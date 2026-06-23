@@ -1,0 +1,2 @@
+# Backend Python dependencies.
+# Keep this file as the source of truth for recreating the backend virtual environment.

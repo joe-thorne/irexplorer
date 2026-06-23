@@ -19,6 +19,8 @@ Early scaffold. Architecture: Option C — a browser JavaScript single-page fron
 
 Environment pin: canonical artefacts and tests are generated through Docker on Ubuntu 24.04 with LLVM/clang/opt 22.1.8 from the official Linux x86_64 release tarball; see `docs/environment.md`.
 
+Local Python tooling: any Python tools/modules used outside Docker for implementation, scripts, tests, or backend work must run inside a virtual environment and be reproducible from a requirements file. Backend dependencies belong in `src/backend/requirements.txt`; do not install Python packages globally or rely on undeclared local packages. The toolchain container is LLVM-only and does not need Python.
+
 _Other conventions TBD as implementation begins — fill in stack, run/build/test commands, layout, and key flags (e.g. `clang -O0 -S -emit-llvm -fno-discard-value-names`)._
 
 ## Engineering guidelines

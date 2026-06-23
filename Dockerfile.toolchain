@@ -1,0 +1,43 @@
+FROM ubuntu:24.04 AS llvm
+
+ARG LLVM_VERSION=22.1.8
+ARG LLVM_ARCHIVE=LLVM-${LLVM_VERSION}-Linux-X64.tar.xz
+ARG LLVM_URL=https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/${LLVM_ARCHIVE}
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        xz-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fL --retry 3 --connect-timeout 20 --progress-bar "${LLVM_URL}" -o "/tmp/${LLVM_ARCHIVE}" \
+    && mkdir -p /opt/llvm-full \
+    && tar -xJf "/tmp/${LLVM_ARCHIVE}" -C /opt/llvm-full --strip-components=1 \
+    && rm "/tmp/${LLVM_ARCHIVE}" \
+    && mkdir -p /opt/llvm/bin /opt/llvm/lib \
+    && for tool in \
+        clang \
+        clang-22 \
+        opt; do \
+        if [ -e "/opt/llvm-full/bin/${tool}" ]; then cp -a "/opt/llvm-full/bin/${tool}" /opt/llvm/bin/; fi; \
+    done \
+    && cp -a /opt/llvm-full/lib/clang /opt/llvm/lib/
+
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PATH="/opt/llvm/bin:${PATH}"
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=llvm /opt/llvm /opt/llvm
+
+WORKDIR /workspace
+
+CMD ["bash"]
