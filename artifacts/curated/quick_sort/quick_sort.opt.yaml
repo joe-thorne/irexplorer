@@ -1,0 +1,1163 @@
+--- !Missed
+Pass:            gvn
+Name:            LoadClobbered
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 18, Column: 16 }
+Function:        partition
+Args:
+  - String:          'load of type '
+  - Type:            i32
+  - String:          ' not eliminated'
+  - String:          ' in favor of '
+  - OtherAccess:     load
+    DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 4, 
+                       Column: 17 }
+  - String:          ' because it is clobbered by '
+  - ClobberedBy:     store
+    DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 13, 
+                       Column: 18 }
+...
+--- !Passed
+Pass:            gvn
+Name:            LoadPRE
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 18, Column: 16 }
+Function:        partition
+Args:
+  - String:          load eliminated by PRE
+...
+--- !Missed
+Pass:            gvn
+Name:            LoadClobbered
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 18, Column: 16 }
+Function:        partition
+Args:
+  - String:          'load of type '
+  - Type:            i32
+  - String:          ' not eliminated'
+  - String:          ' in favor of '
+  - OtherAccess:     load
+    DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 4, 
+                       Column: 17 }
+  - String:          ' because it is clobbered by '
+  - ClobberedBy:     store
+    DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 13, 
+                       Column: 18 }
+...
+--- !Passed
+Pass:            inline
+Name:            Inlined
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 26, Column: 17 }
+Function:        quick_sort
+Args:
+  - String:          ''''
+  - Callee:          partition
+    DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 3, 
+                       Column: 0 }
+  - String:          ''' inlined into '''
+  - Caller:          quick_sort
+    DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 24, 
+                       Column: 0 }
+  - String:          ''''
+  - String:          ' with '
+  - String:          '(cost='
+  - Cost:            '-14930'
+  - String:          ', threshold='
+  - Threshold:       '250'
+  - String:          ')'
+  - String:          ' at callsite '
+  - String:          quick_sort
+  - String:          ':'
+  - Line:            '2'
+  - String:          ':'
+  - Column:          '17'
+  - String:          ';'
+...
+--- !Missed
+Pass:            inline-cost
+Name:            NeverInline
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 28, Column: 9 }
+Function:        quick_sort
+Args:
+  - Callee:          quick_sort
+    DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 24, 
+                       Column: 0 }
+  - String:          ' has uninlinable pattern ('
+  - InlineResult:    recursive
+  - String:          ') and cost is not fully computed'
+...
+--- !Missed
+Pass:            inline
+Name:            NeverInline
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 28, Column: 9 }
+Function:        quick_sort
+Args:
+  - String:          ''''
+  - Callee:          quick_sort
+    DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 24, 
+                       Column: 0 }
+  - String:          ''' not inlined into '''
+  - Caller:          quick_sort
+    DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 24, 
+                       Column: 0 }
+  - String:          ''' because it should never be inlined '
+  - String:          '(cost=never)'
+  - String:          ': '
+  - Reason:          recursive
+...
+--- !Missed
+Pass:            inline-cost
+Name:            NeverInline
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 29, Column: 9 }
+Function:        quick_sort
+Args:
+  - Callee:          quick_sort
+    DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 24, 
+                       Column: 0 }
+  - String:          ' has uninlinable pattern ('
+  - InlineResult:    recursive
+  - String:          ') and cost is not fully computed'
+...
+--- !Missed
+Pass:            inline
+Name:            NeverInline
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 29, Column: 9 }
+Function:        quick_sort
+Args:
+  - String:          ''''
+  - Callee:          quick_sort
+    DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 24, 
+                       Column: 0 }
+  - String:          ''' not inlined into '''
+  - Caller:          quick_sort
+    DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 24, 
+                       Column: 0 }
+  - String:          ''' because it should never be inlined '
+  - String:          '(cost=never)'
+  - String:          ': '
+  - Reason:          recursive
+...
+--- !Passed
+Pass:            tailcallelim
+Name:            tailcall-recursion
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 29, Column: 9 }
+Function:        quick_sort
+Args:
+  - String:          transforming tail recursion into loop
+...
+--- !Passed
+Pass:            licm
+Name:            Hoisted
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 4, Column: 17 }
+Function:        quick_sort
+Args:
+  - String:          'hoisting '
+  - Inst:            sext
+    DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 4, 
+                       Column: 17 }
+...
+--- !Passed
+Pass:            licm
+Name:            Hoisted
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 4, Column: 17 }
+Function:        quick_sort
+Args:
+  - String:          'hoisting '
+  - Inst:            getelementptr
+    DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 4, 
+                       Column: 17 }
+...
+--- !Missed
+Pass:            licm
+Name:            LoadWithLoopInvariantAddressInvalidated
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 4, Column: 17 }
+Function:        quick_sort
+Args:
+  - String:          failed to move load with loop-invariant address because the loop may invalidate its value
+...
+--- !Missed
+Pass:            licm
+Name:            LoadWithLoopInvariantAddressInvalidated
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 18, Column: 16 }
+Function:        quick_sort
+Args:
+  - String:          failed to move load with loop-invariant address because the loop may invalidate its value
+...
+--- !Passed
+Pass:            TTI
+Name:            DontUnroll
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 25, Column: 13 }
+Function:        quick_sort
+Args:
+  - String:          'advising against unrolling the loop because it contains a '
+  - Call:            call
+    DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 28, 
+                       Column: 9 }
+...
+--- !Missed
+Pass:            gvn
+Name:            LoadClobbered
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 4, Column: 17 }
+Function:        quick_sort
+Args:
+  - String:          'load of type '
+  - Type:            i32
+  - String:          ' not eliminated'
+  - String:          ' in favor of '
+  - OtherAccess:     store
+    DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 19, 
+                       Column: 13 }
+  - String:          ' because it is clobbered by '
+  - ClobberedBy:     call
+    DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 28, 
+                       Column: 9 }
+...
+--- !Missed
+Pass:            gvn
+Name:            LoadClobbered
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 18, Column: 16 }
+Function:        quick_sort
+Args:
+  - String:          'load of type '
+  - Type:            i32
+  - String:          ' not eliminated'
+  - String:          ' in favor of '
+  - OtherAccess:     load
+    DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 4, 
+                       Column: 17 }
+  - String:          ' because it is clobbered by '
+  - ClobberedBy:     store
+    DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 13, 
+                       Column: 18 }
+...
+--- !Missed
+Pass:            gvn
+Name:            LoadClobbered
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 4, Column: 17 }
+Function:        quick_sort
+Args:
+  - String:          'load of type '
+  - Type:            i32
+  - String:          ' not eliminated'
+  - String:          ' in favor of '
+  - OtherAccess:     store
+    DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 19, 
+                       Column: 13 }
+  - String:          ' because it is clobbered by '
+  - ClobberedBy:     call
+    DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 28, 
+                       Column: 9 }
+...
+--- !Missed
+Pass:            gvn
+Name:            LoadClobbered
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 18, Column: 16 }
+Function:        quick_sort
+Args:
+  - String:          'load of type '
+  - Type:            i32
+  - String:          ' not eliminated'
+  - String:          ' in favor of '
+  - OtherAccess:     load
+    DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 4, 
+                       Column: 17 }
+  - String:          ' because it is clobbered by '
+  - ClobberedBy:     store
+    DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 13, 
+                       Column: 18 }
+...
+--- !Missed
+Pass:            licm
+Name:            LoadWithLoopInvariantAddressInvalidated
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 4, Column: 17 }
+Function:        quick_sort
+Args:
+  - String:          failed to move load with loop-invariant address because the loop may invalidate its value
+...
+--- !Missed
+Pass:            licm
+Name:            LoadWithLoopInvariantAddressInvalidated
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 18, Column: 16 }
+Function:        quick_sort
+Args:
+  - String:          failed to move load with loop-invariant address because the loop may invalidate its value
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            NonReductionValueUsedOutsideLoop
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 7, Column: 5 }
+Function:        quick_sort
+Args:
+  - String:          'loop not vectorized: '
+  - String:          value that could not be identified as reduction is used outside the loop
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            CantIdentifyArrayBounds
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 11, Column: 23 }
+Function:        quick_sort
+Args:
+  - String:          'loop not vectorized: '
+  - String:          cannot identify array bounds
+...
+--- !Missed
+Pass:            loop-vectorize
+Name:            MissedDetails
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 7, Column: 5 }
+Function:        quick_sort
+Args:
+  - String:          loop not vectorized
+...
+--- !Passed
+Pass:            loop-unroll
+Name:            PartialUnrolled
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 7, Column: 5 }
+Function:        quick_sort
+Args:
+  - String:          'unrolled loop by a factor of '
+  - UnrollCount:     '2'
+  - String:          ' with run-time trip count'
+...
+--- !Passed
+Pass:            TTI
+Name:            DontUnroll
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 25, Column: 13 }
+Function:        quick_sort
+Args:
+  - String:          'advising against unrolling the loop because it contains a '
+  - Call:            call
+    DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 28, 
+                       Column: 9 }
+...
+--- !Missed
+Pass:            licm
+Name:            LoadWithLoopInvariantAddressInvalidated
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 4, Column: 17 }
+Function:        quick_sort
+Args:
+  - String:          failed to move load with loop-invariant address because the loop may invalidate its value
+...
+--- !Passed
+Pass:            licm
+Name:            Hoisted
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 7, Column: 5 }
+Function:        quick_sort
+Args:
+  - String:          'hoisting '
+  - Inst:            add
+    DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 7, 
+                       Column: 5 }
+...
+--- !Missed
+Pass:            licm
+Name:            LoadWithLoopInvariantAddressInvalidated
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 18, Column: 16 }
+Function:        quick_sort
+Args:
+  - String:          failed to move load with loop-invariant address because the loop may invalidate its value
+...
+--- !Analysis
+Pass:            size-info
+Name:            IRSizeChange
+Function:        quick_sort
+Args:
+  - Pass:            Canonicalize natural loops
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '75'
+  - String:          ' to '
+  - IRInstrsAfter:   '78'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '3'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionIRSizeChange
+Function:        quick_sort
+Args:
+  - Pass:            Canonicalize natural loops
+  - String:          ': Function: '
+  - Function:        quick_sort
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '75'
+  - String:          ' to '
+  - IRInstrsAfter:   '78'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '3'
+...
+--- !Analysis
+Pass:            size-info
+Name:            IRSizeChange
+Function:        quick_sort
+Args:
+  - Pass:            Loop Strength Reduction
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '78'
+  - String:          ' to '
+  - IRInstrsAfter:   '81'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '3'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionIRSizeChange
+Function:        quick_sort
+Args:
+  - Pass:            Loop Strength Reduction
+  - String:          ': Function: '
+  - Function:        quick_sort
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '78'
+  - String:          ' to '
+  - IRInstrsAfter:   '81'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '3'
+...
+--- !Analysis
+Pass:            size-info
+Name:            IRSizeChange
+Function:        quick_sort
+Args:
+  - Pass:            CodeGen Prepare
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '81'
+  - String:          ' to '
+  - IRInstrsAfter:   '88'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '7'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionIRSizeChange
+Function:        quick_sort
+Args:
+  - Pass:            CodeGen Prepare
+  - String:          ': Function: '
+  - Function:        quick_sort
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '78'
+  - String:          ' to '
+  - IRInstrsAfter:   '88'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '10'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 24, Column: 0 }
+Function:        quick_sort
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        quick_sort
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '112'
+  - String:          '; Delta: '
+  - Delta:           '112'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 24, Column: 0 }
+Function:        quick_sort
+Args:
+  - Pass:            Machine Common Subexpression Elimination
+  - String:          ': Function: '
+  - Function:        quick_sort
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '112'
+  - String:          ' to '
+  - MIInstrsAfter:   '110'
+  - String:          '; Delta: '
+  - Delta:           '-2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 24, Column: 0 }
+Function:        quick_sort
+Args:
+  - Pass:            Peephole Optimizations
+  - String:          ': Function: '
+  - Function:        quick_sort
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '110'
+  - String:          ' to '
+  - MIInstrsAfter:   '112'
+  - String:          '; Delta: '
+  - Delta:           '2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 24, Column: 0 }
+Function:        quick_sort
+Args:
+  - Pass:            Process Implicit Definitions
+  - String:          ': Function: '
+  - Function:        quick_sort
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '112'
+  - String:          ' to '
+  - MIInstrsAfter:   '111'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 24, Column: 0 }
+Function:        quick_sort
+Args:
+  - Pass:            Eliminate PHI nodes for register allocation
+  - String:          ': Function: '
+  - Function:        quick_sort
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '111'
+  - String:          ' to '
+  - MIInstrsAfter:   '131'
+  - String:          '; Delta: '
+  - Delta:           '20'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 24, Column: 0 }
+Function:        quick_sort
+Args:
+  - Pass:            Two-Address instruction pass
+  - String:          ': Function: '
+  - Function:        quick_sort
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '131'
+  - String:          ' to '
+  - MIInstrsAfter:   '137'
+  - String:          '; Delta: '
+  - Delta:           '6'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 24, Column: 0 }
+Function:        quick_sort
+Args:
+  - Pass:            Register Coalescer
+  - String:          ': Function: '
+  - Function:        quick_sort
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '137'
+  - String:          ' to '
+  - MIInstrsAfter:   '102'
+  - String:          '; Delta: '
+  - Delta:           '-35'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 24, Column: 0 }
+Function:        quick_sort
+Args:
+  - Pass:            Debug Variable Analysis
+  - String:          ': Function: '
+  - Function:        quick_sort
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '102'
+  - String:          ' to '
+  - MIInstrsAfter:   '68'
+  - String:          '; Delta: '
+  - Delta:           '-34'
+...
+--- !Missed
+Pass:            regalloc
+Name:            LoopSpillReloadCopies
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 25, Column: 13 }
+Function:        quick_sort
+Args:
+  - NumVRCopies:     '6'
+  - String:          ' virtual registers copies '
+  - TotalCopiesCost: '7.600000e+01'
+  - String:          ' total copies cost '
+  - String:          generated in loop
+...
+--- !Missed
+Pass:            regalloc
+Name:            SpillReloadCopies
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 24, Column: 1 }
+Function:        quick_sort
+Args:
+  - NumVRCopies:     '8'
+  - String:          ' virtual registers copies '
+  - TotalCopiesCost: '7.800000e+01'
+  - String:          ' total copies cost '
+  - String:          generated in function
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 24, Column: 0 }
+Function:        quick_sort
+Args:
+  - Pass:            Virtual Register Rewriter
+  - String:          ': Function: '
+  - Function:        quick_sort
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '68'
+  - String:          ' to '
+  - MIInstrsAfter:   '109'
+  - String:          '; Delta: '
+  - Delta:           '41'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 24, Column: 0 }
+Function:        quick_sort
+Args:
+  - Pass:            Shrink Wrapping analysis
+  - String:          ': Function: '
+  - Function:        quick_sort
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '109'
+  - String:          ' to '
+  - MIInstrsAfter:   '110'
+  - String:          '; Delta: '
+  - Delta:           '1'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 24, Column: 0 }
+Function:        quick_sort
+Args:
+  - NumStackBytes:   '40'
+  - String:          ' stack bytes in function '''
+  - Function:        quick_sort
+  - String:          ''''
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 24, Column: 0 }
+Function:        quick_sort
+Args:
+  - Pass:            'Prologue/Epilogue Insertion & Frame Finalization'
+  - String:          ': Function: '
+  - Function:        quick_sort
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '110'
+  - String:          ' to '
+  - MIInstrsAfter:   '138'
+  - String:          '; Delta: '
+  - Delta:           '28'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 24, Column: 0 }
+Function:        quick_sort
+Args:
+  - Pass:            Control Flow Optimizer
+  - String:          ': Function: '
+  - Function:        quick_sort
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '138'
+  - String:          ' to '
+  - MIInstrsAfter:   '130'
+  - String:          '; Delta: '
+  - Delta:           '-8'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 24, Column: 0 }
+Function:        quick_sort
+Args:
+  - Pass:            Branch Probability Basic Block Placement
+  - String:          ': Function: '
+  - Function:        quick_sort
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '130'
+  - String:          ' to '
+  - MIInstrsAfter:   '142'
+  - String:          '; Delta: '
+  - Delta:           '12'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 24, Column: 0 }
+Function:        quick_sort
+Args:
+  - Pass:            Live DEBUG_VALUE analysis
+  - String:          ': Function: '
+  - Function:        quick_sort
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '142'
+  - String:          ' to '
+  - MIInstrsAfter:   '263'
+  - String:          '; Delta: '
+  - Delta:           '121'
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 24, Column: 0 }
+Function:        quick_sort
+Args:
+  - String:          "\nFunction: quick_sort"
+  - String:          "\nOffset: [SP"
+  - Offset:          '-8'
+  - String:          '], Type: '
+  - Type:            Spill
+  - String:          ', Align: '
+  - Align:           '16'
+  - String:          ', Size: '
+  - Size:            '8'
+  - String:          "\nOffset: [SP"
+  - Offset:          '-16'
+  - String:          '], Type: '
+  - Type:            Spill
+  - String:          ', Align: '
+  - Align:           '8'
+  - String:          ', Size: '
+  - Size:            '8'
+  - String:          "\nOffset: [SP"
+  - Offset:          '-24'
+  - String:          '], Type: '
+  - Type:            Spill
+  - String:          ', Align: '
+  - Align:           '16'
+  - String:          ', Size: '
+  - Size:            '8'
+  - String:          "\nOffset: [SP"
+  - Offset:          '-32'
+  - String:          '], Type: '
+  - Type:            Spill
+  - String:          ', Align: '
+  - Align:           '8'
+  - String:          ', Size: '
+  - Size:            '8'
+  - String:          "\nOffset: [SP"
+  - Offset:          '-40'
+  - String:          '], Type: '
+  - Type:            Spill
+  - String:          ', Align: '
+  - Align:           '16'
+  - String:          ', Size: '
+  - Size:            '8'
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+Function:        quick_sort
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      entry
+  - String:          "\n"
+  - String:          CMP32rr
+  - String:          ': '
+  - INST_CMP32rr:    '1'
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 0, Column: 0 }
+Function:        quick_sort
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      for.body.preheader.i.lr.ph
+  - String:          "\n"
+  - String:          PUSH64r
+  - String:          ': '
+  - INST_PUSH64r:    '5'
+  - String:          "\n"
+  - String:          JMP_1
+  - String:          ': '
+  - INST_JMP_1:      '1'
+  - String:          "\n"
+  - String:          LEA64r
+  - String:          ': '
+  - INST_LEA64r:     '1'
+  - String:          "\n"
+  - String:          MOV32rr
+  - String:          ': '
+  - INST_MOV32rr:    '1'
+  - String:          "\n"
+  - String:          MOV64rr
+  - String:          ': '
+  - INST_MOV64rr:    '1'
+  - String:          "\n"
+  - String:          MOVSX64rr32
+  - String:          ': '
+  - INST_MOVSX64rr32: '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 0, Column: 0 }
+Function:        quick_sort
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      partition.exit
+  - String:          "\n"
+  - String:          MOV32mr
+  - String:          ': '
+  - INST_MOV32mr:    '2'
+  - String:          "\n"
+  - String:          MOV32rm
+  - String:          ': '
+  - INST_MOV32rm:    '2'
+  - String:          "\n"
+  - String:          MOV32rr
+  - String:          ': '
+  - INST_MOV32rr:    '2'
+  - String:          "\n"
+  - String:          ADD32ri
+  - String:          ': '
+  - INST_ADD32ri:    '1'
+  - String:          "\n"
+  - String:          CALL64pcrel32
+  - String:          ': '
+  - INST_CALL64pcrel32: '1'
+  - String:          "\n"
+  - String:          CMP32rr
+  - String:          ': '
+  - INST_CMP32rr:    '1'
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+  - String:          MOV64rr
+  - String:          ': '
+  - INST_MOV64rr:    '1'
+  - String:          "\n"
+  - String:          MOVSX64rr32
+  - String:          ': '
+  - INST_MOVSX64rr32: '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 0, Column: 0 }
+Function:        quick_sort
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      for.body.preheader.i
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+  - String:          LEA64_32r
+  - String:          ': '
+  - INST_LEA64_32r:  '1'
+  - String:          "\n"
+  - String:          MOV32rm
+  - String:          ': '
+  - INST_MOV32rm:    '1'
+  - String:          "\n"
+  - String:          MOV32rr
+  - String:          ': '
+  - INST_MOV32rr:    '1'
+  - String:          "\n"
+  - String:          MOVSX64rr32
+  - String:          ': '
+  - INST_MOVSX64rr32: '1'
+  - String:          "\n"
+  - String:          SUB32rr
+  - String:          ': '
+  - INST_SUB32rr:    '1'
+  - String:          "\n"
+  - String:          TEST8ri
+  - String:          ': '
+  - INST_TEST8ri:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 0, Column: 0 }
+Function:        quick_sort
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      ''
+  - String:          "\n"
+  - String:          CMP64rr
+  - String:          ': '
+  - INST_CMP64rr:    '1'
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+  - String:          JMP_1
+  - String:          ': '
+  - INST_JMP_1:      '1'
+  - String:          "\n"
+  - String:          MOV64rr
+  - String:          ': '
+  - INST_MOV64rr:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 0, Column: 0 }
+Function:        quick_sort
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      for.body.i.prol
+  - String:          "\n"
+  - String:          CMP32rr
+  - String:          ': '
+  - INST_CMP32rr:    '1'
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+  - String:          MOV32rm
+  - String:          ': '
+  - INST_MOV32rm:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 0, Column: 0 }
+Function:        quick_sort
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      if.then.i.prol
+  - String:          "\n"
+  - String:          MOV32mr
+  - String:          ': '
+  - INST_MOV32mr:    '2'
+  - String:          "\n"
+  - String:          MOV32rm
+  - String:          ': '
+  - INST_MOV32rm:    '1'
+  - String:          "\n"
+  - String:          MOV32rr
+  - String:          ': '
+  - INST_MOV32rr:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 0, Column: 0 }
+Function:        quick_sort
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      for.inc.i.prol
+  - String:          "\n"
+  - String:          CMP64rr
+  - String:          ': '
+  - INST_CMP64rr:    '1'
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+  - String:          JMP_1
+  - String:          ': '
+  - INST_JMP_1:      '1'
+  - String:          "\n"
+  - String:          LEA64r
+  - String:          ': '
+  - INST_LEA64r:     '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 0, Column: 0 }
+Function:        quick_sort
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      for.inc.i.1
+  - String:          "\n"
+  - String:          ADD64ri32
+  - String:          ': '
+  - INST_ADD64ri32:  '1'
+  - String:          "\n"
+  - String:          CMP64rr
+  - String:          ': '
+  - INST_CMP64rr:    '1'
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 0, Column: 0 }
+Function:        quick_sort
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      for.body.i
+  - String:          "\n"
+  - String:          CMP32rr
+  - String:          ': '
+  - INST_CMP32rr:    '1'
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+  - String:          MOV32rm
+  - String:          ': '
+  - INST_MOV32rm:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 0, Column: 0 }
+Function:        quick_sort
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      for.inc.i
+  - String:          "\n"
+  - String:          CMP32rr
+  - String:          ': '
+  - INST_CMP32rr:    '1'
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+  - String:          JMP_1
+  - String:          ': '
+  - INST_JMP_1:      '1'
+  - String:          "\n"
+  - String:          MOV32rm
+  - String:          ': '
+  - INST_MOV32rm:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 0, Column: 0 }
+Function:        quick_sort
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      if.then.i
+  - String:          "\n"
+  - String:          MOV32mr
+  - String:          ': '
+  - INST_MOV32mr:    '2'
+  - String:          "\n"
+  - String:          MOV32rm
+  - String:          ': '
+  - INST_MOV32rm:    '2'
+  - String:          "\n"
+  - String:          CMP32rr
+  - String:          ': '
+  - INST_CMP32rr:    '1'
+  - String:          "\n"
+  - String:          INC32r
+  - String:          ': '
+  - INST_INC32r:     '1'
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+  - String:          MOVSX64rr32
+  - String:          ': '
+  - INST_MOVSX64rr32: '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 0, Column: 0 }
+Function:        quick_sort
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      if.then.i.1
+  - String:          "\n"
+  - String:          MOV32mr
+  - String:          ': '
+  - INST_MOV32mr:    '2'
+  - String:          "\n"
+  - String:          INC32r
+  - String:          ': '
+  - INST_INC32r:     '1'
+  - String:          "\n"
+  - String:          JMP_1
+  - String:          ': '
+  - INST_JMP_1:      '1'
+  - String:          "\n"
+  - String:          MOV32rm
+  - String:          ': '
+  - INST_MOV32rm:    '1'
+  - String:          "\n"
+  - String:          MOVSX64rr32
+  - String:          ': '
+  - INST_MOVSX64rr32: '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 0, Column: 0 }
+Function:        quick_sort
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      ''
+  - String:          "\n"
+  - String:          POP64r
+  - String:          ': '
+  - INST_POP64r:     '5'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 0, Column: 0 }
+Function:        quick_sort
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      if.end
+  - String:          "\n"
+  - String:          RET64
+  - String:          ': '
+  - INST_RET64:      '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 24, Column: 0 }
+Function:        quick_sort
+Args:
+  - NumInstructions: '76'
+  - String:          ' instructions in function'
+...

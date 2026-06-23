@@ -1,0 +1,164 @@
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/score.c', Line: 1, Column: 0 }
+Function:        score
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        score
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '15'
+  - String:          '; Delta: '
+  - Delta:           '15'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/score.c', Line: 1, Column: 0 }
+Function:        score
+Args:
+  - Pass:            Two-Address instruction pass
+  - String:          ': Function: '
+  - Function:        score
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '15'
+  - String:          ' to '
+  - MIInstrsAfter:   '19'
+  - String:          '; Delta: '
+  - Delta:           '4'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/score.c', Line: 1, Column: 0 }
+Function:        score
+Args:
+  - Pass:            Register Coalescer
+  - String:          ': Function: '
+  - Function:        score
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '19'
+  - String:          ' to '
+  - MIInstrsAfter:   '15'
+  - String:          '; Delta: '
+  - Delta:           '-4'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/score.c', Line: 1, Column: 0 }
+Function:        score
+Args:
+  - Pass:            Debug Variable Analysis
+  - String:          ': Function: '
+  - Function:        score
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '15'
+  - String:          ' to '
+  - MIInstrsAfter:   '9'
+  - String:          '; Delta: '
+  - Delta:           '-6'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/score.c', Line: 1, Column: 0 }
+Function:        score
+Args:
+  - Pass:            Virtual Register Rewriter
+  - String:          ': Function: '
+  - Function:        score
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '9'
+  - String:          ' to '
+  - MIInstrsAfter:   '13'
+  - String:          '; Delta: '
+  - Delta:           '4'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: 'examples/curated/score.c', Line: 1, Column: 0 }
+Function:        score
+Args:
+  - NumStackBytes:   '0'
+  - String:          ' stack bytes in function '''
+  - Function:        score
+  - String:          ''''
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/score.c', Line: 1, Column: 0 }
+Function:        score
+Args:
+  - Pass:            Live DEBUG_VALUE analysis
+  - String:          ': Function: '
+  - Function:        score
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '13'
+  - String:          ' to '
+  - MIInstrsAfter:   '17'
+  - String:          '; Delta: '
+  - Delta:           '4'
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: 'examples/curated/score.c', Line: 1, Column: 0 }
+Function:        score
+Args:
+  - String:          "\nFunction: score"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'examples/curated/score.c', Line: 0, Column: 0 }
+Function:        score
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      entry
+  - String:          "\n"
+  - String:          CMOV32rr
+  - String:          ': '
+  - INST_CMOV32rr:   '1'
+  - String:          "\n"
+  - String:          CMP32rr
+  - String:          ': '
+  - INST_CMP32rr:    '1'
+  - String:          "\n"
+  - String:          IMUL32rr
+  - String:          ': '
+  - INST_IMUL32rr:   '1'
+  - String:          "\n"
+  - String:          LEA64_32r
+  - String:          ': '
+  - INST_LEA64_32r:  '1'
+  - String:          "\n"
+  - String:          RET64
+  - String:          ': '
+  - INST_RET64:      '1'
+  - String:          "\n"
+  - String:          SHL32ri
+  - String:          ': '
+  - INST_SHL32ri:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: 'examples/curated/score.c', Line: 1, Column: 0 }
+Function:        score
+Args:
+  - NumInstructions: '6'
+  - String:          ' instructions in function'
+...

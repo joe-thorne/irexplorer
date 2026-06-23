@@ -35,6 +35,80 @@ Verified local image size after pruning: about 880 MB. The retained LLVM release
 - Local Python tools and modules must run inside a virtual environment and be reproducible from a requirements file. Backend Python dependencies belong in `src/backend/requirements.txt`.
 - The toolchain container does not provide Python; it is only for canonical LLVM generation.
 
+## Phase 1 Curated Examples
+
+- `score.c`: compact arithmetic and branch example.
+- `binary_search`: single-function loop and CFG example.
+- `quick_sort`: recursive, multi-function example.
+
+## Default Teaching Pass Chain
+
+The default configurable pass sequence is:
+
+1. `mem2reg` - promote stack variables to SSA.
+2. `instcombine` - simplify algebraic instruction forms.
+3. `simplifycfg` - simplify CFG shape.
+4. `gvn` - remove redundant equivalent computations.
+5. `instcombine,simplifycfg` - clean up newly exposed simplifications.
+6. `loop-simplify,lcssa` - canonicalise loop form.
+7. `loop-rotate` - rotate loop control flow.
+8. `licm` - hoist loop-invariant work.
+9. `indvars` - simplify induction variables.
+10. `instcombine,simplifycfg` - clean up after loop optimisations.
+11. `loop-vectorize` - attempt safe loop vectorisation.
+12. `instcombine,simplifycfg` - perform final instruction and CFG cleanup.
+
+No-op states remain in the model and are rendered compactly.
+
+## Command Templates
+
+The generator records the exact command line with each generated artefact. These templates define the canonical shape; S1.2 owns the concrete invocation code.
+
+Run the canonical generator from `irexplorer/` inside the local Python virtual environment:
+
+```sh
+.venv/bin/python -m src.backend.toolchain.generate_curated
+```
+
+Generated artefacts are written to `artifacts/curated/<example>/`. Each example directory contains the `-O0` IR/bitcode, the 12 teaching-pass IR states, the recompiled `clang -O3` anchor, captured `-Rpass` remarks, the `.opt.yaml` optimisation record, and a command manifest.
+
+```sh
+clang -O0 -g \
+  -Xclang -disable-O0-optnone \
+  -fno-discard-value-names \
+  -S -emit-llvm \
+  <example>.c \
+  -o <example>_O0.ll
+
+clang -O0 -g \
+  -Xclang -disable-O0-optnone \
+  -fno-discard-value-names \
+  -emit-llvm -c \
+  <example>.c \
+  -o <example>_O0.bc
+
+opt -passes='<pass-list>' \
+  <input> \
+  -S \
+  -o <output>.ll
+
+clang -O3 -g \
+  -fno-discard-value-names \
+  -S -emit-llvm \
+  <example>.c \
+  -o <example>_O3.ll
+
+clang -O3 -g \
+  -fno-discard-value-names \
+  '-Rpass=.*' \
+  '-Rpass-missed=.*' \
+  '-Rpass-analysis=.*' \
+  -fsave-optimization-record \
+  <example>.c \
+  -c \
+  -o <example>.o
+```
+
 ## Record With Each Artefact
 
 - LLVM/clang/opt version.

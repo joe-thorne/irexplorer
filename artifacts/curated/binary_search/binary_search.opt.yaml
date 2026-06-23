@@ -1,0 +1,679 @@
+--- !Analysis
+Pass:            loop-vectorize
+Name:            NonReductionValueUsedOutsideLoop
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 5, Column: 5 }
+Function:        binary_search
+Args:
+  - String:          'loop not vectorized: '
+  - String:          value that could not be identified as reduction is used outside the loop
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            NonReductionValueUsedOutsideLoop
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 5, Column: 5 }
+Function:        binary_search
+Args:
+  - String:          'loop not vectorized: '
+  - String:          value that could not be identified as reduction is used outside the loop
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            NoInductionVariable
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 5, Column: 5 }
+Function:        binary_search
+Args:
+  - String:          'loop not vectorized: '
+  - String:          loop induction variable could not be identified
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            UnsupportedUncountableLoop
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 5, Column: 5 }
+Function:        binary_search
+Args:
+  - String:          'loop not vectorized: '
+  - String:          Cannot vectorize uncountable loop
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            CantComputeNumberOfIterations
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 5, Column: 5 }
+Function:        binary_search
+Args:
+  - String:          'loop not vectorized: '
+  - String:          could not determine number of loop iterations
+...
+--- !Missed
+Pass:            loop-vectorize
+Name:            MissedDetails
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 5, Column: 5 }
+Function:        binary_search
+Args:
+  - String:          loop not vectorized
+...
+--- !Missed
+Pass:            slp-vectorizer
+Name:            NotBeneficial
+Function:        binary_search
+Args:
+  - String:          'List vectorization was possible but not beneficial with cost '
+  - Cost:            '0'
+  - String:          ' >= '
+  - Treshold:        '0'
+...
+--- !Missed
+Pass:            slp-vectorizer
+Name:            NotBeneficial
+Function:        binary_search
+Args:
+  - String:          'List vectorization was possible but not beneficial with cost '
+  - Cost:            '0'
+  - String:          ' >= '
+  - Treshold:        '0'
+...
+--- !Missed
+Pass:            slp-vectorizer
+Name:            NotBeneficial
+Function:        binary_search
+Args:
+  - String:          'List vectorization was possible but not beneficial with cost '
+  - Cost:            '0'
+  - String:          ' >= '
+  - Treshold:        '0'
+...
+--- !Missed
+Pass:            slp-vectorizer
+Name:            NotBeneficial
+Function:        binary_search
+Args:
+  - String:          'List vectorization was possible but not beneficial with cost '
+  - Cost:            '0'
+  - String:          ' >= '
+  - Treshold:        '0'
+...
+--- !Missed
+Pass:            slp-vectorizer
+Name:            NotBeneficial
+Function:        binary_search
+Args:
+  - String:          'List vectorization was possible but not beneficial with cost '
+  - Cost:            '0'
+  - String:          ' >= '
+  - Treshold:        '0'
+...
+--- !Missed
+Pass:            slp-vectorizer
+Name:            NotBeneficial
+Function:        binary_search
+Args:
+  - String:          'List vectorization was possible but not beneficial with cost '
+  - Cost:            '0'
+  - String:          ' >= '
+  - Treshold:        '0'
+...
+--- !Missed
+Pass:            slp-vectorizer
+Name:            NotBeneficial
+Function:        binary_search
+Args:
+  - String:          'List vectorization was possible but not beneficial with cost '
+  - Cost:            '0'
+  - String:          ' >= '
+  - Treshold:        '0'
+...
+--- !Missed
+Pass:            slp-vectorizer
+Name:            NotBeneficial
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 8, Column: 20 }
+Function:        binary_search
+Args:
+  - String:          'List vectorization was possible but not beneficial with cost '
+  - Cost:            '0'
+  - String:          ' >= '
+  - Treshold:        '0'
+...
+--- !Missed
+Pass:            slp-vectorizer
+Name:            NotPossible
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 8, Column: 20 }
+Function:        binary_search
+Args:
+  - String:          'Cannot SLP vectorize list: vectorization was impossible'
+  - String:          ' with available vectorization factors'
+...
+--- !Analysis
+Pass:            size-info
+Name:            IRSizeChange
+Function:        binary_search
+Args:
+  - Pass:            Canonicalize natural loops
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '27'
+  - String:          ' to '
+  - IRInstrsAfter:   '29'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionIRSizeChange
+Function:        binary_search
+Args:
+  - Pass:            Canonicalize natural loops
+  - String:          ': Function: '
+  - Function:        binary_search
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '27'
+  - String:          ' to '
+  - IRInstrsAfter:   '29'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            IRSizeChange
+Function:        binary_search
+Args:
+  - Pass:            CodeGen Prepare
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '29'
+  - String:          ' to '
+  - IRInstrsAfter:   '28'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionIRSizeChange
+Function:        binary_search
+Args:
+  - Pass:            CodeGen Prepare
+  - String:          ': Function: '
+  - Function:        binary_search
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '29'
+  - String:          ' to '
+  - IRInstrsAfter:   '28'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 1, Column: 0 }
+Function:        binary_search
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        binary_search
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '50'
+  - String:          '; Delta: '
+  - Delta:           '50'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 1, Column: 0 }
+Function:        binary_search
+Args:
+  - Pass:            X86 cmov Conversion
+  - String:          ': Function: '
+  - Function:        binary_search
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '50'
+  - String:          ' to '
+  - MIInstrsAfter:   '51'
+  - String:          '; Delta: '
+  - Delta:           '1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 1, Column: 0 }
+Function:        binary_search
+Args:
+  - Pass:            Machine code sinking
+  - String:          ': Function: '
+  - Function:        binary_search
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '51'
+  - String:          ' to '
+  - MIInstrsAfter:   '52'
+  - String:          '; Delta: '
+  - Delta:           '1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 1, Column: 0 }
+Function:        binary_search
+Args:
+  - Pass:            Peephole Optimizations
+  - String:          ': Function: '
+  - Function:        binary_search
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '52'
+  - String:          ' to '
+  - MIInstrsAfter:   '50'
+  - String:          '; Delta: '
+  - Delta:           '-2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 1, Column: 0 }
+Function:        binary_search
+Args:
+  - Pass:            Process Implicit Definitions
+  - String:          ': Function: '
+  - Function:        binary_search
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '50'
+  - String:          ' to '
+  - MIInstrsAfter:   '48'
+  - String:          '; Delta: '
+  - Delta:           '-2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 1, Column: 0 }
+Function:        binary_search
+Args:
+  - Pass:            Eliminate PHI nodes for register allocation
+  - String:          ': Function: '
+  - Function:        binary_search
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '48'
+  - String:          ' to '
+  - MIInstrsAfter:   '60'
+  - String:          '; Delta: '
+  - Delta:           '12'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 1, Column: 0 }
+Function:        binary_search
+Args:
+  - Pass:            Two-Address instruction pass
+  - String:          ': Function: '
+  - Function:        binary_search
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '60'
+  - String:          ' to '
+  - MIInstrsAfter:   '64'
+  - String:          '; Delta: '
+  - Delta:           '4'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 1, Column: 0 }
+Function:        binary_search
+Args:
+  - Pass:            Register Coalescer
+  - String:          ': Function: '
+  - Function:        binary_search
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '64'
+  - String:          ' to '
+  - MIInstrsAfter:   '41'
+  - String:          '; Delta: '
+  - Delta:           '-23'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 1, Column: 0 }
+Function:        binary_search
+Args:
+  - Pass:            Debug Variable Analysis
+  - String:          ': Function: '
+  - Function:        binary_search
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '41'
+  - String:          ' to '
+  - MIInstrsAfter:   '31'
+  - String:          '; Delta: '
+  - Delta:           '-10'
+...
+--- !Missed
+Pass:            regalloc
+Name:            LoopSpillReloadCopies
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 5, Column: 5 }
+Function:        binary_search
+Args:
+  - NumVRCopies:     '2'
+  - String:          ' virtual registers copies '
+  - TotalCopiesCost: '3.000000e+01'
+  - String:          ' total copies cost '
+  - String:          generated in loop
+...
+--- !Missed
+Pass:            regalloc
+Name:            SpillReloadCopies
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 1, Column: 1 }
+Function:        binary_search
+Args:
+  - NumVRCopies:     '3'
+  - String:          ' virtual registers copies '
+  - TotalCopiesCost: '3.062500e+01'
+  - String:          ' total copies cost '
+  - String:          generated in function
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 1, Column: 0 }
+Function:        binary_search
+Args:
+  - Pass:            Virtual Register Rewriter
+  - String:          ': Function: '
+  - Function:        binary_search
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '31'
+  - String:          ' to '
+  - MIInstrsAfter:   '42'
+  - String:          '; Delta: '
+  - Delta:           '11'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 1, Column: 0 }
+Function:        binary_search
+Args:
+  - NumStackBytes:   '0'
+  - String:          ' stack bytes in function '''
+  - Function:        binary_search
+  - String:          ''''
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 1, Column: 0 }
+Function:        binary_search
+Args:
+  - Pass:            Control Flow Optimizer
+  - String:          ': Function: '
+  - Function:        binary_search
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '42'
+  - String:          ' to '
+  - MIInstrsAfter:   '37'
+  - String:          '; Delta: '
+  - Delta:           '-5'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 1, Column: 0 }
+Function:        binary_search
+Args:
+  - Pass:            Branch Probability Basic Block Placement
+  - String:          ': Function: '
+  - Function:        binary_search
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '37'
+  - String:          ' to '
+  - MIInstrsAfter:   '43'
+  - String:          '; Delta: '
+  - Delta:           '6'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 1, Column: 0 }
+Function:        binary_search
+Args:
+  - Pass:            X86 LEA Fixup
+  - String:          ': Function: '
+  - Function:        binary_search
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '43'
+  - String:          ' to '
+  - MIInstrsAfter:   '44'
+  - String:          '; Delta: '
+  - Delta:           '1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 1, Column: 0 }
+Function:        binary_search
+Args:
+  - Pass:            Live DEBUG_VALUE analysis
+  - String:          ': Function: '
+  - Function:        binary_search
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '44'
+  - String:          ' to '
+  - MIInstrsAfter:   '83'
+  - String:          '; Delta: '
+  - Delta:           '39'
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 1, Column: 0 }
+Function:        binary_search
+Args:
+  - String:          "\nFunction: binary_search"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 0, Column: 0 }
+Function:        binary_search
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      entry
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+  - String:          TEST32rr
+  - String:          ': '
+  - INST_TEST32rr:   '1'
+  - String:          "\n"
+  - String:          XOR32rr
+  - String:          ': '
+  - INST_XOR32rr:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 0, Column: 0 }
+Function:        binary_search
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      while.body.preheader
+  - String:          "\n"
+  - String:          JMP_1
+  - String:          ': '
+  - INST_JMP_1:      '1'
+  - String:          "\n"
+  - String:          MOV32rr
+  - String:          ': '
+  - INST_MOV32rr:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 0, Column: 0 }
+Function:        binary_search
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      while.body
+  - String:          "\n"
+  - String:          CMP32rr
+  - String:          ': '
+  - INST_CMP32rr:    '1'
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+  - String:          MOV32rr
+  - String:          ': '
+  - INST_MOV32rr:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 0, Column: 0 }
+Function:        binary_search
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      while.body
+  - String:          "\n"
+  - String:          CMP32mr
+  - String:          ': '
+  - INST_CMP32mr:    '1'
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+  - String:          LEA64_32r
+  - String:          ': '
+  - INST_LEA64_32r:  '1'
+  - String:          "\n"
+  - String:          MOV32rr
+  - String:          ': '
+  - INST_MOV32rr:    '1'
+  - String:          "\n"
+  - String:          SHR32ri
+  - String:          ': '
+  - INST_SHR32ri:    '1'
+  - String:          "\n"
+  - String:          SUB32rr
+  - String:          ': '
+  - INST_SUB32rr:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 0, Column: 0 }
+Function:        binary_search
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      ''
+  - String:          "\n"
+  - String:          ADD32rr
+  - String:          ': '
+  - INST_ADD32rr:    '1'
+  - String:          "\n"
+  - String:          CMP32rr
+  - String:          ': '
+  - INST_CMP32rr:    '1'
+  - String:          "\n"
+  - String:          INC32r
+  - String:          ': '
+  - INST_INC32r:     '1'
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 0, Column: 0 }
+Function:        binary_search
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      while.end
+  - String:          "\n"
+  - String:          CMP32rr
+  - String:          ': '
+  - INST_CMP32rr:    '1'
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 0, Column: 0 }
+Function:        binary_search
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      land.lhs.true
+  - String:          "\n"
+  - String:          CMP32mr
+  - String:          ': '
+  - INST_CMP32mr:    '1'
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+  - String:          MOV32rr
+  - String:          ': '
+  - INST_MOV32rr:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 0, Column: 0 }
+Function:        binary_search
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      if.end8
+  - String:          "\n"
+  - String:          MOV32ri
+  - String:          ': '
+  - INST_MOV32ri:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 0, Column: 0 }
+Function:        binary_search
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      cleanup
+  - String:          "\n"
+  - String:          RET64
+  - String:          ': '
+  - INST_RET64:      '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: 'examples/curated/binary_search.c', Line: 1, Column: 0 }
+Function:        binary_search
+Args:
+  - NumInstructions: '25'
+  - String:          ' instructions in function'
+...

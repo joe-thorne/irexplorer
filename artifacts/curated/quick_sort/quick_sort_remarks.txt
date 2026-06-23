@@ -1,0 +1,258 @@
+/workspace/examples/curated/quick_sort.c:18:16: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+   18 |     a[i + 1] = a[high];
+      |                ^
+/workspace/examples/curated/quick_sort.c:18:16: remark: load eliminated by PRE [-Rpass=gvn]
+/workspace/examples/curated/quick_sort.c:18:16: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+/workspace/examples/curated/quick_sort.c:26:17: remark: 'partition' inlined into 'quick_sort' with (cost=-14930, threshold=250) at callsite quick_sort:2:17; [-Rpass=inline]
+   26 |         int p = partition(a, low, high);
+      |                 ^
+/workspace/examples/curated/quick_sort.c:28:9: remark: quick_sort has uninlinable pattern (recursive) and cost is not fully computed [-Rpass-missed=inline-cost]
+   28 |         quick_sort(a, low, p - 1);
+      |         ^
+/workspace/examples/curated/quick_sort.c:28:9: remark: 'quick_sort' not inlined into 'quick_sort' because it should never be inlined (cost=never): recursive [-Rpass-missed=inline]
+/workspace/examples/curated/quick_sort.c:29:9: remark: quick_sort has uninlinable pattern (recursive) and cost is not fully computed [-Rpass-missed=inline-cost]
+   29 |         quick_sort(a, p + 1, high);
+      |         ^
+/workspace/examples/curated/quick_sort.c:29:9: remark: 'quick_sort' not inlined into 'quick_sort' because it should never be inlined (cost=never): recursive [-Rpass-missed=inline]
+/workspace/examples/curated/quick_sort.c:29:9: remark: transforming tail recursion into loop [-Rpass=tailcallelim]
+/workspace/examples/curated/quick_sort.c:4:17: remark: hoisting sext [-Rpass=licm]
+    4 |     int pivot = a[high];
+      |                 ^
+/workspace/examples/curated/quick_sort.c:4:17: remark: hoisting getelementptr [-Rpass=licm]
+/workspace/examples/curated/quick_sort.c:4:17: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+/workspace/examples/curated/quick_sort.c:18:16: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   18 |     a[i + 1] = a[high];
+      |                ^
+/workspace/examples/curated/quick_sort.c:25:13: remark: advising against unrolling the loop because it contains a call [-Rpass=TTI]
+   25 |     if (low < high) {
+      |             ^
+/workspace/examples/curated/quick_sort.c:4:17: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+    4 |     int pivot = a[high];
+      |                 ^
+/workspace/examples/curated/quick_sort.c:18:16: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+   18 |     a[i + 1] = a[high];
+      |                ^
+/workspace/examples/curated/quick_sort.c:4:17: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+    4 |     int pivot = a[high];
+      |                 ^
+/workspace/examples/curated/quick_sort.c:18:16: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+   18 |     a[i + 1] = a[high];
+      |                ^
+/workspace/examples/curated/quick_sort.c:4:17: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+    4 |     int pivot = a[high];
+      |                 ^
+/workspace/examples/curated/quick_sort.c:18:16: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   18 |     a[i + 1] = a[high];
+      |                ^
+/workspace/examples/curated/quick_sort.c:7:5: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+    7 |     for (int j = low; j < high; ++j) {
+      |     ^
+/workspace/examples/curated/quick_sort.c:11:23: remark: loop not vectorized: cannot identify array bounds [-Rpass-analysis=loop-vectorize]
+   11 |             int tmp = a[i];
+      |                       ^
+/workspace/examples/curated/quick_sort.c:7:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+    7 |     for (int j = low; j < high; ++j) {
+      |     ^
+/workspace/examples/curated/quick_sort.c:7:5: remark: unrolled loop by a factor of 2 with run-time trip count [-Rpass=loop-unroll]
+/workspace/examples/curated/quick_sort.c:25:13: remark: advising against unrolling the loop because it contains a call [-Rpass=TTI]
+   25 |     if (low < high) {
+      |             ^
+/workspace/examples/curated/quick_sort.c:4:17: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+    4 |     int pivot = a[high];
+      |                 ^
+/workspace/examples/curated/quick_sort.c:7:5: remark: hoisting add [-Rpass=licm]
+    7 |     for (int j = low; j < high; ++j) {
+      |     ^
+/workspace/examples/curated/quick_sort.c:18:16: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   18 |     a[i + 1] = a[high];
+      |                ^
+/workspace/examples/curated/quick_sort.c:24:6: remark: Canonicalize natural loops: IR instruction count changed from 75 to 78; Delta: 3 [-Rpass-analysis=size-info]
+   24 | void quick_sort(int *a, int low, int high) {
+      |      ^
+/workspace/examples/curated/quick_sort.c:24:6: remark: Canonicalize natural loops: Function: quick_sort: IR instruction count changed from 75 to 78; Delta: 3 [-Rpass-analysis=size-info]
+/workspace/examples/curated/quick_sort.c:24:6: remark: Loop Strength Reduction: IR instruction count changed from 78 to 81; Delta: 3 [-Rpass-analysis=size-info]
+/workspace/examples/curated/quick_sort.c:24:6: remark: Loop Strength Reduction: Function: quick_sort: IR instruction count changed from 78 to 81; Delta: 3 [-Rpass-analysis=size-info]
+/workspace/examples/curated/quick_sort.c:24:6: remark: CodeGen Prepare: IR instruction count changed from 81 to 88; Delta: 7 [-Rpass-analysis=size-info]
+/workspace/examples/curated/quick_sort.c:24:6: remark: CodeGen Prepare: Function: quick_sort: IR instruction count changed from 78 to 88; Delta: 10 [-Rpass-analysis=size-info]
+/workspace/examples/curated/quick_sort.c:24:1: remark: X86 DAG->DAG Instruction Selection: Function: quick_sort: MI Instruction count changed from 0 to 112; Delta: 112 [-Rpass-analysis=size-info]
+   24 | void quick_sort(int *a, int low, int high) {
+      | ^
+/workspace/examples/curated/quick_sort.c:24:1: remark: Machine Common Subexpression Elimination: Function: quick_sort: MI Instruction count changed from 112 to 110; Delta: -2 [-Rpass-analysis=size-info]
+/workspace/examples/curated/quick_sort.c:24:1: remark: Peephole Optimizations: Function: quick_sort: MI Instruction count changed from 110 to 112; Delta: 2 [-Rpass-analysis=size-info]
+/workspace/examples/curated/quick_sort.c:24:1: remark: Process Implicit Definitions: Function: quick_sort: MI Instruction count changed from 112 to 111; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/examples/curated/quick_sort.c:24:1: remark: Eliminate PHI nodes for register allocation: Function: quick_sort: MI Instruction count changed from 111 to 131; Delta: 20 [-Rpass-analysis=size-info]
+/workspace/examples/curated/quick_sort.c:24:1: remark: Two-Address instruction pass: Function: quick_sort: MI Instruction count changed from 131 to 137; Delta: 6 [-Rpass-analysis=size-info]
+/workspace/examples/curated/quick_sort.c:24:1: remark: Register Coalescer: Function: quick_sort: MI Instruction count changed from 137 to 102; Delta: -35 [-Rpass-analysis=size-info]
+/workspace/examples/curated/quick_sort.c:24:1: remark: Debug Variable Analysis: Function: quick_sort: MI Instruction count changed from 102 to 68; Delta: -34 [-Rpass-analysis=size-info]
+/workspace/examples/curated/quick_sort.c:25:13: remark: 6 virtual registers copies 7.600000e+01 total copies cost generated in loop [-Rpass-missed=regalloc]
+   25 |     if (low < high) {
+      |             ^
+/workspace/examples/curated/quick_sort.c:24:1: remark: 8 virtual registers copies 7.800000e+01 total copies cost generated in function [-Rpass-missed=regalloc]
+   24 | void quick_sort(int *a, int low, int high) {
+      | ^
+/workspace/examples/curated/quick_sort.c:24:1: remark: Virtual Register Rewriter: Function: quick_sort: MI Instruction count changed from 68 to 109; Delta: 41 [-Rpass-analysis=size-info]
+/workspace/examples/curated/quick_sort.c:24:1: remark: Shrink Wrapping analysis: Function: quick_sort: MI Instruction count changed from 109 to 110; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/examples/curated/quick_sort.c:24:1: remark: 40 stack bytes in function 'quick_sort' [-Rpass-analysis=prologepilog]
+/workspace/examples/curated/quick_sort.c:24:1: remark: Prologue/Epilogue Insertion & Frame Finalization: Function: quick_sort: MI Instruction count changed from 110 to 138; Delta: 28 [-Rpass-analysis=size-info]
+/workspace/examples/curated/quick_sort.c:24:1: remark: Control Flow Optimizer: Function: quick_sort: MI Instruction count changed from 138 to 130; Delta: -8 [-Rpass-analysis=size-info]
+/workspace/examples/curated/quick_sort.c:24:1: remark: Branch Probability Basic Block Placement: Function: quick_sort: MI Instruction count changed from 130 to 142; Delta: 12 [-Rpass-analysis=size-info]
+/workspace/examples/curated/quick_sort.c:24:1: remark: Live DEBUG_VALUE analysis: Function: quick_sort: MI Instruction count changed from 142 to 263; Delta: 121 [-Rpass-analysis=size-info]
+/workspace/examples/curated/quick_sort.c:24:1: remark: 
+Function: quick_sort
+Offset: [SP-8], Type: Spill, Align: 16, Size: 8
+Offset: [SP-16], Type: Spill, Align: 8, Size: 8
+Offset: [SP-24], Type: Spill, Align: 16, Size: 8
+Offset: [SP-32], Type: Spill, Align: 8, Size: 8
+Offset: [SP-40], Type: Spill, Align: 16, Size: 8 [-Rpass-analysis=stack-frame-layout]
+/workspace/examples/curated/quick_sort.c:24:6: remark: BasicBlock: entry
+CMP32rr: 1
+JCC_1: 1
+ [-Rpass-analysis=asm-printer]
+   24 | void quick_sort(int *a, int low, int high) {
+      |      ^
+/workspace/examples/curated/quick_sort.c:24:6: note: could not determine the original source location for examples/curated/quick_sort.c:0:0
+/workspace/examples/curated/quick_sort.c:24:6: remark: BasicBlock: for.body.preheader.i.lr.ph
+PUSH64r: 5
+JMP_1: 1
+LEA64r: 1
+MOV32rr: 1
+MOV64rr: 1
+MOVSX64rr32: 1
+ [-Rpass-analysis=asm-printer]
+   24 | void quick_sort(int *a, int low, int high) {
+      |      ^
+/workspace/examples/curated/quick_sort.c:24:6: note: could not determine the original source location for examples/curated/quick_sort.c:0:0
+/workspace/examples/curated/quick_sort.c:24:6: note: could not determine the original source location for examples/curated/quick_sort.c:0:0
+/workspace/examples/curated/quick_sort.c:24:6: remark: BasicBlock: partition.exit
+MOV32mr: 2
+MOV32rm: 2
+MOV32rr: 2
+ADD32ri: 1
+CALL64pcrel32: 1
+CMP32rr: 1
+JCC_1: 1
+MOV64rr: 1
+MOVSX64rr32: 1
+ [-Rpass-analysis=asm-printer]
+   24 | void quick_sort(int *a, int low, int high) {
+      |      ^
+/workspace/examples/curated/quick_sort.c:24:6: note: could not determine the original source location for examples/curated/quick_sort.c:0:0
+/workspace/examples/curated/quick_sort.c:24:6: note: could not determine the original source location for examples/curated/quick_sort.c:0:0
+/workspace/examples/curated/quick_sort.c:24:6: remark: BasicBlock: for.body.preheader.i
+JCC_1: 1
+LEA64_32r: 1
+MOV32rm: 1
+MOV32rr: 1
+MOVSX64rr32: 1
+SUB32rr: 1
+TEST8ri: 1
+ [-Rpass-analysis=asm-printer]
+   24 | void quick_sort(int *a, int low, int high) {
+      |      ^
+/workspace/examples/curated/quick_sort.c:24:6: note: could not determine the original source location for examples/curated/quick_sort.c:0:0
+/workspace/examples/curated/quick_sort.c:24:6: note: could not determine the original source location for examples/curated/quick_sort.c:0:0
+/workspace/examples/curated/quick_sort.c:24:6: remark: BasicBlock: 
+CMP64rr: 1
+JCC_1: 1
+JMP_1: 1
+MOV64rr: 1
+ [-Rpass-analysis=asm-printer]
+   24 | void quick_sort(int *a, int low, int high) {
+      |      ^
+/workspace/examples/curated/quick_sort.c:24:6: note: could not determine the original source location for examples/curated/quick_sort.c:0:0
+/workspace/examples/curated/quick_sort.c:24:6: note: could not determine the original source location for examples/curated/quick_sort.c:0:0
+/workspace/examples/curated/quick_sort.c:24:6: remark: BasicBlock: for.body.i.prol
+CMP32rr: 1
+JCC_1: 1
+MOV32rm: 1
+ [-Rpass-analysis=asm-printer]
+   24 | void quick_sort(int *a, int low, int high) {
+      |      ^
+/workspace/examples/curated/quick_sort.c:24:6: note: could not determine the original source location for examples/curated/quick_sort.c:0:0
+/workspace/examples/curated/quick_sort.c:24:6: note: could not determine the original source location for examples/curated/quick_sort.c:0:0
+/workspace/examples/curated/quick_sort.c:24:6: remark: BasicBlock: if.then.i.prol
+MOV32mr: 2
+MOV32rm: 1
+MOV32rr: 1
+ [-Rpass-analysis=asm-printer]
+   24 | void quick_sort(int *a, int low, int high) {
+      |      ^
+/workspace/examples/curated/quick_sort.c:24:6: note: could not determine the original source location for examples/curated/quick_sort.c:0:0
+/workspace/examples/curated/quick_sort.c:24:6: note: could not determine the original source location for examples/curated/quick_sort.c:0:0
+/workspace/examples/curated/quick_sort.c:24:6: remark: BasicBlock: for.inc.i.prol
+CMP64rr: 1
+JCC_1: 1
+JMP_1: 1
+LEA64r: 1
+ [-Rpass-analysis=asm-printer]
+   24 | void quick_sort(int *a, int low, int high) {
+      |      ^
+/workspace/examples/curated/quick_sort.c:24:6: note: could not determine the original source location for examples/curated/quick_sort.c:0:0
+/workspace/examples/curated/quick_sort.c:24:6: note: could not determine the original source location for examples/curated/quick_sort.c:0:0
+/workspace/examples/curated/quick_sort.c:24:6: remark: BasicBlock: for.inc.i.1
+ADD64ri32: 1
+CMP64rr: 1
+JCC_1: 1
+ [-Rpass-analysis=asm-printer]
+   24 | void quick_sort(int *a, int low, int high) {
+      |      ^
+/workspace/examples/curated/quick_sort.c:24:6: note: could not determine the original source location for examples/curated/quick_sort.c:0:0
+/workspace/examples/curated/quick_sort.c:24:6: note: could not determine the original source location for examples/curated/quick_sort.c:0:0
+/workspace/examples/curated/quick_sort.c:24:6: remark: BasicBlock: for.body.i
+CMP32rr: 1
+JCC_1: 1
+MOV32rm: 1
+ [-Rpass-analysis=asm-printer]
+   24 | void quick_sort(int *a, int low, int high) {
+      |      ^
+/workspace/examples/curated/quick_sort.c:24:6: note: could not determine the original source location for examples/curated/quick_sort.c:0:0
+/workspace/examples/curated/quick_sort.c:24:6: note: could not determine the original source location for examples/curated/quick_sort.c:0:0
+/workspace/examples/curated/quick_sort.c:24:6: remark: BasicBlock: for.inc.i
+CMP32rr: 1
+JCC_1: 1
+JMP_1: 1
+MOV32rm: 1
+ [-Rpass-analysis=asm-printer]
+   24 | void quick_sort(int *a, int low, int high) {
+      |      ^
+/workspace/examples/curated/quick_sort.c:24:6: note: could not determine the original source location for examples/curated/quick_sort.c:0:0
+/workspace/examples/curated/quick_sort.c:24:6: note: could not determine the original source location for examples/curated/quick_sort.c:0:0
+/workspace/examples/curated/quick_sort.c:24:6: remark: BasicBlock: if.then.i
+MOV32mr: 2
+MOV32rm: 2
+CMP32rr: 1
+INC32r: 1
+JCC_1: 1
+MOVSX64rr32: 1
+ [-Rpass-analysis=asm-printer]
+   24 | void quick_sort(int *a, int low, int high) {
+      |      ^
+/workspace/examples/curated/quick_sort.c:24:6: note: could not determine the original source location for examples/curated/quick_sort.c:0:0
+/workspace/examples/curated/quick_sort.c:24:6: note: could not determine the original source location for examples/curated/quick_sort.c:0:0
+/workspace/examples/curated/quick_sort.c:24:6: remark: BasicBlock: if.then.i.1
+MOV32mr: 2
+INC32r: 1
+JMP_1: 1
+MOV32rm: 1
+MOVSX64rr32: 1
+ [-Rpass-analysis=asm-printer]
+   24 | void quick_sort(int *a, int low, int high) {
+      |      ^
+/workspace/examples/curated/quick_sort.c:24:6: note: could not determine the original source location for examples/curated/quick_sort.c:0:0
+/workspace/examples/curated/quick_sort.c:24:6: note: could not determine the original source location for examples/curated/quick_sort.c:0:0
+/workspace/examples/curated/quick_sort.c:24:6: remark: BasicBlock: 
+POP64r: 5
+ [-Rpass-analysis=asm-printer]
+   24 | void quick_sort(int *a, int low, int high) {
+      |      ^
+/workspace/examples/curated/quick_sort.c:24:6: note: could not determine the original source location for examples/curated/quick_sort.c:0:0
+/workspace/examples/curated/quick_sort.c:24:6: note: could not determine the original source location for examples/curated/quick_sort.c:0:0
+/workspace/examples/curated/quick_sort.c:24:6: remark: BasicBlock: if.end
+RET64: 1
+ [-Rpass-analysis=asm-printer]
+   24 | void quick_sort(int *a, int low, int high) {
+      |      ^
+/workspace/examples/curated/quick_sort.c:24:6: note: could not determine the original source location for examples/curated/quick_sort.c:0:0
+/workspace/examples/curated/quick_sort.c:24:1: remark: 76 instructions in function [-Rpass-analysis=asm-printer]
+   24 | void quick_sort(int *a, int low, int high) {
+      | ^

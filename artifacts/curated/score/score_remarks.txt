@@ -1,0 +1,28 @@
+/workspace/examples/curated/score.c:1:1: remark: X86 DAG->DAG Instruction Selection: Function: score: MI Instruction count changed from 0 to 15; Delta: 15 [-Rpass-analysis=size-info]
+    1 | int score(int x, int scale) {
+      | ^
+/workspace/examples/curated/score.c:1:1: remark: Two-Address instruction pass: Function: score: MI Instruction count changed from 15 to 19; Delta: 4 [-Rpass-analysis=size-info]
+/workspace/examples/curated/score.c:1:1: remark: Register Coalescer: Function: score: MI Instruction count changed from 19 to 15; Delta: -4 [-Rpass-analysis=size-info]
+/workspace/examples/curated/score.c:1:1: remark: Debug Variable Analysis: Function: score: MI Instruction count changed from 15 to 9; Delta: -6 [-Rpass-analysis=size-info]
+/workspace/examples/curated/score.c:1:1: remark: Virtual Register Rewriter: Function: score: MI Instruction count changed from 9 to 13; Delta: 4 [-Rpass-analysis=size-info]
+/workspace/examples/curated/score.c:1:1: remark: 0 stack bytes in function 'score' [-Rpass-analysis=prologepilog]
+/workspace/examples/curated/score.c:1:1: remark: Live DEBUG_VALUE analysis: Function: score: MI Instruction count changed from 13 to 17; Delta: 4 [-Rpass-analysis=size-info]
+/workspace/examples/curated/score.c:1:1: remark: 
+Function: score [-Rpass-analysis=stack-frame-layout]
+/workspace/examples/curated/score.c:1:5: note: could not determine the original source location for examples/curated/score.c:0:0
+    1 | int score(int x, int scale) {
+      |     ^
+/workspace/examples/curated/score.c:1:5: remark: BasicBlock: entry
+CMOV32rr: 1
+CMP32rr: 1
+IMUL32rr: 1
+LEA64_32r: 1
+RET64: 1
+SHL32ri: 1
+ [-Rpass-analysis=asm-printer]
+    1 | int score(int x, int scale) {
+      |     ^
+/workspace/examples/curated/score.c:1:5: note: could not determine the original source location for examples/curated/score.c:0:0
+/workspace/examples/curated/score.c:1:1: remark: 6 instructions in function [-Rpass-analysis=asm-printer]
+    1 | int score(int x, int scale) {
+      | ^

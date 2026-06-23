@@ -1,0 +1,136 @@
+/workspace/examples/curated/binary_search.c:5:5: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+    5 |     while (lo < hi) {
+      |     ^
+/workspace/examples/curated/binary_search.c:5:5: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+/workspace/examples/curated/binary_search.c:5:5: remark: loop not vectorized: loop induction variable could not be identified [-Rpass-analysis=loop-vectorize]
+/workspace/examples/curated/binary_search.c:5:5: remark: loop not vectorized: Cannot vectorize uncountable loop [-Rpass-analysis=loop-vectorize]
+/workspace/examples/curated/binary_search.c:5:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+/workspace/examples/curated/binary_search.c:5:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+/workspace/examples/curated/binary_search.c:1:5: remark: List vectorization was possible but not beneficial with cost 0 >= 0 [-Rpass-missed=slp-vectorizer]
+    1 | int binary_search(const int *a, int n, int key) {
+      |     ^
+/workspace/examples/curated/binary_search.c:1:5: remark: List vectorization was possible but not beneficial with cost 0 >= 0 [-Rpass-missed=slp-vectorizer]
+/workspace/examples/curated/binary_search.c:1:5: remark: List vectorization was possible but not beneficial with cost 0 >= 0 [-Rpass-missed=slp-vectorizer]
+/workspace/examples/curated/binary_search.c:1:5: remark: List vectorization was possible but not beneficial with cost 0 >= 0 [-Rpass-missed=slp-vectorizer]
+/workspace/examples/curated/binary_search.c:1:5: remark: List vectorization was possible but not beneficial with cost 0 >= 0 [-Rpass-missed=slp-vectorizer]
+/workspace/examples/curated/binary_search.c:1:5: remark: List vectorization was possible but not beneficial with cost 0 >= 0 [-Rpass-missed=slp-vectorizer]
+/workspace/examples/curated/binary_search.c:1:5: remark: List vectorization was possible but not beneficial with cost 0 >= 0 [-Rpass-missed=slp-vectorizer]
+/workspace/examples/curated/binary_search.c:8:20: remark: List vectorization was possible but not beneficial with cost 0 >= 0 [-Rpass-missed=slp-vectorizer]
+    8 |         if (a[mid] < key) {
+      |                    ^
+/workspace/examples/curated/binary_search.c:8:20: remark: Cannot SLP vectorize list: vectorization was impossible with available vectorization factors [-Rpass-missed=slp-vectorizer]
+/workspace/examples/curated/binary_search.c:1:5: remark: Canonicalize natural loops: IR instruction count changed from 27 to 29; Delta: 2 [-Rpass-analysis=size-info]
+    1 | int binary_search(const int *a, int n, int key) {
+      |     ^
+/workspace/examples/curated/binary_search.c:1:5: remark: Canonicalize natural loops: Function: binary_search: IR instruction count changed from 27 to 29; Delta: 2 [-Rpass-analysis=size-info]
+/workspace/examples/curated/binary_search.c:1:5: remark: CodeGen Prepare: IR instruction count changed from 29 to 28; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/examples/curated/binary_search.c:1:5: remark: CodeGen Prepare: Function: binary_search: IR instruction count changed from 29 to 28; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/examples/curated/binary_search.c:1:1: remark: X86 DAG->DAG Instruction Selection: Function: binary_search: MI Instruction count changed from 0 to 50; Delta: 50 [-Rpass-analysis=size-info]
+    1 | int binary_search(const int *a, int n, int key) {
+      | ^
+/workspace/examples/curated/binary_search.c:1:1: remark: X86 cmov Conversion: Function: binary_search: MI Instruction count changed from 50 to 51; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/examples/curated/binary_search.c:1:1: remark: Machine code sinking: Function: binary_search: MI Instruction count changed from 51 to 52; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/examples/curated/binary_search.c:1:1: remark: Peephole Optimizations: Function: binary_search: MI Instruction count changed from 52 to 50; Delta: -2 [-Rpass-analysis=size-info]
+/workspace/examples/curated/binary_search.c:1:1: remark: Process Implicit Definitions: Function: binary_search: MI Instruction count changed from 50 to 48; Delta: -2 [-Rpass-analysis=size-info]
+/workspace/examples/curated/binary_search.c:1:1: remark: Eliminate PHI nodes for register allocation: Function: binary_search: MI Instruction count changed from 48 to 60; Delta: 12 [-Rpass-analysis=size-info]
+/workspace/examples/curated/binary_search.c:1:1: remark: Two-Address instruction pass: Function: binary_search: MI Instruction count changed from 60 to 64; Delta: 4 [-Rpass-analysis=size-info]
+/workspace/examples/curated/binary_search.c:1:1: remark: Register Coalescer: Function: binary_search: MI Instruction count changed from 64 to 41; Delta: -23 [-Rpass-analysis=size-info]
+/workspace/examples/curated/binary_search.c:1:1: remark: Debug Variable Analysis: Function: binary_search: MI Instruction count changed from 41 to 31; Delta: -10 [-Rpass-analysis=size-info]
+/workspace/examples/curated/binary_search.c:5:5: remark: 2 virtual registers copies 3.000000e+01 total copies cost generated in loop [-Rpass-missed=regalloc]
+    5 |     while (lo < hi) {
+      |     ^
+/workspace/examples/curated/binary_search.c:1:1: remark: 3 virtual registers copies 3.062500e+01 total copies cost generated in function [-Rpass-missed=regalloc]
+    1 | int binary_search(const int *a, int n, int key) {
+      | ^
+/workspace/examples/curated/binary_search.c:1:1: remark: Virtual Register Rewriter: Function: binary_search: MI Instruction count changed from 31 to 42; Delta: 11 [-Rpass-analysis=size-info]
+/workspace/examples/curated/binary_search.c:1:1: remark: 0 stack bytes in function 'binary_search' [-Rpass-analysis=prologepilog]
+/workspace/examples/curated/binary_search.c:1:1: remark: Control Flow Optimizer: Function: binary_search: MI Instruction count changed from 42 to 37; Delta: -5 [-Rpass-analysis=size-info]
+/workspace/examples/curated/binary_search.c:1:1: remark: Branch Probability Basic Block Placement: Function: binary_search: MI Instruction count changed from 37 to 43; Delta: 6 [-Rpass-analysis=size-info]
+/workspace/examples/curated/binary_search.c:1:1: remark: X86 LEA Fixup: Function: binary_search: MI Instruction count changed from 43 to 44; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/examples/curated/binary_search.c:1:1: remark: Live DEBUG_VALUE analysis: Function: binary_search: MI Instruction count changed from 44 to 83; Delta: 39 [-Rpass-analysis=size-info]
+/workspace/examples/curated/binary_search.c:1:1: remark: 
+Function: binary_search [-Rpass-analysis=stack-frame-layout]
+/workspace/examples/curated/binary_search.c:1:5: note: could not determine the original source location for examples/curated/binary_search.c:0:0
+    1 | int binary_search(const int *a, int n, int key) {
+      |     ^
+/workspace/examples/curated/binary_search.c:1:5: remark: BasicBlock: entry
+JCC_1: 1
+TEST32rr: 1
+XOR32rr: 1
+ [-Rpass-analysis=asm-printer]
+    1 | int binary_search(const int *a, int n, int key) {
+      |     ^
+/workspace/examples/curated/binary_search.c:1:5: note: could not determine the original source location for examples/curated/binary_search.c:0:0
+/workspace/examples/curated/binary_search.c:1:5: note: could not determine the original source location for examples/curated/binary_search.c:0:0
+/workspace/examples/curated/binary_search.c:1:5: remark: BasicBlock: while.body.preheader
+JMP_1: 1
+MOV32rr: 1
+ [-Rpass-analysis=asm-printer]
+    1 | int binary_search(const int *a, int n, int key) {
+      |     ^
+/workspace/examples/curated/binary_search.c:1:5: note: could not determine the original source location for examples/curated/binary_search.c:0:0
+/workspace/examples/curated/binary_search.c:1:5: note: could not determine the original source location for examples/curated/binary_search.c:0:0
+/workspace/examples/curated/binary_search.c:1:5: remark: BasicBlock: while.body
+CMP32rr: 1
+JCC_1: 1
+MOV32rr: 1
+ [-Rpass-analysis=asm-printer]
+    1 | int binary_search(const int *a, int n, int key) {
+      |     ^
+/workspace/examples/curated/binary_search.c:1:5: note: could not determine the original source location for examples/curated/binary_search.c:0:0
+/workspace/examples/curated/binary_search.c:1:5: note: could not determine the original source location for examples/curated/binary_search.c:0:0
+/workspace/examples/curated/binary_search.c:1:5: remark: BasicBlock: while.body
+CMP32mr: 1
+JCC_1: 1
+LEA64_32r: 1
+MOV32rr: 1
+SHR32ri: 1
+SUB32rr: 1
+ [-Rpass-analysis=asm-printer]
+    1 | int binary_search(const int *a, int n, int key) {
+      |     ^
+/workspace/examples/curated/binary_search.c:1:5: note: could not determine the original source location for examples/curated/binary_search.c:0:0
+/workspace/examples/curated/binary_search.c:1:5: note: could not determine the original source location for examples/curated/binary_search.c:0:0
+/workspace/examples/curated/binary_search.c:1:5: remark: BasicBlock: 
+ADD32rr: 1
+CMP32rr: 1
+INC32r: 1
+JCC_1: 1
+ [-Rpass-analysis=asm-printer]
+    1 | int binary_search(const int *a, int n, int key) {
+      |     ^
+/workspace/examples/curated/binary_search.c:1:5: note: could not determine the original source location for examples/curated/binary_search.c:0:0
+/workspace/examples/curated/binary_search.c:1:5: note: could not determine the original source location for examples/curated/binary_search.c:0:0
+/workspace/examples/curated/binary_search.c:1:5: remark: BasicBlock: while.end
+CMP32rr: 1
+JCC_1: 1
+ [-Rpass-analysis=asm-printer]
+    1 | int binary_search(const int *a, int n, int key) {
+      |     ^
+/workspace/examples/curated/binary_search.c:1:5: note: could not determine the original source location for examples/curated/binary_search.c:0:0
+/workspace/examples/curated/binary_search.c:1:5: note: could not determine the original source location for examples/curated/binary_search.c:0:0
+/workspace/examples/curated/binary_search.c:1:5: remark: BasicBlock: land.lhs.true
+CMP32mr: 1
+JCC_1: 1
+MOV32rr: 1
+ [-Rpass-analysis=asm-printer]
+    1 | int binary_search(const int *a, int n, int key) {
+      |     ^
+/workspace/examples/curated/binary_search.c:1:5: note: could not determine the original source location for examples/curated/binary_search.c:0:0
+/workspace/examples/curated/binary_search.c:1:5: note: could not determine the original source location for examples/curated/binary_search.c:0:0
+/workspace/examples/curated/binary_search.c:1:5: remark: BasicBlock: if.end8
+MOV32ri: 1
+ [-Rpass-analysis=asm-printer]
+    1 | int binary_search(const int *a, int n, int key) {
+      |     ^
+/workspace/examples/curated/binary_search.c:1:5: note: could not determine the original source location for examples/curated/binary_search.c:0:0
+/workspace/examples/curated/binary_search.c:1:5: note: could not determine the original source location for examples/curated/binary_search.c:0:0
+/workspace/examples/curated/binary_search.c:1:5: remark: BasicBlock: cleanup
+RET64: 1
+ [-Rpass-analysis=asm-printer]
+    1 | int binary_search(const int *a, int n, int key) {
+      |     ^
+/workspace/examples/curated/binary_search.c:1:5: note: could not determine the original source location for examples/curated/binary_search.c:0:0
+/workspace/examples/curated/binary_search.c:1:1: remark: 25 instructions in function [-Rpass-analysis=asm-printer]
+    1 | int binary_search(const int *a, int n, int key) {
+      | ^
