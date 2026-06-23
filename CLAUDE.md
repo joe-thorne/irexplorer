@@ -6,7 +6,7 @@ For thesis context, aims, and process, see `../CLAUDE.md`. Design basis: `../del
 
 ## Status
 
-Early scaffold. Architecture: Option C — local-served browser front-end + local backend that owns artefact generation (collapsible to a hosted web app later). Python `src/frontend/` and `src/backend/`.
+Early scaffold. Architecture: Option C — a browser JavaScript single-page front-end (`src/frontend/`, static HTML/CSS/JS assets) served by a local Python backend (`src/backend/`) that owns artefact generation, the internal model, comparison, and a `localhost` model-query API (collapsible to a hosted web app later). Build order, decisions, and rules: `../deliverables/5-system-plan/implementation-plan.md`. Canonical generation environment: `docs/environment.md`. (Note: the empty `src/frontend/requirements.txt` is obsolete under this split — front-end dependencies, if any, belong in a front-end manifest, not a Python requirements file.)
 
 ## Repo & submodule routing
 
@@ -17,7 +17,9 @@ Early scaffold. Architecture: Option C — local-served browser front-end + loca
 
 ## Conventions
 
-_TBD as implementation begins — fill in stack, run/build/test commands, layout, and key flags (e.g. `clang -O0 -S -emit-llvm -fno-discard-value-names`)._
+Environment pin: canonical artefacts and tests are generated through Docker on Ubuntu 24.04 with LLVM/clang/opt 22.1.8 from the official Linux x86_64 release tarball; see `docs/environment.md`.
+
+_Other conventions TBD as implementation begins — fill in stack, run/build/test commands, layout, and key flags (e.g. `clang -O0 -S -emit-llvm -fno-discard-value-names`)._
 
 ## Engineering guidelines
 
