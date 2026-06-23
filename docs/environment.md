@@ -70,7 +70,7 @@ Run the canonical generator from `irexplorer/` inside the local Python virtual e
 .venv/bin/python -m src.backend.toolchain.generate_curated
 ```
 
-Generated artefacts are written to `artifacts/curated/<example>/`. Each example directory contains the `-O0` IR/bitcode, the 12 teaching-pass IR states, the recompiled `clang -O3` anchor, captured `-Rpass` remarks, the `.opt.yaml` optimisation record, and a command manifest.
+Generated artefacts are written to `artefacts/curated/<example>/`. Each example directory contains the `-O0` IR/bitcode, the 12 teaching-pass IR states, the recompiled `clang -O3` anchor, captured `-Rpass` remarks, the `.opt.yaml` optimisation record, and a command manifest.
 
 ```sh
 clang -O0 -g \

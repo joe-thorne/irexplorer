@@ -1,0 +1,22 @@
+example: score
+source: examples/curated/score.c
+clang: clang version 22.1.8 (https://github.com/llvm/llvm-project ca7933e47d3a3451d81e72ac174dcb5aa28b59d1)
+opt: LLVM version 22.1.8
+targetTriple: x86_64-unknown-linux-gnu
+commands:
+  - clang -O0 -g -Xclang -disable-O0-optnone -fno-discard-value-names -S -emit-llvm /workspace/examples/curated/score.c -o /workspace/artefacts/curated/score/score_O0.ll
+  - clang -O0 -g -Xclang -disable-O0-optnone -fno-discard-value-names -emit-llvm -c /workspace/examples/curated/score.c -o /workspace/artefacts/curated/score/score_O0.bc
+  - opt -passes=mem2reg /workspace/artefacts/curated/score/score_O0.bc -S -o /workspace/artefacts/curated/score/score_01_mem2reg.ll
+  - opt -passes=instcombine /workspace/artefacts/curated/score/score_01_mem2reg.ll -S -o /workspace/artefacts/curated/score/score_02_instcombine.ll
+  - opt -passes=simplifycfg /workspace/artefacts/curated/score/score_02_instcombine.ll -S -o /workspace/artefacts/curated/score/score_03_simplifycfg.ll
+  - opt -passes=gvn /workspace/artefacts/curated/score/score_03_simplifycfg.ll -S -o /workspace/artefacts/curated/score/score_04_gvn.ll
+  - opt '-passes=instcombine,simplifycfg' /workspace/artefacts/curated/score/score_04_gvn.ll -S -o /workspace/artefacts/curated/score/score_05_cleanup.ll
+  - opt '-passes=loop-simplify,lcssa' /workspace/artefacts/curated/score/score_05_cleanup.ll -S -o /workspace/artefacts/curated/score/score_06_loop_canonical.ll
+  - opt -passes=loop-rotate /workspace/artefacts/curated/score/score_06_loop_canonical.ll -S -o /workspace/artefacts/curated/score/score_07_loop_rotate.ll
+  - opt -passes=licm /workspace/artefacts/curated/score/score_07_loop_rotate.ll -S -o /workspace/artefacts/curated/score/score_08_licm.ll
+  - opt -passes=indvars /workspace/artefacts/curated/score/score_08_licm.ll -S -o /workspace/artefacts/curated/score/score_09_indvars.ll
+  - opt '-passes=instcombine,simplifycfg' /workspace/artefacts/curated/score/score_09_indvars.ll -S -o /workspace/artefacts/curated/score/score_10_loop_cleanup.ll
+  - opt -passes=loop-vectorize /workspace/artefacts/curated/score/score_10_loop_cleanup.ll -S -o /workspace/artefacts/curated/score/score_11_vectorize.ll
+  - opt '-passes=instcombine,simplifycfg' /workspace/artefacts/curated/score/score_11_vectorize.ll -S -o /workspace/artefacts/curated/score/score_12_final_cleanup.ll
+  - clang -O3 -g -fno-discard-value-names -S -emit-llvm /workspace/examples/curated/score.c -o /workspace/artefacts/curated/score/score_O3.ll
+  - clang -O3 -g -fno-discard-value-names '-Rpass=.*' '-Rpass-missed=.*' '-Rpass-analysis=.*' -fsave-optimization-record /workspace/examples/curated/score.c -c -o /workspace/artefacts/curated/score/score.o

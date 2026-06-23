@@ -7,7 +7,7 @@ import shutil
 import subprocess
 
 from src.backend.toolchain.curated import (
-    ARTIFACTS_ROOT,
+    ARTEFACTS_ROOT,
     EXAMPLES_ROOT,
     PASS_STATES,
     REPO_ROOT,
@@ -22,7 +22,7 @@ WORKSPACE_ROOT = Path("/workspace")
 def generate_all() -> None:
     """Regenerate all curated artefacts through the pinned Docker toolchain."""
 
-    ARTIFACTS_ROOT.mkdir(parents=True, exist_ok=True)
+    ARTEFACTS_ROOT.mkdir(parents=True, exist_ok=True)
     for example in list_examples():
         print(f"Generating {example}")
         generate_example(example)
@@ -33,7 +33,7 @@ def generate_example(example: str) -> None:
     if not source.exists():
         raise ToolchainError(f"Missing curated source: {source}")
 
-    out_dir = ARTIFACTS_ROOT / example
+    out_dir = ARTEFACTS_ROOT / example
     if out_dir.exists():
         shutil.rmtree(out_dir)
     out_dir.mkdir(parents=True)

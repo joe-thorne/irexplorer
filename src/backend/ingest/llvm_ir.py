@@ -344,6 +344,12 @@ def _parse_instruction(
     debug_ref = _debug_ref(text)
     source = debug_locations.get(debug_ref) if debug_ref else None
     successors = _successors(body)
+    # Terminators recognised for the curated C set. Other LLVM terminators
+    # (invoke, callbr, indirectbr, catchswitch, catchret, cleanupret) do not
+    # appear in these examples; if one ever ends a block it is left unrecognised
+    # and ingestion fails in a controlled way via _require_terminated (FR15/NFR8),
+    # never silently mislabelled. Full terminator support is scheduled with
+    # user-supplied / C++ input (implementation-plan S2.6 / Phase 4).
     is_terminator = opcode in {"br", "ret", "switch", "unreachable", "resume"}
 
     return _InstructionBuild(

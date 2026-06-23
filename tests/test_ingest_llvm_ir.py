@@ -10,6 +10,7 @@ class LlvmIrIngestionTests(unittest.TestCase):
             curated.read_ir("score", "O0"),
             ordinal=0,
             state_id="O0",
+            origin_command=curated.origin_command("score", "O0"),
         )
 
         kinds = _kind_counts(graph)
@@ -18,6 +19,8 @@ class LlvmIrIngestionTests(unittest.TestCase):
         self.assertEqual(kinds["BasicBlock"], 4)
         self.assertEqual(kinds["Instruction"], 41)
         self.assertEqual(graph.target_triple, "x86_64-unknown-linux-gnu")
+        self.assertIsNotNone(graph.origin_command)
+        self.assertIn("score_O0.ll", graph.origin_command)
 
         cfg_edges = [
             edge

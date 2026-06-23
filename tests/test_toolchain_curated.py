@@ -43,6 +43,25 @@ class CuratedToolchainTests(unittest.TestCase):
             self.assertGreater(curated.remarks_path(example).stat().st_size, 0)
             self.assertGreater(curated.opt_record_path(example).stat().st_size, 0)
 
+    def test_origin_command_resolves_per_state(self) -> None:
+        baseline = curated.origin_command("score", "O0")
+        self.assertIn("clang", baseline)
+        self.assertIn("-emit-llvm", baseline)
+        self.assertTrue(baseline.endswith("score_O0.ll"))
+
+        mem2reg = curated.origin_command("score", "mem2reg")
+        self.assertIn("opt", mem2reg)
+        self.assertIn("-passes=mem2reg", mem2reg)
+        self.assertTrue(mem2reg.endswith("score_01_mem2reg.ll"))
+
+        anchor = curated.origin_command("score", "O3")
+        self.assertIn("-O3", anchor)
+        self.assertTrue(anchor.endswith("score_O3.ll"))
+
+    def test_origin_command_unknown_state_is_controlled_failure(self) -> None:
+        with self.assertRaises(curated.ToolchainError):
+            curated.origin_command("score", "missing")
+
     def test_unknown_state_is_controlled_failure(self) -> None:
         with self.assertRaises(curated.ToolchainError):
             curated.ir_path("score", "missing")

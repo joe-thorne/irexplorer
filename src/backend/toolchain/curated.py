@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import shlex
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 EXAMPLES_ROOT = REPO_ROOT / "examples" / "curated"
-ARTIFACTS_ROOT = REPO_ROOT / "artifacts" / "curated"
+ARTEFACTS_ROOT = REPO_ROOT / "artefacts" / "curated"
 
 
 class ToolchainError(RuntimeError):
@@ -56,7 +57,7 @@ def list_states() -> tuple[PassState, ...]:
 
 def artefact_dir(example: str) -> Path:
     _require_example(example)
-    return ARTIFACTS_ROOT / example
+    return ARTEFACTS_ROOT / example
 
 
 def ir_path(example: str, state_id: str) -> Path:
@@ -91,6 +92,33 @@ def opt_record_path(example: str) -> Path:
     return path
 
 
+def manifest_path(example: str) -> Path:
+    path = artefact_dir(example) / "manifest.txt"
+    if not path.exists():
+        raise ToolchainError(f"Missing command manifest for example '{example}': {path}")
+    return path
+
+
+def origin_command(example: str, state_id: str) -> str:
+    """Resolve the exact toolchain command that produced a state's IR.
+
+    Provenance is read back from the generated manifest by matching the
+    command whose ``-o`` target is the state's ``.ll`` file, so the model can
+    carry ``origin.command`` per state (R8, NFR3/NFR4). Persisting this into the
+    serialised StateGraph is an S1.4 task.
+    """
+
+    state = _require_state(state_id)
+    target = f"{example}_{state.file_suffix}.ll"
+    for command in _manifest_commands(example):
+        if _command_output(command) == target:
+            return command
+    raise ToolchainError(
+        f"No recorded command for example '{example}' state '{state_id}' "
+        f"(target '{target}') in {manifest_path(example)}"
+    )
+
+
 def generate_curated() -> None:
     """Regenerate curated artefacts through the pinned Docker toolchain."""
 
@@ -111,3 +139,22 @@ def _require_state(state_id: str) -> PassState:
             return state
     available = ", ".join(state.state_id for state in PASS_STATES)
     raise ToolchainError(f"Unknown optimisation state '{state_id}'. Available states: {available}")
+
+
+def _manifest_commands(example: str) -> tuple[str, ...]:
+    commands: list[str] = []
+    for line in manifest_path(example).read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if stripped.startswith("- "):
+            commands.append(stripped[2:].strip())
+    return tuple(commands)
+
+
+def _command_output(command: str) -> str | None:
+    tokens = shlex.split(command)
+    if "-o" not in tokens:
+        return None
+    index = tokens.index("-o")
+    if index + 1 >= len(tokens):
+        return None
+    return Path(tokens[index + 1]).name

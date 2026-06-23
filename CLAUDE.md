@@ -6,7 +6,18 @@ For thesis context, aims, and process, see `../CLAUDE.md`. Design basis: `../del
 
 ## Status
 
-Early scaffold. Architecture: Option C — a browser JavaScript single-page front-end (`src/frontend/`, static HTML/CSS/JS assets) served by a local Python backend (`src/backend/`) that owns artefact generation, the internal model, comparison, and a `localhost` model-query API (collapsible to a hosted web app later). Build order, decisions, and rules: `../deliverables/5-system-plan/implementation-plan.md`. Canonical generation environment: `docs/environment.md`.
+Phase 1 underway. Architecture: Option C — a browser JavaScript single-page front-end (`src/frontend/`, static HTML/CSS/JS assets, not yet started) served by a local Python backend (`src/backend/`) that owns artefact generation, the internal model, comparison, and a `localhost` model-query API (collapsible to a hosted web app later). Build order, decisions, and rules: `../deliverables/5-system-plan/implementation-plan.md`. Canonical generation environment: `docs/environment.md`.
+
+Built and under green tests:
+
+- **S0.1–S0.3** — Option C baseline, the pinned Docker LLVM 22.1.8 toolchain (`docs/environment.md`, `Dockerfile.toolchain`, `docker-compose.yml`, `scripts/smoke-toolchain.sh`), and the layered `src/backend/` package skeleton.
+- **S1.1** — curated set (`score`, `binary_search`, `quick_sort`), the 12-step teaching pass chain, full `-g` debug info, and the exact `clang`/`opt` command templates.
+- **S1.2** — toolchain wrapper (`toolchain/curated.py`) + pre-baked generator (`toolchain/generate_curated.py`); artefacts under `artefacts/curated/`; per-state `origin.command` resolvable from the manifest (`curated.origin_command`).
+- **S1.3** — IR→`StateGraph` parser (`ingest/llvm_ir.py`) with within-state invariant validation (I1–I8), source-map and remark attachment, and controlled ingest failure.
+
+Next: S1.4 (model serialisation, timeline/`PassStep`, indices built once at load), S1.5 (two-state `Correspondence`), S1.6 (query API), S1.7 (front-end). Outstanding issues are tracked inline in the implementation plan.
+
+Run the backend tests from this directory with the project virtual environment: `python -m unittest tests.test_ingest_llvm_ir tests.test_toolchain_curated`.
 
 ## Repo & submodule routing
 
@@ -28,6 +39,8 @@ Backend package layout mirrors the system layers:
 - `src/backend/model/` — Layer 3 immutable internal model and serialisation.
 - `src/backend/analysis/` — Layer 4 pure comparison and summaries.
 - `src/backend/api/` — read-only query boundary for the browser frontend.
+
+Spelling (R13): prose, docstrings, identifiers, paths, and user-facing strings use UK/Australian spelling — *artefact*, *optimisation*, *faithfulness*. The generated artefact tree is `artefacts/curated/` (constant `ARTEFACTS_ROOT`). The only retained US spellings are upstream LLVM tokens that cannot be changed: the `-fsave-optimization-record` flag and the `.opt.yaml` records it emits.
 
 _Other conventions TBD as implementation begins — fill in run/build/test commands and exact generation flags._
 
