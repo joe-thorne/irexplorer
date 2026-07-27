@@ -132,7 +132,7 @@ def compare_states(
     correspondence.validate(from_state, to_state)
     return ComparisonResult(
         correspondence=correspondence,
-        summary=_summarise(correspondence, from_state, to_state, step),
+        summary=summarise_correspondence(correspondence, from_state, to_state, step),
     )
 
 
@@ -242,7 +242,7 @@ def _group_unique(
     }
 
 
-def _summarise(
+def summarise_correspondence(
     correspondence: Correspondence,
     from_state: StateGraph,
     to_state: StateGraph,
