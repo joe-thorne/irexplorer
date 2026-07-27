@@ -17,3 +17,8 @@ timeline and correspondence records. The current endpoint API supports:
 - state metadata, structured IR, CFG, containment navigation, counterparts,
   step provenance, and the link-backed summary;
 - `POST /api/focus` to retain the current state/node focus during a session.
+
+Open `http://127.0.0.1:8000/` in a browser to use the static frontend. It is
+served from `src/frontend/` by this local service, so it makes same-origin
+requests only to the query API; it does not read compiler artefacts or invoke
+compiler tooling.

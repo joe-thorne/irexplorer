@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Explore curated LLVM IR optimisation artefacts." />
+    <title>irexplorer</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#workspace">Skip to explorer</a>
+    <header class="site-header">
+      <div>
+        <p class="eyebrow">LLVM optimisation artefact explorer</p>
+        <h1>irexplorer</h1>
+      </div>
+      <p class="header-note">Curated examples · local, read-only analysis</p>
+    </header>
+
+    <main id="workspace" class="app-shell">
+      <section class="controls panel" aria-labelledby="load-heading">
+        <div>
+          <h2 id="load-heading">Choose a curated example</h2>
+          <p class="muted">Load a pre-baked comparison without recompiling code.</p>
+        </div>
+        <div class="load-controls">
+          <label for="example-select">Example</label>
+          <select id="example-select" disabled>
+            <option>Loading examples…</option>
+          </select>
+          <button id="load-example" type="button" disabled>Load comparison</button>
+        </div>
+      </section>
+
+      <section id="notice" class="notice" role="status" aria-live="polite">
+        Loading available curated examples…
+      </section>
+
+      <section id="empty-state" class="empty-state panel" aria-labelledby="empty-heading">
+        <p class="eyebrow">Start exploring</p>
+        <h2 id="empty-heading">Choose an example to inspect its two optimisation states.</h2>
+        <p>
+          The baseline and optimised outputs are preserved compiler artefacts. Select a
+          state, function, or basic block to focus the views.
+        </p>
+      </section>
+
+      <section id="explorer" class="explorer" hidden aria-label="Optimisation comparison">
+        <section class="comparison panel" aria-labelledby="comparison-heading">
+          <div>
+            <p class="eyebrow">Comparison</p>
+            <h2 id="comparison-heading">Baseline and recompiled anchor</h2>
+          </div>
+          <div id="summary-context" class="anchor-context"></div>
+          <ul id="summary-items" class="summary-items"></ul>
+        </section>
+
+        <section class="state-panel panel" aria-labelledby="state-heading">
+          <div>
+            <p class="eyebrow">View state</p>
+            <h2 id="state-heading">Select an optimisation state</h2>
+          </div>
+          <fieldset id="state-options" class="state-options">
+            <legend class="visually-hidden">Optimisation state</legend>
+          </fieldset>
+        </section>
+
+        <div class="view-grid">
+          <nav class="navigator panel" aria-labelledby="navigator-heading">
+            <div>
+              <p class="eyebrow">Navigate</p>
+              <h2 id="navigator-heading">Functions and blocks</h2>
+            </div>
+            <div id="navigation-tree" class="navigation-tree"></div>
+          </nav>
+
+          <section class="ir-panel panel" aria-labelledby="ir-heading">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Structured IR</p>
+                <h2 id="ir-heading">Intermediate representation</h2>
+              </div>
+              <label class="toggle-control" for="debug-toggle">
+                <input id="debug-toggle" type="checkbox" />
+                <span>Show debug metadata</span>
+              </label>
+            </div>
+            <p id="ir-description" class="muted"></p>
+            <div id="ir-view" class="ir-view" tabindex="0"></div>
+          </section>
+
+          <section class="cfg-panel panel" aria-labelledby="cfg-heading">
+            <div>
+              <p class="eyebrow">Control-flow graph (CFG)</p>
+              <h2 id="cfg-heading">Function structure</h2>
+            </div>
+            <p id="cfg-description" class="muted"></p>
+            <div id="cfg-view" class="cfg-view"></div>
+          </section>
+        </div>
+
+        <button id="invalid-request" class="quiet-button" type="button">
+          Test controlled failure handling
+        </button>
+      </section>
+    </main>
+
+    <template id="error-template">
+      <section class="error-state panel" role="alert">
+        <p class="eyebrow">Request could not be completed</p>
+        <h2>irexplorer could not load this view.</h2>
+        <p class="error-message"></p>
+        <p>Check that the local service is running, then try loading the example again.</p>
+      </section>
+    </template>
+    <script src="/app.js" defer></script>
+  </body>
+</html>

@@ -5,10 +5,19 @@ from __future__ import annotations
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
+from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 from src.backend.api.query import QueryError, QueryService
+
+
+FRONTEND_ROOT = Path(__file__).resolve().parents[2] / "frontend"
+STATIC_CONTENT_TYPES = {
+    ".css": "text/css; charset=utf-8",
+    ".html": "text/html; charset=utf-8",
+    ".js": "text/javascript; charset=utf-8",
+}
 
 
 def create_server(
@@ -22,6 +31,9 @@ def create_server(
 
     class QueryHandler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:  # noqa: N802 - required HTTP handler name
+            if not urlparse(self.path).path.startswith("/api/"):
+                self._serve_frontend()
+                return
             try:
                 self._send_json(HTTPStatus.OK, _route_get(query_service, self.path))
             except QueryError as exc:
@@ -47,6 +59,26 @@ def create_server(
             encoded = json.dumps(body).encode("utf-8")
             self.send_response(status)
             self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(encoded)))
+            self.end_headers()
+            self.wfile.write(encoded)
+
+        def _serve_frontend(self) -> None:
+            request_path = urlparse(self.path).path
+            relative_path = "index.html" if request_path == "/" else request_path.lstrip("/")
+            candidate = (FRONTEND_ROOT / relative_path).resolve()
+            try:
+                candidate.relative_to(FRONTEND_ROOT.resolve())
+            except ValueError:
+                self._send_json(HTTPStatus.NOT_FOUND, {"error": "frontend asset not found"})
+                return
+            content_type = STATIC_CONTENT_TYPES.get(candidate.suffix)
+            if content_type is None or not candidate.is_file():
+                self._send_json(HTTPStatus.NOT_FOUND, {"error": "frontend asset not found"})
+                return
+            encoded = candidate.read_bytes()
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", content_type)
             self.send_header("Content-Length", str(len(encoded)))
             self.end_headers()
             self.wfile.write(encoded)

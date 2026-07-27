@@ -6,7 +6,7 @@ For thesis context, aims, and process, see `../CLAUDE.md`. Design basis: `../del
 
 ## Status
 
-Phase 1 underway. Architecture: Option C — a browser JavaScript single-page front-end (`src/frontend/`, static HTML/CSS/JS assets, not yet started) served by a local Python backend (`src/backend/`) that owns artefact generation, the internal model, comparison, and a `localhost` model-query API (collapsible to a hosted web app later). Build order, decisions, and rules: `../deliverables/5-system-plan/implementation-plan.md`. Canonical generation environment: `docs/environment.md`.
+Phase 1 underway. Architecture: Option C — a browser JavaScript single-page front-end (`src/frontend/`, static HTML/CSS/JS assets) served by a local Python backend (`src/backend/`) that owns artefact generation, the internal model, comparison, and a `localhost` model-query API (collapsible to a hosted web app later). Build order, decisions, and rules: `../deliverables/5-system-plan/implementation-plan.md`. Canonical generation environment: `docs/environment.md`.
 
 Built and under green tests:
 
@@ -17,8 +17,9 @@ Built and under green tests:
 - **S1.4** — immutable `OptimisationTimeline`/`PassStep` records with honest derived versus recompiled provenance, plain JSON-ready model serialisation that validates and rebuilds state indices on load, and endpoint/full curated timeline loading. The offline bake path persists one endpoint record per curated example. Canonical artefacts are protected by a checked-in aggregate SHA-256 snapshot verified in the test suite.
 - **S1.5** — deterministic, coverage-complete endpoint `Correspondence` overlays with exact/approximate confidence, audit evidence, and concise link-backed summaries. The matching strategy is deliberately conservative, using unique structure and debug locations, and each pre-baked endpoint timeline now has its paired overlay.
 - **S1.6** — read-only `localhost` query API (`api/query.py`, `api/server.py`) over the pre-baked model records, with IR/CFG/navigation/counterpart/summary queries and in-session focus retention. The endpoint MVP uses the two-state `-O0`/recompiled-`-O3` timeline; `valueFlow` remains lazy and unbuilt until a later query requires it.
+- **S1.7** — dependency-free static browser front-end (`frontend/index.html`, `style.css`, `app.js`) served by the local API service. It loads curated comparisons, switches optimisation state, renders structured and syntax-highlighted IR with debug metadata hidden by default, navigates functions and basic blocks, renders a labelled API-derived SVG CFG, presents the recompiled-anchor summary, and surfaces controlled request failures. It contains no compiler, parsing, matching, or artefact logic.
 
-Next: S1.7 (front-end). Outstanding issues are tracked inline in the implementation plan.
+Next: S1.8 (MVP verification gate). Outstanding issues are tracked inline in the implementation plan.
 
 Run the backend tests from this directory with the project virtual environment: `.venv/bin/python -m unittest discover -s tests -v`.
 

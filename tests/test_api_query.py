@@ -85,6 +85,18 @@ class LocalhostApiTests(unittest.TestCase):
         self.assertEqual(context.exception.code, 404)
         context.exception.close()
 
+    def test_localhost_server_serves_the_browser_frontend(self) -> None:
+        with urlopen(f"{self.base_url}/") as response:
+            html = response.read().decode("utf-8")
+            self.assertEqual(response.headers.get_content_type(), "text/html")
+        self.assertIn("irexplorer", html)
+        self.assertIn('src="/app.js"', html)
+
+        with urlopen(f"{self.base_url}/app.js") as response:
+            javascript = response.read().decode("utf-8")
+            self.assertEqual(response.headers.get_content_type(), "text/javascript")
+        self.assertIn("/api/session", javascript)
+
 
 def _get_json(url: str) -> dict:
     with urlopen(url) as response:
