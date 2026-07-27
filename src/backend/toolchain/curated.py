@@ -99,6 +99,18 @@ def manifest_path(example: str) -> Path:
     return path
 
 
+def model_timeline_path(example: str) -> Path:
+    """Resolve the pre-baked endpoint model timeline for a curated example."""
+
+    _require_example(example)
+    path = artefact_dir(example) / "model" / "timeline-endpoints.json"
+    if not path.exists():
+        raise ToolchainError(
+            f"Missing pre-baked endpoint timeline for example '{example}': {path}"
+        )
+    return path
+
+
 def origin_command(example: str, state_id: str) -> str:
     """Resolve the exact toolchain command that produced a state's IR.
 

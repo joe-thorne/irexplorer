@@ -1,0 +1,2552 @@
+{
+  "configId": "O0-to-O3",
+  "exampleId": "score",
+  "formatVersion": 1,
+  "states": [
+    {
+      "edges": [
+        {
+          "fromId": "module",
+          "label": null,
+          "order": 0,
+          "relation": "contains",
+          "toId": "fn0"
+        },
+        {
+          "fromId": "fn0",
+          "label": null,
+          "order": 0,
+          "relation": "contains",
+          "toId": "fn0/bb0"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 0,
+          "relation": "contains",
+          "toId": "fn0/bb0/i0"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 1,
+          "relation": "contains",
+          "toId": "fn0/bb0/i1"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 2,
+          "relation": "contains",
+          "toId": "fn0/bb0/i2"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 3,
+          "relation": "contains",
+          "toId": "fn0/bb0/i3"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 4,
+          "relation": "contains",
+          "toId": "fn0/bb0/i4"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 5,
+          "relation": "contains",
+          "toId": "fn0/bb0/i5"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 6,
+          "relation": "contains",
+          "toId": "fn0/bb0/i6"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 7,
+          "relation": "contains",
+          "toId": "fn0/bb0/i7"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 8,
+          "relation": "contains",
+          "toId": "fn0/bb0/i8"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 9,
+          "relation": "contains",
+          "toId": "fn0/bb0/i9"
+        },
+        {
+          "fromId": "fn0/bb0/i9",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:2:20"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 10,
+          "relation": "contains",
+          "toId": "fn0/bb0/i10"
+        },
+        {
+          "fromId": "fn0/bb0/i10",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:2:26"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 11,
+          "relation": "contains",
+          "toId": "fn0/bb0/i11"
+        },
+        {
+          "fromId": "fn0/bb0/i11",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:2:9"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 12,
+          "relation": "contains",
+          "toId": "fn0/bb0/i12"
+        },
+        {
+          "fromId": "fn0/bb0/i12",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:3:20"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 13,
+          "relation": "contains",
+          "toId": "fn0/bb0/i13"
+        },
+        {
+          "fromId": "fn0/bb0/i13",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:3:28"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 14,
+          "relation": "contains",
+          "toId": "fn0/bb0/i14"
+        },
+        {
+          "fromId": "fn0/bb0/i14",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:3:26"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 15,
+          "relation": "contains",
+          "toId": "fn0/bb0/i15"
+        },
+        {
+          "fromId": "fn0/bb0/i15",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:3:36"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 16,
+          "relation": "contains",
+          "toId": "fn0/bb0/i16"
+        },
+        {
+          "fromId": "fn0/bb0/i16",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:3:44"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 17,
+          "relation": "contains",
+          "toId": "fn0/bb0/i17"
+        },
+        {
+          "fromId": "fn0/bb0/i17",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:3:42"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 18,
+          "relation": "contains",
+          "toId": "fn0/bb0/i18"
+        },
+        {
+          "fromId": "fn0/bb0/i18",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:3:34"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 19,
+          "relation": "contains",
+          "toId": "fn0/bb0/i19"
+        },
+        {
+          "fromId": "fn0/bb0/i19",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:3:9"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 20,
+          "relation": "contains",
+          "toId": "fn0/bb0/i20"
+        },
+        {
+          "fromId": "fn0/bb0/i20",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:4:20"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 21,
+          "relation": "contains",
+          "toId": "fn0/bb0/i21"
+        },
+        {
+          "fromId": "fn0/bb0/i21",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:4:22"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 22,
+          "relation": "contains",
+          "toId": "fn0/bb0/i22"
+        },
+        {
+          "fromId": "fn0/bb0/i22",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:4:9"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 23,
+          "relation": "contains",
+          "toId": "fn0/bb0/i23"
+        },
+        {
+          "fromId": "fn0/bb0/i23",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:5:20"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 24,
+          "relation": "contains",
+          "toId": "fn0/bb0/i24"
+        },
+        {
+          "fromId": "fn0/bb0/i24",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:5:31"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 25,
+          "relation": "contains",
+          "toId": "fn0/bb0/i25"
+        },
+        {
+          "fromId": "fn0/bb0/i25",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:5:29"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 26,
+          "relation": "contains",
+          "toId": "fn0/bb0/i26"
+        },
+        {
+          "fromId": "fn0/bb0/i26",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:5:9"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 27,
+          "relation": "contains",
+          "toId": "fn0/bb0/i27"
+        },
+        {
+          "fromId": "fn0/bb0/i27",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:7:9"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 28,
+          "relation": "contains",
+          "toId": "fn0/bb0/i28"
+        },
+        {
+          "fromId": "fn0/bb0/i28",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:7:20"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 29,
+          "relation": "contains",
+          "toId": "fn0/bb0/i29"
+        },
+        {
+          "fromId": "fn0/bb0/i29",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:7:18"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 30,
+          "relation": "contains",
+          "toId": "fn0/bb0/i30"
+        },
+        {
+          "fromId": "fn0/bb0/i30",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:7:18"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": "true",
+          "order": null,
+          "relation": "controlFlow",
+          "toId": "fn0/bb1"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": "false",
+          "order": null,
+          "relation": "controlFlow",
+          "toId": "fn0/bb2"
+        },
+        {
+          "fromId": "fn0",
+          "label": null,
+          "order": 1,
+          "relation": "contains",
+          "toId": "fn0/bb1"
+        },
+        {
+          "fromId": "fn0/bb1",
+          "label": null,
+          "order": 0,
+          "relation": "contains",
+          "toId": "fn0/bb1/i0"
+        },
+        {
+          "fromId": "fn0/bb1/i0",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:8:16"
+        },
+        {
+          "fromId": "fn0/bb1",
+          "label": null,
+          "order": 1,
+          "relation": "contains",
+          "toId": "fn0/bb1/i1"
+        },
+        {
+          "fromId": "fn0/bb1/i1",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:8:9"
+        },
+        {
+          "fromId": "fn0/bb1",
+          "label": null,
+          "order": 2,
+          "relation": "contains",
+          "toId": "fn0/bb1/i2"
+        },
+        {
+          "fromId": "fn0/bb1/i2",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:8:9"
+        },
+        {
+          "fromId": "fn0/bb1",
+          "label": "unconditional",
+          "order": null,
+          "relation": "controlFlow",
+          "toId": "fn0/bb3"
+        },
+        {
+          "fromId": "fn0",
+          "label": null,
+          "order": 2,
+          "relation": "contains",
+          "toId": "fn0/bb2"
+        },
+        {
+          "fromId": "fn0/bb2",
+          "label": null,
+          "order": 0,
+          "relation": "contains",
+          "toId": "fn0/bb2/i0"
+        },
+        {
+          "fromId": "fn0/bb2/i0",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:10:12"
+        },
+        {
+          "fromId": "fn0/bb2",
+          "label": null,
+          "order": 1,
+          "relation": "contains",
+          "toId": "fn0/bb2/i1"
+        },
+        {
+          "fromId": "fn0/bb2/i1",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:10:23"
+        },
+        {
+          "fromId": "fn0/bb2",
+          "label": null,
+          "order": 2,
+          "relation": "contains",
+          "toId": "fn0/bb2/i2"
+        },
+        {
+          "fromId": "fn0/bb2/i2",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:10:21"
+        },
+        {
+          "fromId": "fn0/bb2",
+          "label": null,
+          "order": 3,
+          "relation": "contains",
+          "toId": "fn0/bb2/i3"
+        },
+        {
+          "fromId": "fn0/bb2/i3",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:10:5"
+        },
+        {
+          "fromId": "fn0/bb2",
+          "label": null,
+          "order": 4,
+          "relation": "contains",
+          "toId": "fn0/bb2/i4"
+        },
+        {
+          "fromId": "fn0/bb2/i4",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:10:5"
+        },
+        {
+          "fromId": "fn0/bb2",
+          "label": "unconditional",
+          "order": null,
+          "relation": "controlFlow",
+          "toId": "fn0/bb3"
+        },
+        {
+          "fromId": "fn0",
+          "label": null,
+          "order": 3,
+          "relation": "contains",
+          "toId": "fn0/bb3"
+        },
+        {
+          "fromId": "fn0/bb3",
+          "label": null,
+          "order": 0,
+          "relation": "contains",
+          "toId": "fn0/bb3/i0"
+        },
+        {
+          "fromId": "fn0/bb3/i0",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:11:1"
+        },
+        {
+          "fromId": "fn0/bb3",
+          "label": null,
+          "order": 1,
+          "relation": "contains",
+          "toId": "fn0/bb3/i1"
+        },
+        {
+          "fromId": "fn0/bb3/i1",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:11:1"
+        }
+      ],
+      "formatVersion": 1,
+      "nodes": [
+        {
+          "attributes": {
+            "source_filename": "/workspace/examples/curated/score.c",
+            "target_datalayout": "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128",
+            "target_triple": "x86_64-unknown-linux-gnu"
+          },
+          "displayName": "/workspace/examples/curated/score.c",
+          "kind": "Module",
+          "stableId": "module"
+        },
+        {
+          "attributes": {
+            "arguments": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%x",
+                "%scale"
+              ]
+            },
+            "name": "score",
+            "signature": "define dso_local i32 @score(i32 noundef %x, i32 noundef %scale) #0 !dbg !10 {"
+          },
+          "displayName": "score",
+          "kind": "Function",
+          "stableId": "fn0"
+        },
+        {
+          "attributes": {
+            "label": "entry"
+          },
+          "displayName": "entry",
+          "kind": "BasicBlock",
+          "stableId": "fn0/bb0"
+        },
+        {
+          "attributes": {
+            "debug_ref": null,
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "alloca",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": "%retval",
+            "source": null,
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "%retval = alloca i32, align 4"
+          },
+          "displayName": "%retval",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i0"
+        },
+        {
+          "attributes": {
+            "debug_ref": null,
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "alloca",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": "%x.addr",
+            "source": null,
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "%x.addr = alloca i32, align 4"
+          },
+          "displayName": "%x.addr",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i1"
+        },
+        {
+          "attributes": {
+            "debug_ref": null,
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "alloca",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": "%scale.addr",
+            "source": null,
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "%scale.addr = alloca i32, align 4"
+          },
+          "displayName": "%scale.addr",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i2"
+        },
+        {
+          "attributes": {
+            "debug_ref": null,
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "alloca",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": "%limit",
+            "source": null,
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "%limit = alloca i32, align 4"
+          },
+          "displayName": "%limit",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i3"
+        },
+        {
+          "attributes": {
+            "debug_ref": null,
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "alloca",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": "%wasted",
+            "source": null,
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "%wasted = alloca i32, align 4"
+          },
+          "displayName": "%wasted",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i4"
+        },
+        {
+          "attributes": {
+            "debug_ref": null,
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "alloca",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": "%adjusted",
+            "source": null,
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "%adjusted = alloca i32, align 4"
+          },
+          "displayName": "%adjusted",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i5"
+        },
+        {
+          "attributes": {
+            "debug_ref": null,
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "alloca",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": "%weighted",
+            "source": null,
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "%weighted = alloca i32, align 4"
+          },
+          "displayName": "%weighted",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i6"
+        },
+        {
+          "attributes": {
+            "debug_ref": null,
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "store",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%x",
+                "%x.addr"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": null,
+            "source": null,
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "store i32 %x, ptr %x.addr, align 4"
+          },
+          "displayName": "store",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i7"
+        },
+        {
+          "attributes": {
+            "debug_ref": null,
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "store",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%scale",
+                "%scale.addr"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": null,
+            "source": null,
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "store i32 %scale, ptr %scale.addr, align 4"
+          },
+          "displayName": "store",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i8"
+        },
+        {
+          "attributes": {
+            "debug_ref": "22",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "load",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%scale.addr"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": "%0",
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 20,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 2
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "%0 = load i32, ptr %scale.addr, align 4, !dbg !22"
+          },
+          "displayName": "%0",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i9"
+        },
+        {
+          "attributes": {
+            "debug_ref": "23",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "mul",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%0"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": "%mul",
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 26,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 2
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "%mul = mul nsw i32 %0, 32, !dbg !23"
+          },
+          "displayName": "%mul",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i10"
+        },
+        {
+          "attributes": {
+            "debug_ref": "21",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "store",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%mul",
+                "%limit"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": null,
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 9,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 2
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "store i32 %mul, ptr %limit, align 4, !dbg !21"
+          },
+          "displayName": "store",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i11"
+        },
+        {
+          "attributes": {
+            "debug_ref": "26",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "load",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%scale.addr"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": "%1",
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 20,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 3
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "%1 = load i32, ptr %scale.addr, align 4, !dbg !26"
+          },
+          "displayName": "%1",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i12"
+        },
+        {
+          "attributes": {
+            "debug_ref": "27",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "load",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%scale.addr"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": "%2",
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 28,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 3
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "%2 = load i32, ptr %scale.addr, align 4, !dbg !27"
+          },
+          "displayName": "%2",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i13"
+        },
+        {
+          "attributes": {
+            "debug_ref": "28",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "mul",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%1",
+                "%2"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": "%mul1",
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 26,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 3
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "%mul1 = mul nsw i32 %1, %2, !dbg !28"
+          },
+          "displayName": "%mul1",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i14"
+        },
+        {
+          "attributes": {
+            "debug_ref": "29",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "load",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%scale.addr"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": "%3",
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 36,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 3
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "%3 = load i32, ptr %scale.addr, align 4, !dbg !29"
+          },
+          "displayName": "%3",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i15"
+        },
+        {
+          "attributes": {
+            "debug_ref": "30",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "load",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%scale.addr"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": "%4",
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 44,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 3
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "%4 = load i32, ptr %scale.addr, align 4, !dbg !30"
+          },
+          "displayName": "%4",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i16"
+        },
+        {
+          "attributes": {
+            "debug_ref": "31",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "mul",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%3",
+                "%4"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": "%mul2",
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 42,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 3
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "%mul2 = mul nsw i32 %3, %4, !dbg !31"
+          },
+          "displayName": "%mul2",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i17"
+        },
+        {
+          "attributes": {
+            "debug_ref": "32",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "sub",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%mul1",
+                "%mul2"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": "%sub",
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 34,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 3
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "%sub = sub nsw i32 %mul1, %mul2, !dbg !32"
+          },
+          "displayName": "%sub",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i18"
+        },
+        {
+          "attributes": {
+            "debug_ref": "25",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "store",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%sub",
+                "%wasted"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": null,
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 9,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 3
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "store i32 %sub, ptr %wasted, align 4, !dbg !25"
+          },
+          "displayName": "store",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i19"
+        },
+        {
+          "attributes": {
+            "debug_ref": "35",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "load",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%x.addr"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": "%5",
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 20,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 4
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "%5 = load i32, ptr %x.addr, align 4, !dbg !35"
+          },
+          "displayName": "%5",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i20"
+        },
+        {
+          "attributes": {
+            "debug_ref": "36",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "sub",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%5"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": "%sub3",
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 22,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 4
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "%sub3 = sub nsw i32 %5, 128, !dbg !36"
+          },
+          "displayName": "%sub3",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i21"
+        },
+        {
+          "attributes": {
+            "debug_ref": "34",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "store",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%sub3",
+                "%adjusted"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": null,
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 9,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 4
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "store i32 %sub3, ptr %adjusted, align 4, !dbg !34"
+          },
+          "displayName": "store",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i22"
+        },
+        {
+          "attributes": {
+            "debug_ref": "39",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "load",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%adjusted"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": "%6",
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 20,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 5
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "%6 = load i32, ptr %adjusted, align 4, !dbg !39"
+          },
+          "displayName": "%6",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i23"
+        },
+        {
+          "attributes": {
+            "debug_ref": "40",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "load",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%scale.addr"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": "%7",
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 31,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 5
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "%7 = load i32, ptr %scale.addr, align 4, !dbg !40"
+          },
+          "displayName": "%7",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i24"
+        },
+        {
+          "attributes": {
+            "debug_ref": "41",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "mul",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%6",
+                "%7"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": "%mul4",
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 29,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 5
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "%mul4 = mul nsw i32 %6, %7, !dbg !41"
+          },
+          "displayName": "%mul4",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i25"
+        },
+        {
+          "attributes": {
+            "debug_ref": "38",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "store",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%mul4",
+                "%weighted"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": null,
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 9,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 5
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "store i32 %mul4, ptr %weighted, align 4, !dbg !38"
+          },
+          "displayName": "store",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i26"
+        },
+        {
+          "attributes": {
+            "debug_ref": "42",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "load",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%weighted"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": "%8",
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 9,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 7
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "%8 = load i32, ptr %weighted, align 4, !dbg !42"
+          },
+          "displayName": "%8",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i27"
+        },
+        {
+          "attributes": {
+            "debug_ref": "44",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "load",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%limit"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": "%9",
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 20,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 7
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "%9 = load i32, ptr %limit, align 4, !dbg !44"
+          },
+          "displayName": "%9",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i28"
+        },
+        {
+          "attributes": {
+            "debug_ref": "45",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "icmp",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%8",
+                "%9"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": "%cmp",
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 18,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 7
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "%cmp = icmp sgt i32 %8, %9, !dbg !45"
+          },
+          "displayName": "%cmp",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i29"
+        },
+        {
+          "attributes": {
+            "debug_ref": "45",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": true,
+            "opcode": "br",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%cmp",
+                "%if.then",
+                "%if.end"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": null,
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 18,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 7
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                {
+                  "__irexplorer_type__": "tuple",
+                  "items": [
+                    "fn0/bb1",
+                    "true"
+                  ]
+                },
+                {
+                  "__irexplorer_type__": "tuple",
+                  "items": [
+                    "fn0/bb2",
+                    "false"
+                  ]
+                }
+              ]
+            },
+            "text": "br i1 %cmp, label %if.then, label %if.end, !dbg !45"
+          },
+          "displayName": "br",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i30"
+        },
+        {
+          "attributes": {
+            "label": "if.then"
+          },
+          "displayName": "if.then",
+          "kind": "BasicBlock",
+          "stableId": "fn0/bb1"
+        },
+        {
+          "attributes": {
+            "debug_ref": "46",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "load",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%limit"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": "%10",
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 16,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 8
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "%10 = load i32, ptr %limit, align 4, !dbg !46"
+          },
+          "displayName": "%10",
+          "kind": "Instruction",
+          "stableId": "fn0/bb1/i0"
+        },
+        {
+          "attributes": {
+            "debug_ref": "47",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "store",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%10",
+                "%retval"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": null,
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 9,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 8
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "store i32 %10, ptr %retval, align 4, !dbg !47"
+          },
+          "displayName": "store",
+          "kind": "Instruction",
+          "stableId": "fn0/bb1/i1"
+        },
+        {
+          "attributes": {
+            "debug_ref": "47",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": true,
+            "opcode": "br",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%return"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": null,
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 9,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 8
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                {
+                  "__irexplorer_type__": "tuple",
+                  "items": [
+                    "fn0/bb3",
+                    "unconditional"
+                  ]
+                }
+              ]
+            },
+            "text": "br label %return, !dbg !47"
+          },
+          "displayName": "br",
+          "kind": "Instruction",
+          "stableId": "fn0/bb1/i2"
+        },
+        {
+          "attributes": {
+            "label": "if.end"
+          },
+          "displayName": "if.end",
+          "kind": "BasicBlock",
+          "stableId": "fn0/bb2"
+        },
+        {
+          "attributes": {
+            "debug_ref": "48",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "load",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%weighted"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": "%11",
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 12,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 10
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "%11 = load i32, ptr %weighted, align 4, !dbg !48"
+          },
+          "displayName": "%11",
+          "kind": "Instruction",
+          "stableId": "fn0/bb2/i0"
+        },
+        {
+          "attributes": {
+            "debug_ref": "49",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "load",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%wasted"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": "%12",
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 23,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 10
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "%12 = load i32, ptr %wasted, align 4, !dbg !49"
+          },
+          "displayName": "%12",
+          "kind": "Instruction",
+          "stableId": "fn0/bb2/i1"
+        },
+        {
+          "attributes": {
+            "debug_ref": "50",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "add",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%11",
+                "%12"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": "%add",
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 21,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 10
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "%add = add nsw i32 %11, %12, !dbg !50"
+          },
+          "displayName": "%add",
+          "kind": "Instruction",
+          "stableId": "fn0/bb2/i2"
+        },
+        {
+          "attributes": {
+            "debug_ref": "51",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "store",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%add",
+                "%retval"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": null,
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 5,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 10
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "store i32 %add, ptr %retval, align 4, !dbg !51"
+          },
+          "displayName": "store",
+          "kind": "Instruction",
+          "stableId": "fn0/bb2/i3"
+        },
+        {
+          "attributes": {
+            "debug_ref": "51",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": true,
+            "opcode": "br",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%return"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": null,
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 5,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 10
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                {
+                  "__irexplorer_type__": "tuple",
+                  "items": [
+                    "fn0/bb3",
+                    "unconditional"
+                  ]
+                }
+              ]
+            },
+            "text": "br label %return, !dbg !51"
+          },
+          "displayName": "br",
+          "kind": "Instruction",
+          "stableId": "fn0/bb2/i4"
+        },
+        {
+          "attributes": {
+            "label": "return"
+          },
+          "displayName": "return",
+          "kind": "BasicBlock",
+          "stableId": "fn0/bb3"
+        },
+        {
+          "attributes": {
+            "debug_ref": "52",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "load",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%retval"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": "%13",
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 1,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 11
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "%13 = load i32, ptr %retval, align 4, !dbg !52"
+          },
+          "displayName": "%13",
+          "kind": "Instruction",
+          "stableId": "fn0/bb3/i0"
+        },
+        {
+          "attributes": {
+            "debug_ref": "52",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": true,
+            "opcode": "ret",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%13"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": null,
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 1,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 11
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "ret i32 %13, !dbg !52"
+          },
+          "displayName": "ret",
+          "kind": "Instruction",
+          "stableId": "fn0/bb3/i1"
+        }
+      ],
+      "ordinal": 0,
+      "originCommand": "clang -O0 -g -Xclang -disable-O0-optnone -fno-discard-value-names -S -emit-llvm /workspace/examples/curated/score.c -o /workspace/artefacts/curated/score/score_O0.ll",
+      "remarks": [],
+      "sourceFilename": "/workspace/examples/curated/score.c",
+      "stateId": "O0",
+      "targetDatalayout": "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128",
+      "targetTriple": "x86_64-unknown-linux-gnu"
+    },
+    {
+      "edges": [
+        {
+          "fromId": "module",
+          "label": null,
+          "order": 0,
+          "relation": "contains",
+          "toId": "fn0"
+        },
+        {
+          "fromId": "fn0",
+          "label": null,
+          "order": 0,
+          "relation": "contains",
+          "toId": "fn0/bb0"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 0,
+          "relation": "contains",
+          "toId": "fn0/bb0/i0"
+        },
+        {
+          "fromId": "fn0/bb0/i0",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:2:26"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 1,
+          "relation": "contains",
+          "toId": "fn0/bb0/i1"
+        },
+        {
+          "fromId": "fn0/bb0/i1",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:4:22"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 2,
+          "relation": "contains",
+          "toId": "fn0/bb0/i2"
+        },
+        {
+          "fromId": "fn0/bb0/i2",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:5:29"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 3,
+          "relation": "contains",
+          "toId": "fn0/bb0/i3"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "label": null,
+          "order": 4,
+          "relation": "contains",
+          "toId": "fn0/bb0/i4"
+        },
+        {
+          "fromId": "fn0/bb0/i4",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/score.c:11:1"
+        }
+      ],
+      "formatVersion": 1,
+      "nodes": [
+        {
+          "attributes": {
+            "source_filename": "/workspace/examples/curated/score.c",
+            "target_datalayout": "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128",
+            "target_triple": "x86_64-unknown-linux-gnu"
+          },
+          "displayName": "/workspace/examples/curated/score.c",
+          "kind": "Module",
+          "stableId": "module"
+        },
+        {
+          "attributes": {
+            "arguments": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%x",
+                "%scale"
+              ]
+            },
+            "name": "score",
+            "signature": "define dso_local range(i32 -2147483648, 2147483617) i32 @score(i32 noundef %x, i32 noundef %scale) local_unnamed_addr #0 !dbg !14 {"
+          },
+          "displayName": "score",
+          "kind": "Function",
+          "stableId": "fn0"
+        },
+        {
+          "attributes": {
+            "label": "entry"
+          },
+          "displayName": "entry",
+          "kind": "BasicBlock",
+          "stableId": "fn0/bb0"
+        },
+        {
+          "attributes": {
+            "debug_ref": "27",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "shl",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%scale"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": "%mul",
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 26,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 2
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "%mul = shl nsw i32 %scale, 5, !dbg !27"
+          },
+          "displayName": "%mul",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i0"
+        },
+        {
+          "attributes": {
+            "debug_ref": "28",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "add",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%x"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": "%sub3",
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 22,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 4
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "%sub3 = add nsw i32 %x, -128, !dbg !28"
+          },
+          "displayName": "%sub3",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i1"
+        },
+        {
+          "attributes": {
+            "debug_ref": "29",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "mul",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%sub3",
+                "%scale"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": "%mul4",
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 29,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 5
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "%mul4 = mul nsw i32 %sub3, %scale, !dbg !29"
+          },
+          "displayName": "%mul4",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i2"
+        },
+        {
+          "attributes": {
+            "debug_ref": "26",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": false,
+            "opcode": "call",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%mul4",
+                "%mul"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": "%mul.mul4",
+            "source": null,
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "%mul.mul4 = tail call i32 @llvm.smin.i32(i32 %mul4, i32 %mul), !dbg !26"
+          },
+          "displayName": "%mul.mul4",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i3"
+        },
+        {
+          "attributes": {
+            "debug_ref": "30",
+            "incoming_blocks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "is_terminator": true,
+            "opcode": "ret",
+            "operands": {
+              "__irexplorer_type__": "tuple",
+              "items": [
+                "%mul.mul4"
+              ]
+            },
+            "remarks": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "result": null,
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 1,
+              "file": "/workspace/examples/curated/score.c",
+              "line": 11
+            },
+            "successors": {
+              "__irexplorer_type__": "tuple",
+              "items": []
+            },
+            "text": "ret i32 %mul.mul4, !dbg !30"
+          },
+          "displayName": "ret",
+          "kind": "Instruction",
+          "stableId": "fn0/bb0/i4"
+        }
+      ],
+      "ordinal": 1,
+      "originCommand": "clang -O3 -g -fno-discard-value-names -S -emit-llvm /workspace/examples/curated/score.c -o /workspace/artefacts/curated/score/score_O3.ll",
+      "remarks": [
+        {
+          "function": "score",
+          "location": {
+            "__irexplorer_type__": "SourceLocation",
+            "column": 0,
+            "file": "examples/curated/score.c",
+            "line": 1
+          },
+          "name": "FunctionMISizeChange",
+          "passName": "size-info",
+          "raw": "!Analysis\nPass:            size-info\nName:            FunctionMISizeChange\nDebugLoc:        { File: 'examples/curated/score.c', Line: 1, Column: 0 }\nFunction:        score\nArgs:\n  - Pass:            'X86 DAG->DAG Instruction Selection'\n  - String:          ': Function: '\n  - Function:        score\n  - String:          ': '\n  - String:          'MI Instruction count changed from '\n  - MIInstrsBefore:  '0'\n  - String:          ' to '\n  - MIInstrsAfter:   '15'\n  - String:          '; Delta: '\n  - Delta:           '15'"
+        },
+        {
+          "function": "score",
+          "location": {
+            "__irexplorer_type__": "SourceLocation",
+            "column": 0,
+            "file": "examples/curated/score.c",
+            "line": 1
+          },
+          "name": "FunctionMISizeChange",
+          "passName": "size-info",
+          "raw": "!Analysis\nPass:            size-info\nName:            FunctionMISizeChange\nDebugLoc:        { File: 'examples/curated/score.c', Line: 1, Column: 0 }\nFunction:        score\nArgs:\n  - Pass:            Two-Address instruction pass\n  - String:          ': Function: '\n  - Function:        score\n  - String:          ': '\n  - String:          'MI Instruction count changed from '\n  - MIInstrsBefore:  '15'\n  - String:          ' to '\n  - MIInstrsAfter:   '19'\n  - String:          '; Delta: '\n  - Delta:           '4'"
+        },
+        {
+          "function": "score",
+          "location": {
+            "__irexplorer_type__": "SourceLocation",
+            "column": 0,
+            "file": "examples/curated/score.c",
+            "line": 1
+          },
+          "name": "FunctionMISizeChange",
+          "passName": "size-info",
+          "raw": "!Analysis\nPass:            size-info\nName:            FunctionMISizeChange\nDebugLoc:        { File: 'examples/curated/score.c', Line: 1, Column: 0 }\nFunction:        score\nArgs:\n  - Pass:            Register Coalescer\n  - String:          ': Function: '\n  - Function:        score\n  - String:          ': '\n  - String:          'MI Instruction count changed from '\n  - MIInstrsBefore:  '19'\n  - String:          ' to '\n  - MIInstrsAfter:   '15'\n  - String:          '; Delta: '\n  - Delta:           '-4'"
+        },
+        {
+          "function": "score",
+          "location": {
+            "__irexplorer_type__": "SourceLocation",
+            "column": 0,
+            "file": "examples/curated/score.c",
+            "line": 1
+          },
+          "name": "FunctionMISizeChange",
+          "passName": "size-info",
+          "raw": "!Analysis\nPass:            size-info\nName:            FunctionMISizeChange\nDebugLoc:        { File: 'examples/curated/score.c', Line: 1, Column: 0 }\nFunction:        score\nArgs:\n  - Pass:            Debug Variable Analysis\n  - String:          ': Function: '\n  - Function:        score\n  - String:          ': '\n  - String:          'MI Instruction count changed from '\n  - MIInstrsBefore:  '15'\n  - String:          ' to '\n  - MIInstrsAfter:   '9'\n  - String:          '; Delta: '\n  - Delta:           '-6'"
+        },
+        {
+          "function": "score",
+          "location": {
+            "__irexplorer_type__": "SourceLocation",
+            "column": 0,
+            "file": "examples/curated/score.c",
+            "line": 1
+          },
+          "name": "FunctionMISizeChange",
+          "passName": "size-info",
+          "raw": "!Analysis\nPass:            size-info\nName:            FunctionMISizeChange\nDebugLoc:        { File: 'examples/curated/score.c', Line: 1, Column: 0 }\nFunction:        score\nArgs:\n  - Pass:            Virtual Register Rewriter\n  - String:          ': Function: '\n  - Function:        score\n  - String:          ': '\n  - String:          'MI Instruction count changed from '\n  - MIInstrsBefore:  '9'\n  - String:          ' to '\n  - MIInstrsAfter:   '13'\n  - String:          '; Delta: '\n  - Delta:           '4'"
+        },
+        {
+          "function": "score",
+          "location": {
+            "__irexplorer_type__": "SourceLocation",
+            "column": 0,
+            "file": "examples/curated/score.c",
+            "line": 1
+          },
+          "name": "StackSize",
+          "passName": "prologepilog",
+          "raw": "!Analysis\nPass:            prologepilog\nName:            StackSize\nDebugLoc:        { File: 'examples/curated/score.c', Line: 1, Column: 0 }\nFunction:        score\nArgs:\n  - NumStackBytes:   '0'\n  - String:          ' stack bytes in function '''\n  - Function:        score\n  - String:          ''''"
+        },
+        {
+          "function": "score",
+          "location": {
+            "__irexplorer_type__": "SourceLocation",
+            "column": 0,
+            "file": "examples/curated/score.c",
+            "line": 1
+          },
+          "name": "FunctionMISizeChange",
+          "passName": "size-info",
+          "raw": "!Analysis\nPass:            size-info\nName:            FunctionMISizeChange\nDebugLoc:        { File: 'examples/curated/score.c', Line: 1, Column: 0 }\nFunction:        score\nArgs:\n  - Pass:            Live DEBUG_VALUE analysis\n  - String:          ': Function: '\n  - Function:        score\n  - String:          ': '\n  - String:          'MI Instruction count changed from '\n  - MIInstrsBefore:  '13'\n  - String:          ' to '\n  - MIInstrsAfter:   '17'\n  - String:          '; Delta: '\n  - Delta:           '4'"
+        },
+        {
+          "function": "score",
+          "location": {
+            "__irexplorer_type__": "SourceLocation",
+            "column": 0,
+            "file": "examples/curated/score.c",
+            "line": 1
+          },
+          "name": "StackLayout",
+          "passName": "stack-frame-layout",
+          "raw": "!Analysis\nPass:            stack-frame-layout\nName:            StackLayout\nDebugLoc:        { File: 'examples/curated/score.c', Line: 1, Column: 0 }\nFunction:        score\nArgs:\n  - String:          \"\\nFunction: score\""
+        },
+        {
+          "function": "score",
+          "location": {
+            "__irexplorer_type__": "SourceLocation",
+            "column": 0,
+            "file": "examples/curated/score.c",
+            "line": 0
+          },
+          "name": "InstructionMix",
+          "passName": "asm-printer",
+          "raw": "!Analysis\nPass:            asm-printer\nName:            InstructionMix\nDebugLoc:        { File: 'examples/curated/score.c', Line: 0, Column: 0 }\nFunction:        score\nArgs:\n  - String:          'BasicBlock: '\n  - BasicBlock:      entry\n  - String:          \"\\n\"\n  - String:          CMOV32rr\n  - String:          ': '\n  - INST_CMOV32rr:   '1'\n  - String:          \"\\n\"\n  - String:          CMP32rr\n  - String:          ': '\n  - INST_CMP32rr:    '1'\n  - String:          \"\\n\"\n  - String:          IMUL32rr\n  - String:          ': '\n  - INST_IMUL32rr:   '1'\n  - String:          \"\\n\"\n  - String:          LEA64_32r\n  - String:          ': '\n  - INST_LEA64_32r:  '1'\n  - String:          \"\\n\"\n  - String:          RET64\n  - String:          ': '\n  - INST_RET64:      '1'\n  - String:          \"\\n\"\n  - String:          SHL32ri\n  - String:          ': '\n  - INST_SHL32ri:    '1'\n  - String:          \"\\n\""
+        },
+        {
+          "function": "score",
+          "location": {
+            "__irexplorer_type__": "SourceLocation",
+            "column": 0,
+            "file": "examples/curated/score.c",
+            "line": 1
+          },
+          "name": "InstructionCount",
+          "passName": "asm-printer",
+          "raw": "!Analysis\nPass:            asm-printer\nName:            InstructionCount\nDebugLoc:        { File: 'examples/curated/score.c', Line: 1, Column: 0 }\nFunction:        score\nArgs:\n  - NumInstructions: '6'\n  - String:          ' instructions in function'"
+        }
+      ],
+      "sourceFilename": "/workspace/examples/curated/score.c",
+      "stateId": "O3",
+      "targetDatalayout": "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128",
+      "targetTriple": "x86_64-unknown-linux-gnu"
+    }
+  ],
+  "steps": [
+    {
+      "fromOrdinal": 0,
+      "kind": "recompiled",
+      "origin": {
+        "command": "clang -O3 -g -fno-discard-value-names -S -emit-llvm /workspace/examples/curated/score.c -o /workspace/artefacts/curated/score/score_O3.ll",
+        "level": "-O3",
+        "passName": null
+      },
+      "toOrdinal": 1
+    }
+  ]
+}

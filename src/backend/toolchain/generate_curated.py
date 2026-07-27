@@ -27,6 +27,12 @@ def generate_all() -> None:
         print(f"Generating {example}")
         generate_example(example)
 
+    # The compiler artefacts and model snapshots share this one offline path:
+    # runtime consumes the serialised model, never raw LLVM output.
+    from src.backend.ingest.curated import bake_curated_model_records
+
+    bake_curated_model_records()
+
 
 def generate_example(example: str) -> None:
     source = EXAMPLES_ROOT / f"{example}.c"

@@ -59,49 +59,69 @@ class StateGraph:
     origin_command: str | None = None
     remarks: tuple[Remark, ...] = ()
 
+    # These are derived from the canonical node/edge lists once, when a graph
+    # is created or loaded.  They deliberately do not participate in equality
+    # or serialisation: they are an implementation detail of read-only model
+    # queries, not another source of truth.
+    by_id: Mapping[str, Node] = field(init=False, repr=False, compare=False)
+    contains_children: Mapping[str, tuple[str, ...]] = field(
+        init=False, repr=False, compare=False
+    )
+    contains_parent: Mapping[str, str] = field(init=False, repr=False, compare=False)
+    cfg_successors: Mapping[str, tuple[Edge, ...]] = field(
+        init=False, repr=False, compare=False
+    )
+    cfg_predecessors: Mapping[str, tuple[Edge, ...]] = field(
+        init=False, repr=False, compare=False
+    )
+
+    def __post_init__(self) -> None:
+        by_id = {node.stable_id: node for node in self.nodes}
+        contains_children: dict[str, list[tuple[int, str]]] = {}
+        contains_parent: dict[str, str] = {}
+        cfg_successors: dict[str, list[Edge]] = {}
+        cfg_predecessors: dict[str, list[Edge]] = {}
+
+        for edge in self.edges:
+            if edge.relation == "contains":
+                if edge.order is not None:
+                    contains_children.setdefault(edge.from_id, []).append(
+                        (edge.order, edge.to_id)
+                    )
+                contains_parent[edge.to_id] = edge.from_id
+            elif edge.relation == "controlFlow":
+                cfg_successors.setdefault(edge.from_id, []).append(edge)
+                cfg_predecessors.setdefault(edge.to_id, []).append(edge)
+
+        object.__setattr__(self, "by_id", MappingProxyType(by_id))
+        object.__setattr__(
+            self,
+            "contains_children",
+            MappingProxyType(
+                {
+                    parent: tuple(child for _, child in sorted(children))
+                    for parent, children in contains_children.items()
+                }
+            ),
+        )
+        object.__setattr__(self, "contains_parent", MappingProxyType(contains_parent))
+        object.__setattr__(
+            self,
+            "cfg_successors",
+            MappingProxyType(
+                {node_id: tuple(edges) for node_id, edges in cfg_successors.items()}
+            ),
+        )
+        object.__setattr__(
+            self,
+            "cfg_predecessors",
+            MappingProxyType(
+                {node_id: tuple(edges) for node_id, edges in cfg_predecessors.items()}
+            ),
+        )
+
     def validate(self) -> None:
         validate_state_graph(self)
-
-    @property
-    def by_id(self) -> dict[str, Node]:
-        return {node.stable_id: node for node in self.nodes}
-
-    @property
-    def contains_children(self) -> dict[str, tuple[str, ...]]:
-        children: dict[str, list[tuple[int, str]]] = {}
-        for edge in self.edges:
-            if edge.relation == "contains":
-                if edge.order is None:
-                    raise ModelValidationError("contains edge missing sibling order")
-                children.setdefault(edge.from_id, []).append((edge.order, edge.to_id))
-        return {
-            parent: tuple(child for _, child in sorted(items))
-            for parent, items in children.items()
-        }
-
-    @property
-    def contains_parent(self) -> dict[str, str]:
-        parents: dict[str, str] = {}
-        for edge in self.edges:
-            if edge.relation == "contains":
-                parents[edge.to_id] = edge.from_id
-        return parents
-
-    @property
-    def cfg_successors(self) -> dict[str, tuple[Edge, ...]]:
-        successors: dict[str, list[Edge]] = {}
-        for edge in self.edges:
-            if edge.relation == "controlFlow":
-                successors.setdefault(edge.from_id, []).append(edge)
-        return {block_id: tuple(edges) for block_id, edges in successors.items()}
-
-    @property
-    def cfg_predecessors(self) -> dict[str, tuple[Edge, ...]]:
-        predecessors: dict[str, list[Edge]] = {}
-        for edge in self.edges:
-            if edge.relation == "controlFlow":
-                predecessors.setdefault(edge.to_id, []).append(edge)
-        return {block_id: tuple(edges) for block_id, edges in predecessors.items()}
 
 
 def validate_state_graph(graph: StateGraph) -> None:

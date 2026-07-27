@@ -1,6 +1,7 @@
 import unittest
 
 from src.backend.toolchain import curated
+from src.backend.toolchain.integrity import verify_curated_snapshot
 
 
 class CuratedToolchainTests(unittest.TestCase):
@@ -9,6 +10,9 @@ class CuratedToolchainTests(unittest.TestCase):
             curated.list_examples(),
             ("binary_search", "quick_sort", "score"),
         )
+
+    def test_curated_artefacts_match_pinned_snapshot(self) -> None:
+        verify_curated_snapshot()
 
     def test_standard_state_sequence_is_fixed(self) -> None:
         self.assertEqual(

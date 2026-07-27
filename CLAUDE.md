@@ -14,10 +14,11 @@ Built and under green tests:
 - **S1.1** — curated set (`score`, `binary_search`, `quick_sort`), the 12-step teaching pass chain, full `-g` debug info, and the exact `clang`/`opt` command templates.
 - **S1.2** — toolchain wrapper (`toolchain/curated.py`) + pre-baked generator (`toolchain/generate_curated.py`); artefacts under `artefacts/curated/`; per-state `origin.command` resolvable from the manifest (`curated.origin_command`).
 - **S1.3** — IR→`StateGraph` parser (`ingest/llvm_ir.py`) with within-state invariant validation (I1–I8), source-map and remark attachment, and controlled ingest failure.
+- **S1.4** — immutable `OptimisationTimeline`/`PassStep` records with honest derived versus recompiled provenance, plain JSON-ready model serialisation that validates and rebuilds state indices on load, and endpoint/full curated timeline loading. The offline bake path persists one endpoint record per curated example. Canonical artefacts are protected by a checked-in aggregate SHA-256 snapshot verified in the test suite.
 
-Next: S1.4 (model serialisation, timeline/`PassStep`, indices built once at load), S1.5 (two-state `Correspondence`), S1.6 (query API), S1.7 (front-end). Outstanding issues are tracked inline in the implementation plan.
+Next: S1.5 (two-state `Correspondence`), S1.6 (query API), S1.7 (front-end). Outstanding issues are tracked inline in the implementation plan.
 
-Run the backend tests from this directory with the project virtual environment: `python -m unittest tests.test_ingest_llvm_ir tests.test_toolchain_curated`.
+Run the backend tests from this directory with the project virtual environment: `.venv/bin/python -m unittest discover -s tests -v`.
 
 ## Repo & submodule routing
 
