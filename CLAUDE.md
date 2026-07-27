@@ -15,8 +15,9 @@ Built and under green tests:
 - **S1.2** — toolchain wrapper (`toolchain/curated.py`) + pre-baked generator (`toolchain/generate_curated.py`); artefacts under `artefacts/curated/`; per-state `origin.command` resolvable from the manifest (`curated.origin_command`).
 - **S1.3** — IR→`StateGraph` parser (`ingest/llvm_ir.py`) with within-state invariant validation (I1–I8), source-map and remark attachment, and controlled ingest failure.
 - **S1.4** — immutable `OptimisationTimeline`/`PassStep` records with honest derived versus recompiled provenance, plain JSON-ready model serialisation that validates and rebuilds state indices on load, and endpoint/full curated timeline loading. The offline bake path persists one endpoint record per curated example. Canonical artefacts are protected by a checked-in aggregate SHA-256 snapshot verified in the test suite.
+- **S1.5** — deterministic, coverage-complete endpoint `Correspondence` overlays with exact/approximate confidence, audit evidence, and concise link-backed summaries. The matching strategy is deliberately conservative, using unique structure and debug locations, and each pre-baked endpoint timeline now has its paired overlay.
 
-Next: S1.5 (two-state `Correspondence`), S1.6 (query API), S1.7 (front-end). Outstanding issues are tracked inline in the implementation plan.
+Next: S1.6 (query API), S1.7 (front-end). Outstanding issues are tracked inline in the implementation plan.
 
 Run the backend tests from this directory with the project virtual environment: `.venv/bin/python -m unittest discover -s tests -v`.
 

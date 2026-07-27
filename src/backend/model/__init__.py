@@ -8,11 +8,18 @@ from src.backend.model.graph import (
     SourceLocation,
     StateGraph,
 )
+from src.backend.model.correspondence import (
+    Correspondence,
+    Link,
+    validate_correspondence,
+)
 from src.backend.model.serialisation import (
+    deserialise_correspondence,
     deserialise_json,
     deserialise_state_graph,
     deserialise_timeline,
     serialise_json,
+    serialise_correspondence,
     serialise_state_graph,
     serialise_timeline,
 )
@@ -30,14 +37,19 @@ __all__ = [
     "Remark",
     "SourceLocation",
     "StateGraph",
+    "Correspondence",
+    "Link",
     "OptimisationTimeline",
     "PassStep",
     "StepOrigin",
+    "deserialise_correspondence",
     "deserialise_json",
     "deserialise_state_graph",
     "deserialise_timeline",
     "serialise_json",
+    "serialise_correspondence",
     "serialise_state_graph",
     "serialise_timeline",
     "validate_timeline",
+    "validate_correspondence",
 ]

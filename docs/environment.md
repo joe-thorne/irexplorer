@@ -72,7 +72,7 @@ Run the canonical generator from `irexplorer/` inside the local Python virtual e
 
 Generated artefacts are written to `artefacts/curated/<example>/`. Each example directory contains the `-O0` IR/bitcode, the 12 teaching-pass IR states, the recompiled `clang -O3` anchor, captured `-Rpass` remarks, the `.opt.yaml` optimisation record, and a command manifest.
 
-`docs/curated-artefacts.sha256` records a deterministic aggregate SHA-256 over the 60 generated artefacts, including one serialised endpoint timeline per example. The backend test suite verifies it, so an unintended change to any canonical artefact fails locally before it can become a new fixture. After an intentional Docker regeneration, review the changed artefacts and update this checksum deliberately.
+`docs/curated-artefacts.sha256` records a deterministic aggregate SHA-256 over the 63 generated artefacts, including one serialised endpoint timeline and correspondence overlay per example. The backend test suite verifies it, so an unintended change to any canonical artefact fails locally before it can become a new fixture. After an intentional Docker regeneration, review the changed artefacts and update this checksum deliberately.
 
 ```sh
 clang -O0 -g \

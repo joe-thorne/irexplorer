@@ -13,6 +13,7 @@ from src.backend.model.graph import (
     SourceLocation,
     StateGraph,
 )
+from src.backend.model.correspondence import Correspondence, Link
 from src.backend.model.timeline import OptimisationTimeline, PassStep, StepOrigin
 
 
@@ -129,6 +130,54 @@ def deserialise_timeline(record: Mapping[str, Any]) -> OptimisationTimeline:
         raise ModelValidationError(f"invalid optimisation timeline record: {exc}") from exc
 
 
+def serialise_correspondence(correspondence: Correspondence) -> dict[str, Any]:
+    """Return a plain correspondence record; endpoint validation occurs on load."""
+
+    return {
+        "formatVersion": FORMAT_VERSION,
+        "fromOrdinal": correspondence.from_ordinal,
+        "toOrdinal": correspondence.to_ordinal,
+        "coveredKinds": list(correspondence.covered_kinds),
+        "links": [
+            {
+                "fromNodeIds": list(link.from_node_ids),
+                "toNodeIds": list(link.to_node_ids),
+                "relation": link.relation,
+                "confidence": link.confidence,
+                "evidence": link.evidence,
+            }
+            for link in correspondence.links
+        ],
+    }
+
+
+def deserialise_correspondence(
+    record: Mapping[str, Any],
+    from_state: StateGraph,
+    to_state: StateGraph,
+) -> Correspondence:
+    """Load a correspondence only when its concrete endpoint states are known."""
+
+    _require_format_version(record)
+    try:
+        correspondence = Correspondence(
+            from_ordinal=_require_int(record, "fromOrdinal"),
+            to_ordinal=_require_int(record, "toOrdinal"),
+            covered_kinds=tuple(
+                _require_string_items(_require_list(record, "coveredKinds"), "coveredKinds")
+            ),
+            links=tuple(
+                _deserialise_link(item) for item in _require_list(record, "links")
+            ),
+        )
+        correspondence.validate(from_state, to_state)
+        return correspondence
+    except (KeyError, TypeError, ValueError) as exc:
+        if isinstance(exc, ModelValidationError):
+            raise
+        raise ModelValidationError(f"invalid correspondence record: {exc}") from exc
+
+
 def serialise_json(record: Mapping[str, Any]) -> str:
     """Encode a plain model record deterministically for fixture storage."""
 
@@ -243,6 +292,20 @@ def _deserialise_step(record: Mapping[str, Any]) -> PassStep:
     )
 
 
+def _deserialise_link(record: Mapping[str, Any]) -> Link:
+    return Link(
+        from_node_ids=tuple(
+            _require_string_items(_require_list(record, "fromNodeIds"), "fromNodeIds")
+        ),
+        to_node_ids=tuple(
+            _require_string_items(_require_list(record, "toNodeIds"), "toNodeIds")
+        ),
+        relation=_require_str(record, "relation"),  # type: ignore[arg-type]
+        confidence=_require_str(record, "confidence"),  # type: ignore[arg-type]
+        evidence=_optional_str(record.get("evidence"), "evidence"),
+    )
+
+
 def _require_format_version(record: Mapping[str, Any]) -> None:
     if _require_int(record, "formatVersion") != FORMAT_VERSION:
         raise ModelValidationError("unsupported model record formatVersion")
@@ -260,6 +323,12 @@ def _require_str(record: Mapping[str, Any], key: str) -> str:
     if not isinstance(value, str):
         raise ModelValidationError(f"{key} must be a string")
     return value
+
+
+def _require_string_items(values: list[Any], key: str) -> list[str]:
+    if not all(isinstance(value, str) for value in values):
+        raise ModelValidationError(f"{key} must contain only strings")
+    return values
 
 
 def _optional_str(value: Any, key: str) -> str | None:

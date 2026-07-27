@@ -1,0 +1,854 @@
+{
+  "coveredKinds": [
+    "Function",
+    "BasicBlock",
+    "Instruction"
+  ],
+  "formatVersion": 1,
+  "fromOrdinal": 0,
+  "links": [
+    {
+      "confidence": "exact",
+      "evidence": "unique function name",
+      "fromNodeIds": [
+        "fn0"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn0"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique basic-block label",
+      "fromNodeIds": [
+        "fn0/bb0"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn0/bb0"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique basic-block label",
+      "fromNodeIds": [
+        "fn0/bb9"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn0/bb4"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique basic-block label",
+      "fromNodeIds": [
+        "fn0/bb7"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn0/bb3"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique basic-block label",
+      "fromNodeIds": [
+        "fn0/bb2"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn0/bb1"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique basic-block label",
+      "fromNodeIds": [
+        "fn0/bb6"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn0/bb2"
+      ]
+    },
+    {
+      "confidence": "approximate",
+      "evidence": "unique debug source location and opcode",
+      "fromNodeIds": [
+        "fn0/bb6/i2"
+      ],
+      "relation": "renamed",
+      "toNodeIds": [
+        "fn0/bb2/i1"
+      ]
+    },
+    {
+      "confidence": "approximate",
+      "evidence": "unique debug source location and opcode",
+      "fromNodeIds": [
+        "fn0/bb7/i3"
+      ],
+      "relation": "renamed",
+      "toNodeIds": [
+        "fn0/bb3/i1"
+      ]
+    },
+    {
+      "confidence": "approximate",
+      "evidence": "unique debug source location and opcode",
+      "fromNodeIds": [
+        "fn0/bb7/i6"
+      ],
+      "relation": "renamed",
+      "toNodeIds": [
+        "fn0/bb3/i3"
+      ]
+    },
+    {
+      "confidence": "approximate",
+      "evidence": "unique debug source location and opcode",
+      "fromNodeIds": [
+        "fn0/bb9/i1"
+      ],
+      "relation": "renamed",
+      "toNodeIds": [
+        "fn0/bb4/i0"
+      ]
+    },
+    {
+      "confidence": "approximate",
+      "evidence": "unique debug source location and opcode",
+      "fromNodeIds": [
+        "fn0/bb10/i1"
+      ],
+      "relation": "renamed",
+      "toNodeIds": [
+        "fn0/bb5/i1"
+      ]
+    },
+    {
+      "confidence": "approximate",
+      "evidence": "unique debug source location and opcode",
+      "fromNodeIds": [
+        "fn0/bb2/i5"
+      ],
+      "relation": "renamed",
+      "toNodeIds": [
+        "fn0/bb1/i4"
+      ]
+    },
+    {
+      "confidence": "approximate",
+      "evidence": "unique debug source location and opcode",
+      "fromNodeIds": [
+        "fn0/bb2/i3"
+      ],
+      "relation": "renamed",
+      "toNodeIds": [
+        "fn0/bb1/i2"
+      ]
+    },
+    {
+      "confidence": "approximate",
+      "evidence": "unique debug source location and opcode",
+      "fromNodeIds": [
+        "fn0/bb2/i10"
+      ],
+      "relation": "renamed",
+      "toNodeIds": [
+        "fn0/bb1/i6"
+      ]
+    },
+    {
+      "confidence": "approximate",
+      "evidence": "unique debug source location and opcode",
+      "fromNodeIds": [
+        "fn0/bb2/i13"
+      ],
+      "relation": "renamed",
+      "toNodeIds": [
+        "fn0/bb1/i8"
+      ]
+    },
+    {
+      "confidence": "approximate",
+      "evidence": "unique debug source location after opcode rewrite",
+      "fromNodeIds": [
+        "fn0/bb2/i4"
+      ],
+      "relation": "simplifiedInto",
+      "toNodeIds": [
+        "fn0/bb1/i3"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb0/i0"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb0/i1"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb0/i2"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb0/i3"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb0/i4"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb0/i5"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb0/i6"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb0/i7"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb0/i8"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb0/i9"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb0/i10"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb0/i11"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb0/i12"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb0/i13"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb1"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb1/i0"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb1/i1"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb1/i2"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb1/i3"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb2/i0"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb2/i1"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb2/i2"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb2/i6"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb2/i7"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb2/i8"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb2/i9"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb2/i11"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb2/i12"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb2/i14"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb3"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb3/i0"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb3/i1"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb3/i2"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb3/i3"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb4"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb4/i0"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb4/i1"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb4/i2"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb5"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb5/i0"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb6/i0"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb6/i1"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb6/i3"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb7/i0"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb7/i1"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb7/i2"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb7/i4"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb7/i5"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb7/i7"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb8"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb8/i0"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb8/i1"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb8/i2"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb9/i0"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb10"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from target after conservative matching",
+      "fromNodeIds": [
+        "fn0/bb10/i0"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from source after conservative matching",
+      "fromNodeIds": [],
+      "relation": "added",
+      "toNodeIds": [
+        "fn0/bb0/i0"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from source after conservative matching",
+      "fromNodeIds": [],
+      "relation": "added",
+      "toNodeIds": [
+        "fn0/bb0/i1"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from source after conservative matching",
+      "fromNodeIds": [],
+      "relation": "added",
+      "toNodeIds": [
+        "fn0/bb1/i0"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from source after conservative matching",
+      "fromNodeIds": [],
+      "relation": "added",
+      "toNodeIds": [
+        "fn0/bb1/i1"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from source after conservative matching",
+      "fromNodeIds": [],
+      "relation": "added",
+      "toNodeIds": [
+        "fn0/bb1/i5"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from source after conservative matching",
+      "fromNodeIds": [],
+      "relation": "added",
+      "toNodeIds": [
+        "fn0/bb1/i7"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from source after conservative matching",
+      "fromNodeIds": [],
+      "relation": "added",
+      "toNodeIds": [
+        "fn0/bb1/i9"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from source after conservative matching",
+      "fromNodeIds": [],
+      "relation": "added",
+      "toNodeIds": [
+        "fn0/bb1/i10"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from source after conservative matching",
+      "fromNodeIds": [],
+      "relation": "added",
+      "toNodeIds": [
+        "fn0/bb1/i11"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from source after conservative matching",
+      "fromNodeIds": [],
+      "relation": "added",
+      "toNodeIds": [
+        "fn0/bb1/i12"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from source after conservative matching",
+      "fromNodeIds": [],
+      "relation": "added",
+      "toNodeIds": [
+        "fn0/bb1/i13"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from source after conservative matching",
+      "fromNodeIds": [],
+      "relation": "added",
+      "toNodeIds": [
+        "fn0/bb2/i0"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from source after conservative matching",
+      "fromNodeIds": [],
+      "relation": "added",
+      "toNodeIds": [
+        "fn0/bb2/i2"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from source after conservative matching",
+      "fromNodeIds": [],
+      "relation": "added",
+      "toNodeIds": [
+        "fn0/bb3/i0"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from source after conservative matching",
+      "fromNodeIds": [],
+      "relation": "added",
+      "toNodeIds": [
+        "fn0/bb3/i2"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from source after conservative matching",
+      "fromNodeIds": [],
+      "relation": "added",
+      "toNodeIds": [
+        "fn0/bb3/i4"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from source after conservative matching",
+      "fromNodeIds": [],
+      "relation": "added",
+      "toNodeIds": [
+        "fn0/bb5"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "node absent from source after conservative matching",
+      "fromNodeIds": [],
+      "relation": "added",
+      "toNodeIds": [
+        "fn0/bb5/i0"
+      ]
+    }
+  ],
+  "toOrdinal": 1
+}
