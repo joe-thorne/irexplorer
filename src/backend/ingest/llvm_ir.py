@@ -205,6 +205,8 @@ def _parse_ir_state(
                         ) from exc
                     edges.append(Edge(block.id, target_id, "controlFlow", label=edge_label))
 
+    edges.extend(_value_flow_edges(functions))
+
     graph = StateGraph(
         ordinal=ordinal,
         state_id=state_id,
@@ -217,6 +219,46 @@ def _parse_ir_state(
         remarks=remarks,
     )
     return graph
+
+
+def _value_flow_edges(functions: list[_FunctionBuild]) -> list[Edge]:
+    """Materialise the curated-scale SSA def-use relation at ingestion.
+
+    Arguments, constants, globals, and block labels remain instruction
+    attributes rather than graph nodes, so only operands defined by another
+    instruction produce a ``valueFlow`` edge.
+    """
+
+    edges: list[Edge] = []
+    for function in functions:
+        definitions: dict[str, str] = {}
+        block_labels = {block.label for block in function.blocks}
+        for block in function.blocks:
+            for instruction in block.instructions:
+                if instruction.result is None:
+                    continue
+                if instruction.result in definitions:
+                    raise IngestError(
+                        f"multiple definitions of {instruction.result} in function {function.name}"
+                    )
+                definitions[instruction.result] = instruction.id
+
+        for block in function.blocks:
+            for instruction in block.instructions:
+                for operand_index, operand in enumerate(instruction.operands):
+                    if operand.lstrip("%") in block_labels:
+                        continue
+                    definition_id = definitions.get(operand)
+                    if definition_id is not None:
+                        edges.append(
+                            Edge(
+                                definition_id,
+                                instruction.id,
+                                "valueFlow",
+                                label=f"operand({operand_index})",
+                            )
+                        )
+    return edges
 
 
 def _parse_single(lines: list[str], pattern: re.Pattern[str]) -> str | None:

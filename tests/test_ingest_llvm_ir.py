@@ -35,6 +35,14 @@ class LlvmIrIngestionTests(unittest.TestCase):
         source_edges = [edge for edge in graph.edges if edge.relation == "sourceMap"]
         self.assertGreater(len(source_edges), 0)
 
+        value_flow_edges = [edge for edge in graph.edges if edge.relation == "valueFlow"]
+        self.assertGreater(len(value_flow_edges), 0)
+        for edge in value_flow_edges:
+            self.assertEqual(graph.by_id[edge.from_id].kind, "Instruction")
+            self.assertEqual(graph.by_id[edge.to_id].kind, "Instruction")
+            self.assertIn(edge, graph.value_flow_successors[edge.from_id])
+            self.assertIn(edge, graph.value_flow_predecessors[edge.to_id])
+
     def test_all_curated_states_validate(self) -> None:
         for example in curated.list_examples():
             for ordinal, state in enumerate(curated.list_states()):

@@ -74,6 +74,12 @@ class StateGraph:
     cfg_predecessors: Mapping[str, tuple[Edge, ...]] = field(
         init=False, repr=False, compare=False
     )
+    value_flow_successors: Mapping[str, tuple[Edge, ...]] = field(
+        init=False, repr=False, compare=False
+    )
+    value_flow_predecessors: Mapping[str, tuple[Edge, ...]] = field(
+        init=False, repr=False, compare=False
+    )
 
     def __post_init__(self) -> None:
         by_id = {node.stable_id: node for node in self.nodes}
@@ -81,6 +87,8 @@ class StateGraph:
         contains_parent: dict[str, str] = {}
         cfg_successors: dict[str, list[Edge]] = {}
         cfg_predecessors: dict[str, list[Edge]] = {}
+        value_flow_successors: dict[str, list[Edge]] = {}
+        value_flow_predecessors: dict[str, list[Edge]] = {}
 
         for edge in self.edges:
             if edge.relation == "contains":
@@ -92,6 +100,9 @@ class StateGraph:
             elif edge.relation == "controlFlow":
                 cfg_successors.setdefault(edge.from_id, []).append(edge)
                 cfg_predecessors.setdefault(edge.to_id, []).append(edge)
+            elif edge.relation == "valueFlow":
+                value_flow_successors.setdefault(edge.from_id, []).append(edge)
+                value_flow_predecessors.setdefault(edge.to_id, []).append(edge)
 
         object.__setattr__(self, "by_id", MappingProxyType(by_id))
         object.__setattr__(
@@ -119,6 +130,26 @@ class StateGraph:
                 {node_id: tuple(edges) for node_id, edges in cfg_predecessors.items()}
             ),
         )
+        object.__setattr__(
+            self,
+            "value_flow_successors",
+            MappingProxyType(
+                {
+                    node_id: tuple(edges)
+                    for node_id, edges in value_flow_successors.items()
+                }
+            ),
+        )
+        object.__setattr__(
+            self,
+            "value_flow_predecessors",
+            MappingProxyType(
+                {
+                    node_id: tuple(edges)
+                    for node_id, edges in value_flow_predecessors.items()
+                }
+            ),
+        )
 
     def validate(self) -> None:
         validate_state_graph(self)
@@ -135,6 +166,7 @@ def validate_state_graph(graph: StateGraph) -> None:
     parent_by_id, children_by_id = _validate_containment_tree(graph.edges, by_id, root_id)
     function_by_block = _validate_containment_kinds(by_id, parent_by_id, children_by_id, root_id)
     _validate_control_flow(graph.edges, by_id, function_by_block)
+    _validate_value_flow(graph.edges, by_id, parent_by_id, function_by_block)
     _validate_blocks(graph.edges, by_id, children_by_id, function_by_block)
 
 
@@ -258,6 +290,39 @@ def _validate_control_flow(
             raise ModelValidationError(
                 f"controlFlow edge crosses functions: {edge.from_id}->{edge.to_id}"
             )
+
+
+def _validate_value_flow(
+    edges: Iterable[Edge],
+    by_id: Mapping[str, Node],
+    parent_by_id: Mapping[str, str],
+    function_by_block: Mapping[str, str],
+) -> None:
+    """Validate eager def-use edges without treating arguments as nodes."""
+
+    instruction_function: dict[str, str] = {}
+    for node in by_id.values():
+        if node.kind != "Instruction":
+            continue
+        block_id = parent_by_id[node.stable_id]
+        instruction_function[node.stable_id] = function_by_block[block_id]
+
+    seen: set[tuple[str, str, str | None]] = set()
+    for edge in edges:
+        if edge.relation != "valueFlow":
+            continue
+        if by_id[edge.from_id].kind != "Instruction" or by_id[edge.to_id].kind != "Instruction":
+            raise ModelValidationError("valueFlow edge must connect Instruction nodes")
+        if instruction_function[edge.from_id] != instruction_function[edge.to_id]:
+            raise ModelValidationError(
+                f"valueFlow edge crosses functions: {edge.from_id}->{edge.to_id}"
+            )
+        identity = (edge.from_id, edge.to_id, edge.label)
+        if identity in seen:
+            raise ModelValidationError(
+                f"duplicate valueFlow edge: {edge.from_id}->{edge.to_id} ({edge.label})"
+            )
+        seen.add(identity)
 
 
 def _validate_blocks(

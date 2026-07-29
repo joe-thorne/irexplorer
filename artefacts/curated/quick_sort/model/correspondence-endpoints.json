@@ -19,36 +19,58 @@
       ]
     },
     {
-      "confidence": "approximate",
-      "evidence": "unique debug source location and opcode",
+      "confidence": "exact",
+      "evidence": "unique basic-block label and CFG role",
       "fromNodeIds": [
-        "fn1/bb6/i3"
+        "fn0/bb0"
       ],
-      "relation": "renamed",
+      "relation": "same",
       "toNodeIds": [
-        "fn0/bb12/i2"
+        "fn0/bb0"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique basic-block label and CFG role",
+      "fromNodeIds": [
+        "fn0/bb2"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn0/bb13"
       ]
     },
     {
       "confidence": "approximate",
-      "evidence": "unique debug source location and opcode",
+      "evidence": "unique CFG role and layout position",
       "fromNodeIds": [
-        "fn1/bb6/i17"
+        "fn0/bb1"
       ],
-      "relation": "renamed",
+      "relation": "moved",
       "toNodeIds": [
-        "fn0/bb12/i6"
+        "fn0/bb1"
       ]
     },
     {
-      "confidence": "approximate",
-      "evidence": "unique debug source location and opcode",
+      "confidence": "exact",
+      "evidence": "unique structural, source, and value-flow signature",
       "fromNodeIds": [
-        "fn1/bb6/i23"
+        "fn0/bb0/i10"
       ],
-      "relation": "renamed",
+      "relation": "same",
       "toNodeIds": [
-        "fn0/bb12/i7"
+        "fn0/bb0/i1"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique structural, source, and value-flow signature",
+      "fromNodeIds": [
+        "fn0/bb2/i0"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn0/bb13/i0"
       ]
     },
     {
@@ -74,50 +96,8 @@
       ]
     },
     {
-      "confidence": "approximate",
-      "evidence": "unique debug source location and opcode",
-      "fromNodeIds": [
-        "fn0/bb2/i0"
-      ],
-      "relation": "renamed",
-      "toNodeIds": [
-        "fn0/bb13/i0"
-      ]
-    },
-    {
-      "confidence": "approximate",
-      "evidence": "unique debug source location and opcode",
-      "fromNodeIds": [
-        "fn1/bb1/i2"
-      ],
-      "relation": "renamed",
-      "toNodeIds": [
-        "fn0/bb11/i2"
-      ]
-    },
-    {
-      "confidence": "approximate",
-      "evidence": "unique debug source location after opcode rewrite",
-      "fromNodeIds": [
-        "fn1/bb0/i18"
-      ],
-      "relation": "simplifiedInto",
-      "toNodeIds": [
-        "fn0/bb2/i2"
-      ]
-    },
-    {
       "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
-      "fromNodeIds": [
-        "fn0/bb0"
-      ],
-      "relation": "removed",
-      "toNodeIds": []
-    },
-    {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn0/bb0/i0"
       ],
@@ -126,7 +106,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn0/bb0/i1"
       ],
@@ -135,7 +115,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn0/bb0/i2"
       ],
@@ -144,7 +124,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn0/bb0/i3"
       ],
@@ -152,8 +132,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn0/bb0/i4"
       ],
@@ -161,8 +141,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn0/bb0/i5"
       ],
@@ -170,8 +150,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn0/bb0/i6"
       ],
@@ -179,8 +159,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn0/bb0/i7"
       ],
@@ -188,8 +168,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn0/bb0/i8"
       ],
@@ -197,8 +177,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn0/bb0/i9"
       ],
@@ -206,26 +186,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
-      "fromNodeIds": [
-        "fn0/bb0/i10"
-      ],
-      "relation": "removed",
-      "toNodeIds": []
-    },
-    {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
-      "fromNodeIds": [
-        "fn0/bb1"
-      ],
-      "relation": "removed",
-      "toNodeIds": []
-    },
-    {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn0/bb1/i0"
       ],
@@ -233,8 +195,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn0/bb1/i1"
       ],
@@ -242,8 +204,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn0/bb1/i2"
       ],
@@ -252,7 +214,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn0/bb1/i3"
       ],
@@ -260,8 +222,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn0/bb1/i4"
       ],
@@ -269,8 +231,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn0/bb1/i5"
       ],
@@ -278,8 +240,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn0/bb1/i6"
       ],
@@ -287,8 +249,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn0/bb1/i7"
       ],
@@ -296,8 +258,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn0/bb1/i8"
       ],
@@ -305,8 +267,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn0/bb1/i10"
       ],
@@ -314,8 +276,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn0/bb1/i11"
       ],
@@ -323,8 +285,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn0/bb1/i13"
       ],
@@ -333,7 +295,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn0/bb1/i14"
       ],
@@ -341,8 +303,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn0/bb1/i15"
       ],
@@ -351,16 +313,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
-      "fromNodeIds": [
-        "fn0/bb2"
-      ],
-      "relation": "removed",
-      "toNodeIds": []
-    },
-    {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1"
       ],
@@ -369,7 +322,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb0"
       ],
@@ -378,7 +331,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb0/i0"
       ],
@@ -387,7 +340,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb0/i1"
       ],
@@ -396,7 +349,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb0/i2"
       ],
@@ -405,7 +358,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb0/i3"
       ],
@@ -414,7 +367,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb0/i4"
       ],
@@ -423,7 +376,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb0/i5"
       ],
@@ -432,7 +385,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb0/i6"
       ],
@@ -441,7 +394,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb0/i7"
       ],
@@ -449,8 +402,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb0/i8"
       ],
@@ -458,8 +411,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb0/i9"
       ],
@@ -467,8 +420,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb0/i10"
       ],
@@ -476,8 +429,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb0/i11"
       ],
@@ -485,8 +438,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb0/i12"
       ],
@@ -494,8 +447,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb0/i13"
       ],
@@ -503,8 +456,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb0/i14"
       ],
@@ -512,8 +465,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb0/i15"
       ],
@@ -521,8 +474,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb0/i16"
       ],
@@ -530,8 +483,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb0/i17"
       ],
@@ -539,8 +492,17 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "fromNodeIds": [
+        "fn1/bb0/i18"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb0/i19"
       ],
@@ -548,8 +510,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb0/i20"
       ],
@@ -557,8 +519,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb0/i21"
       ],
@@ -566,8 +528,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb0/i22"
       ],
@@ -575,8 +537,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb1"
       ],
@@ -584,8 +546,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb1/i0"
       ],
@@ -593,8 +555,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb1/i1"
       ],
@@ -602,8 +564,17 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "fromNodeIds": [
+        "fn1/bb1/i2"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb1/i3"
       ],
@@ -611,8 +582,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb2"
       ],
@@ -620,8 +591,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb2/i0"
       ],
@@ -629,8 +600,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb2/i1"
       ],
@@ -638,8 +609,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb2/i2"
       ],
@@ -647,8 +618,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb2/i3"
       ],
@@ -656,8 +627,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb2/i4"
       ],
@@ -665,8 +636,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb2/i5"
       ],
@@ -674,8 +645,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb2/i6"
       ],
@@ -683,8 +654,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb2/i7"
       ],
@@ -692,8 +663,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb3"
       ],
@@ -701,8 +672,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb3/i0"
       ],
@@ -710,8 +681,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb3/i1"
       ],
@@ -719,8 +690,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb3/i2"
       ],
@@ -728,8 +699,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb3/i3"
       ],
@@ -737,8 +708,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb3/i4"
       ],
@@ -746,8 +717,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb3/i5"
       ],
@@ -755,8 +726,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb3/i6"
       ],
@@ -764,8 +735,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb3/i7"
       ],
@@ -773,8 +744,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb3/i8"
       ],
@@ -782,8 +753,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb3/i9"
       ],
@@ -791,8 +762,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb3/i10"
       ],
@@ -800,8 +771,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb3/i11"
       ],
@@ -809,8 +780,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb3/i12"
       ],
@@ -818,8 +789,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb3/i13"
       ],
@@ -827,8 +798,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb3/i14"
       ],
@@ -836,8 +807,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb3/i15"
       ],
@@ -845,8 +816,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb3/i16"
       ],
@@ -854,8 +825,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb3/i17"
       ],
@@ -863,8 +834,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb3/i18"
       ],
@@ -872,8 +843,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb3/i19"
       ],
@@ -881,8 +852,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb3/i20"
       ],
@@ -890,8 +861,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb3/i21"
       ],
@@ -899,8 +870,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb3/i22"
       ],
@@ -908,8 +879,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb3/i23"
       ],
@@ -917,8 +888,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb3/i24"
       ],
@@ -926,8 +897,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb3/i25"
       ],
@@ -935,8 +906,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb4"
       ],
@@ -944,8 +915,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb4/i0"
       ],
@@ -953,8 +924,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb5"
       ],
@@ -962,8 +933,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb5/i0"
       ],
@@ -971,8 +942,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb5/i1"
       ],
@@ -980,8 +951,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb5/i2"
       ],
@@ -989,8 +960,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb5/i3"
       ],
@@ -999,7 +970,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb6"
       ],
@@ -1007,8 +978,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb6/i0"
       ],
@@ -1016,8 +987,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb6/i1"
       ],
@@ -1025,8 +996,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb6/i2"
       ],
@@ -1034,8 +1005,17 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "fromNodeIds": [
+        "fn1/bb6/i3"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb6/i4"
       ],
@@ -1043,8 +1023,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb6/i5"
       ],
@@ -1052,8 +1032,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb6/i6"
       ],
@@ -1061,8 +1041,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb6/i7"
       ],
@@ -1070,8 +1050,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb6/i8"
       ],
@@ -1079,8 +1059,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb6/i9"
       ],
@@ -1088,8 +1068,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb6/i10"
       ],
@@ -1097,8 +1077,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb6/i11"
       ],
@@ -1106,8 +1086,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb6/i12"
       ],
@@ -1115,8 +1095,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb6/i13"
       ],
@@ -1124,8 +1104,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb6/i14"
       ],
@@ -1133,8 +1113,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb6/i15"
       ],
@@ -1142,8 +1122,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb6/i16"
       ],
@@ -1151,8 +1131,17 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "fromNodeIds": [
+        "fn1/bb6/i17"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb6/i18"
       ],
@@ -1160,8 +1149,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb6/i19"
       ],
@@ -1169,8 +1158,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb6/i20"
       ],
@@ -1178,8 +1167,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb6/i21"
       ],
@@ -1187,8 +1176,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb6/i22"
       ],
@@ -1196,8 +1185,17 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "fromNodeIds": [
+        "fn1/bb6/i23"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb6/i24"
       ],
@@ -1205,8 +1203,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn1/bb6/i25"
       ],
@@ -1215,7 +1213,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from target after conservative matching",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb6/i26"
       ],
@@ -1223,17 +1221,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
-      "fromNodeIds": [],
-      "relation": "added",
-      "toNodeIds": [
-        "fn0/bb0"
-      ]
-    },
-    {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1242,25 +1231,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
-      "fromNodeIds": [],
-      "relation": "added",
-      "toNodeIds": [
-        "fn0/bb0/i1"
-      ]
-    },
-    {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
-      "fromNodeIds": [],
-      "relation": "added",
-      "toNodeIds": [
-        "fn0/bb1"
-      ]
-    },
-    {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1269,7 +1240,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1278,7 +1249,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1286,8 +1257,8 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1296,7 +1267,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1305,7 +1276,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1313,8 +1284,8 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1323,7 +1294,16 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
+      "fromNodeIds": [],
+      "relation": "added",
+      "toNodeIds": [
+        "fn0/bb2/i2"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1331,8 +1311,8 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1341,7 +1321,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1349,8 +1329,8 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1358,8 +1338,8 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1368,7 +1348,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1377,7 +1357,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1385,8 +1365,8 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1394,8 +1374,8 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1403,8 +1383,8 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1413,7 +1393,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1422,7 +1402,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1431,7 +1411,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1439,8 +1419,8 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1448,8 +1428,8 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1457,8 +1437,8 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1466,8 +1446,8 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1476,7 +1456,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1485,7 +1465,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1494,7 +1474,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1502,8 +1482,8 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1512,7 +1492,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1521,7 +1501,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1530,7 +1510,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1539,7 +1519,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1547,8 +1527,8 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1556,8 +1536,8 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1566,7 +1546,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1575,7 +1555,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1584,7 +1564,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1593,7 +1573,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1601,8 +1581,8 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1610,8 +1590,8 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1619,8 +1599,8 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1629,7 +1609,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1638,7 +1618,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1647,7 +1627,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1656,7 +1636,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1664,8 +1644,8 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1673,8 +1653,8 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1682,8 +1662,8 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1691,8 +1671,8 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1701,7 +1681,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1710,7 +1690,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1719,7 +1699,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1728,7 +1708,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1736,8 +1716,8 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1745,8 +1725,8 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1754,8 +1734,8 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1764,7 +1744,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1773,7 +1753,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1782,7 +1762,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1791,7 +1771,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1799,8 +1779,8 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1808,8 +1788,8 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1817,8 +1797,8 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1826,8 +1806,8 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1836,7 +1816,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1845,7 +1825,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1854,7 +1834,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1862,8 +1842,17 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "fromNodeIds": [],
+      "relation": "added",
+      "toNodeIds": [
+        "fn0/bb11/i2"
+      ]
+    },
+    {
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1872,7 +1861,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1881,7 +1870,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1889,8 +1878,8 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1899,7 +1888,16 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
+      "fromNodeIds": [],
+      "relation": "added",
+      "toNodeIds": [
+        "fn0/bb12/i2"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1908,7 +1906,7 @@
     },
     {
       "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1916,8 +1914,8 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1925,8 +1923,26 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "fromNodeIds": [],
+      "relation": "added",
+      "toNodeIds": [
+        "fn0/bb12/i6"
+      ]
+    },
+    {
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "fromNodeIds": [],
+      "relation": "added",
+      "toNodeIds": [
+        "fn0/bb12/i7"
+      ]
+    },
+    {
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -1934,21 +1950,12 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
         "fn0/bb12/i11"
-      ]
-    },
-    {
-      "confidence": "exact",
-      "evidence": "node absent from source after conservative matching",
-      "fromNodeIds": [],
-      "relation": "added",
-      "toNodeIds": [
-        "fn0/bb13"
       ]
     }
   ],

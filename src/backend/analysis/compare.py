@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
 import re
-from typing import Iterable
+from typing import Callable, Iterable
 
 from src.backend.model.correspondence import Correspondence, Link
 from src.backend.model.graph import Node, StateGraph
@@ -64,12 +64,15 @@ def compare_states(
     *,
     step: PassStep | None = None,
 ) -> ComparisonResult:
-    """Return a deterministic, coverage-complete overlay for adjacent states.
+    """Return a deterministic, coverage-complete hybrid overlay.
 
-    This MVP matcher uses only evidence that remains auditable after an LLVM
-    rewrite: unique function/block names and debug source locations. It is
-    intentionally conservative; unmatched nodes become explicit additions or
-    removals rather than speculative cross-state identity claims.
+    The matcher combines containment/CFG structure, eager SSA def-use edges,
+    debug source locations, and a deliberately weak positional tiebreak.
+    Exact instruction links require the structural and value-flow signature to
+    agree. Source-only and positional links are approximate. A candidate set
+    which was inspected but could not be resolved remains an explicit
+    confidence-``none`` addition or removal; ``none`` never means that work is
+    pending.
     """
 
     if to_state.ordinal != from_state.ordinal + 1:
@@ -84,7 +87,7 @@ def compare_states(
     unmatched_to = _comparable_nodes(to_state)
     links: list[Link] = []
 
-    _match_unique(
+    function_pairs = _match_unique(
         unmatched_from,
         unmatched_to,
         links,
@@ -92,36 +95,31 @@ def compare_states(
         key=lambda node: node.display_name,
         evidence="unique function name",
     )
-    _match_unique(
+    block_pairs = _match_blocks(
         unmatched_from,
         unmatched_to,
         links,
-        kind="BasicBlock",
-        key=lambda node: node.display_name,
-        evidence="unique basic-block label",
+        from_state,
+        to_state,
+        function_pairs,
     )
-    _match_instructions_by_source(unmatched_from, unmatched_to, links)
-
-    for node in unmatched_from.values():
-        links.append(
-            Link(
-                from_node_ids=(node.stable_id,),
-                to_node_ids=(),
-                relation="removed",
-                confidence="exact",
-                evidence="node absent from target after conservative matching",
-            )
-        )
-    for node in unmatched_to.values():
-        links.append(
-            Link(
-                from_node_ids=(),
-                to_node_ids=(node.stable_id,),
-                relation="added",
-                confidence="exact",
-                evidence="node absent from source after conservative matching",
-            )
-        )
+    _match_instructions(
+        unmatched_from,
+        unmatched_to,
+        links,
+        from_state,
+        to_state,
+        function_pairs,
+        block_pairs,
+    )
+    _append_unmatched_links(
+        unmatched_from,
+        unmatched_to,
+        links,
+        from_state,
+        to_state,
+        function_pairs,
+    )
 
     correspondence = Correspondence(
         from_ordinal=from_state.ordinal,
@@ -148,17 +146,18 @@ def _match_unique(
     links: list[Link],
     *,
     kind: str,
-    key: object,
+    key: Callable[[Node], object],
     evidence: str,
     relation: str = "same",
     confidence: str = "exact",
-) -> None:
+) -> dict[str, str]:
     grouped_from = _group_unique(
         (node for node in unmatched_from.values() if node.kind == kind), key
     )
     grouped_to = _group_unique(
         (node for node in unmatched_to.values() if node.kind == kind), key
     )
+    pairs: dict[str, str] = {}
     for match_key in sorted(grouped_from.keys() & grouped_to.keys(), key=str):
         from_node = grouped_from[match_key]
         to_node = grouped_to[match_key]
@@ -173,40 +172,191 @@ def _match_unique(
         )
         del unmatched_from[from_node.stable_id]
         del unmatched_to[to_node.stable_id]
+        pairs[from_node.stable_id] = to_node.stable_id
+    return pairs
 
 
-def _match_instructions_by_source(
+def _match_blocks(
     unmatched_from: dict[str, Node],
     unmatched_to: dict[str, Node],
     links: list[Link],
+    from_state: StateGraph,
+    to_state: StateGraph,
+    function_pairs: dict[str, str],
+) -> dict[str, str]:
+    """Match blocks by CFG role, retaining position only as a tiebreak."""
+
+    pairs: dict[str, str] = {}
+    for from_function, to_function in function_pairs.items():
+        pairs.update(
+            _match_unique_in_context(
+                unmatched_from,
+                unmatched_to,
+                links,
+                kind="BasicBlock",
+                from_parent=from_function,
+                to_parent=to_function,
+                from_state=from_state,
+                to_state=to_state,
+                key=lambda state, node: (node.display_name, _block_shape(state, node)),
+                evidence="unique basic-block label and CFG role",
+                confidence="exact",
+            )
+        )
+    for from_function, to_function in function_pairs.items():
+        pairs.update(
+            _match_unique_in_context(
+                unmatched_from,
+                unmatched_to,
+                links,
+                kind="BasicBlock",
+                from_parent=from_function,
+                to_parent=to_function,
+                from_state=from_state,
+                to_state=to_state,
+                key=lambda state, node: node.display_name,
+                evidence="unique basic-block label after CFG change",
+                relation="changed",
+                confidence="approximate",
+            )
+        )
+    for from_function, to_function in function_pairs.items():
+        pairs.update(
+            _match_unique_in_context(
+                unmatched_from,
+                unmatched_to,
+                links,
+                kind="BasicBlock",
+                from_parent=from_function,
+                to_parent=to_function,
+                from_state=from_state,
+                to_state=to_state,
+                key=lambda state, node: (_block_shape(state, node), _contains_position(state, node)),
+                evidence="unique CFG role and layout position",
+                relation="moved",
+                confidence="approximate",
+            )
+        )
+    return pairs
+
+
+def _match_instructions(
+    unmatched_from: dict[str, Node],
+    unmatched_to: dict[str, Node],
+    links: list[Link],
+    from_state: StateGraph,
+    to_state: StateGraph,
+    function_pairs: dict[str, str],
+    block_pairs: dict[str, str],
 ) -> None:
-    source_key = lambda node: node.attributes.get("source")
-    opcode_key = lambda node: (source_key(node), node.attributes.get("opcode"))
+    for from_block, to_block in block_pairs.items():
+        _match_unique_in_context(
+            unmatched_from,
+            unmatched_to,
+            links,
+            kind="Instruction",
+            from_parent=from_block,
+            to_parent=to_block,
+            from_state=from_state,
+            to_state=to_state,
+            key=_instruction_exact_signature,
+            evidence="unique structural, source, and value-flow signature",
+            confidence="exact",
+        )
 
-    _match_unique(
-        unmatched_from,
-        unmatched_to,
-        links,
-        kind="Instruction",
-        key=opcode_key,
-        evidence="unique debug source location and opcode",
-        relation="renamed",
-        confidence="approximate",
-    )
+    for from_function, to_function in function_pairs.items():
+        _match_unique_in_context(
+            unmatched_from,
+            unmatched_to,
+            links,
+            kind="Instruction",
+            from_parent=from_function,
+            to_parent=to_function,
+            from_state=from_state,
+            to_state=to_state,
+            key=lambda state, node: _source_opcode_key(node),
+            evidence="unique debug source location and opcode",
+            relation="renamed",
+            confidence="approximate",
+            ignore_none=True,
+            parent_kind="Function",
+        )
+        _match_source_rewrites_in_context(
+            unmatched_from,
+            unmatched_to,
+            links,
+            from_state,
+            to_state,
+            from_function,
+            to_function,
+        )
 
-    # LLVM may rewrite an instruction's opcode while retaining its source
-    # location (e.g., `sub` to `add`). Only unique one-to-one locations are
-    # linked; every ambiguous location remains explicit add/remove evidence.
+    for from_block, to_block in block_pairs.items():
+        _match_unique_in_context(
+            unmatched_from,
+            unmatched_to,
+            links,
+            kind="Instruction",
+            from_parent=from_block,
+            to_parent=to_block,
+            from_state=from_state,
+            to_state=to_state,
+            key=lambda state, node: (node.attributes.get("opcode"), _contains_position(state, node)),
+            evidence="unique opcode and layout position in matched basic block",
+            relation="moved",
+            confidence="approximate",
+        )
+
+
+def _match_unique_in_context(
+    unmatched_from: dict[str, Node],
+    unmatched_to: dict[str, Node],
+    links: list[Link],
+    *,
+    kind: str,
+    from_parent: str,
+    to_parent: str,
+    from_state: StateGraph,
+    to_state: StateGraph,
+    key: Callable[[StateGraph, Node], object],
+    evidence: str,
+    relation: str = "same",
+    confidence: str = "exact",
+    ignore_none: bool = False,
+    parent_kind: str = "BasicBlock",
+) -> dict[str, str]:
+    """Match unique node keys inside already matched containment contexts."""
+
+    if parent_kind == "Function":
+        from_nodes = (
+            node
+            for node in unmatched_from.values()
+            if node.kind == kind and _function_for_node(from_state, node) == from_parent
+        )
+        to_nodes = (
+            node
+            for node in unmatched_to.values()
+            if node.kind == kind and _function_for_node(to_state, node) == to_parent
+        )
+    else:
+        from_nodes = (
+            node
+            for node in unmatched_from.values()
+            if node.kind == kind and from_state.contains_parent.get(node.stable_id) == from_parent
+        )
+        to_nodes = (
+            node
+            for node in unmatched_to.values()
+            if node.kind == kind and to_state.contains_parent.get(node.stable_id) == to_parent
+        )
     grouped_from = _group_unique(
-        (node for node in unmatched_from.values() if node.kind == "Instruction"),
-        source_key,
-        ignore_none=True,
+        from_nodes, lambda node: key(from_state, node), ignore_none=ignore_none
     )
     grouped_to = _group_unique(
-        (node for node in unmatched_to.values() if node.kind == "Instruction"),
-        source_key,
-        ignore_none=True,
+        to_nodes, lambda node: key(to_state, node), ignore_none=ignore_none
     )
+
+    pairs: dict[str, str] = {}
     for match_key in sorted(grouped_from.keys() & grouped_to.keys(), key=str):
         from_node = grouped_from[match_key]
         to_node = grouped_to[match_key]
@@ -214,13 +364,202 @@ def _match_instructions_by_source(
             Link(
                 from_node_ids=(from_node.stable_id,),
                 to_node_ids=(to_node.stable_id,),
-                relation="simplifiedInto",
-                confidence="approximate",
-                evidence="unique debug source location after opcode rewrite",
+                relation=relation,  # type: ignore[arg-type]
+                confidence=confidence,  # type: ignore[arg-type]
+                evidence=evidence,
             )
         )
         del unmatched_from[from_node.stable_id]
         del unmatched_to[to_node.stable_id]
+        pairs[from_node.stable_id] = to_node.stable_id
+    return pairs
+
+
+def _match_source_rewrites_in_context(
+    unmatched_from: dict[str, Node],
+    unmatched_to: dict[str, Node],
+    links: list[Link],
+    from_state: StateGraph,
+    to_state: StateGraph,
+    from_function: str,
+    to_function: str,
+) -> None:
+    source_key = lambda state, node: node.attributes.get("source")
+    grouped_from = _group_unique(
+        (
+            node
+            for node in unmatched_from.values()
+            if node.kind == "Instruction" and _function_for_node(from_state, node) == from_function
+        ),
+        lambda node: source_key(from_state, node),
+        ignore_none=True,
+    )
+    grouped_to = _group_unique(
+        (
+            node
+            for node in unmatched_to.values()
+            if node.kind == "Instruction" and _function_for_node(to_state, node) == to_function
+        ),
+        lambda node: source_key(to_state, node),
+        ignore_none=True,
+    )
+    for match_key in sorted(grouped_from.keys() & grouped_to.keys(), key=str):
+        from_node = grouped_from[match_key]
+        to_node = grouped_to[match_key]
+        relation = (
+            "promoted"
+            if from_node.attributes.get("opcode") == "load"
+            and to_node.attributes.get("opcode") != "load"
+            else "simplifiedInto"
+        )
+        links.append(
+            Link(
+                from_node_ids=(from_node.stable_id,),
+                to_node_ids=(to_node.stable_id,),
+                relation=relation,
+                confidence="approximate",
+                evidence="unique debug source location after instruction rewrite",
+            )
+        )
+        del unmatched_from[from_node.stable_id]
+        del unmatched_to[to_node.stable_id]
+
+
+def _append_unmatched_links(
+    unmatched_from: dict[str, Node],
+    unmatched_to: dict[str, Node],
+    links: list[Link],
+    from_state: StateGraph,
+    to_state: StateGraph,
+    function_pairs: dict[str, str],
+) -> None:
+    """Account for every unresolved node without inventing a counterpart."""
+
+    inverse_function_pairs = {to_id: from_id for from_id, to_id in function_pairs.items()}
+    for node in tuple(unmatched_from.values()):
+        confidence = "none" if _has_plausible_target(
+            node, unmatched_to.values(), from_state, to_state, function_pairs
+        ) else "exact"
+        evidence = (
+            "candidate counterparts were inspected but no unique hybrid match exists"
+            if confidence == "none"
+            else "no target node shares the structural matcher signature"
+        )
+        links.append(
+            Link(
+                from_node_ids=(node.stable_id,),
+                to_node_ids=(),
+                relation="removed",
+                confidence=confidence,
+                evidence=evidence,
+            )
+        )
+    for node in tuple(unmatched_to.values()):
+        confidence = "none" if _has_plausible_target(
+            node,
+            unmatched_from.values(),
+            to_state,
+            from_state,
+            inverse_function_pairs,
+        ) else "exact"
+        evidence = (
+            "candidate counterparts were inspected but no unique hybrid match exists"
+            if confidence == "none"
+            else "no source node shares the structural matcher signature"
+        )
+        links.append(
+            Link(
+                from_node_ids=(),
+                to_node_ids=(node.stable_id,),
+                relation="added",
+                confidence=confidence,
+                evidence=evidence,
+            )
+        )
+
+
+def _has_plausible_target(
+    node: Node,
+    candidates: Iterable[Node],
+    state: StateGraph,
+    candidate_state: StateGraph,
+    function_pairs: dict[str, str],
+) -> bool:
+    if node.kind == "Function":
+        return any(candidate.display_name == node.display_name for candidate in candidates)
+    expected_function = function_pairs.get(_function_for_node(state, node))
+    for candidate in candidates:
+        if candidate.kind != node.kind:
+            continue
+        if expected_function is not None and _function_for_node(candidate_state, candidate) != expected_function:
+            continue
+        if node.kind == "Instruction" and candidate.attributes.get("opcode") == node.attributes.get("opcode"):
+            return True
+        if node.kind == "BasicBlock" and _block_shape(candidate_state, candidate) == _block_shape(state, node):
+            return True
+    return False
+
+
+def _function_for_node(state: StateGraph, node: Node) -> str:
+    if node.kind == "Function":
+        return node.stable_id
+    current = node.stable_id
+    while state.by_id[current].kind != "Function":
+        current = state.contains_parent[current]
+    return current
+
+
+def _contains_position(state: StateGraph, node: Node) -> int:
+    parent_id = state.contains_parent[node.stable_id]
+    return state.contains_children[parent_id].index(node.stable_id)
+
+
+def _block_shape(state: StateGraph, node: Node) -> tuple[object, ...]:
+    successors = tuple(edge.label for edge in state.cfg_successors.get(node.stable_id, ()))
+    instructions = state.contains_children.get(node.stable_id, ())
+    terminator = state.by_id[instructions[-1]].attributes.get("opcode") if instructions else None
+    return (
+        _contains_position(state, node) == 0,
+        len(state.cfg_predecessors.get(node.stable_id, ())),
+        successors,
+        terminator,
+    )
+
+
+def _instruction_exact_signature(state: StateGraph, node: Node) -> tuple[object, ...]:
+    predecessors = tuple(
+        sorted(
+            str(state.by_id[edge.from_id].attributes.get("opcode"))
+            for edge in state.value_flow_predecessors.get(node.stable_id, ())
+        )
+    )
+    successors = tuple(
+        sorted(
+            str(state.by_id[edge.to_id].attributes.get("opcode"))
+            for edge in state.value_flow_successors.get(node.stable_id, ())
+        )
+    )
+    return (
+        node.attributes.get("opcode"),
+        node.attributes.get("source"),
+        _normalised_instruction_text(node),
+        predecessors,
+        successors,
+    )
+
+
+def _normalised_instruction_text(node: Node) -> str:
+    text = str(node.attributes.get("text", ""))
+    text = _DEBUG_REF_RE.sub("", text)
+    text = re.sub(r"^%[-A-Za-z0-9_.$]+\s*=\s*", "", text)
+    return _VALUE_NAME_RE.sub("%value", " ".join(text.split()))
+
+
+def _source_opcode_key(node: Node) -> tuple[object, object] | None:
+    source = node.attributes.get("source")
+    if source is None:
+        return None
+    return (source, node.attributes.get("opcode"))
 
 
 def _group_unique(
@@ -265,6 +604,7 @@ def summarise_correspondence(
                 index
                 for index, link in enumerate(correspondence.links)
                 if link.relation == relation
+                and link.confidence == "exact"
                 and _link_kind(link, from_state, to_state) == kind
             )
             if indices:
@@ -281,8 +621,20 @@ def summarise_correspondence(
     if rewritten:
         items.append(
             SummaryItem(
-                f"{len(rewritten)} {_plural('instruction', len(rewritten))} were rewritten with source-location evidence.",
+                f"{len(rewritten)} {_plural('instruction', len(rewritten))} were linked as rewrites or moves.",
                 rewritten,
+            )
+        )
+    unresolved = tuple(
+        index
+        for index, link in enumerate(correspondence.links)
+        if link.confidence == "none"
+    )
+    if unresolved:
+        items.append(
+            SummaryItem(
+                f"{len(unresolved)} {_plural('node', len(unresolved))} could not be classified with the available matching evidence.",
+                unresolved,
             )
         )
     if not items:

@@ -15,6 +15,66 @@ from src.backend.model import (
 
 
 class EndpointComparisonTests(unittest.TestCase):
+    def test_hybrid_matcher_validates_all_curated_pass_pairs(self) -> None:
+        for example in ("score", "binary_search", "quick_sort"):
+            with self.subTest(example=example):
+                timeline = load_curated_timeline(example, resolution="full")
+                for ordinal in range(len(timeline.steps)):
+                    result = compare_timeline_step(timeline, ordinal)
+                    result.correspondence.validate(
+                        timeline.state(ordinal), timeline.state(ordinal + 1)
+                    )
+
+    def test_hybrid_matcher_uses_eager_value_flow_across_early_passes(self) -> None:
+        timeline = load_curated_timeline("score", resolution="full")
+        for ordinal in range(3):
+            with self.subTest(pass_name=timeline.steps[ordinal].origin.pass_name):
+                result = compare_timeline_step(timeline, ordinal)
+                result.correspondence.validate(
+                    timeline.state(ordinal), timeline.state(ordinal + 1)
+                )
+                matched_instructions = [
+                    link
+                    for link in result.correspondence.links
+                    if link.from_node_ids
+                    and link.to_node_ids
+                    and timeline.state(ordinal).by_id[link.from_node_ids[0]].kind
+                    == "Instruction"
+                ]
+                self.assertTrue(matched_instructions)
+
+        mem2reg = compare_timeline_step(timeline, 0).correspondence
+        exact_blocks = [
+            link
+            for link in mem2reg.links
+            if link.relation == "same"
+            and link.confidence == "exact"
+            and timeline.state(0).by_id[link.from_node_ids[0]].kind == "BasicBlock"
+        ]
+        self.assertEqual(len(exact_blocks), 4)
+
+        instcombine = compare_timeline_step(timeline, 1).correspondence
+        self.assertTrue(
+            any(
+                link.relation == "simplifiedInto"
+                and link.confidence == "approximate"
+                for link in instcombine.links
+            )
+        )
+
+    def test_unresolved_candidates_are_explicit_none_links(self) -> None:
+        timeline = load_curated_timeline("binary_search", resolution="full")
+        correspondence = compare_timeline_step(timeline, 2).correspondence
+        unresolved = [link for link in correspondence.links if link.confidence == "none"]
+
+        self.assertTrue(unresolved)
+        self.assertTrue(
+            all(link.relation in {"added", "removed"} for link in unresolved)
+        )
+        self.assertTrue(
+            all("inspected" in (link.evidence or "") for link in unresolved)
+        )
+
     def test_score_anchor_comparison_is_coverage_complete_and_honest(self) -> None:
         timeline = load_curated_timeline("score")
         result = compare_timeline_step(timeline)

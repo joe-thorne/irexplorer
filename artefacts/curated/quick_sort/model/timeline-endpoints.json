@@ -1733,6 +1733,944 @@
           "order": null,
           "relation": "sourceMap",
           "toId": "source:/workspace/examples/curated/quick_sort.c:21:5"
+        },
+        {
+          "fromId": "fn0/bb0/i0",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb0/i4"
+        },
+        {
+          "fromId": "fn0/bb0/i1",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb0/i5"
+        },
+        {
+          "fromId": "fn0/bb0/i2",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb0/i6"
+        },
+        {
+          "fromId": "fn0/bb0/i1",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb0/i7"
+        },
+        {
+          "fromId": "fn0/bb0/i2",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb0/i8"
+        },
+        {
+          "fromId": "fn0/bb0/i7",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb0/i9"
+        },
+        {
+          "fromId": "fn0/bb0/i8",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb0/i9"
+        },
+        {
+          "fromId": "fn0/bb0/i9",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb0/i10"
+        },
+        {
+          "fromId": "fn0/bb0/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb1/i0"
+        },
+        {
+          "fromId": "fn0/bb0/i1",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb1/i1"
+        },
+        {
+          "fromId": "fn0/bb0/i2",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb1/i2"
+        },
+        {
+          "fromId": "fn0/bb1/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb1/i3"
+        },
+        {
+          "fromId": "fn0/bb1/i1",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb1/i3"
+        },
+        {
+          "fromId": "fn0/bb1/i2",
+          "label": "operand(2)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb1/i3"
+        },
+        {
+          "fromId": "fn0/bb1/i3",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb1/i4"
+        },
+        {
+          "fromId": "fn0/bb0/i3",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb1/i4"
+        },
+        {
+          "fromId": "fn0/bb0/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb1/i5"
+        },
+        {
+          "fromId": "fn0/bb0/i1",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb1/i6"
+        },
+        {
+          "fromId": "fn0/bb0/i3",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb1/i7"
+        },
+        {
+          "fromId": "fn0/bb1/i7",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb1/i8"
+        },
+        {
+          "fromId": "fn0/bb1/i5",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb1/i9"
+        },
+        {
+          "fromId": "fn0/bb1/i6",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb1/i9"
+        },
+        {
+          "fromId": "fn0/bb1/i8",
+          "label": "operand(2)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb1/i9"
+        },
+        {
+          "fromId": "fn0/bb0/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb1/i10"
+        },
+        {
+          "fromId": "fn0/bb0/i3",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb1/i11"
+        },
+        {
+          "fromId": "fn0/bb1/i11",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb1/i12"
+        },
+        {
+          "fromId": "fn0/bb0/i2",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb1/i13"
+        },
+        {
+          "fromId": "fn0/bb1/i10",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb1/i14"
+        },
+        {
+          "fromId": "fn0/bb1/i12",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb1/i14"
+        },
+        {
+          "fromId": "fn0/bb1/i13",
+          "label": "operand(2)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb1/i14"
+        },
+        {
+          "fromId": "fn1/bb0/i0",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb0/i8"
+        },
+        {
+          "fromId": "fn1/bb0/i1",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb0/i9"
+        },
+        {
+          "fromId": "fn1/bb0/i2",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb0/i10"
+        },
+        {
+          "fromId": "fn1/bb0/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb0/i11"
+        },
+        {
+          "fromId": "fn1/bb0/i2",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb0/i12"
+        },
+        {
+          "fromId": "fn1/bb0/i12",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb0/i13"
+        },
+        {
+          "fromId": "fn1/bb0/i11",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb0/i14"
+        },
+        {
+          "fromId": "fn1/bb0/i13",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb0/i14"
+        },
+        {
+          "fromId": "fn1/bb0/i14",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb0/i15"
+        },
+        {
+          "fromId": "fn1/bb0/i15",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb0/i16"
+        },
+        {
+          "fromId": "fn1/bb0/i3",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb0/i16"
+        },
+        {
+          "fromId": "fn1/bb0/i1",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb0/i17"
+        },
+        {
+          "fromId": "fn1/bb0/i17",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb0/i18"
+        },
+        {
+          "fromId": "fn1/bb0/i18",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb0/i19"
+        },
+        {
+          "fromId": "fn1/bb0/i4",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb0/i19"
+        },
+        {
+          "fromId": "fn1/bb0/i1",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb0/i20"
+        },
+        {
+          "fromId": "fn1/bb0/i20",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb0/i21"
+        },
+        {
+          "fromId": "fn1/bb0/i5",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb0/i21"
+        },
+        {
+          "fromId": "fn1/bb0/i5",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb1/i0"
+        },
+        {
+          "fromId": "fn1/bb0/i2",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb1/i1"
+        },
+        {
+          "fromId": "fn1/bb1/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb1/i2"
+        },
+        {
+          "fromId": "fn1/bb1/i1",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb1/i2"
+        },
+        {
+          "fromId": "fn1/bb1/i2",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb1/i3"
+        },
+        {
+          "fromId": "fn1/bb0/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb2/i0"
+        },
+        {
+          "fromId": "fn1/bb0/i5",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb2/i1"
+        },
+        {
+          "fromId": "fn1/bb2/i1",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb2/i2"
+        },
+        {
+          "fromId": "fn1/bb2/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb2/i3"
+        },
+        {
+          "fromId": "fn1/bb2/i2",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb2/i3"
+        },
+        {
+          "fromId": "fn1/bb2/i3",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb2/i4"
+        },
+        {
+          "fromId": "fn1/bb0/i3",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb2/i5"
+        },
+        {
+          "fromId": "fn1/bb2/i4",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb2/i6"
+        },
+        {
+          "fromId": "fn1/bb2/i5",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb2/i6"
+        },
+        {
+          "fromId": "fn1/bb2/i6",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb2/i7"
+        },
+        {
+          "fromId": "fn1/bb0/i4",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb3/i0"
+        },
+        {
+          "fromId": "fn1/bb3/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb3/i1"
+        },
+        {
+          "fromId": "fn1/bb3/i1",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb3/i2"
+        },
+        {
+          "fromId": "fn1/bb0/i4",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb3/i2"
+        },
+        {
+          "fromId": "fn1/bb0/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb3/i3"
+        },
+        {
+          "fromId": "fn1/bb0/i4",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb3/i4"
+        },
+        {
+          "fromId": "fn1/bb3/i4",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb3/i5"
+        },
+        {
+          "fromId": "fn1/bb3/i3",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb3/i6"
+        },
+        {
+          "fromId": "fn1/bb3/i5",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb3/i6"
+        },
+        {
+          "fromId": "fn1/bb3/i6",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb3/i7"
+        },
+        {
+          "fromId": "fn1/bb3/i7",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb3/i8"
+        },
+        {
+          "fromId": "fn1/bb0/i6",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb3/i8"
+        },
+        {
+          "fromId": "fn1/bb0/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb3/i9"
+        },
+        {
+          "fromId": "fn1/bb0/i5",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb3/i10"
+        },
+        {
+          "fromId": "fn1/bb3/i10",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb3/i11"
+        },
+        {
+          "fromId": "fn1/bb3/i9",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb3/i12"
+        },
+        {
+          "fromId": "fn1/bb3/i11",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb3/i12"
+        },
+        {
+          "fromId": "fn1/bb3/i12",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb3/i13"
+        },
+        {
+          "fromId": "fn1/bb0/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb3/i14"
+        },
+        {
+          "fromId": "fn1/bb0/i4",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb3/i15"
+        },
+        {
+          "fromId": "fn1/bb3/i15",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb3/i16"
+        },
+        {
+          "fromId": "fn1/bb3/i14",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb3/i17"
+        },
+        {
+          "fromId": "fn1/bb3/i16",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb3/i17"
+        },
+        {
+          "fromId": "fn1/bb3/i13",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb3/i18"
+        },
+        {
+          "fromId": "fn1/bb3/i17",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb3/i18"
+        },
+        {
+          "fromId": "fn1/bb0/i6",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb3/i19"
+        },
+        {
+          "fromId": "fn1/bb0/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb3/i20"
+        },
+        {
+          "fromId": "fn1/bb0/i5",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb3/i21"
+        },
+        {
+          "fromId": "fn1/bb3/i21",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb3/i22"
+        },
+        {
+          "fromId": "fn1/bb3/i20",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb3/i23"
+        },
+        {
+          "fromId": "fn1/bb3/i22",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb3/i23"
+        },
+        {
+          "fromId": "fn1/bb3/i19",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb3/i24"
+        },
+        {
+          "fromId": "fn1/bb3/i23",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb3/i24"
+        },
+        {
+          "fromId": "fn1/bb0/i5",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb5/i0"
+        },
+        {
+          "fromId": "fn1/bb5/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb5/i1"
+        },
+        {
+          "fromId": "fn1/bb5/i1",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb5/i2"
+        },
+        {
+          "fromId": "fn1/bb0/i5",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb5/i2"
+        },
+        {
+          "fromId": "fn1/bb0/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i0"
+        },
+        {
+          "fromId": "fn1/bb0/i4",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i1"
+        },
+        {
+          "fromId": "fn1/bb6/i1",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i2"
+        },
+        {
+          "fromId": "fn1/bb6/i2",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i3"
+        },
+        {
+          "fromId": "fn1/bb6/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i4"
+        },
+        {
+          "fromId": "fn1/bb6/i3",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i4"
+        },
+        {
+          "fromId": "fn1/bb6/i4",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i5"
+        },
+        {
+          "fromId": "fn1/bb6/i5",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i6"
+        },
+        {
+          "fromId": "fn1/bb0/i7",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i6"
+        },
+        {
+          "fromId": "fn1/bb0/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i7"
+        },
+        {
+          "fromId": "fn1/bb0/i2",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i8"
+        },
+        {
+          "fromId": "fn1/bb6/i8",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i9"
+        },
+        {
+          "fromId": "fn1/bb6/i7",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i10"
+        },
+        {
+          "fromId": "fn1/bb6/i9",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i10"
+        },
+        {
+          "fromId": "fn1/bb6/i10",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i11"
+        },
+        {
+          "fromId": "fn1/bb0/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i12"
+        },
+        {
+          "fromId": "fn1/bb0/i4",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i13"
+        },
+        {
+          "fromId": "fn1/bb6/i13",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i14"
+        },
+        {
+          "fromId": "fn1/bb6/i14",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i15"
+        },
+        {
+          "fromId": "fn1/bb6/i12",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i16"
+        },
+        {
+          "fromId": "fn1/bb6/i15",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i16"
+        },
+        {
+          "fromId": "fn1/bb6/i11",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i17"
+        },
+        {
+          "fromId": "fn1/bb6/i16",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i17"
+        },
+        {
+          "fromId": "fn1/bb0/i7",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i18"
+        },
+        {
+          "fromId": "fn1/bb0/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i19"
+        },
+        {
+          "fromId": "fn1/bb0/i2",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i20"
+        },
+        {
+          "fromId": "fn1/bb6/i20",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i21"
+        },
+        {
+          "fromId": "fn1/bb6/i19",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i22"
+        },
+        {
+          "fromId": "fn1/bb6/i21",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i22"
+        },
+        {
+          "fromId": "fn1/bb6/i18",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i23"
+        },
+        {
+          "fromId": "fn1/bb6/i22",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i23"
+        },
+        {
+          "fromId": "fn1/bb0/i4",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i24"
+        },
+        {
+          "fromId": "fn1/bb6/i24",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i25"
+        },
+        {
+          "fromId": "fn1/bb6/i25",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn1/bb6/i26"
         }
       ],
       "formatVersion": 1,
@@ -7450,6 +8388,636 @@
           "order": null,
           "relation": "sourceMap",
           "toId": "source:/workspace/examples/curated/quick_sort.c:31:1"
+        },
+        {
+          "fromId": "fn0/bb0/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb0/i1"
+        },
+        {
+          "fromId": "fn0/bb1/i0",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb1/i1"
+        },
+        {
+          "fromId": "fn0/bb1/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb1/i2"
+        },
+        {
+          "fromId": "fn0/bb12/i9",
+          "label": "operand(2)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb2/i0"
+        },
+        {
+          "fromId": "fn0/bb1/i1",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb2/i1"
+        },
+        {
+          "fromId": "fn0/bb2/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb2/i2"
+        },
+        {
+          "fromId": "fn0/bb2/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb2/i3"
+        },
+        {
+          "fromId": "fn0/bb1/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb2/i4"
+        },
+        {
+          "fromId": "fn0/bb2/i3",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb2/i4"
+        },
+        {
+          "fromId": "fn0/bb2/i4",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb2/i5"
+        },
+        {
+          "fromId": "fn0/bb2/i5",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb2/i6"
+        },
+        {
+          "fromId": "fn0/bb2/i6",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb2/i7"
+        },
+        {
+          "fromId": "fn0/bb2/i3",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb3/i0"
+        },
+        {
+          "fromId": "fn0/bb3/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb3/i1"
+        },
+        {
+          "fromId": "fn0/bb3/i1",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb3/i2"
+        },
+        {
+          "fromId": "fn0/bb2/i1",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb3/i2"
+        },
+        {
+          "fromId": "fn0/bb3/i2",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb3/i3"
+        },
+        {
+          "fromId": "fn0/bb2/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb4/i0"
+        },
+        {
+          "fromId": "fn0/bb4/i0",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb4/i1"
+        },
+        {
+          "fromId": "fn0/bb4/i1",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb4/i2"
+        },
+        {
+          "fromId": "fn0/bb3/i1",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb4/i3"
+        },
+        {
+          "fromId": "fn0/bb4/i1",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb4/i3"
+        },
+        {
+          "fromId": "fn0/bb4/i2",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb4/i4"
+        },
+        {
+          "fromId": "fn0/bb3/i0",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb4/i4"
+        },
+        {
+          "fromId": "fn0/bb2/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb5/i0"
+        },
+        {
+          "fromId": "fn0/bb2/i2",
+          "label": "operand(2)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb5/i0"
+        },
+        {
+          "fromId": "fn0/bb2/i3",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb5/i1"
+        },
+        {
+          "fromId": "fn0/bb5/i0",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb6/i0"
+        },
+        {
+          "fromId": "fn0/bb2/i3",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb6/i1"
+        },
+        {
+          "fromId": "fn0/bb5/i1",
+          "label": "operand(2)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb6/i1"
+        },
+        {
+          "fromId": "fn0/bb2/i2",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb6/i2"
+        },
+        {
+          "fromId": "fn0/bb5/i0",
+          "label": "operand(2)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb6/i2"
+        },
+        {
+          "fromId": "fn0/bb1/i2",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb6/i3"
+        },
+        {
+          "fromId": "fn0/bb2/i3",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb6/i3"
+        },
+        {
+          "fromId": "fn0/bb6/i3",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb6/i4"
+        },
+        {
+          "fromId": "fn0/bb11/i1",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb7/i0"
+        },
+        {
+          "fromId": "fn0/bb6/i1",
+          "label": "operand(2)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb7/i0"
+        },
+        {
+          "fromId": "fn0/bb11/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb7/i1"
+        },
+        {
+          "fromId": "fn0/bb6/i2",
+          "label": "operand(2)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb7/i1"
+        },
+        {
+          "fromId": "fn0/bb7/i0",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb7/i2"
+        },
+        {
+          "fromId": "fn0/bb7/i2",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb7/i3"
+        },
+        {
+          "fromId": "fn0/bb7/i3",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb7/i4"
+        },
+        {
+          "fromId": "fn0/bb2/i1",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb7/i4"
+        },
+        {
+          "fromId": "fn0/bb7/i4",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb7/i5"
+        },
+        {
+          "fromId": "fn0/bb7/i1",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb8/i0"
+        },
+        {
+          "fromId": "fn0/bb8/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb8/i1"
+        },
+        {
+          "fromId": "fn0/bb8/i1",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb8/i2"
+        },
+        {
+          "fromId": "fn0/bb8/i2",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb8/i3"
+        },
+        {
+          "fromId": "fn0/bb7/i3",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb8/i4"
+        },
+        {
+          "fromId": "fn0/bb8/i2",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb8/i4"
+        },
+        {
+          "fromId": "fn0/bb8/i3",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb8/i5"
+        },
+        {
+          "fromId": "fn0/bb7/i2",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb8/i5"
+        },
+        {
+          "fromId": "fn0/bb8/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb9/i0"
+        },
+        {
+          "fromId": "fn0/bb7/i1",
+          "label": "operand(2)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb9/i0"
+        },
+        {
+          "fromId": "fn0/bb7/i0",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb9/i1"
+        },
+        {
+          "fromId": "fn0/bb9/i1",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb9/i2"
+        },
+        {
+          "fromId": "fn0/bb9/i2",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb9/i3"
+        },
+        {
+          "fromId": "fn0/bb9/i3",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb9/i4"
+        },
+        {
+          "fromId": "fn0/bb2/i1",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb9/i4"
+        },
+        {
+          "fromId": "fn0/bb9/i4",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb9/i5"
+        },
+        {
+          "fromId": "fn0/bb9/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb10/i0"
+        },
+        {
+          "fromId": "fn0/bb10/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb10/i1"
+        },
+        {
+          "fromId": "fn0/bb10/i1",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb10/i2"
+        },
+        {
+          "fromId": "fn0/bb10/i2",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb10/i3"
+        },
+        {
+          "fromId": "fn0/bb9/i3",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb10/i4"
+        },
+        {
+          "fromId": "fn0/bb10/i2",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb10/i4"
+        },
+        {
+          "fromId": "fn0/bb10/i3",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb10/i5"
+        },
+        {
+          "fromId": "fn0/bb9/i2",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb10/i5"
+        },
+        {
+          "fromId": "fn0/bb10/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb11/i0"
+        },
+        {
+          "fromId": "fn0/bb9/i0",
+          "label": "operand(2)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb11/i0"
+        },
+        {
+          "fromId": "fn0/bb7/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb11/i1"
+        },
+        {
+          "fromId": "fn0/bb11/i1",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb11/i2"
+        },
+        {
+          "fromId": "fn0/bb1/i0",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb11/i2"
+        },
+        {
+          "fromId": "fn0/bb11/i2",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb11/i3"
+        },
+        {
+          "fromId": "fn0/bb6/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb12/i0"
+        },
+        {
+          "fromId": "fn0/bb11/i0",
+          "label": "operand(2)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb12/i0"
+        },
+        {
+          "fromId": "fn0/bb1/i1",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb12/i1"
+        },
+        {
+          "fromId": "fn0/bb12/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb12/i2"
+        },
+        {
+          "fromId": "fn0/bb12/i2",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb12/i3"
+        },
+        {
+          "fromId": "fn0/bb12/i3",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb12/i4"
+        },
+        {
+          "fromId": "fn0/bb12/i4",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb12/i5"
+        },
+        {
+          "fromId": "fn0/bb12/i1",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb12/i6"
+        },
+        {
+          "fromId": "fn0/bb12/i4",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb12/i6"
+        },
+        {
+          "fromId": "fn0/bb12/i5",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb12/i7"
+        },
+        {
+          "fromId": "fn0/bb1/i1",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb12/i7"
+        },
+        {
+          "fromId": "fn0/bb2/i0",
+          "label": "operand(1)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb12/i8"
+        },
+        {
+          "fromId": "fn0/bb12/i0",
+          "label": "operand(2)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb12/i8"
+        },
+        {
+          "fromId": "fn0/bb12/i0",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb12/i9"
+        },
+        {
+          "fromId": "fn0/bb12/i9",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb12/i10"
+        },
+        {
+          "fromId": "fn0/bb12/i10",
+          "label": "operand(0)",
+          "order": null,
+          "relation": "valueFlow",
+          "toId": "fn0/bb12/i11"
         }
       ],
       "formatVersion": 1,
