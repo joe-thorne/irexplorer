@@ -32,8 +32,15 @@ class OptimisationTimelineTests(unittest.TestCase):
         self.assertEqual(len(timeline.steps), 13)
         self.assertEqual(timeline.steps[0].kind, "derived")
         self.assertEqual(timeline.steps[0].origin.pass_name, "mem2reg")
+        self.assertEqual(timeline.steps[0].remarks, timeline.state(1).remarks)
         self.assertEqual(timeline.steps[-1].kind, "recompiled")
         self.assertEqual(timeline.steps[-1].origin.level, "-O3")
+        self.assertEqual(timeline.steps[-1].remarks, timeline.state(13).remarks)
+
+        quick_sort_timeline = load_curated_timeline("quick_sort", resolution="full")
+        gvn_step = quick_sort_timeline.steps[3]
+        self.assertGreater(len(gvn_step.remarks), 0)
+        self.assertEqual(gvn_step.remarks, quick_sort_timeline.state(4).remarks)
 
     def test_timeline_round_trips_through_plain_json_and_rebuilds_indices(self) -> None:
         original = load_curated_timeline("binary_search", resolution="full")
@@ -57,13 +64,29 @@ class OptimisationTimelineTests(unittest.TestCase):
         self.assertEqual(loaded, state)
         self.assertEqual(loaded.origin_command, state.origin_command)
 
-    def test_prebaked_endpoint_timeline_loads_without_reingestion(self) -> None:
+    def test_prebaked_full_timeline_loads_without_reingestion(self) -> None:
         for example in ("score", "binary_search", "quick_sort"):
             with self.subTest(example=example):
                 timeline = load_prebaked_curated_timeline(example)
-                self.assertEqual(timeline.config_id, "O0-to-O3")
+                self.assertEqual(timeline.config_id, "teaching-pass-chain")
                 self.assertEqual(
-                    [state.state_id for state in timeline.states], ["O0", "O3"]
+                    [state.state_id for state in timeline.states],
+                    [
+                        "O0",
+                        "mem2reg",
+                        "instcombine",
+                        "simplifycfg",
+                        "gvn",
+                        "cleanup",
+                        "loop_canonical",
+                        "loop_rotate",
+                        "licm",
+                        "indvars",
+                        "loop_cleanup",
+                        "vectorize",
+                        "final_cleanup",
+                        "O3",
+                    ],
                 )
 
     def test_invalid_step_provenance_is_rejected_at_load_boundary(self) -> None:

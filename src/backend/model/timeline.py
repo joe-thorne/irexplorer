@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from types import MappingProxyType
 from typing import Literal, Mapping
 
-from src.backend.model.graph import ModelValidationError, StateGraph
+from src.backend.model.graph import ModelValidationError, Remark, StateGraph
 
 
 StepKind = Literal["derived", "recompiled"]
@@ -29,6 +29,7 @@ class PassStep:
     to_ordinal: int
     kind: StepKind
     origin: StepOrigin
+    remarks: tuple[Remark, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -103,6 +104,10 @@ def validate_timeline(timeline: OptimisationTimeline) -> None:
         if target.origin_command != step.origin.command:
             raise ModelValidationError(
                 f"step provenance does not match target state {target.state_id}"
+            )
+        if step.remarks != target.remarks:
+            raise ModelValidationError(
+                f"step remarks do not match target state {target.state_id}"
             )
         if step.kind == "derived" and not step.origin.pass_name:
             raise ModelValidationError("derived step requires an origin pass_name")

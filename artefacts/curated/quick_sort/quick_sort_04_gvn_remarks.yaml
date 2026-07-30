@@ -1,0 +1,50 @@
+--- !Missed
+Pass:            gvn
+Name:            LoadClobbered
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 18, Column: 16 }
+Function:        partition
+Args:
+  - String:          'load of type '
+  - Type:            i32
+  - String:          ' not eliminated'
+  - String:          ' in favor of '
+  - OtherAccess:     load
+    DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 4, 
+                       Column: 17 }
+  - String:          ' because it is clobbered by '
+  - ClobberedBy:     store
+    DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 13, 
+                       Column: 18 }
+...
+--- !Passed
+Pass:            gvn
+Name:            LoadElim
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 12, Column: 20 }
+Function:        partition
+Args:
+  - String:          'load of type '
+  - Type:            i32
+  - String:          ' eliminated'
+  - String:          ' in favor of '
+  - InfavorOfValue:  load
+    DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 8, 
+                       Column: 13 }
+...
+--- !Missed
+Pass:            gvn
+Name:            LoadClobbered
+DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 18, Column: 16 }
+Function:        partition
+Args:
+  - String:          'load of type '
+  - Type:            i32
+  - String:          ' not eliminated'
+  - String:          ' in favor of '
+  - OtherAccess:     load
+    DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 4, 
+                       Column: 17 }
+  - String:          ' because it is clobbered by '
+  - ClobberedBy:     store
+    DebugLoc:        { File: 'examples/curated/quick_sort.c', Line: 13, 
+                       Column: 18 }
+...

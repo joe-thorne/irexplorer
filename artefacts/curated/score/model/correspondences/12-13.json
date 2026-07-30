@@ -1,0 +1,96 @@
+{
+  "coveredKinds": [
+    "Function",
+    "BasicBlock",
+    "Instruction"
+  ],
+  "formatVersion": 2,
+  "fromOrdinal": 12,
+  "links": [
+    {
+      "confidence": "exact",
+      "evidence": "unique function name",
+      "fromNodeIds": [
+        "fn0"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn0"
+      ]
+    },
+    {
+      "confidence": "approximate",
+      "evidence": "conservative anchor match on unique basic-block label",
+      "fromNodeIds": [
+        "fn0/bb0"
+      ],
+      "relation": "changed",
+      "toNodeIds": [
+        "fn0/bb0"
+      ]
+    },
+    {
+      "confidence": "approximate",
+      "evidence": "conservative anchor match on unique debug source location and opcode",
+      "fromNodeIds": [
+        "fn0/bb0/i4"
+      ],
+      "relation": "renamed",
+      "toNodeIds": [
+        "fn0/bb0/i4"
+      ]
+    },
+    {
+      "confidence": "approximate",
+      "evidence": "conservative anchor match on unique debug source location and opcode",
+      "fromNodeIds": [
+        "fn0/bb0/i0"
+      ],
+      "relation": "renamed",
+      "toNodeIds": [
+        "fn0/bb0/i0"
+      ]
+    },
+    {
+      "confidence": "approximate",
+      "evidence": "conservative anchor match on unique debug source location and opcode",
+      "fromNodeIds": [
+        "fn0/bb0/i1"
+      ],
+      "relation": "renamed",
+      "toNodeIds": [
+        "fn0/bb0/i1"
+      ]
+    },
+    {
+      "confidence": "approximate",
+      "evidence": "conservative anchor match on unique debug source location and opcode",
+      "fromNodeIds": [
+        "fn0/bb0/i2"
+      ],
+      "relation": "renamed",
+      "toNodeIds": [
+        "fn0/bb0/i2"
+      ]
+    },
+    {
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "fromNodeIds": [
+        "fn0/bb0/i3"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "none",
+      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "fromNodeIds": [],
+      "relation": "added",
+      "toNodeIds": [
+        "fn0/bb0/i3"
+      ]
+    }
+  ],
+  "toOrdinal": 13
+}

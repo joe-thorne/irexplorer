@@ -60,6 +60,22 @@ def artefact_dir(example: str) -> Path:
     return ARTEFACTS_ROOT / example
 
 
+def source_path(example: str) -> Path:
+    """Resolve the canonical curated source input for an example."""
+
+    _require_example(example)
+    path = EXAMPLES_ROOT / f"{example}.c"
+    if not path.exists():  # pragma: no cover - list_examples derives from this tree
+        raise ToolchainError(f"Missing curated source for example '{example}': {path}")
+    return path
+
+
+def read_source(example: str) -> str:
+    """Read a canonical curated source input through the toolchain boundary."""
+
+    return source_path(example).read_text(encoding="utf-8")
+
+
 def ir_path(example: str, state_id: str) -> Path:
     """Resolve the IR path for a generated curated example state."""
 
@@ -92,6 +108,20 @@ def opt_record_path(example: str) -> Path:
     return path
 
 
+def step_remarks_path(example: str, state_id: str) -> Path:
+    """Resolve the YAML remarks emitted by one derived ``opt`` state."""
+
+    state = _require_state(state_id)
+    if state.pass_pipeline is None:
+        raise ToolchainError(f"State '{state_id}' has no derived-pass remarks")
+    path = artefact_dir(example) / f"{example}_{state.file_suffix}_remarks.yaml"
+    if not path.exists():
+        raise ToolchainError(
+            f"Missing per-pass remarks for example '{example}' state '{state_id}': {path}"
+        )
+    return path
+
+
 def manifest_path(example: str) -> Path:
     path = artefact_dir(example) / "manifest.txt"
     if not path.exists():
@@ -100,25 +130,33 @@ def manifest_path(example: str) -> Path:
 
 
 def model_timeline_path(example: str) -> Path:
-    """Resolve the pre-baked endpoint model timeline for a curated example."""
+    """Resolve the pre-baked full-pass model timeline for a curated example."""
 
     _require_example(example)
-    path = artefact_dir(example) / "model" / "timeline-endpoints.json"
+    path = artefact_dir(example) / "model" / "timeline.json"
     if not path.exists():
         raise ToolchainError(
-            f"Missing pre-baked endpoint timeline for example '{example}': {path}"
+            f"Missing pre-baked full-pass timeline for example '{example}': {path}"
         )
     return path
 
 
-def model_correspondence_path(example: str) -> Path:
-    """Resolve the pre-baked endpoint correspondence for a curated example."""
+def model_correspondence_path(example: str, from_ordinal: int) -> Path:
+    """Resolve one persisted adjacent correspondence for a curated timeline."""
 
     _require_example(example)
-    path = artefact_dir(example) / "model" / "correspondence-endpoints.json"
+    if from_ordinal < 0 or from_ordinal >= len(PASS_STATES) - 1:
+        raise ToolchainError(f"Unknown adjacent correspondence ordinal: {from_ordinal}")
+    path = (
+        artefact_dir(example)
+        / "model"
+        / "correspondences"
+        / f"{from_ordinal:02d}-{from_ordinal + 1:02d}.json"
+    )
     if not path.exists():
         raise ToolchainError(
-            f"Missing pre-baked endpoint correspondence for example '{example}': {path}"
+            f"Missing pre-baked adjacent correspondence for example '{example}' "
+            f"from ordinal {from_ordinal}: {path}"
         )
     return path
 

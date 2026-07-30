@@ -1,0 +1,161 @@
+{
+  "coveredKinds": [
+    "Function",
+    "BasicBlock",
+    "Instruction"
+  ],
+  "formatVersion": 2,
+  "fromOrdinal": 2,
+  "links": [
+    {
+      "confidence": "exact",
+      "evidence": "unique function name",
+      "fromNodeIds": [
+        "fn0"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn0"
+      ]
+    },
+    {
+      "confidence": "approximate",
+      "evidence": "unique basic-block label after CFG change",
+      "fromNodeIds": [
+        "fn0/bb0"
+      ],
+      "relation": "changed",
+      "toNodeIds": [
+        "fn0/bb0"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique structural, source, and value-flow signature",
+      "fromNodeIds": [
+        "fn0/bb0/i1"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn0/bb0/i1"
+      ]
+    },
+    {
+      "confidence": "approximate",
+      "evidence": "unique debug source location and opcode",
+      "fromNodeIds": [
+        "fn0/bb3/i1"
+      ],
+      "relation": "renamed",
+      "toNodeIds": [
+        "fn0/bb0/i5"
+      ]
+    },
+    {
+      "confidence": "approximate",
+      "evidence": "unique debug source location and opcode",
+      "fromNodeIds": [
+        "fn0/bb0/i0"
+      ],
+      "relation": "renamed",
+      "toNodeIds": [
+        "fn0/bb0/i0"
+      ]
+    },
+    {
+      "confidence": "approximate",
+      "evidence": "unique debug source location and opcode",
+      "fromNodeIds": [
+        "fn0/bb0/i2"
+      ],
+      "relation": "renamed",
+      "toNodeIds": [
+        "fn0/bb0/i2"
+      ]
+    },
+    {
+      "confidence": "approximate",
+      "evidence": "unique debug source location and opcode",
+      "fromNodeIds": [
+        "fn0/bb0/i3"
+      ],
+      "relation": "renamed",
+      "toNodeIds": [
+        "fn0/bb0/i3"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
+      "fromNodeIds": [
+        "fn0/bb0/i4"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
+      "fromNodeIds": [
+        "fn0/bb1"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
+      "fromNodeIds": [
+        "fn0/bb1/i0"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
+      "fromNodeIds": [
+        "fn0/bb2"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
+      "fromNodeIds": [
+        "fn0/bb2/i0"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
+      "fromNodeIds": [
+        "fn0/bb3"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
+      "fromNodeIds": [
+        "fn0/bb3/i0"
+      ],
+      "relation": "removed",
+      "toNodeIds": []
+    },
+    {
+      "confidence": "exact",
+      "evidence": "no source node shares the structural matcher signature",
+      "fromNodeIds": [],
+      "relation": "added",
+      "toNodeIds": [
+        "fn0/bb0/i4"
+      ]
+    }
+  ],
+  "toOrdinal": 3
+}

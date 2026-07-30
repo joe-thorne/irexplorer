@@ -42,10 +42,26 @@ class CuratedToolchainTests(unittest.TestCase):
         self.assertIn("!dbg", ir)
         self.assertIn("@score", ir)
 
+    def test_reads_curated_source_through_the_toolchain_boundary(self) -> None:
+        source = curated.read_source("score")
+
+        self.assertIn("int score", source)
+        self.assertEqual(curated.source_path("score").name, "score.c")
+
     def test_resolves_generated_remarks_and_yaml(self) -> None:
         for example in curated.list_examples():
             self.assertGreater(curated.remarks_path(example).stat().st_size, 0)
             self.assertGreater(curated.opt_record_path(example).stat().st_size, 0)
+            for state in curated.list_states()[1:-1]:
+                with self.subTest(example=example, state=state.state_id):
+                    remarks = curated.step_remarks_path(example, state.state_id)
+                    self.assertTrue(remarks.is_file())
+
+    def test_derived_commands_capture_per_pass_yaml_remarks(self) -> None:
+        command = curated.origin_command("score", "mem2reg")
+
+        self.assertIn("-pass-remarks=.*", command)
+        self.assertIn("-pass-remarks-output=", command)
 
     def test_origin_command_resolves_per_state(self) -> None:
         baseline = curated.origin_command("score", "O0")

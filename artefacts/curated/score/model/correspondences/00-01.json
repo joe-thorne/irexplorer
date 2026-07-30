@@ -4,7 +4,7 @@
     "BasicBlock",
     "Instruction"
   ],
-  "formatVersion": 1,
+  "formatVersion": 2,
   "fromOrdinal": 0,
   "links": [
     {
@@ -19,14 +19,91 @@
       ]
     },
     {
-      "confidence": "approximate",
-      "evidence": "unique basic-block label after CFG change",
+      "confidence": "exact",
+      "evidence": "unique basic-block label and CFG role",
       "fromNodeIds": [
         "fn0/bb0"
       ],
-      "relation": "changed",
+      "relation": "same",
       "toNodeIds": [
         "fn0/bb0"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique basic-block label and CFG role",
+      "fromNodeIds": [
+        "fn0/bb2"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn0/bb2"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique basic-block label and CFG role",
+      "fromNodeIds": [
+        "fn0/bb1"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn0/bb1"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique basic-block label and CFG role",
+      "fromNodeIds": [
+        "fn0/bb3"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn0/bb3"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique structural, source, and value-flow signature",
+      "fromNodeIds": [
+        "fn0/bb0/i30"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn0/bb0/i7"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique structural, source, and value-flow signature",
+      "fromNodeIds": [
+        "fn0/bb2/i4"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn0/bb2/i1"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique structural, source, and value-flow signature",
+      "fromNodeIds": [
+        "fn0/bb1/i2"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn0/bb1/i0"
+      ]
+    },
+    {
+      "confidence": "approximate",
+      "evidence": "unique debug source location and opcode",
+      "fromNodeIds": [
+        "fn0/bb2/i2"
+      ],
+      "relation": "renamed",
+      "toNodeIds": [
+        "fn0/bb2/i0"
       ]
     },
     {
@@ -34,6 +111,61 @@
       "evidence": "unique debug source location and opcode",
       "fromNodeIds": [
         "fn0/bb3/i1"
+      ],
+      "relation": "renamed",
+      "toNodeIds": [
+        "fn0/bb3/i1"
+      ]
+    },
+    {
+      "confidence": "approximate",
+      "evidence": "unique debug source location and opcode",
+      "fromNodeIds": [
+        "fn0/bb0/i10"
+      ],
+      "relation": "renamed",
+      "toNodeIds": [
+        "fn0/bb0/i0"
+      ]
+    },
+    {
+      "confidence": "approximate",
+      "evidence": "unique debug source location and opcode",
+      "fromNodeIds": [
+        "fn0/bb0/i14"
+      ],
+      "relation": "renamed",
+      "toNodeIds": [
+        "fn0/bb0/i1"
+      ]
+    },
+    {
+      "confidence": "approximate",
+      "evidence": "unique debug source location and opcode",
+      "fromNodeIds": [
+        "fn0/bb0/i18"
+      ],
+      "relation": "renamed",
+      "toNodeIds": [
+        "fn0/bb0/i3"
+      ]
+    },
+    {
+      "confidence": "approximate",
+      "evidence": "unique debug source location and opcode",
+      "fromNodeIds": [
+        "fn0/bb0/i17"
+      ],
+      "relation": "renamed",
+      "toNodeIds": [
+        "fn0/bb0/i2"
+      ]
+    },
+    {
+      "confidence": "approximate",
+      "evidence": "unique debug source location and opcode",
+      "fromNodeIds": [
+        "fn0/bb0/i21"
       ],
       "relation": "renamed",
       "toNodeIds": [
@@ -48,29 +180,18 @@
       ],
       "relation": "renamed",
       "toNodeIds": [
-        "fn0/bb0/i2"
+        "fn0/bb0/i5"
       ]
     },
     {
       "confidence": "approximate",
-      "evidence": "unique debug source location after instruction rewrite",
+      "evidence": "unique debug source location and opcode",
       "fromNodeIds": [
-        "fn0/bb0/i10"
+        "fn0/bb0/i29"
       ],
-      "relation": "simplifiedInto",
+      "relation": "renamed",
       "toNodeIds": [
-        "fn0/bb0/i0"
-      ]
-    },
-    {
-      "confidence": "approximate",
-      "evidence": "unique debug source location after instruction rewrite",
-      "fromNodeIds": [
-        "fn0/bb0/i21"
-      ],
-      "relation": "simplifiedInto",
-      "toNodeIds": [
-        "fn0/bb0/i1"
+        "fn0/bb0/i6"
       ]
     },
     {
@@ -194,15 +315,6 @@
       "confidence": "exact",
       "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
-        "fn0/bb0/i14"
-      ],
-      "relation": "removed",
-      "toNodeIds": []
-    },
-    {
-      "confidence": "exact",
-      "evidence": "no target node shares the structural matcher signature",
-      "fromNodeIds": [
         "fn0/bb0/i15"
       ],
       "relation": "removed",
@@ -213,24 +325,6 @@
       "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn0/bb0/i16"
-      ],
-      "relation": "removed",
-      "toNodeIds": []
-    },
-    {
-      "confidence": "exact",
-      "evidence": "no target node shares the structural matcher signature",
-      "fromNodeIds": [
-        "fn0/bb0/i17"
-      ],
-      "relation": "removed",
-      "toNodeIds": []
-    },
-    {
-      "confidence": "exact",
-      "evidence": "no target node shares the structural matcher signature",
-      "fromNodeIds": [
-        "fn0/bb0/i18"
       ],
       "relation": "removed",
       "toNodeIds": []
@@ -311,33 +405,6 @@
       "confidence": "exact",
       "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
-        "fn0/bb0/i29"
-      ],
-      "relation": "removed",
-      "toNodeIds": []
-    },
-    {
-      "confidence": "exact",
-      "evidence": "no target node shares the structural matcher signature",
-      "fromNodeIds": [
-        "fn0/bb0/i30"
-      ],
-      "relation": "removed",
-      "toNodeIds": []
-    },
-    {
-      "confidence": "exact",
-      "evidence": "no target node shares the structural matcher signature",
-      "fromNodeIds": [
-        "fn0/bb1"
-      ],
-      "relation": "removed",
-      "toNodeIds": []
-    },
-    {
-      "confidence": "exact",
-      "evidence": "no target node shares the structural matcher signature",
-      "fromNodeIds": [
         "fn0/bb1/i0"
       ],
       "relation": "removed",
@@ -348,24 +415,6 @@
       "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn0/bb1/i1"
-      ],
-      "relation": "removed",
-      "toNodeIds": []
-    },
-    {
-      "confidence": "exact",
-      "evidence": "no target node shares the structural matcher signature",
-      "fromNodeIds": [
-        "fn0/bb1/i2"
-      ],
-      "relation": "removed",
-      "toNodeIds": []
-    },
-    {
-      "confidence": "exact",
-      "evidence": "no target node shares the structural matcher signature",
-      "fromNodeIds": [
-        "fn0/bb2"
       ],
       "relation": "removed",
       "toNodeIds": []
@@ -392,34 +441,7 @@
       "confidence": "exact",
       "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
-        "fn0/bb2/i2"
-      ],
-      "relation": "removed",
-      "toNodeIds": []
-    },
-    {
-      "confidence": "exact",
-      "evidence": "no target node shares the structural matcher signature",
-      "fromNodeIds": [
         "fn0/bb2/i3"
-      ],
-      "relation": "removed",
-      "toNodeIds": []
-    },
-    {
-      "confidence": "exact",
-      "evidence": "no target node shares the structural matcher signature",
-      "fromNodeIds": [
-        "fn0/bb2/i4"
-      ],
-      "relation": "removed",
-      "toNodeIds": []
-    },
-    {
-      "confidence": "exact",
-      "evidence": "no target node shares the structural matcher signature",
-      "fromNodeIds": [
-        "fn0/bb3"
       ],
       "relation": "removed",
       "toNodeIds": []
@@ -439,7 +461,7 @@
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
-        "fn0/bb0/i3"
+        "fn0/bb3/i0"
       ]
     }
   ],

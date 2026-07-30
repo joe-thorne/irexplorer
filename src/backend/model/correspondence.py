@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from types import MappingProxyType
-from typing import Literal, Mapping
+from typing import Literal, Mapping, Protocol
 
 from src.backend.model.graph import ModelValidationError, StateGraph
 
@@ -74,19 +74,37 @@ class Correspondence:
         validate_correspondence(self, from_state, to_state)
 
 
+class CorrespondenceView(Protocol):
+    """The common read-only shape shared by stored and composed overlays."""
+
+    from_ordinal: int
+    to_ordinal: int
+    covered_kinds: tuple[str, ...]
+    links: tuple[Link, ...]
+
+
 def validate_correspondence(
-    correspondence: Correspondence,
+    correspondence: CorrespondenceView,
     from_state: StateGraph,
     to_state: StateGraph,
+    *,
+    require_adjacent: bool = True,
 ) -> None:
-    """Enforce I9–I12 for a correspondence and its two adjacent states."""
+    """Enforce I9–I12 for a stored or derived correspondence view.
+
+    Stored ``Correspondence`` records must be adjacent. Layer 4 uses the same
+    coverage checks for its transient composed views, which deliberately span
+    more than one adjacent pair and are never serialised as correspondences.
+    """
 
     if correspondence.from_ordinal != from_state.ordinal:
         raise ModelValidationError("correspondence from ordinal does not match source state")
     if correspondence.to_ordinal != to_state.ordinal:
         raise ModelValidationError("correspondence to ordinal does not match target state")
-    if correspondence.to_ordinal != correspondence.from_ordinal + 1:
+    if require_adjacent and correspondence.to_ordinal != correspondence.from_ordinal + 1:
         raise ModelValidationError("correspondence must relate adjacent state ordinals")
+    if not require_adjacent and correspondence.to_ordinal <= correspondence.from_ordinal:
+        raise ModelValidationError("composed correspondence must advance in timeline order")
     if not correspondence.covered_kinds:
         raise ModelValidationError("correspondence must declare covered node kinds")
 

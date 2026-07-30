@@ -90,11 +90,16 @@ def generate_example(example: str) -> None:
         if state.pass_pipeline is None:
             raise ToolchainError(f"Pass state '{state.state_id}' has no pass pipeline")
         output = out_dir / f"{example}_{state.file_suffix}.ll"
+        remarks_output = out_dir / f"{example}_{state.file_suffix}_remarks.yaml"
         _run_and_record(
             manifest,
             [
                 "opt",
                 f"-passes={state.pass_pipeline}",
+                "-pass-remarks=.*",
+                "-pass-remarks-missed=.*",
+                "-pass-remarks-analysis=.*",
+                f"-pass-remarks-output={_container_path(remarks_output)}",
                 _container_path(previous),
                 "-S",
                 "-o",

@@ -1,5 +1,5 @@
 # SHA-256 over each generated file's repository-relative path and SHA-256.
 # Update only after deliberately regenerating the pinned Docker snapshot and
 # reviewing the resulting artefact changes.
-files=63
-sha256=939cdfaa0bc76a336f0af0f993f8da2820dcb6ca81d1b71a2a5353d9af98f6b1
+files=135
+sha256=5df7d29081f47cedc5514b971e96f62b4ccdc67af3ef126bfd968f0e6cfa2b7f

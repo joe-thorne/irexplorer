@@ -16,13 +16,32 @@ class QueryServiceTests(unittest.TestCase):
             service.list_states()
 
         session = service.load_example("score")
-        self.assertEqual([state["stateId"] for state in session["states"]], ["O0", "O3"])
+        self.assertEqual(len(session["states"]), 14)
+        self.assertEqual(session["states"][1]["transition"]["passName"], "mem2reg")
+        self.assertTrue(session["states"][4]["transition"]["noOp"])
+        self.assertEqual(session["states"][-1]["transition"]["kind"], "recompiled")
         timeline_id = id(service._session.timeline)  # session retention, not reprocessing
 
         ir = service.ir(0)
         self.assertEqual(ir["functions"][0]["name"], "score")
         entry = ir["functions"][0]["blocks"][0]
         self.assertGreater(len(entry["instructions"]), 0)
+
+        source = service.source(0)
+        self.assertEqual(source["filename"], "score.c")
+        source_instruction_ids = {
+            instruction_id
+            for line in source["lines"]
+            for instruction_id in line["instructionIds"]
+        }
+        mapped_instruction = next(
+            instruction
+            for block in ir["functions"][0]["blocks"]
+            for instruction in block["instructions"]
+            if instruction["source"] is not None
+        )
+        self.assertIn(mapped_instruction["id"], source_instruction_ids)
+        self.assertTrue(any(not line["instructionIds"] for line in source["lines"]))
 
         cfg = service.cfg(0, "fn0")
         self.assertEqual(len(cfg["blocks"]), 4)
@@ -35,7 +54,39 @@ class QueryServiceTests(unittest.TestCase):
         counterparts = service.counterparts(0, entry["instructions"][0]["id"])
         self.assertIn(counterparts["relation"], {"removed", "renamed", "simplifiedInto"})
         self.assertIn(counterparts["confidence"], {"exact", "approximate", "none"})
-        self.assertIn("anchor comparison", service.summary()["context"])
+        self.assertIn("Composed comparison", service.summary()["context"])
+        composed = service.summary(0, 13)
+        self.assertIn("recompiled -O3 anchor", composed["context"])
+        self.assertTrue(service.step(3)["noOp"])
+        derived_step = service.step(0)
+        self.assertIsInstance(derived_step["remarks"], list)
+        for remark in derived_step["remarks"]:
+            self.assertEqual(remark["type"], "remark")
+            self.assertIn("instructionIds", remark)
+        step_summary = service.summary(0, 1)
+        self.assertTrue(
+            all(item["evidence"] for item in step_summary["items"])
+        )
+        self.assertTrue(
+            any(
+                evidence["type"] == "link"
+                for item in step_summary["items"]
+                for evidence in item["evidence"]
+            )
+        )
+
+        service.load_example("quick_sort")
+        remark_summary = service.summary(3, 4)
+        pass_remarks = [
+            evidence
+            for item in remark_summary["items"]
+            for evidence in item["evidence"]
+            if evidence["type"] == "remark"
+        ]
+        self.assertTrue(pass_remarks)
+        self.assertTrue(any(remark["instructionIds"] for remark in pass_remarks))
+        self.assertTrue(all("raw" in remark for remark in pass_remarks))
+        self.assertEqual(service.step(12)["kind"], "recompiled")
 
     def test_navigation_and_invalid_queries_are_controlled(self) -> None:
         service = QueryService()
@@ -48,7 +99,28 @@ class QueryServiceTests(unittest.TestCase):
         with self.assertRaises(QueryError):
             service.cfg(0, "missing")
         with self.assertRaises(QueryError):
-            service.set_focus(9)
+            service.set_focus(14)
+        with self.assertRaises(QueryError):
+            service.summary(3, 3)
+        with self.assertRaises(QueryError):
+            service.step(-1)
+        with self.assertRaises(QueryError):
+            service.source(14)
+
+    def test_largest_curated_function_remains_scoped_and_queryable(self) -> None:
+        service = QueryService()
+        service.load_example("quick_sort")
+
+        state = service.ir(0)
+        partition = next(function for function in state["functions"] if function["name"] == "partition")
+        self.assertEqual(len(partition["blocks"]), 7)
+        self.assertEqual(
+            sum(len(block["instructions"]) for block in partition["blocks"]),
+            93,
+        )
+        cfg = service.cfg(0, partition["id"])
+        self.assertEqual(len(cfg["blocks"]), len(partition["blocks"]))
+        self.assertTrue(cfg["edges"])
 
 
 class LocalhostApiTests(unittest.TestCase):
@@ -75,13 +147,25 @@ class LocalhostApiTests(unittest.TestCase):
         session = _post_json(f"{self.base_url}/api/session", {"exampleId": "score"})
         self.assertEqual(session["exampleId"], "score")
         self.assertEqual(
-            _get_json(f"{self.base_url}/api/ir?ordinal=1")["stateId"], "O3"
+            _get_json(f"{self.base_url}/api/ir?ordinal=1")["stateId"], "mem2reg"
         )
-        summary = _get_json(f"{self.base_url}/api/summary")
-        self.assertIn("anchor comparison", summary["context"])
+        source = _get_json(f"{self.base_url}/api/source?ordinal=1")
+        self.assertEqual(source["filename"], "score.c")
+        summary = _get_json(f"{self.base_url}/api/summary?fromOrdinal=0&toOrdinal=13")
+        self.assertIn("recompiled -O3 anchor", summary["context"])
+        self.assertTrue(_get_json(f"{self.base_url}/api/step?fromOrdinal=3")["noOp"])
 
         with self.assertRaises(HTTPError) as context:
             urlopen(f"{self.base_url}/api/cfg?ordinal=0&functionId=missing")
+        self.assertEqual(context.exception.code, 404)
+        context.exception.close()
+
+    def test_localhost_server_does_not_expose_user_source_analysis(self) -> None:
+        with self.assertRaises(HTTPError) as context:
+            _post_json(
+                f"{self.base_url}/api/analysis",
+                {"language": "c", "source": "int main(void) { return 0; }"},
+            )
         self.assertEqual(context.exception.code, 404)
         context.exception.close()
 
@@ -91,11 +175,18 @@ class LocalhostApiTests(unittest.TestCase):
             self.assertEqual(response.headers.get_content_type(), "text/html")
         self.assertIn("irexplorer", html)
         self.assertIn('src="/app.js"', html)
+        self.assertIn('id="ir-filter"', html)
+        self.assertIn('id="ir-scope"', html)
+        self.assertIn('id="cfg-neighbourhood"', html)
+        self.assertIn('aria-live="polite"', html)
+        self.assertIn('tabindex="-1"', html)
 
         with urlopen(f"{self.base_url}/app.js") as response:
             javascript = response.read().decode("utf-8")
-            self.assertEqual(response.headers.get_content_type(), "text/javascript")
+        self.assertEqual(response.headers.get_content_type(), "text/javascript")
         self.assertIn("/api/session", javascript)
+        self.assertIn("instructionMatchesFilter", javascript)
+        self.assertIn("cfgNeighbourhood", javascript)
 
 
 def _get_json(url: str) -> dict:

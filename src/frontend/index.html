@@ -17,7 +17,7 @@
       <p class="header-note">Curated examples · local, read-only analysis</p>
     </header>
 
-    <main id="workspace" class="app-shell">
+    <main id="workspace" class="app-shell" tabindex="-1">
       <section class="controls panel" aria-labelledby="load-heading">
         <div>
           <h2 id="load-heading">Choose a curated example</h2>
@@ -38,7 +38,7 @@
 
       <section id="empty-state" class="empty-state panel" aria-labelledby="empty-heading">
         <p class="eyebrow">Start exploring</p>
-        <h2 id="empty-heading">Choose an example to inspect its two optimisation states.</h2>
+        <h2 id="empty-heading">Choose an example to inspect its optimisation timeline.</h2>
         <p>
           The baseline and optimised outputs are preserved compiler artefacts. Select a
           state, function, or basic block to focus the views.
@@ -49,20 +49,37 @@
         <section class="comparison panel" aria-labelledby="comparison-heading">
           <div>
             <p class="eyebrow">Comparison</p>
-            <h2 id="comparison-heading">Baseline and recompiled anchor</h2>
+            <h2 id="comparison-heading">Selected optimisation transition</h2>
           </div>
-          <div id="summary-context" class="anchor-context"></div>
+          <button id="compare-baseline" class="quiet-button" type="button" disabled>
+            Compare baseline to selected state
+          </button>
+          <div id="summary-context" class="summary-context"></div>
           <ul id="summary-items" class="summary-items"></ul>
         </section>
 
         <section class="state-panel panel" aria-labelledby="state-heading">
           <div>
-            <p class="eyebrow">View state</p>
-            <h2 id="state-heading">Select an optimisation state</h2>
+            <p class="eyebrow">Pass timeline</p>
+            <h2 id="state-heading">Step through optimisation states</h2>
+            <p class="muted">Move one recorded transition at a time, or scrub directly to a state.</p>
           </div>
-          <fieldset id="state-options" class="state-options">
-            <legend class="visually-hidden">Optimisation state</legend>
-          </fieldset>
+          <div class="timeline-controls">
+            <div class="timeline-stepper" aria-label="Optimisation state stepper">
+              <button id="previous-state" class="timeline-button" type="button">Previous</button>
+              <label class="timeline-scrubber-label" for="timeline-scrubber">
+                <span id="timeline-position">State 1 of 14</span>
+                <input id="timeline-scrubber" type="range" min="0" max="0" value="0" />
+              </label>
+              <button id="next-state" class="timeline-button" type="button">Next</button>
+            </div>
+            <div class="timeline-options">
+              <button id="toggle-noops" class="quiet-button" type="button">Show unchanged passes</button>
+              <fieldset id="state-options" class="state-options">
+                <legend class="visually-hidden">Optimisation state</legend>
+              </fieldset>
+            </div>
+          </div>
         </section>
 
         <div class="view-grid">
@@ -86,6 +103,20 @@
               </label>
             </div>
             <p id="ir-description" class="muted"></p>
+            <fieldset class="view-controls">
+              <legend>IR display</legend>
+              <label for="ir-scope">Scope
+                <select id="ir-scope">
+                  <option value="function">Selected function</option>
+                  <option value="block">Selected block</option>
+                </select>
+              </label>
+              <label for="ir-filter">Filter instructions
+                <input id="ir-filter" type="search" autocomplete="off" placeholder="Opcode, value, or text" />
+              </label>
+              <button id="clear-ir-filter" class="quiet-button" type="button" disabled>Clear filter</button>
+              <output id="ir-result-count" class="filter-result" aria-live="polite"></output>
+            </fieldset>
             <div id="ir-view" class="ir-view" tabindex="0"></div>
           </section>
 
@@ -95,7 +126,28 @@
               <h2 id="cfg-heading">Function structure</h2>
             </div>
             <p id="cfg-description" class="muted"></p>
+            <label class="toggle-control cfg-scope-control" for="cfg-neighbourhood">
+              <input id="cfg-neighbourhood" type="checkbox" />
+              <span>Show selected block and direct neighbours</span>
+            </label>
             <div id="cfg-view" class="cfg-view"></div>
+          </section>
+
+          <section class="coordination-panel panel" aria-labelledby="coordination-heading">
+            <div>
+              <p class="eyebrow">Selection mapping</p>
+              <h2 id="coordination-heading">IR, CFG, and state links</h2>
+            </div>
+            <div id="coordination-view" class="coordination-view" aria-live="polite"></div>
+          </section>
+
+          <section class="source-panel panel" aria-labelledby="source-heading">
+            <div>
+              <p class="eyebrow">Source anchor</p>
+              <h2 id="source-heading">Curated C source</h2>
+            </div>
+            <p id="source-description" class="muted"></p>
+            <div id="source-view" class="source-view"></div>
           </section>
         </div>
 

@@ -17,7 +17,7 @@ from src.backend.model.correspondence import Correspondence, Link
 from src.backend.model.timeline import OptimisationTimeline, PassStep, StepOrigin
 
 
-FORMAT_VERSION = 1
+FORMAT_VERSION = 2
 _TYPE_KEY = "__irexplorer_type__"
 
 
@@ -103,6 +103,7 @@ def serialise_timeline(timeline: OptimisationTimeline) -> dict[str, Any]:
                     "level": step.origin.level,
                     "command": step.origin.command,
                 },
+                "remarks": [_serialise_remark(remark) for remark in step.remarks],
             }
             for step in timeline.steps
         ],
@@ -288,6 +289,9 @@ def _deserialise_step(record: Mapping[str, Any]) -> PassStep:
             command=_require_str(origin, "command"),
             pass_name=_optional_str(origin.get("passName"), "passName"),
             level=_optional_str(origin.get("level"), "level"),
+        ),
+        remarks=tuple(
+            _deserialise_remark(item) for item in _require_list(record, "remarks")
         ),
     )
 

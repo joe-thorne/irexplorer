@@ -109,6 +109,8 @@ def _route_get(service: QueryService, request_path: str) -> dict[str, Any]:
         return service.list_states()
     if path == "/api/ir":
         return service.ir(_required_int(query, "ordinal"))
+    if path == "/api/source":
+        return service.source(_required_int(query, "ordinal"))
     if path == "/api/cfg":
         return service.cfg(_required_int(query, "ordinal"), _required_str(query, "functionId"))
     if path == "/api/children":
@@ -123,10 +125,15 @@ def _route_get(service: QueryService, request_path: str) -> dict[str, Any]:
         return service.step(_optional_int(query, "fromOrdinal", default=0))
     if path == "/api/counterparts":
         return service.counterparts(
-            _required_int(query, "ordinal"), _required_str(query, "nodeId")
+            _required_int(query, "ordinal"),
+            _required_str(query, "nodeId"),
+            _optional_int_or_none(query, "toOrdinal"),
         )
     if path == "/api/summary":
-        return service.summary(_optional_int(query, "fromOrdinal", default=0))
+        return service.summary(
+            _optional_int(query, "fromOrdinal", default=0),
+            _optional_int_or_none(query, "toOrdinal"),
+        )
     raise QueryError(f"unknown API route: {path}")
 
 
@@ -192,6 +199,12 @@ def _optional_int(query: dict[str, list[str]], key: str, *, default: int) -> int
     if len(values) != 1:
         raise ValueError(f"{key} query parameter must appear once")
     return _parse_int(values[0], key)
+
+
+def _optional_int_or_none(query: dict[str, list[str]], key: str) -> int | None:
+    if key not in query:
+        return None
+    return _optional_int(query, key, default=0)
 
 
 def _parse_int(value: str, key: str) -> int:

@@ -3,14 +3,21 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
-from src.backend.analysis.compare import ComparisonSummary, summarise_correspondence
-from src.backend.analysis.curated import load_prebaked_curated_correspondence
+from src.backend.analysis.compare import (
+    ComposedCorrespondence,
+    ComparisonSummary,
+    compose_timeline_correspondences,
+    is_identity_correspondence,
+    summarise_correspondence,
+)
+from src.backend.analysis.curated import load_prebaked_curated_correspondences
 from src.backend.ingest.curated import load_prebaked_curated_timeline
 from src.backend.model.correspondence import Correspondence, Link
-from src.backend.model.graph import Node, SourceLocation, StateGraph
-from src.backend.model.timeline import OptimisationTimeline
+from src.backend.model.graph import Node, Remark, SourceLocation, StateGraph
+from src.backend.model.timeline import OptimisationTimeline, PassStep
 from src.backend.toolchain import curated
 
 
@@ -24,7 +31,7 @@ class SessionState:
 
     example_id: str
     timeline: OptimisationTimeline
-    correspondence: Correspondence
+    correspondences: tuple[Correspondence, ...]
     current_ordinal: int = 0
     focused_node_id: str | None = None
 
@@ -41,10 +48,10 @@ class QueryService:
     def load_example(self, example_id: str) -> dict[str, Any]:
         try:
             timeline = load_prebaked_curated_timeline(example_id)
-            correspondence = load_prebaked_curated_correspondence(example_id)
+            correspondences = load_prebaked_curated_correspondences(example_id, timeline)
         except (ValueError, RuntimeError) as exc:
             raise QueryError(str(exc)) from exc
-        self._session = SessionState(example_id, timeline, correspondence)
+        self._session = SessionState(example_id, timeline, correspondences)
         return self.session()
 
     def session(self) -> dict[str, Any]:
@@ -73,6 +80,7 @@ class QueryService:
                     "ordinal": state.ordinal,
                     "stateId": state.state_id,
                     "originCommand": state.origin_command,
+                    "transition": self._transition_view(state.ordinal),
                 }
                 for state in session.timeline.states
             ]
@@ -107,6 +115,43 @@ class QueryService:
                 }
             )
         return {"ordinal": state.ordinal, "stateId": state.state_id, "functions": functions}
+
+    def source(self, ordinal: int) -> dict[str, Any]:
+        """Return curated source text annotated only with recorded IR mappings."""
+
+        session = self._require_session()
+        state = self._state(ordinal)
+        try:
+            source_lines = curated.read_source(session.example_id).splitlines()
+        except RuntimeError as exc:
+            raise QueryError(str(exc)) from exc
+        source_mapped_instruction_ids = {
+            edge.from_id for edge in state.edges if edge.relation == "sourceMap"
+        }
+        source_filename = Path(state.source_filename or f"{session.example_id}.c").name
+        instruction_ids_by_line: dict[int, list[str]] = {}
+        for node in state.nodes:
+            if node.kind != "Instruction" or node.stable_id not in source_mapped_instruction_ids:
+                continue
+            location = node.attributes.get("source")
+            if not isinstance(location, SourceLocation):
+                continue
+            if Path(location.file).name != source_filename:
+                continue
+            if 1 <= location.line <= len(source_lines):
+                instruction_ids_by_line.setdefault(location.line, []).append(node.stable_id)
+        return {
+            "ordinal": state.ordinal,
+            "filename": source_filename,
+            "lines": [
+                {
+                    "number": number,
+                    "text": text,
+                    "instructionIds": instruction_ids_by_line.get(number, []),
+                }
+                for number, text in enumerate(source_lines, start=1)
+            ],
+        }
 
     def cfg(self, ordinal: int, function_id: str) -> dict[str, Any]:
         state = self._state(ordinal)
@@ -154,9 +199,13 @@ class QueryService:
 
     def step(self, from_ordinal: int = 0) -> dict[str, Any]:
         session = self._require_session()
-        if from_ordinal != 0:
+        if from_ordinal < 0:
             raise QueryError(f"no pre-baked step from ordinal {from_ordinal}")
-        step = session.timeline.steps[from_ordinal]
+        try:
+            step = session.timeline.steps[from_ordinal]
+            correspondence = session.correspondences[from_ordinal]
+        except IndexError as exc:
+            raise QueryError(f"no pre-baked step from ordinal {from_ordinal}") from exc
         return {
             "fromOrdinal": step.from_ordinal,
             "toOrdinal": step.to_ordinal,
@@ -166,26 +215,34 @@ class QueryService:
                 "passName": step.origin.pass_name,
                 "level": step.origin.level,
             },
+            "noOp": is_identity_correspondence(correspondence),
+            "remarks": [
+                _remark_view(remark, index, self._state(step.to_ordinal))
+                for index, remark in enumerate(step.remarks)
+            ],
         }
 
-    def counterparts(self, ordinal: int, node_id: str) -> dict[str, Any]:
-        session = self._require_session()
+    def counterparts(
+        self,
+        ordinal: int,
+        node_id: str,
+        to_ordinal: int | None = None,
+    ) -> dict[str, Any]:
         state = self._state(ordinal)
         self._node(state, node_id)
-        if ordinal == session.correspondence.from_ordinal:
-            link = session.correspondence.links_from.get(node_id)
-            counterpart_ordinal = session.correspondence.to_ordinal
-        elif ordinal == session.correspondence.to_ordinal:
-            link = session.correspondence.links_to.get(node_id)
-            counterpart_ordinal = session.correspondence.from_ordinal
+        counterpart_ordinal = self._default_counterpart_ordinal(ordinal, to_ordinal)
+        lower_ordinal, higher_ordinal = sorted((ordinal, counterpart_ordinal))
+        correspondence = self._comparison(lower_ordinal, higher_ordinal)
+        if ordinal == correspondence.from_ordinal:
+            link = correspondence.links_from.get(node_id)
         else:
-            raise QueryError(f"no correspondence available for state {ordinal}")
+            link = correspondence.links_to.get(node_id)
         if link is None:
             raise QueryError(f"node is outside the correspondence coverage: {node_id}")
         counterpart_state = self._state(counterpart_ordinal)
         counterpart_ids = (
             link.to_node_ids
-            if ordinal == session.correspondence.from_ordinal
+            if ordinal == correspondence.from_ordinal
             else link.from_node_ids
         )
         return {
@@ -201,18 +258,78 @@ class QueryService:
             ],
         }
 
-    def summary(self, from_ordinal: int = 0) -> dict[str, Any]:
+    def summary(
+        self,
+        from_ordinal: int = 0,
+        to_ordinal: int | None = None,
+    ) -> dict[str, Any]:
         session = self._require_session()
-        if from_ordinal != 0:
-            raise QueryError(f"no pre-baked summary available from ordinal {from_ordinal}")
-        step = session.timeline.steps[from_ordinal]
+        if to_ordinal is None:
+            to_ordinal = len(session.timeline.states) - 1
+        if to_ordinal <= from_ordinal:
+            raise QueryError("summary target ordinal must follow its source ordinal")
+        correspondence = self._comparison(from_ordinal, to_ordinal)
+        final_step = session.timeline.steps[to_ordinal - 1]
         summary = summarise_correspondence(
-            session.correspondence,
-            session.timeline.state(step.from_ordinal),
-            session.timeline.state(step.to_ordinal),
-            step,
+            correspondence,
+            session.timeline.state(from_ordinal),
+            session.timeline.state(to_ordinal),
+            final_step,
         )
-        return _summary_view(summary)
+        return _summary_view(
+            summary,
+            correspondence,
+            session.timeline.state(from_ordinal),
+            session.timeline.state(to_ordinal),
+            final_step,
+        )
+
+    def _transition_view(self, ordinal: int) -> dict[str, Any] | None:
+        if ordinal == 0:
+            return None
+        session = self._require_session()
+        step = session.timeline.steps[ordinal - 1]
+        return {
+            "kind": step.kind,
+            "passName": step.origin.pass_name,
+            "level": step.origin.level,
+            "noOp": is_identity_correspondence(session.correspondences[ordinal - 1]),
+            "remarkCount": len(step.remarks),
+        }
+
+    def _default_counterpart_ordinal(
+        self,
+        ordinal: int,
+        to_ordinal: int | None,
+    ) -> int:
+        state_count = len(self._require_session().timeline.states)
+        if to_ordinal is not None:
+            if to_ordinal < 0 or to_ordinal >= state_count or to_ordinal == ordinal:
+                raise QueryError("counterpart target ordinal must be another timeline state")
+            return to_ordinal
+        if ordinal < state_count - 1:
+            return ordinal + 1
+        return ordinal - 1
+
+    def _comparison(
+        self,
+        from_ordinal: int,
+        to_ordinal: int,
+    ) -> Correspondence | ComposedCorrespondence:
+        session = self._require_session()
+        if from_ordinal < 0 or to_ordinal >= len(session.timeline.states):
+            raise QueryError("comparison ordinals are outside the timeline")
+        if to_ordinal == from_ordinal + 1:
+            return session.correspondences[from_ordinal]
+        try:
+            return compose_timeline_correspondences(
+                session.timeline,
+                session.correspondences,
+                from_ordinal,
+                to_ordinal,
+            )
+        except ValueError as exc:
+            raise QueryError(str(exc)) from exc
 
     def _require_session(self) -> SessionState:
         if self._session is None:
@@ -253,11 +370,63 @@ def _source_view(location: SourceLocation | None) -> dict[str, Any] | None:
     return {"file": location.file, "line": location.line, "column": location.column}
 
 
-def _summary_view(summary: ComparisonSummary) -> dict[str, Any]:
+def _summary_view(
+    summary: ComparisonSummary,
+    correspondence: Correspondence | ComposedCorrespondence,
+    from_state: StateGraph,
+    to_state: StateGraph,
+    step: PassStep,
+) -> dict[str, Any]:
     return {
         "context": summary.context,
         "items": [
-            {"text": item.text, "linkIndices": list(item.link_indices)}
+            {
+                "text": item.text,
+                "linkIndices": list(item.link_indices),
+                "remarkIndices": list(item.remark_indices),
+                "evidence": [
+                    _link_evidence(correspondence.links[index], index, from_state, to_state)
+                    for index in item.link_indices
+                ]
+                + [
+                    _remark_view(step.remarks[index], index, to_state)
+                    for index in item.remark_indices
+                ],
+            }
             for item in summary.items
         ],
+    }
+
+
+def _link_evidence(
+    link: Link,
+    index: int,
+    from_state: StateGraph,
+    to_state: StateGraph,
+) -> dict[str, Any]:
+    return {
+        "type": "link",
+        "index": index,
+        "relation": link.relation,
+        "confidence": link.confidence,
+        "evidence": link.evidence,
+        "from": [_node_view(from_state.by_id[node_id]) for node_id in link.from_node_ids],
+        "to": [_node_view(to_state.by_id[node_id]) for node_id in link.to_node_ids],
+    }
+
+
+def _remark_view(remark: Remark, index: int, state: StateGraph) -> dict[str, Any]:
+    return {
+        "type": "remark",
+        "index": index,
+        "passName": remark.pass_name,
+        "name": remark.name,
+        "function": remark.function,
+        "location": _source_view(remark.location),
+        "instructionIds": [
+            node.stable_id
+            for node in state.nodes
+            if node.kind == "Instruction" and remark in node.attributes.get("remarks", ())
+        ],
+        "raw": remark.raw,
     }
