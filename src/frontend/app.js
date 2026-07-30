@@ -38,14 +38,21 @@ const elements = {
   nextState: document.querySelector("#next-state"),
   guidedTimeline: document.querySelector("#guided-timeline"),
   fullPipeline: document.querySelector("#full-pipeline"),
+  fullArtefact: document.querySelector("#full-artefact"),
   navigationTree: document.querySelector("#navigation-tree"),
+  navigator: document.querySelector("#navigator"),
   irDescription: document.querySelector("#ir-description"),
+  irChangeContext: document.querySelector("#ir-change-context"),
   irView: document.querySelector("#ir-view"),
   cfgDescription: document.querySelector("#cfg-description"),
   cfgView: document.querySelector("#cfg-view"),
+  openCfg: document.querySelector("#open-cfg"),
+  structureResult: document.querySelector("#structure-result"),
   sourceDescription: document.querySelector("#source-description"),
   sourceView: document.querySelector("#source-view"),
+  fullSourceView: document.querySelector("#full-source-view"),
   coordinationView: document.querySelector("#coordination-view"),
+  selectionInspector: document.querySelector("#selection-inspector"),
   storyHeading: document.querySelector("#story-heading"),
   passRole: document.querySelector("#pass-role"),
   compareBaseline: document.querySelector("#compare-baseline"),
@@ -59,7 +66,6 @@ const elements = {
   clearIrFilter: document.querySelector("#clear-ir-filter"),
   irResultCount: document.querySelector("#ir-result-count"),
   cfgNeighbourhood: document.querySelector("#cfg-neighbourhood"),
-  invalidRequest: document.querySelector("#invalid-request"),
 };
 
 async function request(path, options = {}) {
@@ -131,13 +137,15 @@ async function loadExample() {
       body: JSON.stringify({ exampleId }),
     });
     appState.showNoOpStates = false;
-    appState.irScope = "function";
+    appState.irScope = "block";
     appState.irFilter = "";
     appState.cfgNeighbourhood = false;
     elements.irScope.value = appState.irScope;
     elements.irFilter.value = appState.irFilter;
     elements.cfgNeighbourhood.checked = appState.cfgNeighbourhood;
     elements.fullPipeline.open = false;
+    elements.fullArtefact.open = false;
+    elements.selectionInspector.open = false;
     const stateLoaded = await renderState(0);
     if (!stateLoaded) return;
     elements.emptyState.hidden = true;
@@ -177,6 +185,10 @@ async function renderState(ordinal, focusedNodeId = null) {
       appState.selectedBlockId = functionBlocks[0]?.id ?? null;
       appState.selectedInstructionId = null;
     }
+    if (!appState.selectedInstructionId) {
+      const selectedBlock = functionBlocks.find((block) => block.id === appState.selectedBlockId);
+      appState.selectedInstructionId = selectedBlock?.instructions.find((instruction) => instruction.source)?.id ?? null;
+    }
     appState.cfg = currentFunction
       ? await request(`/api/cfg?ordinal=${ordinal}&functionId=${encodeURIComponent(currentFunction.id)}`)
       : null;
@@ -194,6 +206,7 @@ async function renderState(ordinal, focusedNodeId = null) {
     appState.comparisonToOrdinal = ordinal === 0
       ? storyStates[1]?.ordinal ?? 0
       : ordinal;
+    elements.fullArtefact.open = false;
     renderTimeline();
     renderNavigation();
     renderIr();
@@ -256,7 +269,12 @@ async function renderComparison() {
   const from = appState.session.states.find((state) => state.ordinal === fromOrdinal);
   const to = appState.session.states.find((state) => state.ordinal === toOrdinal);
   if (!from || !to) return;
-  const summary = await request(`/api/summary?fromOrdinal=${fromOrdinal}&toOrdinal=${toOrdinal}`);
+  const functionId = appState.selectedFunctionId;
+  const [summary, fromCfg, toCfg] = await Promise.all([
+    request(`/api/summary?fromOrdinal=${fromOrdinal}&toOrdinal=${toOrdinal}`),
+    request(`/api/cfg?ordinal=${fromOrdinal}&functionId=${encodeURIComponent(functionId)}`),
+    request(`/api/cfg?ordinal=${toOrdinal}&functionId=${encodeURIComponent(functionId)}`),
+  ]);
   elements.storyHeading.textContent = `What changed from ${from.stateId} to ${to.stateId}?`;
   elements.passRole.textContent = `Pass role: ${passRole(to)} Recorded outcomes below are specific to this curated example.`;
   elements.summaryContext.classList.toggle("is-anchor", to.transition?.kind === "recompiled");
@@ -265,38 +283,39 @@ async function renderComparison() {
     ? "Choose a later state to compare with the baseline"
     : `Compare baseline to ${to.stateId}`;
   renderSummary(summary);
+  renderStructuralResult(fromCfg, toCfg);
 }
 
 function renderSummary(summary) {
   elements.summaryContext.textContent = summary.context;
   const primaryItems = summary.items.slice(0, 3);
-  elements.storyOutcomes.replaceChildren(...primaryItems.map(renderSummaryItem));
-  elements.summaryDetail.hidden = summary.items.length <= primaryItems.length;
-  elements.summaryItems.replaceChildren(...summary.items.map(renderSummaryItem));
+  elements.storyOutcomes.replaceChildren(...primaryItems.map((item) => renderSummaryItem(item, false)));
+  elements.summaryDetail.hidden = false;
+  elements.summaryItems.replaceChildren(...summary.items.map((item) => renderSummaryItem(item, true)));
 }
 
-function renderSummaryItem(item) {
-    const listItem = document.createElement("li");
-    const claim = document.createElement("span");
-    claim.textContent = item.text;
-    listItem.append(claim);
-    if (item.evidence?.length) {
-      const evidence = document.createElement("details");
-      evidence.className = "summary-evidence";
-      const label = document.createElement("summary");
-      const linkCount = item.evidence.filter((entry) => entry.type === "link").length;
-      const remarkCount = item.evidence.filter((entry) => entry.type === "remark").length;
-      const parts = [];
-      if (linkCount) parts.push(`${linkCount} ${linkCount === 1 ? "correspondence link" : "correspondence links"}`);
-      if (remarkCount) parts.push(`${remarkCount} ${remarkCount === 1 ? "pass remark" : "pass remarks"}`);
-      label.textContent = `Evidence: ${parts.join(" · ")}`;
-      const list = document.createElement("div");
-      list.className = "summary-evidence-list";
-      item.evidence.forEach((entry) => list.append(renderSummaryEvidence(entry)));
-      evidence.append(label, list);
-      listItem.append(evidence);
-    }
-    return listItem;
+function renderSummaryItem(item, includeRawRemarks) {
+  const listItem = document.createElement("li");
+  const claim = document.createElement("span");
+  claim.textContent = item.text;
+  listItem.append(claim);
+  if (item.evidence?.length) {
+    const evidence = document.createElement("details");
+    evidence.className = "summary-evidence";
+    const label = document.createElement("summary");
+    const linkCount = item.evidence.filter((entry) => entry.type === "link").length;
+    const remarkCount = item.evidence.filter((entry) => entry.type === "remark").length;
+    const parts = [];
+    if (linkCount) parts.push(`${linkCount} ${linkCount === 1 ? "correspondence link" : "correspondence links"}`);
+    if (remarkCount) parts.push(`${remarkCount} ${remarkCount === 1 ? "pass remark" : "pass remarks"}`);
+    label.textContent = `Evidence: ${parts.join(" · ")}`;
+    const list = document.createElement("div");
+    list.className = "summary-evidence-list";
+    item.evidence.forEach((entry) => list.append(renderSummaryEvidence(entry, includeRawRemarks)));
+    evidence.append(label, list);
+    listItem.append(evidence);
+  }
+  return listItem;
 }
 
 function passRole(state) {
@@ -308,7 +327,26 @@ function passRole(state) {
     || "This recorded pass has a specialised role in the configured optimisation pipeline.";
 }
 
-function renderSummaryEvidence(entry) {
+function renderStructuralResult(fromCfg, toCfg) {
+  const changed = fromCfg.blocks.length !== toCfg.blocks.length
+    || fromCfg.edges.length !== toCfg.edges.length
+    || cfgEdgeSignature(fromCfg) !== cfgEdgeSignature(toCfg);
+  const result = changed
+    ? `CFG changed: ${fromCfg.blocks.length} → ${toCfg.blocks.length} basic blocks; ${fromCfg.edges.length} → ${toCfg.edges.length} edges.`
+    : `CFG unchanged: ${toCfg.blocks.length} basic blocks; ${toCfg.edges.length} edges.`;
+  elements.structureResult.textContent = result;
+  elements.openCfg.textContent = changed ? "Inspect the changed CFG" : "Inspect full CFG";
+  if (changed) elements.fullArtefact.open = true;
+}
+
+function cfgEdgeSignature(cfg) {
+  return cfg.edges
+    .map((edge) => `${edge.fromId}:${edge.label}:${edge.toId}`)
+    .sort()
+    .join("|");
+}
+
+function renderSummaryEvidence(entry, includeRawRemark) {
   const item = document.createElement("article");
   item.className = `summary-evidence-item is-${entry.type}`;
   if (entry.type === "link") {
@@ -334,9 +372,17 @@ function renderSummaryEvidence(entry) {
     ? ` Mapped to ${entry.instructionIds.join(", ")}.`
     : " No IR instruction shares its recorded debug location.";
   detail.textContent = `${entry.function ? `Function ${entry.function}` : "No function recorded"}${location}.${mapped}`;
-  const raw = document.createElement("pre");
-  raw.textContent = entry.raw;
-  item.append(title, detail, raw);
+  item.append(title, detail);
+  if (includeRawRemark) {
+    const raw = document.createElement("pre");
+    raw.textContent = entry.raw;
+    item.append(raw);
+  } else {
+    const disclosure = document.createElement("p");
+    disclosure.className = "muted";
+    disclosure.textContent = "The captured raw record is available in Inspect full artefact.";
+    item.append(disclosure);
+  }
   return item;
 }
 
@@ -346,6 +392,10 @@ function formatEvidenceNodes(nodes) {
 }
 
 function renderNavigation() {
+  const selectedFunction = appState.ir.functions.find((fn) => fn.id === appState.selectedFunctionId);
+  const hasChoice = appState.ir.functions.length > 1 || (selectedFunction?.blocks.length ?? 0) > 1;
+  elements.navigator.hidden = !hasChoice;
+  if (!hasChoice) return;
   elements.navigationTree.replaceChildren(...appState.ir.functions.map((fn) => {
     const group = document.createElement("div");
     group.className = "function-group";
@@ -422,6 +472,10 @@ function renderIr() {
     ? " · selected instruction is outside this display scope"
     : "";
   elements.irDescription.textContent = `${appState.ir.stateId} · ${fn.name} · ${visibleBlocks.length} of ${fn.blocks.length} basic blocks · ${visibleInstructions} of ${totalInstructions} instructions shown (${scopeLabel})${hiddenSelection}`;
+  const from = appState.session.states.find((state) => state.ordinal === appState.comparisonFromOrdinal);
+  const to = appState.session.states.find((state) => state.ordinal === appState.comparisonToOrdinal);
+  const position = appState.ir.stateId === from?.stateId ? "before" : "after";
+  elements.irChangeContext.textContent = `Viewing ${appState.ir.stateId} as the ${position} IR in ${from?.stateId} → ${to?.stateId}. Select an instruction to inspect its recorded counterpart.`;
   elements.irResultCount.textContent = filter
     ? `${visibleInstructions} matching instruction${visibleInstructions === 1 ? "" : "s"}`
     : `${visibleInstructions} instruction${visibleInstructions === 1 ? "" : "s"} shown`;
@@ -497,6 +551,7 @@ async function selectInstruction(instruction, block, fn) {
   appState.selectedFunctionId = fn.id;
   appState.selectedBlockId = block.id;
   appState.selectedInstructionId = instruction.id;
+  elements.selectionInspector.open = true;
   try {
     await request("/api/focus", {
       method: "POST",
@@ -531,12 +586,29 @@ function renderSource() {
   elements.sourceView.replaceChildren();
   if (!source) {
     elements.sourceDescription.textContent = "Source is unavailable for this state.";
+    elements.fullSourceView.replaceChildren();
     return;
   }
   elements.sourceDescription.textContent = instruction?.source
     ? `${source.filename}:${instruction.source.line}:${instruction.source.column} is the recorded debug anchor for the selected instruction.`
-    : "Select an IR instruction with a recorded debug location to highlight its source anchor.";
-  elements.sourceView.replaceChildren(...source.lines.map((line) => {
+    : "Select an IR instruction with a recorded debug location to show its source context.";
+  const snippet = instruction?.source
+    ? source.lines.filter((line) => Math.abs(line.number - instruction.source.line) <= 1)
+    : [];
+  renderSourceLines(elements.sourceView, snippet, instruction, "Select a mapped IR instruction to show a short source snippet.");
+  renderSourceLines(elements.fullSourceView, source.lines, instruction, "No curated source is available.");
+}
+
+function renderSourceLines(target, lines, instruction, emptyMessage) {
+  target.replaceChildren();
+  if (!lines.length) {
+    const empty = document.createElement("p");
+    empty.className = "source-empty";
+    empty.textContent = emptyMessage;
+    target.append(empty);
+    return;
+  }
+  target.append(...lines.map((line) => {
     const button = document.createElement("button");
     const isSelected = instruction?.source?.line === line.number;
     const isMapped = line.instructionIds.length > 0;
@@ -814,19 +886,16 @@ elements.fullPipeline.addEventListener("toggle", () => {
   }
   renderTimeline();
 });
+elements.openCfg.addEventListener("click", () => {
+  elements.fullArtefact.open = true;
+  document.querySelector("#cfg-heading")?.scrollIntoView({ block: "nearest" });
+});
 elements.compareBaseline.addEventListener("click", async () => {
   if (!appState.session || appState.comparisonToOrdinal === 0) return;
   appState.comparisonFromOrdinal = 0;
   try {
     await renderComparison();
     announce(`Comparing the baseline with ${appState.session.states[appState.comparisonToOrdinal].stateId}.`);
-  } catch (error) {
-    showError(error);
-  }
-});
-elements.invalidRequest.addEventListener("click", async () => {
-  try {
-    await request("/api/cfg?ordinal=0&functionId=missing");
   } catch (error) {
     showError(error);
   }

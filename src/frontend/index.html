@@ -54,13 +54,6 @@
           </div>
           <div id="summary-context" class="summary-context"></div>
           <ul id="story-outcomes" class="story-outcomes"></ul>
-          <details id="summary-detail" class="summary-detail">
-            <summary>Inspect exact recorded changes and evidence</summary>
-            <ul id="summary-items" class="summary-items"></ul>
-            <button id="compare-baseline" class="quiet-button" type="button" disabled>
-              Compare selected state with baseline
-            </button>
-          </details>
         </section>
 
         <section class="state-panel panel" aria-labelledby="state-heading">
@@ -82,20 +75,62 @@
           </div>
         </section>
 
-        <div class="view-grid">
-          <nav class="navigator panel" aria-labelledby="navigator-heading">
+        <div class="focus-grid">
+          <section class="ir-panel panel" aria-labelledby="ir-heading">
+            <div>
+              <p class="eyebrow">Selected IR change</p>
+              <h2 id="ir-heading">Intermediate representation</h2>
+            </div>
+            <p id="ir-change-context" class="ir-change-context" aria-live="polite"></p>
+            <p id="ir-description" class="muted"></p>
+            <div id="ir-view" class="ir-view" tabindex="0"></div>
+          </section>
+
+          <aside class="contextual-column" aria-label="Context for the selected IR change">
+            <section class="source-context panel" aria-labelledby="source-heading">
+              <div>
+                <p class="eyebrow">Source context</p>
+                <h2 id="source-heading">Mapped source</h2>
+              </div>
+              <p id="source-description" class="muted"></p>
+              <div id="source-view" class="source-view source-snippet"></div>
+            </section>
+
+            <section class="structure-context panel" aria-labelledby="structure-heading">
+              <div>
+                <p class="eyebrow">Structure</p>
+                <h2 id="structure-heading">Control flow</h2>
+              </div>
+              <p id="structure-result" class="structural-result" aria-live="polite"></p>
+              <button id="open-cfg" class="quiet-button" type="button">Inspect full CFG</button>
+            </section>
+
+            <details id="selection-inspector" class="selection-inspector panel">
+              <summary>
+                <span class="eyebrow">Selection inspector</span>
+                <span>Inspect source, CFG, and counterpart links</span>
+              </summary>
+              <div id="coordination-view" class="coordination-view" aria-live="polite"></div>
+            </details>
+          </aside>
+        </div>
+
+        <details id="full-artefact" class="full-artefact panel">
+          <summary>Inspect full artefact</summary>
+          <div class="full-artefact-content">
+            <nav id="navigator" class="navigator artefact-section" aria-labelledby="navigator-heading">
             <div>
               <p class="eyebrow">Navigate</p>
               <h2 id="navigator-heading">Functions and blocks</h2>
             </div>
             <div id="navigation-tree" class="navigation-tree"></div>
-          </nav>
+            </nav>
 
-          <section class="ir-panel panel" aria-labelledby="ir-heading">
+            <section class="artefact-controls artefact-section" aria-labelledby="display-heading">
             <div class="panel-heading">
               <div>
-                <p class="eyebrow">Structured IR</p>
-                <h2 id="ir-heading">Intermediate representation</h2>
+                <p class="eyebrow">Display controls</p>
+                <h2 id="display-heading">Full structured IR</h2>
               </div>
               <label class="toggle-control" for="debug-toggle">
                 <input id="debug-toggle" type="checkbox" />
@@ -117,10 +152,9 @@
               <button id="clear-ir-filter" class="quiet-button" type="button" disabled>Clear filter</button>
               <output id="ir-result-count" class="filter-result" aria-live="polite"></output>
             </fieldset>
-            <div id="ir-view" class="ir-view" tabindex="0"></div>
-          </section>
+            </section>
 
-          <section class="cfg-panel panel" aria-labelledby="cfg-heading">
+            <section class="cfg-panel artefact-section" aria-labelledby="cfg-heading">
             <div>
               <p class="eyebrow">Control-flow graph (CFG)</p>
               <h2 id="cfg-heading">Function structure</h2>
@@ -131,29 +165,25 @@
               <span>Show selected block and direct neighbours</span>
             </label>
             <div id="cfg-view" class="cfg-view"></div>
-          </section>
+            </section>
 
-          <section class="coordination-panel panel" aria-labelledby="coordination-heading">
+            <section class="full-source-section artefact-section" aria-labelledby="full-source-heading">
             <div>
-              <p class="eyebrow">Selection mapping</p>
-              <h2 id="coordination-heading">IR, CFG, and state links</h2>
+                <p class="eyebrow">Full source</p>
+                <h2 id="full-source-heading">Curated C source</h2>
             </div>
-            <div id="coordination-view" class="coordination-view" aria-live="polite"></div>
-          </section>
+              <div id="full-source-view" class="source-view"></div>
+            </section>
 
-          <section class="source-panel panel" aria-labelledby="source-heading">
-            <div>
-              <p class="eyebrow">Source anchor</p>
-              <h2 id="source-heading">Curated C source</h2>
-            </div>
-            <p id="source-description" class="muted"></p>
-            <div id="source-view" class="source-view"></div>
-          </section>
-        </div>
-
-        <button id="invalid-request" class="quiet-button" type="button">
-          Test controlled failure handling
-        </button>
+            <details id="summary-detail" class="summary-detail artefact-section">
+              <summary>Inspect exact recorded changes and evidence</summary>
+              <ul id="summary-items" class="summary-items"></ul>
+              <button id="compare-baseline" class="quiet-button" type="button" disabled>
+                Compare selected state with baseline
+              </button>
+            </details>
+          </div>
+        </details>
       </section>
     </main>
 

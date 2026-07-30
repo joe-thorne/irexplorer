@@ -178,6 +178,12 @@ class LocalhostApiTests(unittest.TestCase):
         self.assertIn('id="guided-timeline"', html)
         self.assertIn('id="full-pipeline"', html)
         self.assertIn('id="story-outcomes"', html)
+        self.assertIn('id="ir-change-context"', html)
+        self.assertIn('id="structure-result"', html)
+        self.assertIn('id="selection-inspector"', html)
+        self.assertIn('id="full-artefact"', html)
+        self.assertIn('id="full-source-view"', html)
+        self.assertNotIn('id="invalid-request"', html)
         self.assertNotIn('id="timeline-scrubber"', html)
         self.assertNotIn('id="state-options"', html)
         self.assertIn('id="ir-filter"', html)
@@ -196,6 +202,11 @@ class LocalhostApiTests(unittest.TestCase):
         self.assertIn("const storyStates = meaningfulTimelineStates()", javascript)
         self.assertIn("PASS_ROLES", javascript)
         self.assertIn("fullPipeline", javascript)
+        self.assertIn("renderStructuralResult", javascript)
+        self.assertIn("renderSourceLines", javascript)
+        self.assertIn("selectionInspector", javascript)
+        self.assertIn("includeRawRemark", javascript)
+        self.assertNotIn("invalidRequest", javascript)
 
 
 def _get_json(url: str) -> dict:
