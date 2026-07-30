@@ -175,6 +175,11 @@ class LocalhostApiTests(unittest.TestCase):
             self.assertEqual(response.headers.get_content_type(), "text/html")
         self.assertIn("irexplorer", html)
         self.assertIn('src="/app.js"', html)
+        self.assertIn('id="guided-timeline"', html)
+        self.assertIn('id="full-pipeline"', html)
+        self.assertIn('id="story-outcomes"', html)
+        self.assertNotIn('id="timeline-scrubber"', html)
+        self.assertNotIn('id="state-options"', html)
         self.assertIn('id="ir-filter"', html)
         self.assertIn('id="ir-scope"', html)
         self.assertIn('id="cfg-neighbourhood"', html)
@@ -187,6 +192,10 @@ class LocalhostApiTests(unittest.TestCase):
         self.assertIn("/api/session", javascript)
         self.assertIn("instructionMatchesFilter", javascript)
         self.assertIn("cfgNeighbourhood", javascript)
+        self.assertIn("meaningfulTimelineStates", javascript)
+        self.assertIn("const storyStates = meaningfulTimelineStates()", javascript)
+        self.assertIn("PASS_ROLES", javascript)
+        self.assertIn("fullPipeline", javascript)
 
 
 def _get_json(url: str) -> dict:

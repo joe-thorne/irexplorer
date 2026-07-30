@@ -15,18 +15,29 @@ const appState = {
   cfgNeighbourhood: false,
 };
 
+const PASS_ROLES = Object.freeze({
+  mem2reg: "Turn eligible local stack variables into SSA values.",
+  instcombine: "Simplify individual instruction forms.",
+  simplifycfg: "Simplify branches and basic-block structure.",
+  gvn: "Reuse computations already known to have the same value.",
+  "instcombine,simplifycfg": "Apply a cleanup of instruction forms and control flow.",
+  "loop-simplify,lcssa": "Put loops into a more regular form for later passes.",
+  "loop-rotate": "Reshape loop control flow when doing so is safe.",
+  licm: "Move loop-invariant work out of loops when it is safe.",
+  indvars: "Simplify loop induction variables.",
+  "loop-vectorize": "Attempt safe vectorisation of loop work.",
+});
+
 const elements = {
   exampleSelect: document.querySelector("#example-select"),
   loadButton: document.querySelector("#load-example"),
   notice: document.querySelector("#notice"),
   emptyState: document.querySelector("#empty-state"),
   explorer: document.querySelector("#explorer"),
-  stateOptions: document.querySelector("#state-options"),
   previousState: document.querySelector("#previous-state"),
   nextState: document.querySelector("#next-state"),
-  timelineScrubber: document.querySelector("#timeline-scrubber"),
-  timelinePosition: document.querySelector("#timeline-position"),
-  toggleNoops: document.querySelector("#toggle-noops"),
+  guidedTimeline: document.querySelector("#guided-timeline"),
+  fullPipeline: document.querySelector("#full-pipeline"),
   navigationTree: document.querySelector("#navigation-tree"),
   irDescription: document.querySelector("#ir-description"),
   irView: document.querySelector("#ir-view"),
@@ -35,10 +46,13 @@ const elements = {
   sourceDescription: document.querySelector("#source-description"),
   sourceView: document.querySelector("#source-view"),
   coordinationView: document.querySelector("#coordination-view"),
-  comparisonHeading: document.querySelector("#comparison-heading"),
+  storyHeading: document.querySelector("#story-heading"),
+  passRole: document.querySelector("#pass-role"),
   compareBaseline: document.querySelector("#compare-baseline"),
   summaryContext: document.querySelector("#summary-context"),
+  storyOutcomes: document.querySelector("#story-outcomes"),
   summaryItems: document.querySelector("#summary-items"),
+  summaryDetail: document.querySelector("#summary-detail"),
   debugToggle: document.querySelector("#debug-toggle"),
   irScope: document.querySelector("#ir-scope"),
   irFilter: document.querySelector("#ir-filter"),
@@ -123,6 +137,7 @@ async function loadExample() {
     elements.irScope.value = appState.irScope;
     elements.irFilter.value = appState.irFilter;
     elements.cfgNeighbourhood.checked = appState.cfgNeighbourhood;
+    elements.fullPipeline.open = false;
     const stateLoaded = await renderState(0);
     if (!stateLoaded) return;
     elements.emptyState.hidden = true;
@@ -171,10 +186,15 @@ async function renderState(ordinal, focusedNodeId = null) {
       body: JSON.stringify({ ordinal, nodeId: focusedId }),
     });
     appState.currentOrdinal = ordinal;
-    appState.comparisonFromOrdinal = ordinal === 0 ? 0 : ordinal - 1;
-    appState.comparisonToOrdinal = ordinal === 0 ? 1 : ordinal;
-    renderTimelineControls();
-    renderStateOptions();
+    const storyStates = meaningfulTimelineStates();
+    const storyIndex = storyStates.findIndex((candidate) => candidate.ordinal === ordinal);
+    appState.comparisonFromOrdinal = ordinal === 0
+      ? 0
+      : storyStates[Math.max(0, storyIndex - 1)].ordinal;
+    appState.comparisonToOrdinal = ordinal === 0
+      ? storyStates[1]?.ordinal ?? 0
+      : ordinal;
+    renderTimeline();
     renderNavigation();
     renderIr();
     renderCfg();
@@ -189,44 +209,35 @@ async function renderState(ordinal, focusedNodeId = null) {
   }
 }
 
-function renderStateOptions() {
-  const ordinal = appState.currentOrdinal;
-  const visibleStates = appState.session.states.filter((state) => (
-    !state.transition?.noOp || appState.showNoOpStates || state.ordinal === ordinal
+function meaningfulTimelineStates() {
+  return appState.session.states.filter((state) => (
+    state.ordinal === 0 || appState.showNoOpStates || !state.transition?.noOp
   ));
-  elements.stateOptions.replaceChildren(...visibleStates.map((state) => {
-    const label = document.createElement("label");
-    const transition = state.transition;
-    label.className = `state-option${transition?.noOp ? " is-noop" : ""}${transition?.kind === "recompiled" ? " is-anchor" : ""}`;
-    const input = document.createElement("input");
-    input.name = "state";
-    input.type = "radio";
-    input.value = String(state.ordinal);
-    input.checked = state.ordinal === ordinal;
-    input.addEventListener("change", () => renderState(state.ordinal));
-    const text = document.createElement("span");
-    text.innerHTML = `<strong>${state.stateId}</strong><br><small>${stateLabel(state)}</small>`;
-    label.append(input, text);
-    return label;
-  }));
 }
 
-function renderTimelineControls() {
+function renderTimeline() {
   const states = appState.session.states;
   const ordinal = appState.currentOrdinal;
-  const current = states[ordinal];
   const noOpCount = states.filter((state) => state.transition?.noOp).length;
-  elements.previousState.disabled = ordinal === 0;
-  elements.nextState.disabled = ordinal === states.length - 1;
-  elements.timelineScrubber.min = "0";
-  elements.timelineScrubber.max = String(states.length - 1);
-  elements.timelineScrubber.value = String(ordinal);
-  elements.timelineScrubber.setAttribute("aria-valuetext", `${current.stateId}, state ${ordinal + 1} of ${states.length}`);
-  elements.timelinePosition.textContent = `${current.stateId} · state ${ordinal + 1} of ${states.length}`;
-  elements.toggleNoops.hidden = noOpCount === 0;
-  elements.toggleNoops.textContent = appState.showNoOpStates
-    ? "Collapse unchanged passes"
-    : `Show ${noOpCount} unchanged ${noOpCount === 1 ? "pass" : "passes"}`;
+  const visibleStates = meaningfulTimelineStates();
+  const visibleIndex = visibleStates.findIndex((state) => state.ordinal === ordinal);
+  elements.previousState.disabled = visibleIndex <= 0;
+  elements.nextState.disabled = visibleIndex === -1 || visibleIndex === visibleStates.length - 1;
+  elements.fullPipeline.hidden = noOpCount === 0;
+  elements.guidedTimeline.replaceChildren(...visibleStates.map((state) => {
+    const item = document.createElement("li");
+    const button = document.createElement("button");
+    const transition = state.transition;
+    button.type = "button";
+    button.className = `timeline-marker${state.ordinal === ordinal ? " is-current" : ""}${transition?.noOp ? " is-noop" : ""}${transition?.kind === "recompiled" ? " is-anchor" : ""}`;
+    button.textContent = state.stateId;
+    button.title = stateLabel(state);
+    button.setAttribute("aria-current", String(state.ordinal === ordinal));
+    button.setAttribute("aria-label", `${state.stateId}: ${stateLabel(state)}`);
+    button.addEventListener("click", () => renderState(state.ordinal));
+    item.append(button);
+    return item;
+  }));
 }
 
 function stateLabel(state) {
@@ -246,7 +257,8 @@ async function renderComparison() {
   const to = appState.session.states.find((state) => state.ordinal === toOrdinal);
   if (!from || !to) return;
   const summary = await request(`/api/summary?fromOrdinal=${fromOrdinal}&toOrdinal=${toOrdinal}`);
-  elements.comparisonHeading.textContent = `${from.stateId} → ${to.stateId}`;
+  elements.storyHeading.textContent = `What changed from ${from.stateId} to ${to.stateId}?`;
+  elements.passRole.textContent = `Pass role: ${passRole(to)} Recorded outcomes below are specific to this curated example.`;
   elements.summaryContext.classList.toggle("is-anchor", to.transition?.kind === "recompiled");
   elements.compareBaseline.disabled = toOrdinal === 0 || fromOrdinal === 0;
   elements.compareBaseline.textContent = toOrdinal === 0
@@ -257,7 +269,13 @@ async function renderComparison() {
 
 function renderSummary(summary) {
   elements.summaryContext.textContent = summary.context;
-  elements.summaryItems.replaceChildren(...summary.items.map((item) => {
+  const primaryItems = summary.items.slice(0, 3);
+  elements.storyOutcomes.replaceChildren(...primaryItems.map(renderSummaryItem));
+  elements.summaryDetail.hidden = summary.items.length <= primaryItems.length;
+  elements.summaryItems.replaceChildren(...summary.items.map(renderSummaryItem));
+}
+
+function renderSummaryItem(item) {
     const listItem = document.createElement("li");
     const claim = document.createElement("span");
     claim.textContent = item.text;
@@ -279,7 +297,15 @@ function renderSummary(summary) {
       listItem.append(evidence);
     }
     return listItem;
-  }));
+}
+
+function passRole(state) {
+  if (state.ordinal === 0) return "This is the unoptimised starting point.";
+  if (state.transition?.kind === "recompiled") {
+    return "This is a separately compiled -O3 output anchor, not the result of one pass.";
+  }
+  return PASS_ROLES[state.transition?.passName]
+    || "This recorded pass has a specialised role in the configured optimisation pipeline.";
 }
 
 function renderSummaryEvidence(entry) {
@@ -764,21 +790,29 @@ elements.cfgNeighbourhood.addEventListener("change", () => {
   renderCfg();
 });
 elements.previousState.addEventListener("click", () => {
-  if (appState.currentOrdinal > 0) renderState(appState.currentOrdinal - 1);
+  const states = meaningfulTimelineStates();
+  const index = states.findIndex((state) => state.ordinal === appState.currentOrdinal);
+  if (index > 0) renderState(states[index - 1].ordinal);
 });
 elements.nextState.addEventListener("click", () => {
-  if (appState.session && appState.currentOrdinal < appState.session.states.length - 1) {
-    renderState(appState.currentOrdinal + 1);
+  const states = meaningfulTimelineStates();
+  const index = states.findIndex((state) => state.ordinal === appState.currentOrdinal);
+  if (index !== -1 && index < states.length - 1) renderState(states[index + 1].ordinal);
+});
+elements.fullPipeline.addEventListener("toggle", () => {
+  appState.showNoOpStates = elements.fullPipeline.open;
+  const current = appState.session?.states[appState.currentOrdinal];
+  if (!appState.showNoOpStates && current?.transition?.noOp) {
+    const precedingChange = appState.session.states
+      .slice(0, current.ordinal)
+      .reverse()
+      .find((state) => state.ordinal === 0 || !state.transition?.noOp);
+    if (precedingChange) {
+      renderState(precedingChange.ordinal);
+      return;
+    }
   }
-});
-elements.timelineScrubber.addEventListener("change", () => {
-  const ordinal = Number.parseInt(elements.timelineScrubber.value, 10);
-  if (Number.isInteger(ordinal)) renderState(ordinal);
-});
-elements.toggleNoops.addEventListener("click", () => {
-  appState.showNoOpStates = !appState.showNoOpStates;
-  renderTimelineControls();
-  renderStateOptions();
+  renderTimeline();
 });
 elements.compareBaseline.addEventListener("click", async () => {
   if (!appState.session || appState.comparisonToOrdinal === 0) return;

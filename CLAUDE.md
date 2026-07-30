@@ -6,7 +6,7 @@ For thesis context, aims, and process, see `../CLAUDE.md`. Design basis: `../del
 
 ## Status
 
-Phase 2 complete (S2.1–S2.6 complete; the S1.8 verification gate remains to be documented). Architecture: Option C — a browser JavaScript single-page front-end (`src/frontend/`, static HTML/CSS/JS assets) served by a local Python backend (`src/backend/`) that owns artefact generation, the internal model, comparison, and a `localhost` model-query API (collapsible to a hosted web app later). Build order, decisions, and rules: `../deliverables/5-system-plan/implementation-plan.md`. Canonical generation environment: `docs/environment.md`.
+Phase 3 in progress (S2.1–S2.6 and S3.1 complete; the S1.8 verification gate remains to be documented). Architecture: Option C — a browser JavaScript single-page front-end (`src/frontend/`, static HTML/CSS/JS assets) served by a local Python backend (`src/backend/`) that owns artefact generation, the internal model, comparison, and a `localhost` model-query API (collapsible to a hosted web app later). Build order, decisions, and rules: `../deliverables/5-system-plan/implementation-plan.md`. Canonical generation environment: `docs/environment.md`.
 
 Built and under green tests:
 
@@ -24,8 +24,9 @@ Built and under green tests:
 - **S2.4** — sequential previous/next and scrubber controls drive the complete pass timeline, retaining the anchor break and collapsing no-op passes until expanded. Correspondence summaries now distinguish additions, removals, relation classes, CFG stability, and uncertainty; every claim expands into its supporting link records. The generator captures a YAML remark record for every derived `opt` state; records attach by debug location to target instructions and are preserved on the corresponding immutable `PassStep` for summary evidence. The fully re-baked snapshot is checksum-gated.
 - **S2.5** — function-selected views now add local IR filtering and a selected-block detail scope, while the CFG can collapse to the selected block's direct neighbourhood. The UI exposes result counts, keyboard semantics, non-colour selection cues, reduced-motion and forced-colour support, and responsive display controls. `docs/accessibility.md` records the scale fixture, contrast audit, and verification boundary.
 - **S2.6** — `docs/input-isolation.md` fixes the design-only gate for future user-supplied C: strict admission, a fresh no-network resource-bounded worker, sanitised controlled failures, ephemeral retention, and preconditions for activation. The current service has no source-analysis route, does not invoke a live toolchain, and remains curated/pre-baked by default; a localhost test locks that boundary.
+- **S3.1** — the learner-facing front end now has one labelled marker timeline with previous/next navigation, showing baseline and changing states by default while retaining no-op passes behind a full-pipeline disclosure. It leads with up to three link-backed outcomes and a clearly general pass role; full generated summaries and their evidence remain on demand. The `-O3` anchor remains marked and honestly framed as separately compiled output.
 
-Next: S1.8 MVP verification documentation. Phase 3 features remain opportunistic; live arbitrary input is Phase 4 only after the S2.6 activation gate.
+Next: S3.2 contextual representations and evidence disclosure, then S3.3 guided prompts and S3.4 browser walkthroughs. S1.8 MVP verification documentation also remains outstanding; live arbitrary input is Phase 5 only after the S2.6 activation gate.
 
 Run the backend tests from this directory with the project virtual environment: `.venv/bin/python -m unittest discover -s tests -v`.
 

@@ -46,39 +46,39 @@
       </section>
 
       <section id="explorer" class="explorer" hidden aria-label="Optimisation comparison">
-        <section class="comparison panel" aria-labelledby="comparison-heading">
-          <div>
-            <p class="eyebrow">Comparison</p>
-            <h2 id="comparison-heading">Selected optimisation transition</h2>
+        <section class="comparison story panel" aria-labelledby="story-heading">
+          <div class="story-heading">
+            <p class="eyebrow">Current optimisation step</p>
+            <h2 id="story-heading">What changed?</h2>
+            <p id="pass-role" class="pass-role"></p>
           </div>
-          <button id="compare-baseline" class="quiet-button" type="button" disabled>
-            Compare baseline to selected state
-          </button>
           <div id="summary-context" class="summary-context"></div>
-          <ul id="summary-items" class="summary-items"></ul>
+          <ul id="story-outcomes" class="story-outcomes"></ul>
+          <details id="summary-detail" class="summary-detail">
+            <summary>Inspect exact recorded changes and evidence</summary>
+            <ul id="summary-items" class="summary-items"></ul>
+            <button id="compare-baseline" class="quiet-button" type="button" disabled>
+              Compare selected state with baseline
+            </button>
+          </details>
         </section>
 
         <section class="state-panel panel" aria-labelledby="state-heading">
           <div>
             <p class="eyebrow">Pass timeline</p>
-            <h2 id="state-heading">Step through optimisation states</h2>
-            <p class="muted">Move one recorded transition at a time, or scrub directly to a state.</p>
+            <h2 id="state-heading">Follow the optimisation story</h2>
+            <p class="muted">The default path shows the recorded states whose IR changed. The full compiler pipeline remains available below.</p>
           </div>
           <div class="timeline-controls">
-            <div class="timeline-stepper" aria-label="Optimisation state stepper">
+            <div class="guided-timeline-controls" aria-label="Optimisation story timeline">
               <button id="previous-state" class="timeline-button" type="button">Previous</button>
-              <label class="timeline-scrubber-label" for="timeline-scrubber">
-                <span id="timeline-position">State 1 of 14</span>
-                <input id="timeline-scrubber" type="range" min="0" max="0" value="0" />
-              </label>
+              <ol id="guided-timeline" class="guided-timeline"></ol>
               <button id="next-state" class="timeline-button" type="button">Next</button>
             </div>
-            <div class="timeline-options">
-              <button id="toggle-noops" class="quiet-button" type="button">Show unchanged passes</button>
-              <fieldset id="state-options" class="state-options">
-                <legend class="visually-hidden">Optimisation state</legend>
-              </fieldset>
-            </div>
+            <details id="full-pipeline" class="full-pipeline">
+              <summary>Show the full 14-state compiler pipeline</summary>
+              <p>The expanded timeline includes retained passes that made no recorded structural or value-level change.</p>
+            </details>
           </div>
         </section>
 
