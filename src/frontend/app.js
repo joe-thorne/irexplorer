@@ -13,6 +13,7 @@ const appState = {
   irScope: "function",
   irFilter: "",
   cfgNeighbourhood: false,
+  learningTaskIndex: 0,
 };
 
 const PASS_ROLES = Object.freeze({
@@ -26,6 +27,58 @@ const PASS_ROLES = Object.freeze({
   licm: "Move loop-invariant work out of loops when it is safe.",
   indvars: "Simplify loop induction variables.",
   "loop-vectorize": "Attempt safe vectorisation of loop work.",
+});
+
+const CURATED_LEARNING_TASKS = Object.freeze({
+  score: Object.freeze([
+    Object.freeze({
+      title: "Where did `wasted` go?",
+      startOrdinal: 1,
+      sourceLine: 3,
+      prompt: "Locate the calculation assigned to `wasted`, then decide what the next recorded pass does to its IR.",
+      evidencePath: "At mem2reg, select source line 3, then move one marker forward to instcombine and inspect the source snippet, IR, and step evidence.",
+      observation: "At mem2reg, source line 3 maps to `%mul1`, `%mul2`, and `%sub`. At instcombine that source line has no mapped instruction, and the direct correspondence summary records four removed instructions.",
+      record: "Evidence: the recorded source mappings for score.c:3 and the adjacent mem2reg → instcombine correspondence overlay.",
+    }),
+    Object.freeze({
+      title: "Recognise the instruction-form rewrite",
+      startOrdinal: 1,
+      sourceLine: 2,
+      prompt: "Compare the IR for `limit = scale * 32` before and after instcombine. What instruction form replaces the multiplication?",
+      evidencePath: "At mem2reg, select source line 2, then move one marker forward to instcombine and use the selected IR change plus its counterpart link.",
+      observation: "The source-mapped `%mul = mul nsw i32 %scale, 32` is shown as `%mul = shl nsw i32 %scale, 5` after instcombine. The correspondence presents this as an approximate renamed link, so the UI does not claim a stronger identity than the record supports.",
+      record: "Evidence: the source mapping for score.c:2 and the direct mem2reg → instcombine correspondence link for `%mul`.",
+    }),
+    Object.freeze({
+      title: "Explain the block collapse",
+      startOrdinal: 2,
+      prompt: "Compare the control-flow graph immediately before and after simplifycfg. What structural change does the recorded result show?",
+      evidencePath: "Open instcombine, inspect the full CFG, then move one marker forward to simplifycfg and read the structural result and correspondence evidence.",
+      observation: "The recorded CFG changes from four basic blocks and four edges to one basic block and no edges. The direct summary accounts for this as three removed basic blocks, rather than attributing it to source text alone.",
+      record: "Evidence: the score instcombine and simplifycfg API CFG records, plus their adjacent correspondence overlay.",
+    }),
+  ]),
+  binary_search: Object.freeze([
+    Object.freeze({
+      title: "Trace a control-flow simplification",
+      startOrdinal: 2,
+      prompt: "Use the full CFG to compare binary_search before and after simplifycfg. Which branch blocks disappear from the recorded graph?",
+      evidencePath: "Open instcombine, inspect the full CFG, then move one marker forward to simplifycfg and expand the exact recorded changes if needed.",
+      observation: "The graph changes from 11 basic blocks and 14 edges to 7 basic blocks and 9 edges. The correspondence records `if.then`, `if.else`, `if.end`, and `if.then7` as removed basic blocks.",
+      record: "Evidence: the binary_search instcombine and simplifycfg API CFG records and their direct correspondence links.",
+    }),
+  ]),
+  quick_sort: Object.freeze([
+    Object.freeze({
+      title: "Scope the investigation to the partition loop",
+      startOrdinal: 0,
+      functionName: "partition",
+      prompt: "Use function navigation to switch from quick_sort to partition before inspecting its control flow. Why is this a useful scope for the loop investigation?",
+      evidencePath: "Open the baseline, then use Functions and blocks in Inspect full artefact to select partition and compare its CFG with quick_sort.",
+      observation: "At the baseline, quick_sort has 3 basic blocks while partition has 7 basic blocks and 8 edges. Selecting partition therefore isolates the loop-bearing function instead of mixing it with the recursive caller.",
+      record: "Evidence: the baseline quick_sort API IR containment record and function-scoped CFG responses for quick_sort and partition.",
+    }),
+  ]),
 });
 
 const elements = {
@@ -60,6 +113,17 @@ const elements = {
   storyOutcomes: document.querySelector("#story-outcomes"),
   summaryItems: document.querySelector("#summary-items"),
   summaryDetail: document.querySelector("#summary-detail"),
+  learningTask: document.querySelector("#learning-task"),
+  learningTaskHeading: document.querySelector("#learning-task-heading"),
+  learningTaskPosition: document.querySelector("#learning-task-position"),
+  learningTaskPrompt: document.querySelector("#learning-task-prompt"),
+  learningEvidencePath: document.querySelector("#learning-evidence-path"),
+  openLearningTask: document.querySelector("#open-learning-task"),
+  learningAnswer: document.querySelector("#learning-answer"),
+  learningObservation: document.querySelector("#learning-observation"),
+  learningRecord: document.querySelector("#learning-record"),
+  learningTaskPicker: document.querySelector("#learning-task-picker"),
+  learningTaskOptions: document.querySelector("#learning-task-options"),
   debugToggle: document.querySelector("#debug-toggle"),
   irScope: document.querySelector("#ir-scope"),
   irFilter: document.querySelector("#ir-filter"),
@@ -140,12 +204,15 @@ async function loadExample() {
     appState.irScope = "block";
     appState.irFilter = "";
     appState.cfgNeighbourhood = false;
+    appState.learningTaskIndex = 0;
     elements.irScope.value = appState.irScope;
     elements.irFilter.value = appState.irFilter;
     elements.cfgNeighbourhood.checked = appState.cfgNeighbourhood;
     elements.fullPipeline.open = false;
     elements.fullArtefact.open = false;
     elements.selectionInspector.open = false;
+    elements.learningAnswer.open = false;
+    elements.learningTaskPicker.open = false;
     const stateLoaded = await renderState(0);
     if (!stateLoaded) return;
     elements.emptyState.hidden = true;
@@ -214,12 +281,74 @@ async function renderState(ordinal, focusedNodeId = null) {
     renderSource();
     await renderComparison();
     await renderCoordination();
+    renderLearningTask();
     announce(`Showing ${state.stateId}.`);
     return true;
   } catch (error) {
     showError(error);
     return false;
   }
+}
+
+function learningTasks() {
+  return CURATED_LEARNING_TASKS[appState.session?.exampleId] || [];
+}
+
+function currentLearningTask() {
+  const tasks = learningTasks();
+  return tasks[appState.learningTaskIndex] || tasks[0] || null;
+}
+
+function renderLearningTask() {
+  const tasks = learningTasks();
+  const task = currentLearningTask();
+  elements.learningTask.hidden = !task;
+  if (!task) return;
+  const startState = appState.session.states.find((state) => state.ordinal === task.startOrdinal);
+  elements.learningTaskHeading.textContent = task.title;
+  elements.learningTaskPosition.textContent = `Task ${appState.learningTaskIndex + 1} of ${tasks.length}`;
+  elements.learningTaskPrompt.textContent = task.prompt;
+  elements.learningEvidencePath.textContent = task.evidencePath;
+  elements.openLearningTask.textContent = `Open ${startState?.stateId || "starting"} evidence`;
+  elements.learningObservation.textContent = task.observation;
+  elements.learningRecord.textContent = task.record;
+  elements.learningTaskOptions.replaceChildren(...tasks.map((option, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "learning-task-option";
+    button.textContent = `Task ${index + 1}: ${option.title}`;
+    button.setAttribute("aria-pressed", String(index === appState.learningTaskIndex));
+    button.addEventListener("click", () => {
+      appState.learningTaskIndex = index;
+      elements.learningAnswer.open = false;
+      renderLearningTask();
+      elements.learningTaskPicker.open = false;
+      announce(`Selected learning task: ${option.title}.`);
+    });
+    return button;
+  }));
+}
+
+async function openLearningTask() {
+  const task = currentLearningTask();
+  if (!task || !appState.session) return;
+  const opened = await renderState(task.startOrdinal);
+  if (!opened) return;
+  if (task.functionName) {
+    const fn = appState.ir.functions.find((candidate) => candidate.name === task.functionName);
+    if (fn && fn.id !== appState.selectedFunctionId) {
+      appState.selectedFunctionId = fn.id;
+      appState.selectedBlockId = fn.blocks[0]?.id ?? null;
+      appState.selectedInstructionId = null;
+      if (!await renderState(task.startOrdinal)) return;
+    }
+    elements.fullArtefact.open = true;
+  }
+  if (task.sourceLine) {
+    const line = appState.source.lines.find((candidate) => candidate.number === task.sourceLine);
+    if (line?.instructionIds.length) await focusSourceLine(line);
+  }
+  announce(`Opened the recorded starting evidence for: ${task.title}.`);
 }
 
 function meaningfulTimelineStates() {
@@ -842,6 +971,9 @@ function renderCfg() {
 }
 
 elements.loadButton.addEventListener("click", loadExample);
+elements.openLearningTask.addEventListener("click", () => {
+  openLearningTask().catch(showError);
+});
 elements.debugToggle.addEventListener("change", renderIr);
 elements.irScope.addEventListener("change", () => {
   appState.irScope = elements.irScope.value;

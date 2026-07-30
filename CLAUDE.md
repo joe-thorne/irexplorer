@@ -6,7 +6,7 @@ For thesis context, aims, and process, see `../CLAUDE.md`. Design basis: `../del
 
 ## Status
 
-Phase 3 in progress (S2.1–S2.6 and S3.1–S3.2 complete; the S1.8 verification gate remains to be documented). Architecture: Option C — a browser JavaScript single-page front-end (`src/frontend/`, static HTML/CSS/JS assets) served by a local Python backend (`src/backend/`) that owns artefact generation, the internal model, comparison, and a `localhost` model-query API (collapsible to a hosted web app later). Build order, decisions, and rules: `../deliverables/5-system-plan/implementation-plan.md`. Canonical generation environment: `docs/environment.md`.
+Phase 3 in progress (S2.1–S2.6 and S3.1–S3.3 complete; the S1.8 verification gate remains to be documented). Architecture: Option C — a browser JavaScript single-page front-end (`src/frontend/`, static HTML/CSS/JS assets) served by a local Python backend (`src/backend/`) that owns artefact generation, the internal model, comparison, and a `localhost` model-query API (collapsible to a hosted web app later). Build order, decisions, and rules: `../deliverables/5-system-plan/implementation-plan.md`. Canonical generation environment: `docs/environment.md`.
 
 Built and under green tests:
 
@@ -26,8 +26,9 @@ Built and under green tests:
 - **S2.6** — `docs/input-isolation.md` fixes the design-only gate for future user-supplied C: strict admission, a fresh no-network resource-bounded worker, sanitised controlled failures, ephemeral retention, and preconditions for activation. The current service has no source-analysis route, does not invoke a live toolchain, and remains curated/pre-baked by default; a localhost test locks that boundary.
 - **S3.1** — the learner-facing front end now has one labelled marker timeline with previous/next navigation, showing baseline and changing states by default while retaining no-op passes behind a full-pipeline disclosure. It leads with up to three link-backed outcomes and a clearly general pass role; full generated summaries and their evidence remain on demand. The `-O3` anchor remains marked and honestly framed as separately compiled output.
 - **S3.2** — the default workspace centres selected-block IR with explicit before/after state context, a recorded source snippet, and a compact API-derived CFG result. Structural changes open the full artefact disclosure; unchanged CFGs do not compete by default. The full artefact retains navigation, display controls, debug metadata, full source/CFG, evidence, raw remarks, and baseline comparison; a selection inspector retains confidence-labelled source/CFG/counterpart navigation. The learner-facing controlled-failure button is removed, while its API route regression remains.
+- **S3.3** — the default path now includes one short curated learning task at a time, with a recorded evidence path, a starting-state control, and a separately disclosed observation. The five `score`, `binary_search`, and `quick_sort` tasks cover source-to-IR inspection, instruction-form and CFG comparisons, and function-scoped navigation; `docs/learning-tasks.md` links every observation to the existing source mappings, API CFG responses, or correspondence records. Static-asset regression coverage locks the prompt surface and all curated examples.
 
-Next: S3.3 guided prompts, then S3.4 browser walkthroughs. S1.8 MVP verification documentation also remains outstanding; live arbitrary input is Phase 5 only after the S2.6 activation gate.
+Next: S3.4 browser walkthroughs. S1.8 MVP verification documentation also remains outstanding; live arbitrary input is Phase 5 only after the S2.6 activation gate.
 
 Run the backend tests from this directory with the project virtual environment: `.venv/bin/python -m unittest discover -s tests -v`.
 

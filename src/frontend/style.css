@@ -76,6 +76,19 @@ button:disabled, select:disabled { cursor: not-allowed; opacity: .65; }
 .summary-evidence-item.is-remark { border-left-color: #a15c07; background: #fff7df; }
 .summary-evidence-item p { margin: .18rem 0; overflow-wrap: anywhere; }
 .summary-evidence-item pre { background: #fff; border: 1px solid #e7d9b6; border-radius: .2rem; font-size: .72rem; margin: .35rem 0 0; max-height: 12rem; overflow: auto; padding: .35rem; white-space: pre-wrap; }
+.learning-task { display: grid; gap: .7rem; }
+.learning-task-heading { display: grid; gap: .1rem; }
+.learning-task-heading h2 { font-size: 1.15rem; margin-bottom: 0; }
+.learning-task-heading .muted { margin-bottom: 0; }
+.learning-task-prompt, .learning-evidence-path, .learning-answer p { margin: 0; }
+.learning-evidence-path { background: #f2fafb; border-left: 4px solid var(--accent); border-radius: .25rem; padding: .6rem .7rem; }
+.learning-answer, .learning-task-picker { border-top: 1px solid var(--line); padding-top: .6rem; }
+.learning-answer summary, .learning-task-picker summary { color: var(--accent); cursor: pointer; font-weight: 750; }
+.learning-answer p:first-of-type { color: var(--ink); font-weight: 650; margin-top: .6rem; }
+.learning-answer p + p { margin-top: .35rem; }
+.learning-task-options { display: grid; gap: .4rem; margin-top: .6rem; }
+.learning-task-option { background: #fff; border: 1px solid #9fb3c8; color: var(--ink); min-height: 2.1rem; padding: .35rem .5rem; text-align: left; }
+.learning-task-option:hover, .learning-task-option[aria-pressed="true"] { background: var(--accent-soft); color: var(--ink); }
 .state-panel { align-items: start; display: flex; gap: 1.5rem; justify-content: space-between; }
 .state-panel .muted { margin-bottom: 0; }
 .timeline-controls { display: grid; gap: .6rem; min-width: min(100%, 48rem); }
