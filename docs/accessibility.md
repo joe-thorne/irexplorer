@@ -38,7 +38,9 @@ filter the currently selected function/state data already held by the view.
 | Narrow screens | Existing single-column layout remains, and the display controls stack with full-width filtering below 700px. |
 
 Automated checks cover the larger fixture, served accessibility controls, API
-routes, JavaScript syntax, and CSS diff integrity. The in-app browser was not
-available in the implementation environment, so no visual screenshot is
-claimed from this pass; a manual browser walkthrough remains useful before a
-public demo.
+routes, JavaScript syntax, and CSS diff integrity. S3.4 adds rendered Chrome
+captures and layout/media-preference checks in
+`evaluation-captures/s3-4-walkthrough.md`. Its physical-keyboard row remains
+explicitly outstanding because the host could not inject real keyboard input
+into Chrome and did not expose a physical desktop display; complete that one
+manual Tab/Enter pass before a public demonstration.

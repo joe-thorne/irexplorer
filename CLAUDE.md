@@ -28,7 +28,7 @@ Built and under green tests:
 - **S3.2** — the default workspace centres selected-block IR with explicit before/after state context, a recorded source snippet, and a compact API-derived CFG result. Structural changes open the full artefact disclosure; unchanged CFGs do not compete by default. The full artefact retains navigation, display controls, debug metadata, full source/CFG, evidence, raw remarks, and baseline comparison; a selection inspector retains confidence-labelled source/CFG/counterpart navigation. The learner-facing controlled-failure button is removed, while its API route regression remains.
 - **S3.3** — the default path now includes one short curated learning task at a time, with a recorded evidence path, a starting-state control, and a separately disclosed observation. The five `score`, `binary_search`, and `quick_sort` tasks cover source-to-IR inspection, instruction-form and CFG comparisons, and function-scoped navigation; `docs/learning-tasks.md` links every observation to the existing source mappings, API CFG responses, or correspondence records. Static-asset regression coverage locks the prompt surface and all curated examples.
 
-Next: S3.4 browser walkthroughs. S1.8 MVP verification documentation also remains outstanding; live arbitrary input is Phase 5 only after the S2.6 activation gate.
+Next: finish S3.4 with one physical-keyboard Tab/Enter walkthrough; its rendered captures, media/layout checks, and evidence record are in `docs/evaluation-captures/`. S1.8 MVP verification documentation also remains outstanding; live arbitrary input is Phase 5 only after the S2.6 activation gate.
 
 Run the backend tests from this directory with the project virtual environment: `.venv/bin/python -m unittest discover -s tests -v`.
 

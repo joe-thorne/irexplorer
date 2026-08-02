@@ -34,6 +34,7 @@ const CURATED_LEARNING_TASKS = Object.freeze({
     Object.freeze({
       title: "Where did `wasted` go?",
       startOrdinal: 1,
+      contextOrdinals: Object.freeze([0, 1, 2]),
       sourceLine: 3,
       prompt: "Locate the calculation assigned to `wasted`, then decide what the next recorded pass does to its IR.",
       evidencePath: "At mem2reg, select source line 3, then move one marker forward to instcombine and inspect the source snippet, IR, and step evidence.",
@@ -43,6 +44,7 @@ const CURATED_LEARNING_TASKS = Object.freeze({
     Object.freeze({
       title: "Recognise the instruction-form rewrite",
       startOrdinal: 1,
+      contextOrdinals: Object.freeze([1, 2]),
       sourceLine: 2,
       prompt: "Compare the IR for `limit = scale * 32` before and after instcombine. What instruction form replaces the multiplication?",
       evidencePath: "At mem2reg, select source line 2, then move one marker forward to instcombine and use the selected IR change plus its counterpart link.",
@@ -52,6 +54,7 @@ const CURATED_LEARNING_TASKS = Object.freeze({
     Object.freeze({
       title: "Explain the block collapse",
       startOrdinal: 2,
+      contextOrdinals: Object.freeze([2, 3]),
       prompt: "Compare the control-flow graph immediately before and after simplifycfg. What structural change does the recorded result show?",
       evidencePath: "Open instcombine, inspect the full CFG, then move one marker forward to simplifycfg and read the structural result and correspondence evidence.",
       observation: "The recorded CFG changes from four basic blocks and four edges to one basic block and no edges. The direct summary accounts for this as three removed basic blocks, rather than attributing it to source text alone.",
@@ -62,6 +65,7 @@ const CURATED_LEARNING_TASKS = Object.freeze({
     Object.freeze({
       title: "Trace a control-flow simplification",
       startOrdinal: 2,
+      contextOrdinals: Object.freeze([0, 1, 2, 3]),
       prompt: "Use the full CFG to compare binary_search before and after simplifycfg. Which branch blocks disappear from the recorded graph?",
       evidencePath: "Open instcombine, inspect the full CFG, then move one marker forward to simplifycfg and expand the exact recorded changes if needed.",
       observation: "The graph changes from 11 basic blocks and 14 edges to 7 basic blocks and 9 edges. The correspondence records `if.then`, `if.else`, `if.end`, and `if.then7` as removed basic blocks.",
@@ -72,6 +76,7 @@ const CURATED_LEARNING_TASKS = Object.freeze({
     Object.freeze({
       title: "Scope the investigation to the partition loop",
       startOrdinal: 0,
+      contextOrdinals: Object.freeze([0, 1]),
       functionName: "partition",
       prompt: "Use function navigation to switch from quick_sort to partition before inspecting its control flow. Why is this a useful scope for the loop investigation?",
       evidencePath: "Open the baseline, then use Functions and blocks in Inspect full artefact to select partition and compare its CFG with quick_sort.",
@@ -301,7 +306,17 @@ function currentLearningTask() {
 
 function renderLearningTask() {
   const tasks = learningTasks();
-  const task = currentLearningTask();
+  let task = currentLearningTask();
+  if (task && !task.contextOrdinals?.includes(appState.currentOrdinal)) {
+    const contextualIndex = tasks.findIndex((candidate) => (
+      candidate.contextOrdinals?.includes(appState.currentOrdinal)
+    ));
+    if (contextualIndex !== -1) {
+      appState.learningTaskIndex = contextualIndex;
+      elements.learningAnswer.open = false;
+      task = tasks[contextualIndex];
+    }
+  }
   elements.learningTask.hidden = !task;
   if (!task) return;
   const startState = appState.session.states.find((state) => state.ordinal === task.startOrdinal);

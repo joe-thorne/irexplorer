@@ -1,0 +1,72 @@
+{
+  "viewport": "1440 \u00d7 1100 desktop, then 600 \u00d7 900 narrow",
+  "checks": {
+    "default_primary_task": {
+      "learningTask": true,
+      "timelineMarkers": 6,
+      "fullPipelineClosed": true,
+      "fullArtefactClosed": true,
+      "selectionInspectorClosed": true
+    },
+    "score_source_to_ir_task": {
+      "selectedState": "instcombine",
+      "answerOpen": true,
+      "sourceContext": "score.c:4:22 is the recorded debug anchor for the selected instruction.",
+      "inspectorOpen": true
+    },
+    "no_op_and_anchor": {
+      "noOpMarkers": 8,
+      "anchorMarked": "O3",
+      "anchorContext": true,
+      "anchorText": "Recompiled -O3 anchor comparison: these are output differences, not the effect of one optimisation pass."
+    },
+    "score_cfg_change": {
+      "state": "simplifycfg",
+      "primaryTask": "Explain the block collapse",
+      "structuralResult": "CFG changed: 4 \u2192 1 basic blocks; 4 \u2192 0 edges.",
+      "fullArtefactOpen": true
+    },
+    "contextual_score_task": {
+      "state": "simplifycfg",
+      "task": "Explain the block collapse",
+      "structural": "CFG changed: 4 \u2192 1 basic blocks; 4 \u2192 0 edges."
+    },
+    "binary_cfg_change": {
+      "state": "simplifycfg",
+      "structuralResult": "CFG changed: 11 \u2192 7 basic blocks; 14 \u2192 9 edges.",
+      "cfgDescription": "simplifycfg \u00b7 binary_search \u00b7 7 of 7 basic blocks shown \u00b7 edges are labelled from the API CFG response",
+      "fullArtefactOpen": true,
+      "cfgNodes": 7
+    },
+    "quick_sort_scoped_navigation": {
+      "cfgDescription": "O0 \u00b7 partition \u00b7 7 of 7 basic blocks shown \u00b7 edges are labelled from the API CFG response",
+      "fullArtefactOpen": true,
+      "selectedFunction": "partition"
+    },
+    "narrow_layout": {
+      "viewport": 600,
+      "statePanelDirection": "column",
+      "headerDirection": "column",
+      "timelineColumns": "295.281px 295.281px"
+    },
+    "accessibility_preferences": {
+      "reducedMotion": true,
+      "forcedColors": true,
+      "selectedCfgBorderStyle": "5px, 2px",
+      "selectedIrBorderStyle": "solid",
+      "keyboardControls": 71
+    }
+  },
+  "captures": [
+    {
+      "file": "score-simplifycfg-story.png",
+      "sha256": "e563bd1b241a5897058f90dd637b4616b7057ee69c25d99b7b51bdb2884f2a17",
+      "bytes": 369880
+    },
+    {
+      "file": "binary-search-simplifycfg-cfg.png",
+      "sha256": "39368c2d91465f22d3ec94ca5c0a7d6a7aa89a4bdfe540bb8f2fab75dcdc02a1",
+      "bytes": 382681
+    }
+  ]
+}

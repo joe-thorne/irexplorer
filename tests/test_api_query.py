@@ -206,6 +206,9 @@ class LocalhostApiTests(unittest.TestCase):
         self.assertIn("const storyStates = meaningfulTimelineStates()", javascript)
         self.assertIn("PASS_ROLES", javascript)
         self.assertIn("CURATED_LEARNING_TASKS", javascript)
+        self.assertIn("contextOrdinals", javascript)
+        self.assertIn("contextualIndex", javascript)
+        self.assertIn("!task.contextOrdinals?.includes(appState.currentOrdinal)", javascript)
         self.assertIn("renderLearningTask", javascript)
         self.assertIn("openLearningTask", javascript)
         self.assertIn("Where did `wasted` go?", javascript)
@@ -217,6 +220,14 @@ class LocalhostApiTests(unittest.TestCase):
         self.assertIn("selectionInspector", javascript)
         self.assertIn("includeRawRemark", javascript)
         self.assertNotIn("invalidRequest", javascript)
+
+        with urlopen(f"{self.base_url}/style.css") as response:
+            stylesheet = response.read().decode("utf-8")
+            self.assertEqual(response.headers.get_content_type(), "text/css")
+        self.assertIn("@media (prefers-reduced-motion: reduce)", stylesheet)
+        self.assertIn("@media (forced-colors: active)", stylesheet)
+        self.assertIn("@media (max-width: 700px)", stylesheet)
+        self.assertIn(".learning-task-option[aria-pressed=\"true\"]", stylesheet)
 
 
 def _get_json(url: str) -> dict:
