@@ -1,5 +1,5 @@
-import json
 import errno
+import json
 from threading import Thread
 import unittest
 from urllib.error import HTTPError
@@ -9,103 +9,50 @@ from src.backend.api import QueryError, QueryService, create_server
 
 
 class QueryServiceTests(unittest.TestCase):
-    def test_queries_use_prebaked_records_and_preserve_session_focus(self) -> None:
+    def test_queries_load_prebaked_records_without_server_side_focus(self) -> None:
         service = QueryService()
         self.assertEqual(service.list_examples()["examples"], ["binary_search", "quick_sort", "score"])
         with self.assertRaises(QueryError):
             service.list_states()
 
-        session = service.load_example("score")
-        self.assertEqual(len(session["states"]), 14)
-        self.assertEqual(session["states"][1]["transition"]["passName"], "mem2reg")
-        self.assertTrue(session["states"][4]["transition"]["noOp"])
-        self.assertEqual(session["states"][-1]["transition"]["kind"], "recompiled")
-        timeline_id = id(service._session.timeline)  # session retention, not reprocessing
+        loaded = service.load_example("score")
+        self.assertEqual(set(loaded), {"exampleId", "states"})
+        self.assertEqual(len(loaded["states"]), 14)
+        self.assertEqual(loaded["states"][1]["transition"]["passName"], "mem2reg")
+        self.assertTrue(loaded["states"][4]["transition"]["noOp"])
+        self.assertEqual(loaded["states"][-1]["transition"]["kind"], "recompiled")
+        timeline_id = id(service._loaded.timeline)  # cached artefacts, not reprocessed
 
         ir = service.ir(0)
         self.assertEqual(ir["functions"][0]["name"], "score")
         entry = ir["functions"][0]["blocks"][0]
+        instruction = entry["instructions"][0]
         self.assertGreater(len(entry["instructions"]), 0)
-
-        source = service.source(0)
-        self.assertEqual(source["filename"], "score.c")
-        source_instruction_ids = {
-            instruction_id
-            for line in source["lines"]
-            for instruction_id in line["instructionIds"]
-        }
-        mapped_instruction = next(
-            instruction
-            for block in ir["functions"][0]["blocks"]
-            for instruction in block["instructions"]
-            if instruction["source"] is not None
-        )
-        self.assertIn(mapped_instruction["id"], source_instruction_ids)
-        self.assertTrue(any(not line["instructionIds"] for line in source["lines"]))
+        self.assertEqual(set(instruction), {"id", "kind", "displayName", "text", "opcode"})
 
         cfg = service.cfg(0, "fn0")
         self.assertEqual(len(cfg["blocks"]), 4)
         self.assertGreater(len(cfg["edges"]), 0)
 
-        focus = service.set_focus(0, entry["instructions"][0]["id"])
-        self.assertEqual(focus["focusedNodeId"], entry["instructions"][0]["id"])
-        self.assertEqual(id(service._session.timeline), timeline_id)
+        mapping = service.counterparts(2, "fn0/bb0", 3)
+        self.assertEqual(mapping["counterpartOrdinal"], 3)
+        self.assertEqual(mapping["counterparts"][0]["kind"], "BasicBlock")
+        reverse_mapping = service.counterparts(3, "fn0/bb0", 2)
+        self.assertEqual(reverse_mapping["counterpartOrdinal"], 2)
+        self.assertEqual(id(service._loaded.timeline), timeline_id)
 
-        counterparts = service.counterparts(0, entry["instructions"][0]["id"])
-        self.assertIn(counterparts["relation"], {"removed", "renamed", "simplifiedInto"})
-        self.assertIn(counterparts["confidence"], {"exact", "approximate", "none"})
-        self.assertIn("Composed comparison", service.summary()["context"])
-        composed = service.summary(0, 13)
-        self.assertIn("recompiled -O3 anchor", composed["context"])
-        self.assertTrue(service.step(3)["noOp"])
-        derived_step = service.step(0)
-        self.assertIsInstance(derived_step["remarks"], list)
-        for remark in derived_step["remarks"]:
-            self.assertEqual(remark["type"], "remark")
-            self.assertIn("instructionIds", remark)
-        step_summary = service.summary(0, 1)
-        self.assertTrue(
-            all(item["evidence"] for item in step_summary["items"])
-        )
-        self.assertTrue(
-            any(
-                evidence["type"] == "link"
-                for item in step_summary["items"]
-                for evidence in item["evidence"]
-            )
-        )
-
-        service.load_example("quick_sort")
-        remark_summary = service.summary(3, 4)
-        pass_remarks = [
-            evidence
-            for item in remark_summary["items"]
-            for evidence in item["evidence"]
-            if evidence["type"] == "remark"
-        ]
-        self.assertTrue(pass_remarks)
-        self.assertTrue(any(remark["instructionIds"] for remark in pass_remarks))
-        self.assertTrue(all("raw" in remark for remark in pass_remarks))
-        self.assertEqual(service.step(12)["kind"], "recompiled")
-
-    def test_navigation_and_invalid_queries_are_controlled(self) -> None:
+    def test_invalid_queries_are_controlled(self) -> None:
         service = QueryService()
         service.load_example("score")
 
-        children = service.children(0, "fn0")
-        self.assertEqual(children["children"][0]["kind"], "BasicBlock")
-        parent = service.parent(0, "fn0/bb0")
-        self.assertEqual(parent["parent"]["id"], "fn0")
         with self.assertRaises(QueryError):
             service.cfg(0, "missing")
         with self.assertRaises(QueryError):
-            service.set_focus(14)
+            service.ir(14)
         with self.assertRaises(QueryError):
-            service.summary(3, 3)
+            service.counterparts(0, "fn0/bb0", 0)
         with self.assertRaises(QueryError):
-            service.step(-1)
-        with self.assertRaises(QueryError):
-            service.source(14)
+            service.counterparts(0, "missing", 1)
 
     def test_largest_curated_function_remains_scoped_and_queryable(self) -> None:
         service = QueryService()
@@ -140,20 +87,35 @@ class LocalhostApiTests(unittest.TestCase):
         self.thread.join()
         self.server.server_close()
 
-    def test_localhost_routes_load_and_query_score(self) -> None:
+    def test_localhost_routes_supply_the_two_panel_data(self) -> None:
         self.assertEqual(_get_json(f"{self.base_url}/api/health"), {"status": "ok"})
         self.assertIn("score", _get_json(f"{self.base_url}/api/examples")["examples"])
 
-        session = _post_json(f"{self.base_url}/api/session", {"exampleId": "score"})
-        self.assertEqual(session["exampleId"], "score")
+        loaded = _post_json(f"{self.base_url}/api/session", {"exampleId": "score"})
+        self.assertEqual(set(loaded), {"exampleId", "states"})
         self.assertEqual(
             _get_json(f"{self.base_url}/api/ir?ordinal=1")["stateId"], "mem2reg"
         )
-        source = _get_json(f"{self.base_url}/api/source?ordinal=1")
-        self.assertEqual(source["filename"], "score.c")
-        summary = _get_json(f"{self.base_url}/api/summary?fromOrdinal=0&toOrdinal=13")
-        self.assertIn("recompiled -O3 anchor", summary["context"])
-        self.assertTrue(_get_json(f"{self.base_url}/api/step?fromOrdinal=3")["noOp"])
+        cfg = _get_json(f"{self.base_url}/api/cfg?ordinal=0&functionId=fn0")
+        self.assertEqual(len(cfg["blocks"]), 4)
+        mapping = _get_json(
+            f"{self.base_url}/api/counterparts?ordinal=2&nodeId=fn0%2Fbb0&toOrdinal=3"
+        )
+        self.assertEqual(mapping["counterpartOrdinal"], 3)
+
+        for retired_route in (
+            f"{self.base_url}/api/source?ordinal=0",
+            f"{self.base_url}/api/summary?fromOrdinal=0&toOrdinal=1",
+            f"{self.base_url}/api/focus",
+        ):
+            with self.subTest(retired_route=retired_route):
+                with self.assertRaises(HTTPError) as context:
+                    if retired_route.endswith("/focus"):
+                        _post_json(retired_route, {"ordinal": 0, "nodeId": "fn0/bb0"})
+                    else:
+                        urlopen(retired_route)
+                self.assertEqual(context.exception.code, 404)
+                context.exception.close()
 
         with self.assertRaises(HTTPError) as context:
             urlopen(f"{self.base_url}/api/cfg?ordinal=0&functionId=missing")
@@ -169,65 +131,56 @@ class LocalhostApiTests(unittest.TestCase):
         self.assertEqual(context.exception.code, 404)
         context.exception.close()
 
-    def test_localhost_server_serves_the_browser_frontend(self) -> None:
+    def test_localhost_server_serves_the_lean_browser_frontend(self) -> None:
         with urlopen(f"{self.base_url}/") as response:
             html = response.read().decode("utf-8")
             self.assertEqual(response.headers.get_content_type(), "text/html")
         self.assertIn("irexplorer", html)
         self.assertIn('src="/app.js"', html)
-        self.assertIn('id="guided-timeline"', html)
-        self.assertIn('id="full-pipeline"', html)
-        self.assertIn('id="story-outcomes"', html)
-        self.assertIn('id="learning-task"', html)
-        self.assertIn('id="open-learning-task"', html)
-        self.assertIn('id="learning-answer"', html)
-        self.assertIn('id="learning-task-picker"', html)
-        self.assertIn('id="ir-change-context"', html)
-        self.assertIn('id="structure-result"', html)
-        self.assertIn('id="selection-inspector"', html)
-        self.assertIn('id="full-artefact"', html)
-        self.assertIn('id="full-source-view"', html)
-        self.assertNotIn('id="invalid-request"', html)
-        self.assertNotIn('id="timeline-scrubber"', html)
-        self.assertNotIn('id="state-options"', html)
-        self.assertIn('id="ir-filter"', html)
-        self.assertIn('id="ir-scope"', html)
-        self.assertIn('id="cfg-neighbourhood"', html)
-        self.assertIn('aria-live="polite"', html)
-        self.assertIn('tabindex="-1"', html)
+        for element_id in (
+            "example-select",
+            "function-select",
+            "workspace",
+            "comparison-action",
+            "selection-status",
+            "left-state",
+            "left-view",
+            "left-viewer",
+            "right-state",
+            "right-view",
+            "right-viewer",
+        ):
+            self.assertIn(f'id="{element_id}"', html)
+        for retired_element_id in (
+            "guided-timeline",
+            "learning-task",
+            "full-artefact",
+            "full-source-view",
+            "selection-inspector",
+            "ir-filter",
+            "cfg-neighbourhood",
+        ):
+            self.assertNotIn(f'id="{retired_element_id}"', html)
 
         with urlopen(f"{self.base_url}/app.js") as response:
             javascript = response.read().decode("utf-8")
         self.assertEqual(response.headers.get_content_type(), "text/javascript")
-        self.assertIn("/api/session", javascript)
-        self.assertIn("instructionMatchesFilter", javascript)
-        self.assertIn("cfgNeighbourhood", javascript)
-        self.assertIn("meaningfulTimelineStates", javascript)
-        self.assertIn("const storyStates = meaningfulTimelineStates()", javascript)
-        self.assertIn("PASS_ROLES", javascript)
-        self.assertIn("CURATED_LEARNING_TASKS", javascript)
-        self.assertIn("contextOrdinals", javascript)
-        self.assertIn("contextualIndex", javascript)
-        self.assertIn("!task.contextOrdinals?.includes(appState.currentOrdinal)", javascript)
-        self.assertIn("renderLearningTask", javascript)
-        self.assertIn("openLearningTask", javascript)
-        self.assertIn("Where did `wasted` go?", javascript)
-        self.assertIn("Trace a control-flow simplification", javascript)
-        self.assertIn("Scope the investigation to the partition loop", javascript)
-        self.assertIn("fullPipeline", javascript)
-        self.assertIn("renderStructuralResult", javascript)
-        self.assertIn("renderSourceLines", javascript)
-        self.assertIn("selectionInspector", javascript)
-        self.assertIn("includeRawRemark", javascript)
-        self.assertNotIn("invalidRequest", javascript)
+        for api_path in ("/api/session", "/api/ir", "/api/cfg", "/api/counterparts"):
+            self.assertIn(api_path, javascript)
+        for implementation_detail in ("selectNode", "displayNodeIds", "PASS_ACTIONS"):
+            self.assertIn(implementation_detail, javascript)
+        for retired_detail in ("/api/focus", "CURATED_LEARNING_TASKS", "renderLearningTask", "renderSummary", "renderSource"):
+            self.assertNotIn(retired_detail, javascript)
 
         with urlopen(f"{self.base_url}/style.css") as response:
             stylesheet = response.read().decode("utf-8")
             self.assertEqual(response.headers.get_content_type(), "text/css")
+        self.assertIn(".panel-grid", stylesheet)
+        self.assertIn(".ir-line.is-linked", stylesheet)
         self.assertIn("@media (prefers-reduced-motion: reduce)", stylesheet)
         self.assertIn("@media (forced-colors: active)", stylesheet)
-        self.assertIn("@media (max-width: 700px)", stylesheet)
-        self.assertIn(".learning-task-option[aria-pressed=\"true\"]", stylesheet)
+        self.assertIn("@media (max-width: 900px)", stylesheet)
+        self.assertNotIn(".learning-task", stylesheet)
 
 
 def _get_json(url: str) -> dict:

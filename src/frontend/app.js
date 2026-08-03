@@ -1,141 +1,49 @@
+const PASS_ACTIONS = Object.freeze({
+  mem2reg: "promote eligible local variables to SSA values",
+  instcombine: "simplify instruction forms",
+  simplifycfg: "simplify control-flow structure",
+  gvn: "reuse equivalent computations",
+  "instcombine,simplifycfg": "clean up instructions and control flow",
+  "loop-simplify,lcssa": "put loops in a regular form",
+  "loop-rotate": "reshape loop control flow",
+  licm: "move loop-invariant work when safe",
+  indvars: "simplify induction variables",
+  "loop-vectorize": "attempt safe loop vectorisation",
+});
+
 const appState = {
   session: null,
-  ir: null,
-  cfg: null,
-  source: null,
-  selectedFunctionId: null,
-  selectedBlockId: null,
-  selectedInstructionId: null,
-  currentOrdinal: 0,
-  comparisonFromOrdinal: 0,
-  comparisonToOrdinal: 1,
-  showNoOpStates: false,
-  irScope: "function",
-  irFilter: "",
-  cfgNeighbourhood: false,
-  learningTaskIndex: 0,
+  functionName: null,
+  selection: null,
+  refreshId: 0,
+  panels: {
+    left: { ordinal: 0, viewType: "ir", ir: null, cfg: null, function: null, selectedNodeIds: new Set() },
+    right: { ordinal: 1, viewType: "ir", ir: null, cfg: null, function: null, selectedNodeIds: new Set() },
+  },
 };
-
-const PASS_ROLES = Object.freeze({
-  mem2reg: "Turn eligible local stack variables into SSA values.",
-  instcombine: "Simplify individual instruction forms.",
-  simplifycfg: "Simplify branches and basic-block structure.",
-  gvn: "Reuse computations already known to have the same value.",
-  "instcombine,simplifycfg": "Apply a cleanup of instruction forms and control flow.",
-  "loop-simplify,lcssa": "Put loops into a more regular form for later passes.",
-  "loop-rotate": "Reshape loop control flow when doing so is safe.",
-  licm: "Move loop-invariant work out of loops when it is safe.",
-  indvars: "Simplify loop induction variables.",
-  "loop-vectorize": "Attempt safe vectorisation of loop work.",
-});
-
-const CURATED_LEARNING_TASKS = Object.freeze({
-  score: Object.freeze([
-    Object.freeze({
-      title: "Where did `wasted` go?",
-      startOrdinal: 1,
-      contextOrdinals: Object.freeze([0, 1, 2]),
-      sourceLine: 3,
-      prompt: "Locate the calculation assigned to `wasted`, then decide what the next recorded pass does to its IR.",
-      evidencePath: "At mem2reg, select source line 3, then move one marker forward to instcombine and inspect the source snippet, IR, and step evidence.",
-      observation: "At mem2reg, source line 3 maps to `%mul1`, `%mul2`, and `%sub`. At instcombine that source line has no mapped instruction, and the direct correspondence summary records four removed instructions.",
-      record: "Evidence: the recorded source mappings for score.c:3 and the adjacent mem2reg → instcombine correspondence overlay.",
-    }),
-    Object.freeze({
-      title: "Recognise the instruction-form rewrite",
-      startOrdinal: 1,
-      contextOrdinals: Object.freeze([1, 2]),
-      sourceLine: 2,
-      prompt: "Compare the IR for `limit = scale * 32` before and after instcombine. What instruction form replaces the multiplication?",
-      evidencePath: "At mem2reg, select source line 2, then move one marker forward to instcombine and use the selected IR change plus its counterpart link.",
-      observation: "The source-mapped `%mul = mul nsw i32 %scale, 32` is shown as `%mul = shl nsw i32 %scale, 5` after instcombine. The correspondence presents this as an approximate renamed link, so the UI does not claim a stronger identity than the record supports.",
-      record: "Evidence: the source mapping for score.c:2 and the direct mem2reg → instcombine correspondence link for `%mul`.",
-    }),
-    Object.freeze({
-      title: "Explain the block collapse",
-      startOrdinal: 2,
-      contextOrdinals: Object.freeze([2, 3]),
-      prompt: "Compare the control-flow graph immediately before and after simplifycfg. What structural change does the recorded result show?",
-      evidencePath: "Open instcombine, inspect the full CFG, then move one marker forward to simplifycfg and read the structural result and correspondence evidence.",
-      observation: "The recorded CFG changes from four basic blocks and four edges to one basic block and no edges. The direct summary accounts for this as three removed basic blocks, rather than attributing it to source text alone.",
-      record: "Evidence: the score instcombine and simplifycfg API CFG records, plus their adjacent correspondence overlay.",
-    }),
-  ]),
-  binary_search: Object.freeze([
-    Object.freeze({
-      title: "Trace a control-flow simplification",
-      startOrdinal: 2,
-      contextOrdinals: Object.freeze([0, 1, 2, 3]),
-      prompt: "Use the full CFG to compare binary_search before and after simplifycfg. Which branch blocks disappear from the recorded graph?",
-      evidencePath: "Open instcombine, inspect the full CFG, then move one marker forward to simplifycfg and expand the exact recorded changes if needed.",
-      observation: "The graph changes from 11 basic blocks and 14 edges to 7 basic blocks and 9 edges. The correspondence records `if.then`, `if.else`, `if.end`, and `if.then7` as removed basic blocks.",
-      record: "Evidence: the binary_search instcombine and simplifycfg API CFG records and their direct correspondence links.",
-    }),
-  ]),
-  quick_sort: Object.freeze([
-    Object.freeze({
-      title: "Scope the investigation to the partition loop",
-      startOrdinal: 0,
-      contextOrdinals: Object.freeze([0, 1]),
-      functionName: "partition",
-      prompt: "Use function navigation to switch from quick_sort to partition before inspecting its control flow. Why is this a useful scope for the loop investigation?",
-      evidencePath: "Open the baseline, then use Functions and blocks in Inspect full artefact to select partition and compare its CFG with quick_sort.",
-      observation: "At the baseline, quick_sort has 3 basic blocks while partition has 7 basic blocks and 8 edges. Selecting partition therefore isolates the loop-bearing function instead of mixing it with the recursive caller.",
-      record: "Evidence: the baseline quick_sort API IR containment record and function-scoped CFG responses for quick_sort and partition.",
-    }),
-  ]),
-});
 
 const elements = {
   exampleSelect: document.querySelector("#example-select"),
-  loadButton: document.querySelector("#load-example"),
+  functionControl: document.querySelector("#function-control"),
+  functionSelect: document.querySelector("#function-select"),
   notice: document.querySelector("#notice"),
   emptyState: document.querySelector("#empty-state"),
-  explorer: document.querySelector("#explorer"),
-  previousState: document.querySelector("#previous-state"),
-  nextState: document.querySelector("#next-state"),
-  guidedTimeline: document.querySelector("#guided-timeline"),
-  fullPipeline: document.querySelector("#full-pipeline"),
-  fullArtefact: document.querySelector("#full-artefact"),
-  navigationTree: document.querySelector("#navigation-tree"),
-  navigator: document.querySelector("#navigator"),
-  irDescription: document.querySelector("#ir-description"),
-  irChangeContext: document.querySelector("#ir-change-context"),
-  irView: document.querySelector("#ir-view"),
-  cfgDescription: document.querySelector("#cfg-description"),
-  cfgView: document.querySelector("#cfg-view"),
-  openCfg: document.querySelector("#open-cfg"),
-  structureResult: document.querySelector("#structure-result"),
-  sourceDescription: document.querySelector("#source-description"),
-  sourceView: document.querySelector("#source-view"),
-  fullSourceView: document.querySelector("#full-source-view"),
-  coordinationView: document.querySelector("#coordination-view"),
-  selectionInspector: document.querySelector("#selection-inspector"),
-  storyHeading: document.querySelector("#story-heading"),
-  passRole: document.querySelector("#pass-role"),
-  compareBaseline: document.querySelector("#compare-baseline"),
-  summaryContext: document.querySelector("#summary-context"),
-  storyOutcomes: document.querySelector("#story-outcomes"),
-  summaryItems: document.querySelector("#summary-items"),
-  summaryDetail: document.querySelector("#summary-detail"),
-  learningTask: document.querySelector("#learning-task"),
-  learningTaskHeading: document.querySelector("#learning-task-heading"),
-  learningTaskPosition: document.querySelector("#learning-task-position"),
-  learningTaskPrompt: document.querySelector("#learning-task-prompt"),
-  learningEvidencePath: document.querySelector("#learning-evidence-path"),
-  openLearningTask: document.querySelector("#open-learning-task"),
-  learningAnswer: document.querySelector("#learning-answer"),
-  learningObservation: document.querySelector("#learning-observation"),
-  learningRecord: document.querySelector("#learning-record"),
-  learningTaskPicker: document.querySelector("#learning-task-picker"),
-  learningTaskOptions: document.querySelector("#learning-task-options"),
-  debugToggle: document.querySelector("#debug-toggle"),
-  irScope: document.querySelector("#ir-scope"),
-  irFilter: document.querySelector("#ir-filter"),
-  clearIrFilter: document.querySelector("#clear-ir-filter"),
-  irResultCount: document.querySelector("#ir-result-count"),
-  cfgNeighbourhood: document.querySelector("#cfg-neighbourhood"),
+  workspace: document.querySelector("#workspace"),
+  comparisonAction: document.querySelector("#comparison-action"),
+  selectionStatus: document.querySelector("#selection-status"),
+  left: panelElements("left"),
+  right: panelElements("right"),
 };
+
+function panelElements(side) {
+  return {
+    heading: document.querySelector(`#${side}-heading`),
+    state: document.querySelector(`#${side}-state`),
+    view: document.querySelector(`#${side}-view`),
+    description: document.querySelector(`#${side}-description`),
+    viewer: document.querySelector(`#${side}-viewer`),
+  };
+}
 
 async function request(path, options = {}) {
   const response = await fetch(path, {
@@ -143,9 +51,7 @@ async function request(path, options = {}) {
     ...options,
   });
   const body = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(body.error || `Request failed with status ${response.status}.`);
-  }
+  if (!response.ok) throw new Error(body.error || `Request failed with status ${response.status}.`);
   return body;
 }
 
@@ -160,37 +66,31 @@ function showError(error) {
   errorState.querySelector(".error-message").textContent = error.message;
   elements.emptyState.replaceWith(errorState);
   elements.emptyState = errorState;
-  elements.explorer.hidden = true;
+  elements.workspace.hidden = true;
   announce(`Error: ${error.message}`, "error");
 }
 
-function clearErrorOrEmpty() {
-  if (elements.emptyState.classList.contains("error-state")) {
-    const empty = document.createElement("section");
-    empty.id = "empty-state";
-    empty.className = "empty-state panel";
-    empty.innerHTML = "<p class=\"eyebrow\">Start exploring</p><h2>Choose an example to inspect its optimisation timeline.</h2><p>The baseline and optimised outputs are preserved compiler artefacts. Select a state, function, or basic block to focus the views.</p>";
-    elements.emptyState.replaceWith(empty);
-    elements.emptyState = empty;
-  }
-}
-
-function selectedOrdinal() {
-  return appState.currentOrdinal;
+function clearError() {
+  if (!elements.emptyState.classList.contains("error-state")) return;
+  const empty = document.createElement("section");
+  empty.id = "empty-state";
+  empty.className = "empty-state panel";
+  empty.innerHTML = "<h2>Choose a curated file to start comparing.</h2><p>Select a state and a representation in either panel, then select an IR line or CFG block to follow its recorded link.</p>";
+  elements.emptyState.replaceWith(empty);
+  elements.emptyState = empty;
 }
 
 async function loadExamples() {
   try {
     const { examples } = await request("/api/examples");
-    elements.exampleSelect.replaceChildren(...examples.map((exampleId) => {
-      const option = document.createElement("option");
-      option.value = exampleId;
-      option.textContent = exampleId.replaceAll("_", " ");
-      return option;
-    }));
+    const placeholder = new Option("Choose a curated file…", "");
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    elements.exampleSelect.replaceChildren(placeholder, ...examples.map((exampleId) => (
+      new Option(exampleId.replaceAll("_", " "), exampleId)
+    )));
     elements.exampleSelect.disabled = false;
-    elements.loadButton.disabled = false;
-    announce("Choose a curated example, then load its comparison.");
+    announce("Choose a curated file to compare its recorded optimisation states.");
   } catch (error) {
     showError(error);
   }
@@ -198,675 +98,368 @@ async function loadExamples() {
 
 async function loadExample() {
   const exampleId = elements.exampleSelect.value;
-  elements.loadButton.disabled = true;
+  if (!exampleId) return;
+  elements.exampleSelect.disabled = true;
   announce(`Loading ${exampleId}…`);
   try {
+    clearError();
     appState.session = await request("/api/session", {
       method: "POST",
       body: JSON.stringify({ exampleId }),
     });
-    appState.showNoOpStates = false;
-    appState.irScope = "block";
-    appState.irFilter = "";
-    appState.cfgNeighbourhood = false;
-    appState.learningTaskIndex = 0;
-    elements.irScope.value = appState.irScope;
-    elements.irFilter.value = appState.irFilter;
-    elements.cfgNeighbourhood.checked = appState.cfgNeighbourhood;
-    elements.fullPipeline.open = false;
-    elements.fullArtefact.open = false;
-    elements.selectionInspector.open = false;
-    elements.learningAnswer.open = false;
-    elements.learningTaskPicker.open = false;
-    const stateLoaded = await renderState(0);
-    if (!stateLoaded) return;
+    appState.functionName = null;
+    appState.selection = null;
+    appState.panels.left.ordinal = 0;
+    appState.panels.left.viewType = "ir";
+    appState.panels.right.ordinal = Math.min(1, appState.session.states.length - 1);
+    appState.panels.right.viewType = "ir";
+    renderStateOptions();
+    elements.left.view.value = "ir";
+    elements.right.view.value = "ir";
+    await refreshWorkspace();
     elements.emptyState.hidden = true;
-    elements.explorer.hidden = false;
-    announce(`${exampleId} is ready. Use the state and navigation controls to explore it.`);
+    elements.workspace.hidden = false;
+    announce(`${exampleId} is ready. Configure either panel, then select an artefact to follow its recorded link.`);
   } catch (error) {
     showError(error);
   } finally {
-    elements.loadButton.disabled = false;
+    elements.exampleSelect.disabled = false;
   }
 }
 
-async function renderState(ordinal, focusedNodeId = null) {
-  if (!appState.session) return;
-  const state = appState.session.states.find((candidate) => candidate.ordinal === ordinal);
-  announce(`Loading ${state.stateId}…`);
-  try {
-    const [ir, source] = await Promise.all([
-      request(`/api/ir?ordinal=${ordinal}`),
-      request(`/api/source?ordinal=${ordinal}`),
-    ]);
-    const focusContext = focusedNodeId ? irContext(ir, focusedNodeId) : null;
-    const currentFunction = focusContext?.function
-      || ir.functions.find((item) => item.id === appState.selectedFunctionId)
-      || ir.functions[0];
-    appState.ir = ir;
-    appState.source = source;
-    if (!focusContext && appState.selectedInstructionId && !irContext(ir, appState.selectedInstructionId)) {
-      appState.selectedInstructionId = null;
-    }
-    appState.selectedFunctionId = currentFunction?.id ?? null;
-    const functionBlocks = currentFunction?.blocks || [];
-    if (focusContext?.block) {
-      appState.selectedBlockId = focusContext.block.id;
-      appState.selectedInstructionId = focusContext.instruction?.id ?? null;
-    } else if (!functionBlocks.some((block) => block.id === appState.selectedBlockId)) {
-      appState.selectedBlockId = functionBlocks[0]?.id ?? null;
-      appState.selectedInstructionId = null;
-    }
-    if (!appState.selectedInstructionId) {
-      const selectedBlock = functionBlocks.find((block) => block.id === appState.selectedBlockId);
-      appState.selectedInstructionId = selectedBlock?.instructions.find((instruction) => instruction.source)?.id ?? null;
-    }
-    appState.cfg = currentFunction
-      ? await request(`/api/cfg?ordinal=${ordinal}&functionId=${encodeURIComponent(currentFunction.id)}`)
-      : null;
-    const focusedId = focusedNodeId || appState.selectedInstructionId || appState.selectedBlockId;
-    await request("/api/focus", {
-      method: "POST",
-      body: JSON.stringify({ ordinal, nodeId: focusedId }),
-    });
-    appState.currentOrdinal = ordinal;
-    const storyStates = meaningfulTimelineStates();
-    const storyIndex = storyStates.findIndex((candidate) => candidate.ordinal === ordinal);
-    appState.comparisonFromOrdinal = ordinal === 0
-      ? 0
-      : storyStates[Math.max(0, storyIndex - 1)].ordinal;
-    appState.comparisonToOrdinal = ordinal === 0
-      ? storyStates[1]?.ordinal ?? 0
-      : ordinal;
-    elements.fullArtefact.open = false;
-    renderTimeline();
-    renderNavigation();
-    renderIr();
-    renderCfg();
-    renderSource();
-    await renderComparison();
-    await renderCoordination();
-    renderLearningTask();
-    announce(`Showing ${state.stateId}.`);
-    return true;
-  } catch (error) {
-    showError(error);
-    return false;
-  }
-}
-
-function learningTasks() {
-  return CURATED_LEARNING_TASKS[appState.session?.exampleId] || [];
-}
-
-function currentLearningTask() {
-  const tasks = learningTasks();
-  return tasks[appState.learningTaskIndex] || tasks[0] || null;
-}
-
-function renderLearningTask() {
-  const tasks = learningTasks();
-  let task = currentLearningTask();
-  if (task && !task.contextOrdinals?.includes(appState.currentOrdinal)) {
-    const contextualIndex = tasks.findIndex((candidate) => (
-      candidate.contextOrdinals?.includes(appState.currentOrdinal)
-    ));
-    if (contextualIndex !== -1) {
-      appState.learningTaskIndex = contextualIndex;
-      elements.learningAnswer.open = false;
-      task = tasks[contextualIndex];
-    }
-  }
-  elements.learningTask.hidden = !task;
-  if (!task) return;
-  const startState = appState.session.states.find((state) => state.ordinal === task.startOrdinal);
-  elements.learningTaskHeading.textContent = task.title;
-  elements.learningTaskPosition.textContent = `Task ${appState.learningTaskIndex + 1} of ${tasks.length}`;
-  elements.learningTaskPrompt.textContent = task.prompt;
-  elements.learningEvidencePath.textContent = task.evidencePath;
-  elements.openLearningTask.textContent = `Open ${startState?.stateId || "starting"} evidence`;
-  elements.learningObservation.textContent = task.observation;
-  elements.learningRecord.textContent = task.record;
-  elements.learningTaskOptions.replaceChildren(...tasks.map((option, index) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "learning-task-option";
-    button.textContent = `Task ${index + 1}: ${option.title}`;
-    button.setAttribute("aria-pressed", String(index === appState.learningTaskIndex));
-    button.addEventListener("click", () => {
-      appState.learningTaskIndex = index;
-      elements.learningAnswer.open = false;
-      renderLearningTask();
-      elements.learningTaskPicker.open = false;
-      announce(`Selected learning task: ${option.title}.`);
-    });
-    return button;
-  }));
-}
-
-async function openLearningTask() {
-  const task = currentLearningTask();
-  if (!task || !appState.session) return;
-  const opened = await renderState(task.startOrdinal);
-  if (!opened) return;
-  if (task.functionName) {
-    const fn = appState.ir.functions.find((candidate) => candidate.name === task.functionName);
-    if (fn && fn.id !== appState.selectedFunctionId) {
-      appState.selectedFunctionId = fn.id;
-      appState.selectedBlockId = fn.blocks[0]?.id ?? null;
-      appState.selectedInstructionId = null;
-      if (!await renderState(task.startOrdinal)) return;
-    }
-    elements.fullArtefact.open = true;
-  }
-  if (task.sourceLine) {
-    const line = appState.source.lines.find((candidate) => candidate.number === task.sourceLine);
-    if (line?.instructionIds.length) await focusSourceLine(line);
-  }
-  announce(`Opened the recorded starting evidence for: ${task.title}.`);
-}
-
-function meaningfulTimelineStates() {
-  return appState.session.states.filter((state) => (
-    state.ordinal === 0 || appState.showNoOpStates || !state.transition?.noOp
-  ));
-}
-
-function renderTimeline() {
-  const states = appState.session.states;
-  const ordinal = appState.currentOrdinal;
-  const noOpCount = states.filter((state) => state.transition?.noOp).length;
-  const visibleStates = meaningfulTimelineStates();
-  const visibleIndex = visibleStates.findIndex((state) => state.ordinal === ordinal);
-  elements.previousState.disabled = visibleIndex <= 0;
-  elements.nextState.disabled = visibleIndex === -1 || visibleIndex === visibleStates.length - 1;
-  elements.fullPipeline.hidden = noOpCount === 0;
-  elements.guidedTimeline.replaceChildren(...visibleStates.map((state) => {
-    const item = document.createElement("li");
-    const button = document.createElement("button");
-    const transition = state.transition;
-    button.type = "button";
-    button.className = `timeline-marker${state.ordinal === ordinal ? " is-current" : ""}${transition?.noOp ? " is-noop" : ""}${transition?.kind === "recompiled" ? " is-anchor" : ""}`;
-    button.textContent = state.stateId;
-    button.title = stateLabel(state);
-    button.setAttribute("aria-current", String(state.ordinal === ordinal));
-    button.setAttribute("aria-label", `${state.stateId}: ${stateLabel(state)}`);
-    button.addEventListener("click", () => renderState(state.ordinal));
-    item.append(button);
-    return item;
-  }));
-}
-
-function stateLabel(state) {
-  if (state.ordinal === 0) return "Unoptimised baseline";
-  if (state.transition.kind === "recompiled") return `Recompiled ${state.transition.level} anchor`;
-  const remarkLabel = state.transition.remarkCount
-    ? ` · ${state.transition.remarkCount} ${state.transition.remarkCount === 1 ? "remark" : "remarks"}`
-    : "";
-  if (state.transition.noOp) return `No change · ${state.transition.passName}${remarkLabel}`;
-  return `${state.transition.passName}${remarkLabel}`;
-}
-
-async function renderComparison() {
-  const fromOrdinal = appState.comparisonFromOrdinal;
-  const toOrdinal = appState.comparisonToOrdinal;
-  const from = appState.session.states.find((state) => state.ordinal === fromOrdinal);
-  const to = appState.session.states.find((state) => state.ordinal === toOrdinal);
-  if (!from || !to) return;
-  const functionId = appState.selectedFunctionId;
-  const [summary, fromCfg, toCfg] = await Promise.all([
-    request(`/api/summary?fromOrdinal=${fromOrdinal}&toOrdinal=${toOrdinal}`),
-    request(`/api/cfg?ordinal=${fromOrdinal}&functionId=${encodeURIComponent(functionId)}`),
-    request(`/api/cfg?ordinal=${toOrdinal}&functionId=${encodeURIComponent(functionId)}`),
-  ]);
-  elements.storyHeading.textContent = `What changed from ${from.stateId} to ${to.stateId}?`;
-  elements.passRole.textContent = `Pass role: ${passRole(to)} Recorded outcomes below are specific to this curated example.`;
-  elements.summaryContext.classList.toggle("is-anchor", to.transition?.kind === "recompiled");
-  elements.compareBaseline.disabled = toOrdinal === 0 || fromOrdinal === 0;
-  elements.compareBaseline.textContent = toOrdinal === 0
-    ? "Choose a later state to compare with the baseline"
-    : `Compare baseline to ${to.stateId}`;
-  renderSummary(summary);
-  renderStructuralResult(fromCfg, toCfg);
-}
-
-function renderSummary(summary) {
-  elements.summaryContext.textContent = summary.context;
-  const primaryItems = summary.items.slice(0, 3);
-  elements.storyOutcomes.replaceChildren(...primaryItems.map((item) => renderSummaryItem(item, false)));
-  elements.summaryDetail.hidden = false;
-  elements.summaryItems.replaceChildren(...summary.items.map((item) => renderSummaryItem(item, true)));
-}
-
-function renderSummaryItem(item, includeRawRemarks) {
-  const listItem = document.createElement("li");
-  const claim = document.createElement("span");
-  claim.textContent = item.text;
-  listItem.append(claim);
-  if (item.evidence?.length) {
-    const evidence = document.createElement("details");
-    evidence.className = "summary-evidence";
-    const label = document.createElement("summary");
-    const linkCount = item.evidence.filter((entry) => entry.type === "link").length;
-    const remarkCount = item.evidence.filter((entry) => entry.type === "remark").length;
-    const parts = [];
-    if (linkCount) parts.push(`${linkCount} ${linkCount === 1 ? "correspondence link" : "correspondence links"}`);
-    if (remarkCount) parts.push(`${remarkCount} ${remarkCount === 1 ? "pass remark" : "pass remarks"}`);
-    label.textContent = `Evidence: ${parts.join(" · ")}`;
-    const list = document.createElement("div");
-    list.className = "summary-evidence-list";
-    item.evidence.forEach((entry) => list.append(renderSummaryEvidence(entry, includeRawRemarks)));
-    evidence.append(label, list);
-    listItem.append(evidence);
-  }
-  return listItem;
-}
-
-function passRole(state) {
-  if (state.ordinal === 0) return "This is the unoptimised starting point.";
-  if (state.transition?.kind === "recompiled") {
-    return "This is a separately compiled -O3 output anchor, not the result of one pass.";
-  }
-  return PASS_ROLES[state.transition?.passName]
-    || "This recorded pass has a specialised role in the configured optimisation pipeline.";
-}
-
-function renderStructuralResult(fromCfg, toCfg) {
-  const changed = fromCfg.blocks.length !== toCfg.blocks.length
-    || fromCfg.edges.length !== toCfg.edges.length
-    || cfgEdgeSignature(fromCfg) !== cfgEdgeSignature(toCfg);
-  const result = changed
-    ? `CFG changed: ${fromCfg.blocks.length} → ${toCfg.blocks.length} basic blocks; ${fromCfg.edges.length} → ${toCfg.edges.length} edges.`
-    : `CFG unchanged: ${toCfg.blocks.length} basic blocks; ${toCfg.edges.length} edges.`;
-  elements.structureResult.textContent = result;
-  elements.openCfg.textContent = changed ? "Inspect the changed CFG" : "Inspect full CFG";
-  if (changed) elements.fullArtefact.open = true;
-}
-
-function cfgEdgeSignature(cfg) {
-  return cfg.edges
-    .map((edge) => `${edge.fromId}:${edge.label}:${edge.toId}`)
-    .sort()
-    .join("|");
-}
-
-function renderSummaryEvidence(entry, includeRawRemark) {
-  const item = document.createElement("article");
-  item.className = `summary-evidence-item is-${entry.type}`;
-  if (entry.type === "link") {
-    const title = document.createElement("strong");
-    title.textContent = `Link ${entry.index + 1}: ${entry.relation} (${entry.confidence})`;
-    const endpoints = document.createElement("p");
-    endpoints.textContent = `${formatEvidenceNodes(entry.from)} → ${formatEvidenceNodes(entry.to)}`;
-    item.append(title, endpoints);
-    if (entry.evidence) {
-      const detail = document.createElement("p");
-      detail.className = "muted";
-      detail.textContent = entry.evidence;
-      item.append(detail);
-    }
-    return item;
-  }
-
-  const title = document.createElement("strong");
-  title.textContent = `Pass remark ${entry.index + 1}: ${entry.passName || "unnamed pass"} · ${entry.name || "unnamed remark"}`;
-  const detail = document.createElement("p");
-  const location = entry.location ? ` at ${entry.location.file}:${entry.location.line}:${entry.location.column}` : "";
-  const mapped = entry.instructionIds?.length
-    ? ` Mapped to ${entry.instructionIds.join(", ")}.`
-    : " No IR instruction shares its recorded debug location.";
-  detail.textContent = `${entry.function ? `Function ${entry.function}` : "No function recorded"}${location}.${mapped}`;
-  item.append(title, detail);
-  if (includeRawRemark) {
-    const raw = document.createElement("pre");
-    raw.textContent = entry.raw;
-    item.append(raw);
-  } else {
-    const disclosure = document.createElement("p");
-    disclosure.className = "muted";
-    disclosure.textContent = "The captured raw record is available in Inspect full artefact.";
-    item.append(disclosure);
-  }
-  return item;
-}
-
-function formatEvidenceNodes(nodes) {
-  if (!nodes?.length) return "∅";
-  return nodes.map((node) => `${node.kind} ${node.displayName} (${node.id})`).join(", ");
-}
-
-function renderNavigation() {
-  const selectedFunction = appState.ir.functions.find((fn) => fn.id === appState.selectedFunctionId);
-  const hasChoice = appState.ir.functions.length > 1 || (selectedFunction?.blocks.length ?? 0) > 1;
-  elements.navigator.hidden = !hasChoice;
-  if (!hasChoice) return;
-  elements.navigationTree.replaceChildren(...appState.ir.functions.map((fn) => {
-    const group = document.createElement("div");
-    group.className = "function-group";
-    group.append(navigationButton(fn.name, "function-button", fn.id === appState.selectedFunctionId, async () => {
-      appState.selectedFunctionId = fn.id;
-      appState.selectedBlockId = fn.blocks[0]?.id ?? null;
-      appState.selectedInstructionId = null;
-      await renderState(selectedOrdinal());
-    }));
-    fn.blocks.forEach((block) => group.append(navigationButton(
-      block.label,
-      "block-button",
-      block.id === appState.selectedBlockId,
-      async () => {
-        appState.selectedFunctionId = fn.id;
-        appState.selectedBlockId = block.id;
-        appState.selectedInstructionId = null;
-        await request("/api/focus", {
-          method: "POST",
-          body: JSON.stringify({ ordinal: selectedOrdinal(), nodeId: block.id }),
-        });
-        renderNavigation();
-        renderIr();
-        renderCfg();
-        renderSource();
-        await renderCoordination();
-        announce(`Focused basic block ${block.label}.`);
-      },
+function renderStateOptions() {
+  for (const side of ["left", "right"]) {
+    const control = elements[side].state;
+    control.replaceChildren(...appState.session.states.map((state) => (
+      new Option(stateOptionLabel(state), String(state.ordinal))
     )));
-    return group;
-  }));
+    control.value = String(appState.panels[side].ordinal);
+    control.disabled = false;
+    elements[side].view.disabled = false;
+  }
 }
 
-function navigationButton(name, className, isCurrent, onClick) {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = `nav-button ${className}`;
-  button.textContent = name;
-  button.setAttribute("aria-current", String(isCurrent));
-  button.addEventListener("click", onClick);
-  return button;
+function stateOptionLabel(state) {
+  if (state.ordinal === 0) return `${state.stateId} — baseline`;
+  if (state.transition?.kind === "recompiled") return `${state.stateId} — recompiled ${state.transition.level} anchor`;
+  const noOp = state.transition?.noOp ? " (no recorded change)" : "";
+  return `${state.stateId} — ${state.transition?.passName || "recorded state"}${noOp}`;
 }
 
-function renderIr() {
-  const fn = appState.ir.functions.find((candidate) => candidate.id === appState.selectedFunctionId);
-  const showDebug = elements.debugToggle.checked;
-  const filter = appState.irFilter.trim().toLocaleLowerCase();
-  const totalInstructions = fn.blocks.reduce(
-    (count, block) => count + block.instructions.length,
-    0,
-  );
-  const visibleBlocks = [];
-  let lineNumber = 1;
-  fn.blocks.forEach((block) => {
-    const indexedInstructions = block.instructions.map((instruction) => ({
-      instruction,
-      lineNumber: lineNumber++,
-    }));
-    if (appState.irScope === "block" && block.id !== appState.selectedBlockId) return;
-    const instructions = filter
-      ? indexedInstructions.filter(({ instruction }) => instructionMatchesFilter(instruction, filter))
-      : indexedInstructions;
-    if (instructions.length) visibleBlocks.push({ block, instructions });
-  });
-  const visibleInstructions = visibleBlocks.reduce(
-    (count, item) => count + item.instructions.length,
-    0,
-  );
-  const selectedInstructionVisible = visibleBlocks.some(({ instructions }) => (
-    instructions.some(({ instruction }) => instruction.id === appState.selectedInstructionId)
-  ));
-  const scopeLabel = appState.irScope === "block" ? "selected block" : "selected function";
-  const hiddenSelection = appState.selectedInstructionId && !selectedInstructionVisible
-    ? " · selected instruction is outside this display scope"
-    : "";
-  elements.irDescription.textContent = `${appState.ir.stateId} · ${fn.name} · ${visibleBlocks.length} of ${fn.blocks.length} basic blocks · ${visibleInstructions} of ${totalInstructions} instructions shown (${scopeLabel})${hiddenSelection}`;
-  const from = appState.session.states.find((state) => state.ordinal === appState.comparisonFromOrdinal);
-  const to = appState.session.states.find((state) => state.ordinal === appState.comparisonToOrdinal);
-  const position = appState.ir.stateId === from?.stateId ? "before" : "after";
-  elements.irChangeContext.textContent = `Viewing ${appState.ir.stateId} as the ${position} IR in ${from?.stateId} → ${to?.stateId}. Select an instruction to inspect its recorded counterpart.`;
-  elements.irResultCount.textContent = filter
-    ? `${visibleInstructions} matching instruction${visibleInstructions === 1 ? "" : "s"}`
-    : `${visibleInstructions} instruction${visibleInstructions === 1 ? "" : "s"} shown`;
-  elements.clearIrFilter.disabled = !filter;
-  elements.irView.replaceChildren();
-  const signature = document.createElement("code");
-  signature.className = "ir-signature";
-  signature.innerHTML = highlightIr(stripDebug(fn.signature, showDebug));
-  elements.irView.append(signature);
-  if (!visibleBlocks.length) {
-    const empty = document.createElement("p");
-    empty.className = "filtered-empty";
-    empty.textContent = filter
-      ? "No instructions in this scope match the filter. Clear it or choose the selected function scope."
-      : "The selected block has no instructions to display.";
-    elements.irView.append(empty);
+async function refreshWorkspace() {
+  if (!appState.session) return;
+  const refreshId = ++appState.refreshId;
+  try {
+    const [leftIr, rightIr] = await Promise.all([
+      request(`/api/ir?ordinal=${appState.panels.left.ordinal}`),
+      request(`/api/ir?ordinal=${appState.panels.right.ordinal}`),
+    ]);
+    if (refreshId !== appState.refreshId) return;
+    appState.panels.left.ir = leftIr;
+    appState.panels.right.ir = rightIr;
+    const commonFunctions = commonFunctionNames(leftIr, rightIr);
+    if (!commonFunctions.length) throw new Error("The selected states do not share a comparable function.");
+    if (!commonFunctions.includes(appState.functionName)) appState.functionName = commonFunctions[0];
+    renderFunctionOptions(commonFunctions);
+    for (const side of ["left", "right"]) {
+      const panel = appState.panels[side];
+      panel.function = panel.ir.functions.find((fn) => fn.name === appState.functionName) || null;
+      panel.cfg = null;
+    }
+    const cfgRequests = ["left", "right"].map(async (side) => {
+      const panel = appState.panels[side];
+      if (panel.viewType !== "cfg" || !panel.function) return;
+      panel.cfg = await request(`/api/cfg?ordinal=${panel.ordinal}&functionId=${encodeURIComponent(panel.function.id)}`);
+    });
+    await Promise.all(cfgRequests);
+    if (refreshId !== appState.refreshId) return;
+    renderComparison();
+    renderPanel("left");
+    renderPanel("right");
+  } catch (error) {
+    if (refreshId === appState.refreshId) showError(error);
+  }
+}
+
+function commonFunctionNames(leftIr, rightIr) {
+  const rightNames = new Set(rightIr.functions.map((fn) => fn.name));
+  return leftIr.functions.map((fn) => fn.name).filter((name) => rightNames.has(name));
+}
+
+function renderFunctionOptions(names) {
+  elements.functionSelect.replaceChildren(...names.map((name) => new Option(name, name)));
+  elements.functionSelect.value = appState.functionName;
+  elements.functionControl.hidden = names.length <= 1;
+}
+
+function clearSelection() {
+  appState.selection = null;
+  for (const panel of Object.values(appState.panels)) panel.selectedNodeIds = new Set();
+}
+
+function renderComparison() {
+  const leftState = stateFor("left");
+  const rightState = stateFor("right");
+  elements.comparisonAction.textContent = comparisonAction(leftState, rightState);
+  if (!appState.selection) {
+    elements.selectionStatus.className = "selection-status";
+    elements.selectionStatus.textContent = "Select an IR line or CFG block to follow its recorded link.";
     return;
   }
-  visibleBlocks.forEach(({ block, instructions }) => {
+  elements.selectionStatus.className = `selection-status${appState.selection.unresolved ? " is-unresolved" : ""}`;
+  elements.selectionStatus.textContent = appState.selection.text;
+}
+
+function comparisonAction(leftState, rightState) {
+  if (leftState.ordinal === rightState.ordinal) return `Both panels show ${leftState.stateId}; no cross-state action is being compared.`;
+  const [from, to] = leftState.ordinal < rightState.ordinal ? [leftState, rightState] : [rightState, leftState];
+  if (to.ordinal !== from.ordinal + 1) {
+    return `${from.stateId} → ${to.stateId}: composed comparison across ${to.ordinal - from.ordinal} recorded transitions; no single pass is attributed.`;
+  }
+  if (to.transition?.kind === "recompiled") return `${from.stateId} → ${to.stateId}: separately recompiled ${to.transition.level} anchor, not the result of one pass.`;
+  const passName = to.transition?.passName || "recorded pass";
+  const action = PASS_ACTIONS[passName] || "perform its recorded optimisation action";
+  const noOp = to.transition?.noOp ? " No structural or value-level change was recorded." : "";
+  return `${from.stateId} → ${to.stateId}: ${passName} — ${action}.${noOp}`;
+}
+
+function stateFor(side) {
+  return appState.session.states.find((state) => state.ordinal === appState.panels[side].ordinal);
+}
+
+function renderPanel(side) {
+  const panel = appState.panels[side];
+  const controls = elements[side];
+  const state = stateFor(side);
+  controls.heading.textContent = `${side === "left" ? "Left" : "Right"}: ${state.stateId}`;
+  controls.state.value = String(panel.ordinal);
+  controls.view.value = panel.viewType;
+  controls.viewer.replaceChildren();
+  if (!panel.function) {
+    controls.description.textContent = "The selected function is unavailable in this state.";
+    controls.viewer.append(emptyViewer("No comparable function is available."));
+    return;
+  }
+  if (panel.viewType === "ir") renderIr(side);
+  else renderCfg(side);
+}
+
+function renderIr(side) {
+  const panel = appState.panels[side];
+  const { viewer, description } = elements[side];
+  const fn = panel.function;
+  const instructionCount = fn.blocks.reduce((count, block) => count + block.instructions.length, 0);
+  description.textContent = `${panel.ir.stateId} · ${fn.name} · ${fn.blocks.length} basic blocks · ${instructionCount} instructions`;
+  const signature = document.createElement("code");
+  signature.className = "ir-signature";
+  signature.innerHTML = highlightIr(stripDebug(fn.signature));
+  viewer.append(signature);
+  let lineNumber = 1;
+  fn.blocks.forEach((block) => {
     const blockElement = document.createElement("section");
-    blockElement.className = `ir-block${block.id === appState.selectedBlockId ? " is-selected" : ""}`;
-    blockElement.id = `ir-${block.id.replaceAll("/", "-")}`;
-    blockElement.setAttribute("aria-current", String(block.id === appState.selectedBlockId));
-    blockElement.innerHTML = `<div class="ir-block-heading">${escapeHtml(block.label)}:</div>`;
-    instructions.forEach(({ instruction, lineNumber: instructionLineNumber }) => {
+    blockElement.className = selectionClass(side, block.id, "ir-block");
+    blockElement.dataset.nodeId = block.id;
+    const heading = document.createElement("button");
+    heading.type = "button";
+    heading.className = "ir-block-heading";
+    heading.textContent = `${block.label}:`;
+    heading.setAttribute("aria-pressed", String(panel.selectedNodeIds.has(block.id)));
+    heading.addEventListener("click", () => selectNode(side, block.id));
+    blockElement.append(heading);
+    block.instructions.forEach((instruction) => {
       const line = document.createElement("div");
-      line.className = `ir-line${instruction.id === appState.selectedInstructionId ? " is-selected" : ""}${instruction.source ? " is-source-mapped" : ""}`;
+      line.className = selectionClass(side, instruction.id, "ir-line");
+      line.dataset.nodeId = instruction.id;
       line.setAttribute("role", "button");
       line.setAttribute("tabindex", "0");
       line.setAttribute("aria-label", `Select IR instruction ${instruction.opcode}`);
-      line.setAttribute("aria-pressed", String(instruction.id === appState.selectedInstructionId));
-      line.innerHTML = `<span class="line-number">${instructionLineNumber}</span><code>${highlightIr(stripDebug(instruction.text, showDebug))}</code>`;
-      const select = () => selectInstruction(instruction, block, fn);
+      line.setAttribute("aria-pressed", String(panel.selectedNodeIds.has(instruction.id)));
+      line.innerHTML = `<span class="line-number">${lineNumber++}</span><code>${highlightIr(stripDebug(instruction.text))}</code>`;
+      const select = () => selectNode(side, instruction.id);
       line.addEventListener("click", select);
       line.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          select();
-        }
+        if (event.key === "Enter" || event.key === " ") { event.preventDefault(); select(); }
       });
       blockElement.append(line);
     });
-    elements.irView.append(blockElement);
+    viewer.append(blockElement);
   });
 }
 
-function instructionMatchesFilter(instruction, filter) {
-  return [
-    instruction.text,
-    instruction.opcode,
-    instruction.result,
-    instruction.source && `${instruction.source.file}:${instruction.source.line}`,
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLocaleLowerCase()
-    .includes(filter);
-}
-
-function irContext(ir, nodeId) {
-  for (const fn of ir.functions) {
-    if (fn.id === nodeId) return { function: fn, block: null, instruction: null };
-    for (const block of fn.blocks) {
-      if (block.id === nodeId) return { function: fn, block, instruction: null };
-      const instruction = block.instructions.find((item) => item.id === nodeId);
-      if (instruction) return { function: fn, block, instruction };
-    }
+function renderCfg(side) {
+  const panel = appState.panels[side];
+  const { viewer, description } = elements[side];
+  const cfg = panel.cfg;
+  if (!cfg || !cfg.blocks.length) {
+    description.textContent = "No control-flow graph is available for this function.";
+    viewer.append(emptyViewer("No control-flow graph is available."));
+    return;
   }
-  return null;
-}
-
-async function selectInstruction(instruction, block, fn) {
-  appState.selectedFunctionId = fn.id;
-  appState.selectedBlockId = block.id;
-  appState.selectedInstructionId = instruction.id;
-  elements.selectionInspector.open = true;
-  try {
-    await request("/api/focus", {
-      method: "POST",
-      body: JSON.stringify({ ordinal: selectedOrdinal(), nodeId: instruction.id }),
+  description.textContent = `${panel.ir.stateId} · ${panel.function.name} · ${cfg.blocks.length} basic blocks · ${cfg.edges.length} edges`;
+  const columnCount = Math.min(3, Math.max(1, Math.ceil(Math.sqrt(cfg.blocks.length))));
+  const cellWidth = 185;
+  const cellHeight = 115;
+  const width = Math.max(430, columnCount * cellWidth + 60);
+  const rows = Math.ceil(cfg.blocks.length / columnCount);
+  const height = Math.max(220, rows * cellHeight + 90);
+  const positions = new Map(cfg.blocks.map((block, index) => [block.id, {
+    x: 70 + (index % columnCount) * cellWidth,
+    y: 65 + Math.floor(index / columnCount) * cellHeight,
+  }]));
+  const namespace = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(namespace, "svg");
+  const markerId = `arrow-${side}`;
+  svg.classList.add("cfg-svg");
+  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  svg.setAttribute("role", "img");
+  svg.setAttribute("aria-label", `Control-flow graph for ${panel.function.name} in ${panel.ir.stateId}`);
+  svg.innerHTML = `<defs><marker id="${markerId}" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#60758a" /></marker></defs>`;
+  cfg.edges.forEach((edge) => {
+    const from = positions.get(edge.fromId);
+    const to = positions.get(edge.toId);
+    if (!from || !to) return;
+    const line = document.createElementNS(namespace, "line");
+    line.setAttribute("class", "cfg-edge");
+    line.setAttribute("x1", String(from.x + 54));
+    line.setAttribute("y1", String(from.y + 34));
+    line.setAttribute("x2", String(to.x + 54));
+    line.setAttribute("y2", String(to.y + 34));
+    line.setAttribute("marker-end", `url(#${markerId})`);
+    svg.append(line);
+    if (edge.label) {
+      const label = document.createElementNS(namespace, "text");
+      label.setAttribute("class", "cfg-edge-label");
+      label.setAttribute("x", String((from.x + to.x) / 2 + 54));
+      label.setAttribute("y", String((from.y + to.y) / 2 + 27));
+      label.setAttribute("text-anchor", "middle");
+      label.textContent = edge.label;
+      svg.append(label);
+    }
+  });
+  cfg.blocks.forEach((block) => {
+    const point = positions.get(block.id);
+    const node = document.createElementNS(namespace, "g");
+    node.setAttribute("class", selectionClass(side, block.id, "cfg-node"));
+    node.dataset.nodeId = block.id;
+    node.setAttribute("transform", `translate(${point.x}, ${point.y})`);
+    node.setAttribute("role", "button");
+    node.setAttribute("tabindex", "0");
+    node.setAttribute("aria-label", `Select basic block ${block.label}`);
+    node.setAttribute("aria-pressed", String(panel.selectedNodeIds.has(block.id)));
+    const select = () => selectNode(side, block.id);
+    node.addEventListener("click", select);
+    node.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") { event.preventDefault(); select(); }
     });
-    renderNavigation();
-    renderIr();
-    renderCfg();
-    renderSource();
-    await renderCoordination();
-    announce(`Selected ${instruction.opcode}; mapped locations are shown where recorded.`);
-  } catch (error) {
-    showError(error);
-  }
+    const rectangle = document.createElementNS(namespace, "rect");
+    rectangle.setAttribute("width", "108"); rectangle.setAttribute("height", "48"); rectangle.setAttribute("rx", "6");
+    const label = document.createElementNS(namespace, "text");
+    label.setAttribute("x", "54"); label.setAttribute("y", "29"); label.setAttribute("text-anchor", "middle");
+    label.textContent = block.label;
+    node.append(rectangle, label);
+    svg.append(node);
+  });
+  viewer.append(svg);
 }
 
-function selectedInstruction() {
-  if (!appState.selectedInstructionId) return null;
-  return irContext(appState.ir, appState.selectedInstructionId)?.instruction || null;
+function selectionClass(side, nodeId, baseClass) {
+  if (!appState.panels[side].selectedNodeIds.has(nodeId)) return baseClass;
+  return `${baseClass} ${appState.selection?.originSide === side ? "is-selected" : "is-linked"}`;
 }
 
-function selectedNode() {
-  const instruction = selectedInstruction();
-  if (instruction) return instruction;
-  if (!appState.selectedBlockId) return null;
-  return { id: appState.selectedBlockId, kind: "BasicBlock", displayName: appState.selectedBlockId };
-}
-
-function renderSource() {
-  const instruction = selectedInstruction();
-  const source = appState.source;
-  elements.sourceView.replaceChildren();
-  if (!source) {
-    elements.sourceDescription.textContent = "Source is unavailable for this state.";
-    elements.fullSourceView.replaceChildren();
-    return;
-  }
-  elements.sourceDescription.textContent = instruction?.source
-    ? `${source.filename}:${instruction.source.line}:${instruction.source.column} is the recorded debug anchor for the selected instruction.`
-    : "Select an IR instruction with a recorded debug location to show its source context.";
-  const snippet = instruction?.source
-    ? source.lines.filter((line) => Math.abs(line.number - instruction.source.line) <= 1)
-    : [];
-  renderSourceLines(elements.sourceView, snippet, instruction, "Select a mapped IR instruction to show a short source snippet.");
-  renderSourceLines(elements.fullSourceView, source.lines, instruction, "No curated source is available.");
-}
-
-function renderSourceLines(target, lines, instruction, emptyMessage) {
-  target.replaceChildren();
-  if (!lines.length) {
-    const empty = document.createElement("p");
-    empty.className = "source-empty";
-    empty.textContent = emptyMessage;
-    target.append(empty);
-    return;
-  }
-  target.append(...lines.map((line) => {
-    const button = document.createElement("button");
-    const isSelected = instruction?.source?.line === line.number;
-    const isMapped = line.instructionIds.length > 0;
-    button.type = "button";
-    button.className = `source-line${isSelected ? " is-selected" : ""}${isMapped ? " is-mapped" : ""}`;
-    button.disabled = !isMapped;
-    button.setAttribute(
-      "aria-label",
-      isMapped
-        ? `Source line ${line.number}; select one of ${line.instructionIds.length} mapped IR instructions`
-        : `Source line ${line.number}; no recorded IR mapping`,
-    );
-    if (isMapped) button.setAttribute("aria-pressed", String(isSelected));
-    button.innerHTML = `<span class="line-number">${line.number}</span><code>${escapeHtml(line.text) || " "}</code>`;
-    if (isMapped) {
-      button.addEventListener("click", () => focusSourceLine(line));
-    }
-    return button;
-  }));
-}
-
-async function focusSourceLine(line) {
-  const preferredId = line.instructionIds.includes(appState.selectedInstructionId)
-    ? appState.selectedInstructionId
-    : line.instructionIds[0];
-  const context = irContext(appState.ir, preferredId);
-  if (!context?.instruction || !context.block || !context.function) return;
-  await selectInstruction(context.instruction, context.block, context.function);
-}
-
-async function renderCoordination() {
-  const node = selectedNode();
-  elements.coordinationView.replaceChildren();
-  if (!node) {
-    elements.coordinationView.textContent = "Select an IR instruction or basic block to inspect recorded links.";
-    return;
-  }
-
-  const selected = document.createElement("p");
-  selected.className = "mapping-selection";
-  selected.textContent = node.kind === "Instruction"
-    ? `Selected IR instruction: ${node.opcode}.`
-    : "Selected basic block: highlighted in both the IR and CFG views.";
-  elements.coordinationView.append(selected);
-
-  const instruction = selectedInstruction();
-  const sourceStatus = document.createElement("p");
-  sourceStatus.className = "mapping-source";
-  sourceStatus.textContent = instruction?.source
-    ? `Source mapping: ${appState.source.filename}:${instruction.source.line}:${instruction.source.column}.`
-    : node.kind === "Instruction"
-      ? "No debug source location is recorded for this instruction."
-      : "Basic blocks have no direct source location; select an instruction to inspect a source anchor.";
-  elements.coordinationView.append(sourceStatus);
-
-  const counterpartOrdinal = counterpartTargetOrdinal();
-  if (counterpartOrdinal === null) return;
+async function selectNode(originSide, nodeId) {
+  const targetSide = originSide === "left" ? "right" : "left";
+  const origin = appState.panels[originSide];
+  const target = appState.panels[targetSide];
+  clearSelection();
+  origin.selectedNodeIds = new Set([nodeId]);
+  const selected = nodeContext(origin.ir, nodeId);
+  if (!selected) return;
   try {
-    const mapping = await request(
-      `/api/counterparts?ordinal=${selectedOrdinal()}&nodeId=${encodeURIComponent(node.id)}&toOrdinal=${counterpartOrdinal}`,
-    );
-    renderCounterpartMapping(mapping);
+    if (origin.ordinal === target.ordinal) {
+      const targetIds = displayNodeIds(target, [nodeId]);
+      target.selectedNodeIds = new Set(targetIds);
+      appState.selection = {
+        originSide,
+        unresolved: false,
+        text: `${formatNode(selected)} is selected in both views of ${stateFor(originSide).stateId}.`,
+      };
+    } else {
+      const mapping = await request(`/api/counterparts?ordinal=${origin.ordinal}&nodeId=${encodeURIComponent(nodeId)}&toOrdinal=${target.ordinal}`);
+      const targetIds = displayNodeIds(target, mapping.counterparts.map((counterpart) => counterpart.id));
+      target.selectedNodeIds = new Set(targetIds);
+      appState.selection = mappingStatus(originSide, selected, mapping, targetIds.length);
+    }
+    renderComparison();
+    renderPanel(originSide);
+    renderPanel(targetSide);
+    if (target.selectedNodeIds.size) scrollToLinkedNode(targetSide);
   } catch (error) {
-    const unavailable = document.createElement("p");
-    unavailable.className = "mapping-status is-absent";
-    unavailable.textContent = `No cross-state mapping is available: ${error.message}`;
-    elements.coordinationView.append(unavailable);
+    appState.selection = { originSide, unresolved: true, text: `No cross-state mapping is available: ${error.message}` };
+    renderComparison();
+    renderPanel(originSide);
+    renderPanel(targetSide);
   }
 }
 
-function counterpartTargetOrdinal() {
-  if (appState.currentOrdinal === appState.comparisonFromOrdinal) return appState.comparisonToOrdinal;
-  if (appState.currentOrdinal === appState.comparisonToOrdinal) return appState.comparisonFromOrdinal;
+function mappingStatus(originSide, selected, mapping, displayedCount) {
+  const targetState = stateFor(originSide === "left" ? "right" : "left");
+  if (mapping.confidence === "none") {
+    return { originSide, unresolved: true, text: `${formatNode(selected)} has no resolved counterpart in ${targetState.stateId}; matching completed without enough evidence to identify one.` };
+  }
+  if (!mapping.counterparts.length) {
+    return { originSide, unresolved: true, text: `${formatNode(selected)} has no counterpart in ${targetState.stateId}: it is ${mapping.relation}.` };
+  }
+  const confidence = `${mapping.confidence} confidence`;
+  const quantity = displayedCount === 1 ? "linked counterpart" : `${displayedCount} linked counterparts`;
+  return { originSide, unresolved: false, text: `${formatNode(selected)} → ${quantity} in ${targetState.stateId} (${mapping.relation}; ${confidence}).` };
+}
+
+function displayNodeIds(panel, nodeIds) {
+  const displayIds = new Set();
+  nodeIds.forEach((nodeId) => {
+    const context = nodeContext(panel.ir, nodeId);
+    if (!context) return;
+    if (panel.viewType === "cfg" && context.instruction) displayIds.add(context.block.id);
+    else displayIds.add(nodeId);
+  });
+  return [...displayIds];
+}
+
+function nodeContext(ir, nodeId) {
+  for (const fn of ir.functions) {
+    if (fn.id === nodeId) return { function: fn, block: null, instruction: null, node: fn };
+    for (const block of fn.blocks) {
+      if (block.id === nodeId) return { function: fn, block, instruction: null, node: block };
+      const instruction = block.instructions.find((item) => item.id === nodeId);
+      if (instruction) return { function: fn, block, instruction, node: instruction };
+    }
+  }
   return null;
 }
 
-function renderCounterpartMapping(mapping) {
-  const status = document.createElement("p");
-  const confidence = mapping.confidence;
-  status.className = `mapping-status is-${confidence}`;
-  if (confidence === "none") {
-    status.textContent = "Cross-state counterpart is unresolved; matching completed without enough evidence to identify one.";
-  } else if (mapping.counterparts.length === 0) {
-    status.className = "mapping-status is-absent";
-    status.textContent = `No counterpart exists in state ${mapping.counterpartOrdinal}: this node is ${mapping.relation}.`;
-  } else {
-    status.textContent = `Mapped counterpart${mapping.counterparts.length === 1 ? "" : "s"} in state ${mapping.counterpartOrdinal} (${confidence} confidence; ${mapping.relation}).`;
-  }
-  elements.coordinationView.append(status);
-
-  if (mapping.evidence) {
-    const evidence = document.createElement("p");
-    evidence.className = "mapping-evidence";
-    evidence.textContent = `Evidence: ${mapping.evidence}`;
-    elements.coordinationView.append(evidence);
-  }
-  if (!mapping.counterparts.length || mapping.confidence === "none") return;
-
-  const counterparts = document.createElement("div");
-  counterparts.className = "counterpart-actions";
-  mapping.counterparts.forEach((counterpart) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "quiet-button";
-    button.textContent = `View ${counterpart.displayName} in state ${mapping.counterpartOrdinal}`;
-    button.addEventListener("click", () => renderState(mapping.counterpartOrdinal, counterpart.id));
-    counterparts.append(button);
-  });
-  elements.coordinationView.append(counterparts);
+function formatNode(context) {
+  if (context.instruction) return `IR instruction ${context.instruction.displayName}`;
+  if (context.block) return `Basic block ${context.block.label}`;
+  return `Function ${context.function.name}`;
 }
 
-function stripDebug(text, showDebug) {
-  if (showDebug) return text;
-  return text.replace(/,?\s*!dbg\s*!\d+/g, "");
+function scrollToLinkedNode(side) {
+  requestAnimationFrame(() => {
+    const node = elements[side].viewer.querySelector(".is-linked, .is-selected");
+    node?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  });
+}
+
+function emptyViewer(message) {
+  const empty = document.createElement("p");
+  empty.className = "viewer-empty";
+  empty.textContent = message;
+  return empty;
+}
+
+function stripDebug(text) {
+  return String(text || "").replace(/,?\s*!dbg\s*!\d+/g, "");
 }
 
 function highlightIr(text) {
@@ -882,170 +475,23 @@ function escapeHtml(text) {
   return String(text).replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character]);
 }
 
-function renderCfg() {
-  const cfg = appState.cfg;
-  const fn = appState.ir.functions.find((candidate) => candidate.id === appState.selectedFunctionId);
-  elements.cfgView.replaceChildren();
-  if (!cfg || cfg.blocks.length === 0) {
-    elements.cfgDescription.textContent = "No control-flow graph is available for this function.";
-    elements.cfgView.innerHTML = '<p class="cfg-empty">No control-flow graph is available for this function.</p>';
-    return;
-  }
-  const focusedBlockIds = new Set([appState.selectedBlockId]);
-  if (appState.cfgNeighbourhood) {
-    cfg.edges.forEach((edge) => {
-      if (edge.fromId === appState.selectedBlockId) focusedBlockIds.add(edge.toId);
-      if (edge.toId === appState.selectedBlockId) focusedBlockIds.add(edge.fromId);
-    });
-  }
-  const blocks = appState.cfgNeighbourhood
-    ? cfg.blocks.filter((block) => focusedBlockIds.has(block.id))
-    : cfg.blocks;
-  const blockIds = new Set(blocks.map((block) => block.id));
-  const edges = cfg.edges.filter((edge) => blockIds.has(edge.fromId) && blockIds.has(edge.toId));
-  elements.cfgDescription.textContent = `${appState.ir.stateId} · ${fn.name} · ${blocks.length} of ${cfg.blocks.length} basic blocks shown · edges are labelled from the API CFG response${appState.cfgNeighbourhood ? " · selected block and direct neighbours" : ""}`;
-  const columnCount = Math.min(3, Math.max(1, Math.ceil(Math.sqrt(blocks.length))));
-  const cellWidth = 185;
-  const cellHeight = 115;
-  const width = Math.max(430, columnCount * cellWidth + 60);
-  const rows = Math.ceil(blocks.length / columnCount);
-  const height = Math.max(220, rows * cellHeight + 90);
-  const positions = new Map(blocks.map((block, index) => [block.id, {
-    x: 70 + (index % columnCount) * cellWidth,
-    y: 65 + Math.floor(index / columnCount) * cellHeight,
-  }]));
-  const namespace = "http://www.w3.org/2000/svg";
-  const svg = document.createElementNS(namespace, "svg");
-  svg.classList.add("cfg-svg");
-  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
-  svg.setAttribute("role", "img");
-  svg.setAttribute("aria-label", `Control-flow graph for ${fn.name}`);
-  svg.innerHTML = '<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#60758a" /></marker></defs>';
-  edges.forEach((edge) => {
-    const from = positions.get(edge.fromId);
-    const to = positions.get(edge.toId);
-    if (!from || !to) return;
-    const line = document.createElementNS(namespace, "line");
-    line.setAttribute("class", "cfg-edge");
-    line.setAttribute("x1", String(from.x + 54));
-    line.setAttribute("y1", String(from.y + 34));
-    line.setAttribute("x2", String(to.x + 54));
-    line.setAttribute("y2", String(to.y + 34));
-    line.setAttribute("marker-end", "url(#arrow)");
-    svg.append(line);
-    const label = document.createElementNS(namespace, "text");
-    label.setAttribute("class", "cfg-edge-label");
-    label.setAttribute("x", String((from.x + to.x) / 2 + 54));
-    label.setAttribute("y", String((from.y + to.y) / 2 + 27));
-    label.setAttribute("text-anchor", "middle");
-    label.textContent = edge.label;
-    svg.append(label);
+elements.exampleSelect.addEventListener("change", loadExample);
+elements.functionSelect.addEventListener("change", () => {
+  appState.functionName = elements.functionSelect.value;
+  clearSelection();
+  refreshWorkspace();
+});
+for (const side of ["left", "right"]) {
+  elements[side].state.addEventListener("change", () => {
+    appState.panels[side].ordinal = Number(elements[side].state.value);
+    clearSelection();
+    refreshWorkspace();
   });
-  blocks.forEach((block) => {
-    const point = positions.get(block.id);
-    const node = document.createElementNS(namespace, "g");
-    node.setAttribute("class", `cfg-node${block.id === appState.selectedBlockId ? " is-selected" : ""}`);
-    node.setAttribute("transform", `translate(${point.x}, ${point.y})`);
-    node.setAttribute("role", "button");
-    node.setAttribute("tabindex", "0");
-    node.setAttribute("aria-label", `Focus basic block ${block.label}`);
-    node.setAttribute("aria-pressed", String(block.id === appState.selectedBlockId));
-    const focusBlock = async () => {
-      appState.selectedBlockId = block.id;
-      appState.selectedInstructionId = null;
-      try {
-        await request("/api/focus", {
-          method: "POST",
-          body: JSON.stringify({ ordinal: selectedOrdinal(), nodeId: block.id }),
-        });
-      } catch (error) {
-        showError(error);
-        return;
-      }
-      renderNavigation();
-      renderIr();
-      renderCfg();
-      renderSource();
-      await renderCoordination();
-      announce(`Focused basic block ${block.label}.`);
-      document.querySelector(`#ir-${block.id.replaceAll("/", "-")}`)?.scrollIntoView({ block: "nearest" });
-    };
-    node.addEventListener("click", focusBlock);
-    node.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" || event.key === " ") { event.preventDefault(); focusBlock(); }
-    });
-    const rectangle = document.createElementNS(namespace, "rect");
-    rectangle.setAttribute("width", "108"); rectangle.setAttribute("height", "48"); rectangle.setAttribute("rx", "6");
-    const label = document.createElementNS(namespace, "text");
-    label.setAttribute("x", "54"); label.setAttribute("y", "29"); label.setAttribute("text-anchor", "middle");
-    label.textContent = block.label;
-    node.append(rectangle, label);
-    svg.append(node);
+  elements[side].view.addEventListener("change", () => {
+    appState.panels[side].viewType = elements[side].view.value;
+    clearSelection();
+    refreshWorkspace();
   });
-  elements.cfgView.append(svg);
 }
-
-elements.loadButton.addEventListener("click", loadExample);
-elements.openLearningTask.addEventListener("click", () => {
-  openLearningTask().catch(showError);
-});
-elements.debugToggle.addEventListener("change", renderIr);
-elements.irScope.addEventListener("change", () => {
-  appState.irScope = elements.irScope.value;
-  renderIr();
-});
-elements.irFilter.addEventListener("input", () => {
-  appState.irFilter = elements.irFilter.value;
-  renderIr();
-});
-elements.clearIrFilter.addEventListener("click", () => {
-  appState.irFilter = "";
-  elements.irFilter.value = "";
-  renderIr();
-  elements.irFilter.focus();
-});
-elements.cfgNeighbourhood.addEventListener("change", () => {
-  appState.cfgNeighbourhood = elements.cfgNeighbourhood.checked;
-  renderCfg();
-});
-elements.previousState.addEventListener("click", () => {
-  const states = meaningfulTimelineStates();
-  const index = states.findIndex((state) => state.ordinal === appState.currentOrdinal);
-  if (index > 0) renderState(states[index - 1].ordinal);
-});
-elements.nextState.addEventListener("click", () => {
-  const states = meaningfulTimelineStates();
-  const index = states.findIndex((state) => state.ordinal === appState.currentOrdinal);
-  if (index !== -1 && index < states.length - 1) renderState(states[index + 1].ordinal);
-});
-elements.fullPipeline.addEventListener("toggle", () => {
-  appState.showNoOpStates = elements.fullPipeline.open;
-  const current = appState.session?.states[appState.currentOrdinal];
-  if (!appState.showNoOpStates && current?.transition?.noOp) {
-    const precedingChange = appState.session.states
-      .slice(0, current.ordinal)
-      .reverse()
-      .find((state) => state.ordinal === 0 || !state.transition?.noOp);
-    if (precedingChange) {
-      renderState(precedingChange.ordinal);
-      return;
-    }
-  }
-  renderTimeline();
-});
-elements.openCfg.addEventListener("click", () => {
-  elements.fullArtefact.open = true;
-  document.querySelector("#cfg-heading")?.scrollIntoView({ block: "nearest" });
-});
-elements.compareBaseline.addEventListener("click", async () => {
-  if (!appState.session || appState.comparisonToOrdinal === 0) return;
-  appState.comparisonFromOrdinal = 0;
-  try {
-    await renderComparison();
-    announce(`Comparing the baseline with ${appState.session.states[appState.comparisonToOrdinal].stateId}.`);
-  } catch (error) {
-    showError(error);
-  }
-});
 
 loadExamples();

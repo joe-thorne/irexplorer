@@ -3,12 +3,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Explore curated LLVM IR optimisation artefacts." />
+    <meta name="description" content="Compare curated LLVM IR optimisation artefacts." />
     <title>irexplorer</title>
     <link rel="stylesheet" href="/style.css" />
   </head>
   <body>
-    <a class="skip-link" href="#workspace">Skip to explorer</a>
+    <a class="skip-link" href="#workspace">Skip to comparison</a>
     <header class="site-header">
       <div>
         <p class="eyebrow">LLVM optimisation artefact explorer</p>
@@ -17,202 +17,81 @@
       <p class="header-note">Curated examples · local, read-only analysis</p>
     </header>
 
-    <main id="workspace" class="app-shell" tabindex="-1">
-      <section class="controls panel" aria-labelledby="load-heading">
-        <div>
-          <h2 id="load-heading">Choose a curated example</h2>
-          <p class="muted">Load a pre-baked comparison without recompiling code.</p>
-        </div>
-        <div class="load-controls">
-          <label for="example-select">Example</label>
+    <main class="app-shell">
+      <section class="toolbar panel" aria-label="Comparison controls">
+        <label for="example-select">
+          File
           <select id="example-select" disabled>
-            <option>Loading examples…</option>
+            <option value="">Loading curated files…</option>
           </select>
-          <button id="load-example" type="button" disabled>Load comparison</button>
-        </div>
+        </label>
+        <label id="function-control" for="function-select" hidden>
+          Function
+          <select id="function-select"></select>
+        </label>
       </section>
 
-      <section id="notice" class="notice" role="status" aria-live="polite">
-        Loading available curated examples…
-      </section>
+      <p id="notice" class="notice" role="status" aria-live="polite">
+        Loading available curated files…
+      </p>
 
       <section id="empty-state" class="empty-state panel" aria-labelledby="empty-heading">
-        <p class="eyebrow">Start exploring</p>
-        <h2 id="empty-heading">Choose an example to inspect its optimisation timeline.</h2>
-        <p>
-          The baseline and optimised outputs are preserved compiler artefacts. Select a
-          state, function, or basic block to focus the views.
-        </p>
+        <h2 id="empty-heading">Choose a curated file to start comparing.</h2>
+        <p>Select a state and a representation in either panel, then select an IR line or CFG block to follow its recorded link.</p>
       </section>
 
-      <section id="explorer" class="explorer" hidden aria-label="Optimisation comparison">
-        <section class="comparison story panel" aria-labelledby="story-heading">
-          <div class="story-heading">
-            <p class="eyebrow">Current optimisation step</p>
-            <h2 id="story-heading">What changed?</h2>
-            <p id="pass-role" class="pass-role"></p>
-          </div>
-          <div id="summary-context" class="summary-context"></div>
-          <ul id="story-outcomes" class="story-outcomes"></ul>
+      <section id="workspace" class="workspace" hidden aria-label="Side-by-side optimisation comparison">
+        <section class="comparison-status panel" aria-label="Comparison explanation">
+          <p id="comparison-action" class="comparison-action"></p>
+          <p id="selection-status" class="selection-status" aria-live="polite">Select an IR line or CFG block to follow its recorded link.</p>
         </section>
 
-        <section id="learning-task" class="learning-task panel" aria-labelledby="learning-task-heading">
-          <div class="learning-task-heading">
-            <p class="eyebrow">Curated learning task</p>
-            <h2 id="learning-task-heading">Try a recorded investigation</h2>
-            <p id="learning-task-position" class="muted"></p>
-          </div>
-          <p id="learning-task-prompt" class="learning-task-prompt"></p>
-          <p class="learning-evidence-path"><strong>Evidence path:</strong> <span id="learning-evidence-path"></span></p>
-          <button id="open-learning-task" type="button">Open starting evidence</button>
-          <details id="learning-answer" class="learning-answer">
-            <summary>Reveal the recorded observation after inspecting the artefacts</summary>
-            <p id="learning-observation"></p>
-            <p id="learning-record" class="muted"></p>
-          </details>
-          <details id="learning-task-picker" class="learning-task-picker">
-            <summary>Choose another task</summary>
-            <div id="learning-task-options" class="learning-task-options"></div>
-          </details>
-        </section>
-
-        <section class="state-panel panel" aria-labelledby="state-heading">
-          <div>
-            <p class="eyebrow">Pass timeline</p>
-            <h2 id="state-heading">Follow the optimisation story</h2>
-            <p class="muted">The default path shows the recorded states whose IR changed. The full compiler pipeline remains available below.</p>
-          </div>
-          <div class="timeline-controls">
-            <div class="guided-timeline-controls" aria-label="Optimisation story timeline">
-              <button id="previous-state" class="timeline-button" type="button">Previous</button>
-              <ol id="guided-timeline" class="guided-timeline"></ol>
-              <button id="next-state" class="timeline-button" type="button">Next</button>
-            </div>
-            <details id="full-pipeline" class="full-pipeline">
-              <summary>Show the full 14-state compiler pipeline</summary>
-              <p>The expanded timeline includes retained passes that made no recorded structural or value-level change.</p>
-            </details>
-          </div>
-        </section>
-
-        <div class="focus-grid">
-          <section class="ir-panel panel" aria-labelledby="ir-heading">
-            <div>
-              <p class="eyebrow">Selected IR change</p>
-              <h2 id="ir-heading">Intermediate representation</h2>
-            </div>
-            <p id="ir-change-context" class="ir-change-context" aria-live="polite"></p>
-            <p id="ir-description" class="muted"></p>
-            <div id="ir-view" class="ir-view" tabindex="0"></div>
+        <div class="panel-grid">
+          <section class="viewer-panel panel" aria-labelledby="left-heading">
+            <header class="viewer-heading">
+              <h2 id="left-heading">Left panel</h2>
+              <div class="viewer-controls">
+                <label for="left-state">State
+                  <select id="left-state" disabled></select>
+                </label>
+                <label for="left-view">View
+                  <select id="left-view" disabled>
+                    <option value="ir">LLVM IR</option>
+                    <option value="cfg">CFG</option>
+                  </select>
+                </label>
+              </div>
+            </header>
+            <p id="left-description" class="viewer-description"></p>
+            <div id="left-viewer" class="viewer-content"></div>
           </section>
 
-          <aside class="contextual-column" aria-label="Context for the selected IR change">
-            <section class="source-context panel" aria-labelledby="source-heading">
-              <div>
-                <p class="eyebrow">Source context</p>
-                <h2 id="source-heading">Mapped source</h2>
+          <section class="viewer-panel panel" aria-labelledby="right-heading">
+            <header class="viewer-heading">
+              <h2 id="right-heading">Right panel</h2>
+              <div class="viewer-controls">
+                <label for="right-state">State
+                  <select id="right-state" disabled></select>
+                </label>
+                <label for="right-view">View
+                  <select id="right-view" disabled>
+                    <option value="ir">LLVM IR</option>
+                    <option value="cfg">CFG</option>
+                  </select>
+                </label>
               </div>
-              <p id="source-description" class="muted"></p>
-              <div id="source-view" class="source-view source-snippet"></div>
-            </section>
-
-            <section class="structure-context panel" aria-labelledby="structure-heading">
-              <div>
-                <p class="eyebrow">Structure</p>
-                <h2 id="structure-heading">Control flow</h2>
-              </div>
-              <p id="structure-result" class="structural-result" aria-live="polite"></p>
-              <button id="open-cfg" class="quiet-button" type="button">Inspect full CFG</button>
-            </section>
-
-            <details id="selection-inspector" class="selection-inspector panel">
-              <summary>
-                <span class="eyebrow">Selection inspector</span>
-                <span>Inspect source, CFG, and counterpart links</span>
-              </summary>
-              <div id="coordination-view" class="coordination-view" aria-live="polite"></div>
-            </details>
-          </aside>
+            </header>
+            <p id="right-description" class="viewer-description"></p>
+            <div id="right-viewer" class="viewer-content"></div>
+          </section>
         </div>
-
-        <details id="full-artefact" class="full-artefact panel">
-          <summary>Inspect full artefact</summary>
-          <div class="full-artefact-content">
-            <nav id="navigator" class="navigator artefact-section" aria-labelledby="navigator-heading">
-            <div>
-              <p class="eyebrow">Navigate</p>
-              <h2 id="navigator-heading">Functions and blocks</h2>
-            </div>
-            <div id="navigation-tree" class="navigation-tree"></div>
-            </nav>
-
-            <section class="artefact-controls artefact-section" aria-labelledby="display-heading">
-            <div class="panel-heading">
-              <div>
-                <p class="eyebrow">Display controls</p>
-                <h2 id="display-heading">Full structured IR</h2>
-              </div>
-              <label class="toggle-control" for="debug-toggle">
-                <input id="debug-toggle" type="checkbox" />
-                <span>Show debug metadata</span>
-              </label>
-            </div>
-            <p id="ir-description" class="muted"></p>
-            <fieldset class="view-controls">
-              <legend>IR display</legend>
-              <label for="ir-scope">Scope
-                <select id="ir-scope">
-                  <option value="function">Selected function</option>
-                  <option value="block">Selected block</option>
-                </select>
-              </label>
-              <label for="ir-filter">Filter instructions
-                <input id="ir-filter" type="search" autocomplete="off" placeholder="Opcode, value, or text" />
-              </label>
-              <button id="clear-ir-filter" class="quiet-button" type="button" disabled>Clear filter</button>
-              <output id="ir-result-count" class="filter-result" aria-live="polite"></output>
-            </fieldset>
-            </section>
-
-            <section class="cfg-panel artefact-section" aria-labelledby="cfg-heading">
-            <div>
-              <p class="eyebrow">Control-flow graph (CFG)</p>
-              <h2 id="cfg-heading">Function structure</h2>
-            </div>
-            <p id="cfg-description" class="muted"></p>
-            <label class="toggle-control cfg-scope-control" for="cfg-neighbourhood">
-              <input id="cfg-neighbourhood" type="checkbox" />
-              <span>Show selected block and direct neighbours</span>
-            </label>
-            <div id="cfg-view" class="cfg-view"></div>
-            </section>
-
-            <section class="full-source-section artefact-section" aria-labelledby="full-source-heading">
-            <div>
-                <p class="eyebrow">Full source</p>
-                <h2 id="full-source-heading">Curated C source</h2>
-            </div>
-              <div id="full-source-view" class="source-view"></div>
-            </section>
-
-            <details id="summary-detail" class="summary-detail artefact-section">
-              <summary>Inspect exact recorded changes and evidence</summary>
-              <ul id="summary-items" class="summary-items"></ul>
-              <button id="compare-baseline" class="quiet-button" type="button" disabled>
-                Compare selected state with baseline
-              </button>
-            </details>
-          </div>
-        </details>
       </section>
     </main>
 
     <template id="error-template">
       <section class="error-state panel" role="alert">
-        <p class="eyebrow">Request could not be completed</p>
-        <h2>irexplorer could not load this view.</h2>
+        <h2>irexplorer could not load this comparison.</h2>
         <p class="error-message"></p>
-        <p>Check that the local service is running, then try loading the example again.</p>
       </section>
     </template>
     <script src="/app.js" defer></script>

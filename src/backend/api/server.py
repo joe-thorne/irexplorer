@@ -103,35 +103,14 @@ def _route_get(service: QueryService, request_path: str) -> dict[str, Any]:
         return {"status": "ok"}
     if path == "/api/examples":
         return service.list_examples()
-    if path == "/api/session":
-        return service.session()
-    if path == "/api/states":
-        return service.list_states()
     if path == "/api/ir":
         return service.ir(_required_int(query, "ordinal"))
-    if path == "/api/source":
-        return service.source(_required_int(query, "ordinal"))
     if path == "/api/cfg":
         return service.cfg(_required_int(query, "ordinal"), _required_str(query, "functionId"))
-    if path == "/api/children":
-        return service.children(
-            _required_int(query, "ordinal"), _required_str(query, "nodeId")
-        )
-    if path == "/api/parent":
-        return service.parent(
-            _required_int(query, "ordinal"), _required_str(query, "nodeId")
-        )
-    if path == "/api/step":
-        return service.step(_optional_int(query, "fromOrdinal", default=0))
     if path == "/api/counterparts":
         return service.counterparts(
             _required_int(query, "ordinal"),
             _required_str(query, "nodeId"),
-            _optional_int_or_none(query, "toOrdinal"),
-        )
-    if path == "/api/summary":
-        return service.summary(
-            _optional_int(query, "fromOrdinal", default=0),
             _optional_int_or_none(query, "toOrdinal"),
         )
     raise QueryError(f"unknown API route: {path}")
@@ -148,14 +127,6 @@ def _route_post(
         if not isinstance(example_id, str):
             raise ValueError("exampleId must be a string")
         return service.load_example(example_id)
-    if path == "/api/focus":
-        ordinal = body.get("ordinal")
-        node_id = body.get("nodeId")
-        if not isinstance(ordinal, int):
-            raise ValueError("ordinal must be an integer")
-        if node_id is not None and not isinstance(node_id, str):
-            raise ValueError("nodeId must be a string or null")
-        return service.set_focus(ordinal, node_id)
     raise QueryError(f"unknown API route: {path}")
 
 
