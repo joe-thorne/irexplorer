@@ -32,7 +32,7 @@ Verified local image size after pruning: about 880 MB. The retained LLVM release
 - Local canonical generation runs through Docker, even on macOS.
 - Homebrew LLVM 22.1.8 on macOS is acceptable for ad hoc exploration only.
 - Existing seminar artefacts target `arm64-apple-macosx26.0.0`; they are examples, not canonical golden data.
-- Local Python tools and modules must run inside a virtual environment and be reproducible from a requirements file. Backend Python dependencies belong in `src/backend/requirements.txt`.
+- Local Python tools and modules must run inside a virtual environment and be reproducible from a requirements file. Direct backend dependencies belong in `src/backend/requirements.txt`; `src/backend/requirements.lock` pins the fully resolved FastAPI deployment environment.
 - The toolchain container does not provide Python; it is only for canonical LLVM generation.
 
 ## Phase 1 Curated Examples

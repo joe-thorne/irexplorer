@@ -1,8 +1,9 @@
-"""Read-only query service over pre-baked optimisation model records."""
+"""Read-only, stateless queries over pre-baked optimisation model records."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from threading import RLock
 from typing import Any
 
 from src.backend.analysis.compare import (
@@ -19,12 +20,22 @@ from src.backend.toolchain import curated
 
 
 class QueryError(ValueError):
-    """Raised when a query cannot be satisfied from the loaded example."""
+    """Raised when a curated query cannot be satisfied."""
+
+    status_code = 404
+    code = "not_found"
 
 
-@dataclass
+class InvalidQueryError(QueryError):
+    """Raised when otherwise valid query fields form an invalid request."""
+
+    status_code = 422
+    code = "invalid_query"
+
+
+@dataclass(frozen=True)
 class LoadedExample:
-    """In-memory cache of immutable, pre-baked records for one curated example."""
+    """Immutable, pre-baked records for one curated example."""
 
     example_id: str
     timeline: OptimisationTimeline
@@ -32,42 +43,34 @@ class LoadedExample:
 
 
 class QueryService:
-    """The model-query boundary consumed by the localhost browser API."""
+    """The stateless model-query boundary consumed by browser API clients."""
 
-    def __init__(self) -> None:
-        self._loaded: LoadedExample | None = None
+    def __init__(self, *, preload: bool = True) -> None:
+        self._examples: dict[str, LoadedExample] = {}
+        self._cache_lock = RLock()
+        if preload:
+            for example_id in curated.list_examples():
+                self._example(example_id)
 
     def list_examples(self) -> dict[str, Any]:
         return {"examples": list(curated.list_examples())}
 
-    def load_example(self, example_id: str) -> dict[str, Any]:
-        try:
-            timeline = load_prebaked_curated_timeline(example_id)
-            correspondences = load_prebaked_curated_correspondences(example_id, timeline)
-        except (ValueError, RuntimeError) as exc:
-            raise QueryError(str(exc)) from exc
-        self._loaded = LoadedExample(example_id, timeline, correspondences)
-        return {
-            "exampleId": example_id,
-            "states": self.list_states()["states"],
-        }
-
-    def list_states(self) -> dict[str, Any]:
-        loaded = self._require_loaded()
+    def list_states(self, example_id: str) -> dict[str, Any]:
+        loaded = self._example(example_id)
         return {
             "states": [
                 {
                     "ordinal": state.ordinal,
                     "stateId": state.state_id,
                     "originCommand": state.origin_command,
-                    "transition": self._transition_view(state.ordinal),
+                    "transition": self._transition_view(loaded, state.ordinal),
                 }
                 for state in loaded.timeline.states
             ]
         }
 
-    def ir(self, ordinal: int) -> dict[str, Any]:
-        state = self._state(ordinal)
+    def ir(self, example_id: str, ordinal: int) -> dict[str, Any]:
+        state = self._state(example_id, ordinal)
         functions = []
         for function_id in state.contains_children.get("module", ()):
             function = state.by_id[function_id]
@@ -96,8 +99,8 @@ class QueryService:
             )
         return {"ordinal": state.ordinal, "stateId": state.state_id, "functions": functions}
 
-    def cfg(self, ordinal: int, function_id: str) -> dict[str, Any]:
-        state = self._state(ordinal)
+    def cfg(self, example_id: str, ordinal: int, function_id: str) -> dict[str, Any]:
+        state = self._state(example_id, ordinal)
         function = state.by_id.get(function_id)
         if function is None or function.kind != "Function":
             raise QueryError(f"unknown function in state {ordinal}: {function_id}")
@@ -120,22 +123,28 @@ class QueryService:
 
     def counterparts(
         self,
+        example_id: str,
         ordinal: int,
         node_id: str,
         to_ordinal: int | None = None,
     ) -> dict[str, Any]:
-        state = self._state(ordinal)
+        loaded = self._example(example_id)
+        state = self._state(example_id, ordinal)
         self._node(state, node_id)
-        counterpart_ordinal = self._default_counterpart_ordinal(ordinal, to_ordinal)
+        counterpart_ordinal = self._default_counterpart_ordinal(
+            loaded,
+            ordinal,
+            to_ordinal,
+        )
         lower_ordinal, higher_ordinal = sorted((ordinal, counterpart_ordinal))
-        correspondence = self._comparison(lower_ordinal, higher_ordinal)
+        correspondence = self._comparison(loaded, lower_ordinal, higher_ordinal)
         if ordinal == correspondence.from_ordinal:
             link = correspondence.links_from.get(node_id)
         else:
             link = correspondence.links_to.get(node_id)
         if link is None:
             raise QueryError(f"node is outside the correspondence coverage: {node_id}")
-        counterpart_state = self._state(counterpart_ordinal)
+        counterpart_state = self._state(example_id, counterpart_ordinal)
         counterpart_ids = (
             link.to_node_ids
             if ordinal == correspondence.from_ordinal
@@ -154,10 +163,35 @@ class QueryService:
             ],
         }
 
-    def _transition_view(self, ordinal: int) -> dict[str, Any] | None:
+    def _example(self, example_id: str) -> LoadedExample:
+        try:
+            return self._examples[example_id]
+        except KeyError:
+            pass
+        with self._cache_lock:
+            try:
+                return self._examples[example_id]
+            except KeyError:
+                pass
+            try:
+                timeline = load_prebaked_curated_timeline(example_id)
+                correspondences = load_prebaked_curated_correspondences(
+                    example_id,
+                    timeline,
+                )
+            except (ValueError, RuntimeError) as exc:
+                raise QueryError(str(exc)) from exc
+            loaded = LoadedExample(example_id, timeline, correspondences)
+            self._examples[example_id] = loaded
+            return loaded
+
+    @staticmethod
+    def _transition_view(
+        loaded: LoadedExample,
+        ordinal: int,
+    ) -> dict[str, Any] | None:
         if ordinal == 0:
             return None
-        loaded = self._require_loaded()
         step = loaded.timeline.steps[ordinal - 1]
         return {
             "kind": step.kind,
@@ -167,26 +201,29 @@ class QueryService:
             "remarkCount": len(step.remarks),
         }
 
+    @staticmethod
     def _default_counterpart_ordinal(
-        self,
+        loaded: LoadedExample,
         ordinal: int,
         to_ordinal: int | None,
     ) -> int:
-        state_count = len(self._require_loaded().timeline.states)
+        state_count = len(loaded.timeline.states)
         if to_ordinal is not None:
             if to_ordinal < 0 or to_ordinal >= state_count or to_ordinal == ordinal:
-                raise QueryError("counterpart target ordinal must be another timeline state")
+                raise InvalidQueryError(
+                    "counterpart target ordinal must be another timeline state"
+                )
             return to_ordinal
         if ordinal < state_count - 1:
             return ordinal + 1
         return ordinal - 1
 
+    @staticmethod
     def _comparison(
-        self,
+        loaded: LoadedExample,
         from_ordinal: int,
         to_ordinal: int,
     ) -> Correspondence | ComposedCorrespondence:
-        loaded = self._require_loaded()
         if from_ordinal < 0 or to_ordinal >= len(loaded.timeline.states):
             raise QueryError("comparison ordinals are outside the timeline")
         if to_ordinal == from_ordinal + 1:
@@ -201,14 +238,9 @@ class QueryService:
         except ValueError as exc:
             raise QueryError(str(exc)) from exc
 
-    def _require_loaded(self) -> LoadedExample:
-        if self._loaded is None:
-            raise QueryError("no curated example is loaded")
-        return self._loaded
-
-    def _state(self, ordinal: int) -> StateGraph:
+    def _state(self, example_id: str, ordinal: int) -> StateGraph:
         try:
-            return self._require_loaded().timeline.state(ordinal)
+            return self._example(example_id).timeline.state(ordinal)
         except ValueError as exc:
             raise QueryError(str(exc)) from exc
 

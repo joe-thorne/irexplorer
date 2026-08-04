@@ -6,11 +6,12 @@ arbitrary source in the thesis prototype.
 
 ## Current, deliberately disabled posture
 
-The running service accepts a curated `exampleId` for a session and reads only
-the pre-baked records for that example.  It has no source-upload or analysis
-route, does not invoke `clang` or `opt` at runtime, and never runs compiled
-programs.  `POST /api/analysis` is deliberately unknown and returns the normal
-controlled 404 response; the localhost test keeps that property explicit.
+The running service reads only pre-baked records for a curated `exampleId`
+named in every query.  It has no source-upload or analysis route, does not
+invoke `clang` or `opt` at runtime, and never runs compiled programs.
+`POST /api/analysis` is deliberately unavailable and receives a controlled
+unknown-route or method-not-allowed response; the API test keeps that property
+explicit.
 
 There is no dormant feature flag to turn on.  Enabling FR1 is a Phase 4 change
 only after the gates in [Activation gate](#activation-gate) have been met.  The

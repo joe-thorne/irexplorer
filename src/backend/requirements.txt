@@ -1,2 +1,6 @@
-# Backend Python dependencies.
-# Keep this file as the source of truth for recreating the backend virtual environment.
+# Direct runtime and test dependencies for the curated query API.
+# requirements.lock pins the full resolved environment used for deployment.
+fastapi==0.141.1
+pydantic==2.13.4
+uvicorn==0.52.1
+httpx2==2.9.1

@@ -12,7 +12,8 @@ const PASS_ACTIONS = Object.freeze({
 });
 
 const appState = {
-  session: null,
+  exampleId: null,
+  states: null,
   functionName: null,
   selection: null,
   refreshId: 0,
@@ -51,7 +52,10 @@ async function request(path, options = {}) {
     ...options,
   });
   const body = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(body.error || `Request failed with status ${response.status}.`);
+  if (!response.ok) {
+    const message = typeof body.error === "string" ? body.error : body.error?.message;
+    throw new Error(message || `Request failed with status ${response.status}.`);
+  }
   return body;
 }
 
@@ -103,15 +107,13 @@ async function loadExample() {
   announce(`Loading ${exampleId}…`);
   try {
     clearError();
-    appState.session = await request("/api/session", {
-      method: "POST",
-      body: JSON.stringify({ exampleId }),
-    });
+    appState.states = (await request(`${apiRoot(exampleId)}/states`)).states;
+    appState.exampleId = exampleId;
     appState.functionName = null;
     appState.selection = null;
     appState.panels.left.ordinal = 0;
     appState.panels.left.viewType = "ir";
-    appState.panels.right.ordinal = Math.min(1, appState.session.states.length - 1);
+    appState.panels.right.ordinal = Math.min(1, appState.states.length - 1);
     appState.panels.right.viewType = "ir";
     renderStateOptions();
     elements.left.view.value = "ir";
@@ -130,7 +132,7 @@ async function loadExample() {
 function renderStateOptions() {
   for (const side of ["left", "right"]) {
     const control = elements[side].state;
-    control.replaceChildren(...appState.session.states.map((state) => (
+    control.replaceChildren(...appState.states.map((state) => (
       new Option(stateOptionLabel(state), String(state.ordinal))
     )));
     control.value = String(appState.panels[side].ordinal);
@@ -147,12 +149,13 @@ function stateOptionLabel(state) {
 }
 
 async function refreshWorkspace() {
-  if (!appState.session) return;
+  if (!appState.exampleId) return;
   const refreshId = ++appState.refreshId;
+  const apiBase = apiRoot(appState.exampleId);
   try {
     const [leftIr, rightIr] = await Promise.all([
-      request(`/api/ir?ordinal=${appState.panels.left.ordinal}`),
-      request(`/api/ir?ordinal=${appState.panels.right.ordinal}`),
+      request(`${apiBase}/states/${appState.panels.left.ordinal}/ir`),
+      request(`${apiBase}/states/${appState.panels.right.ordinal}/ir`),
     ]);
     if (refreshId !== appState.refreshId) return;
     appState.panels.left.ir = leftIr;
@@ -169,7 +172,7 @@ async function refreshWorkspace() {
     const cfgRequests = ["left", "right"].map(async (side) => {
       const panel = appState.panels[side];
       if (panel.viewType !== "cfg" || !panel.function) return;
-      panel.cfg = await request(`/api/cfg?ordinal=${panel.ordinal}&functionId=${encodeURIComponent(panel.function.id)}`);
+      panel.cfg = await request(`${apiBase}/states/${panel.ordinal}/cfg?functionId=${encodeURIComponent(panel.function.id)}`);
     });
     await Promise.all(cfgRequests);
     if (refreshId !== appState.refreshId) return;
@@ -224,7 +227,7 @@ function comparisonAction(leftState, rightState) {
 }
 
 function stateFor(side) {
-  return appState.session.states.find((state) => state.ordinal === appState.panels[side].ordinal);
+  return appState.states.find((state) => state.ordinal === appState.panels[side].ordinal);
 }
 
 function renderPanel(side) {
@@ -385,7 +388,7 @@ async function selectNode(originSide, nodeId) {
         text: `${formatNode(selected)} is selected in both views of ${stateFor(originSide).stateId}.`,
       };
     } else {
-      const mapping = await request(`/api/counterparts?ordinal=${origin.ordinal}&nodeId=${encodeURIComponent(nodeId)}&toOrdinal=${target.ordinal}`);
+      const mapping = await request(`${apiRoot(appState.exampleId)}/states/${origin.ordinal}/counterparts?nodeId=${encodeURIComponent(nodeId)}&toOrdinal=${target.ordinal}`);
       const targetIds = displayNodeIds(target, mapping.counterparts.map((counterpart) => counterpart.id));
       target.selectedNodeIds = new Set(targetIds);
       appState.selection = mappingStatus(originSide, selected, mapping, targetIds.length);
@@ -473,6 +476,10 @@ function highlightIr(text) {
 
 function escapeHtml(text) {
   return String(text).replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character]);
+}
+
+function apiRoot(exampleId) {
+  return `/api/examples/${encodeURIComponent(exampleId)}`;
 }
 
 elements.exampleSelect.addEventListener("change", loadExample);
