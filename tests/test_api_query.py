@@ -225,6 +225,14 @@ class FastApiTests(unittest.TestCase):
         ):
             self.assertNotIn(retired_detail, javascript.text)
 
+        for stale_selection_guard in (
+            "selectionId",
+            "selectionRequestIsCurrent",
+            "mappingMatchesSelectionRequest",
+            "if (!selectionRequestIsCurrent(selectionRequest)) return;",
+        ):
+            self.assertIn(stale_selection_guard, javascript.text)
+
         stylesheet = self.client.get("/style.css")
         self.assertEqual(stylesheet.status_code, 200)
         self.assertEqual(stylesheet.headers["content-type"].split(";")[0], "text/css")

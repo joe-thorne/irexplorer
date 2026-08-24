@@ -16,6 +16,7 @@ const appState = {
   states: null,
   functionName: null,
   selection: null,
+  selectionId: 0,
   refreshId: 0,
   panels: {
     left: { ordinal: 0, viewType: "ir", ir: null, cfg: null, function: null, selectedNodeIds: new Set() },
@@ -103,6 +104,7 @@ async function loadExamples() {
 async function loadExample() {
   const exampleId = elements.exampleSelect.value;
   if (!exampleId) return;
+  clearSelection();
   elements.exampleSelect.disabled = true;
   announce(`Loading ${exampleId}…`);
   try {
@@ -110,7 +112,6 @@ async function loadExample() {
     appState.states = (await request(`${apiRoot(exampleId)}/states`)).states;
     appState.exampleId = exampleId;
     appState.functionName = null;
-    appState.selection = null;
     appState.panels.left.ordinal = 0;
     appState.panels.left.viewType = "ir";
     appState.panels.right.ordinal = Math.min(1, appState.states.length - 1);
@@ -196,8 +197,22 @@ function renderFunctionOptions(names) {
 }
 
 function clearSelection() {
+  appState.selectionId += 1;
   appState.selection = null;
   for (const panel of Object.values(appState.panels)) panel.selectedNodeIds = new Set();
+}
+
+function selectionRequestIsCurrent(selectionRequest) {
+  return selectionRequest.id === appState.selectionId
+    && selectionRequest.exampleId === appState.exampleId
+    && selectionRequest.originOrdinal === appState.panels[selectionRequest.originSide].ordinal
+    && selectionRequest.targetOrdinal === appState.panels[selectionRequest.targetSide].ordinal;
+}
+
+function mappingMatchesSelectionRequest(mapping, selectionRequest) {
+  return mapping.ordinal === selectionRequest.originOrdinal
+    && mapping.nodeId === selectionRequest.nodeId
+    && mapping.counterpartOrdinal === selectionRequest.targetOrdinal;
 }
 
 function renderComparison() {
@@ -375,6 +390,15 @@ async function selectNode(originSide, nodeId) {
   const origin = appState.panels[originSide];
   const target = appState.panels[targetSide];
   clearSelection();
+  const selectionRequest = {
+    id: appState.selectionId,
+    exampleId: appState.exampleId,
+    originSide,
+    targetSide,
+    originOrdinal: origin.ordinal,
+    targetOrdinal: target.ordinal,
+    nodeId,
+  };
   origin.selectedNodeIds = new Set([nodeId]);
   const selected = nodeContext(origin.ir, nodeId);
   if (!selected) return;
@@ -388,7 +412,11 @@ async function selectNode(originSide, nodeId) {
         text: `${formatNode(selected)} is selected in both views of ${stateFor(originSide).stateId}.`,
       };
     } else {
-      const mapping = await request(`${apiRoot(appState.exampleId)}/states/${origin.ordinal}/counterparts?nodeId=${encodeURIComponent(nodeId)}&toOrdinal=${target.ordinal}`);
+      const mapping = await request(`${apiRoot(selectionRequest.exampleId)}/states/${selectionRequest.originOrdinal}/counterparts?nodeId=${encodeURIComponent(nodeId)}&toOrdinal=${selectionRequest.targetOrdinal}`);
+      if (!selectionRequestIsCurrent(selectionRequest)) return;
+      if (!mappingMatchesSelectionRequest(mapping, selectionRequest)) {
+        throw new Error("The counterpart response did not match the current selection.");
+      }
       const targetIds = displayNodeIds(target, mapping.counterparts.map((counterpart) => counterpart.id));
       target.selectedNodeIds = new Set(targetIds);
       appState.selection = mappingStatus(originSide, selected, mapping, targetIds.length);
@@ -398,6 +426,7 @@ async function selectNode(originSide, nodeId) {
     renderPanel(targetSide);
     if (target.selectedNodeIds.size) scrollToLinkedNode(targetSide);
   } catch (error) {
+    if (!selectionRequestIsCurrent(selectionRequest)) return;
     appState.selection = { originSide, unresolved: true, text: `No cross-state mapping is available: ${error.message}` };
     renderComparison();
     renderPanel(originSide);
