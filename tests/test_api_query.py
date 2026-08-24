@@ -1,9 +1,16 @@
 from concurrent.futures import ThreadPoolExecutor
 import unittest
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from src.backend.api import InvalidQueryError, QueryError, QueryService, create_app
+from src.backend.api import (
+    DataUnavailableError,
+    InvalidQueryError,
+    QueryError,
+    QueryService,
+    create_app,
+)
 
 
 class QueryServiceTests(unittest.TestCase):
@@ -56,6 +63,23 @@ class QueryServiceTests(unittest.TestCase):
             service.counterparts("score", 0, "fn0/bb0", 0)
         with self.assertRaises(QueryError):
             service.counterparts("score", 0, "missing", 1)
+
+    def test_prebaked_data_failures_are_not_reported_as_missing_queries(self) -> None:
+        service = QueryService(preload=False)
+        internal_failure = FileNotFoundError("/private/model/timeline.json")
+
+        with patch(
+            "src.backend.api.query.load_prebaked_curated_timeline",
+            side_effect=internal_failure,
+        ):
+            with self.assertRaises(DataUnavailableError) as context:
+                service.list_states("score")
+
+        self.assertEqual(
+            str(context.exception),
+            "Pre-baked model data is temporarily unavailable.",
+        )
+        self.assertIs(context.exception.__cause__, internal_failure)
 
     def test_largest_curated_function_remains_scoped_and_queryable(self) -> None:
         service = QueryService()
@@ -160,6 +184,34 @@ class FastApiTests(unittest.TestCase):
         )
         self.assertEqual(missing_function.status_code, 404)
         self.assertEqual(missing_function.json()["error"]["code"], "not_found")
+
+        missing_node = self.client.get(
+            "/api/examples/score/states/0/counterparts?nodeId=missing&toOrdinal=1"
+        )
+        self.assertEqual(missing_node.status_code, 404)
+        self.assertEqual(missing_node.json()["error"]["code"], "not_found")
+
+    def test_prebaked_data_failure_is_logged_and_sanitised(self) -> None:
+        service = QueryService(preload=False)
+        client = TestClient(create_app(service))
+        self.addCleanup(client.close)
+        internal_detail = "/private/model/timeline.json contains invalid data"
+
+        with patch(
+            "src.backend.api.query.load_prebaked_curated_timeline",
+            side_effect=ValueError(internal_detail),
+        ):
+            with self.assertLogs("src.backend.api.app", level="ERROR") as logs:
+                response = client.get("/api/examples/score/states")
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json()["error"]["code"], "data_unavailable")
+        self.assertEqual(
+            response.json()["error"]["message"],
+            "Pre-baked model data is temporarily unavailable.",
+        )
+        self.assertNotIn(internal_detail, response.text)
+        self.assertIn(internal_detail, "\n".join(logs.output))
 
     def test_openapi_documents_only_the_read_only_query_surface(self) -> None:
         schema = self.client.get("/openapi.json")

@@ -23,6 +23,10 @@ selected example. The API supports:
 The browser owns all pane and selection state. FastAPI exposes the API contract
 at `http://127.0.0.1:8000/docs` during local development.
 
+Unknown examples and model nodes return `404`, while invalid combinations of
+otherwise valid query parameters return `422`. Missing or corrupt pre-baked
+model data is logged with its internal cause and exposed as a sanitised `503`.
+
 Open `http://127.0.0.1:8000/` in a browser to use the static frontend. It is
 served from `src/frontend/` by this local service, so it makes same-origin
 requests only to the query API; it does not read compiler artefacts or invoke

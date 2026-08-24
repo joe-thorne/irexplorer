@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Annotated
 
@@ -11,7 +12,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHttpException
 
-from src.backend.api.query import QueryError, QueryService
+from src.backend.api.query import DataUnavailableError, QueryError, QueryService
 from src.backend.api.schemas import (
     CfgResponse,
     CounterpartsResponse,
@@ -30,6 +31,7 @@ Ordinal = Annotated[int, ApiPath(ge=0)]
 FunctionId = Annotated[str, Query(alias="functionId", min_length=1)]
 NodeId = Annotated[str, Query(alias="nodeId", min_length=1)]
 TargetOrdinal = Annotated[int | None, Query(alias="toOrdinal", ge=0)]
+logger = logging.getLogger(__name__)
 
 
 def create_app(
@@ -53,6 +55,18 @@ def create_app(
         _request: Request,
         exc: QueryError,
     ) -> JSONResponse:
+        return _error_response(exc.status_code, exc.code, str(exc))
+
+    @app.exception_handler(DataUnavailableError)
+    async def data_unavailable_handler(
+        _request: Request,
+        exc: DataUnavailableError,
+    ) -> JSONResponse:
+        logger.error(
+            "Pre-baked model data failed for curated example %r",
+            exc.example_id,
+            exc_info=(type(exc), exc, exc.__traceback__),
+        )
         return _error_response(exc.status_code, exc.code, str(exc))
 
     @app.exception_handler(RequestValidationError)

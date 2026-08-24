@@ -33,6 +33,17 @@ class InvalidQueryError(QueryError):
     code = "invalid_query"
 
 
+class DataUnavailableError(RuntimeError):
+    """Raised when pre-baked model data cannot be loaded or composed safely."""
+
+    status_code = 503
+    code = "data_unavailable"
+
+    def __init__(self, example_id: str) -> None:
+        super().__init__("Pre-baked model data is temporarily unavailable.")
+        self.example_id = example_id
+
+
 @dataclass(frozen=True)
 class LoadedExample:
     """Immutable, pre-baked records for one curated example."""
@@ -164,6 +175,8 @@ class QueryService:
         }
 
     def _example(self, example_id: str) -> LoadedExample:
+        if example_id not in curated.list_examples():
+            raise QueryError(f"unknown curated example: {example_id}")
         try:
             return self._examples[example_id]
         except KeyError:
@@ -179,8 +192,8 @@ class QueryService:
                     example_id,
                     timeline,
                 )
-            except (ValueError, RuntimeError) as exc:
-                raise QueryError(str(exc)) from exc
+            except (OSError, ValueError, RuntimeError) as exc:
+                raise DataUnavailableError(example_id) from exc
             loaded = LoadedExample(example_id, timeline, correspondences)
             self._examples[example_id] = loaded
             return loaded
@@ -226,17 +239,17 @@ class QueryService:
     ) -> Correspondence | ComposedCorrespondence:
         if from_ordinal < 0 or to_ordinal >= len(loaded.timeline.states):
             raise QueryError("comparison ordinals are outside the timeline")
-        if to_ordinal == from_ordinal + 1:
-            return loaded.correspondences[from_ordinal]
         try:
+            if to_ordinal == from_ordinal + 1:
+                return loaded.correspondences[from_ordinal]
             return compose_timeline_correspondences(
                 loaded.timeline,
                 loaded.correspondences,
                 from_ordinal,
                 to_ordinal,
             )
-        except ValueError as exc:
-            raise QueryError(str(exc)) from exc
+        except (IndexError, ValueError) as exc:
+            raise DataUnavailableError(loaded.example_id) from exc
 
     def _state(self, example_id: str, ordinal: int) -> StateGraph:
         try:
