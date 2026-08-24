@@ -85,6 +85,24 @@ entry:
 
         self.assertIn("lacks terminator", str(context.exception))
 
+    def test_unknown_cfg_successor_is_controlled_failure(self) -> None:
+        malformed = """source_filename = "bad.c"
+target triple = "x86_64-unknown-linux-gnu"
+
+define i32 @bad() {
+entry:
+  br label %missing
+}
+"""
+
+        with self.assertRaises(IngestError) as context:
+            parse_ir_state(malformed, ordinal=0, state_id="bad")
+
+        self.assertIn(
+            "terminator in bad.entry targets unknown block missing",
+            str(context.exception),
+        )
+
 
 def _kind_counts(graph) -> dict[str, int]:
     counts: dict[str, int] = {}

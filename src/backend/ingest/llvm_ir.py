@@ -159,6 +159,16 @@ def _parse_ir_state(
                     function.name,
                     instruction.source,
                 )
+                resolved_successors: list[tuple[str, str]] = []
+                for label, edge_label in instruction.successors:
+                    try:
+                        target_id = block_id_by_function_label[function.id][label]
+                    except KeyError as exc:
+                        raise IngestError(
+                            f"terminator in {function.name}.{block.label} "
+                            f"targets unknown block {label}"
+                        ) from exc
+                    resolved_successors.append((target_id, edge_label))
                 attrs = {
                     "text": instruction.text,
                     "result": instruction.result,
@@ -168,10 +178,7 @@ def _parse_ir_state(
                     "source": instruction.source,
                     "incoming_blocks": instruction.incoming_blocks,
                     "is_terminator": instruction.is_terminator,
-                    "successors": tuple(
-                        (block_id_by_function_label[function.id][label], edge_label)
-                        for label, edge_label in instruction.successors
-                    ),
+                    "successors": tuple(resolved_successors),
                     "remarks": instruction_remarks,
                 }
                 nodes.append(
@@ -192,18 +199,11 @@ def _parse_ir_state(
                             label="debugLoc",
                         )
                     )
-
-            for instruction in block.instructions:
-                if not instruction.is_terminator:
-                    continue
-                for label, edge_label in instruction.successors:
-                    try:
-                        target_id = block_id_by_function_label[function.id][label]
-                    except KeyError as exc:
-                        raise IngestError(
-                            f"terminator in {function.name}.{block.label} targets unknown block {label}"
-                        ) from exc
-                    edges.append(Edge(block.id, target_id, "controlFlow", label=edge_label))
+                if instruction.is_terminator:
+                    for target_id, edge_label in resolved_successors:
+                        edges.append(
+                            Edge(block.id, target_id, "controlFlow", label=edge_label)
+                        )
 
     edges.extend(_value_flow_edges(functions))
 
