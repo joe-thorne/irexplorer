@@ -1,8 +1,9 @@
-FROM ubuntu:24.04 AS llvm
+FROM ubuntu:24.04@sha256:1e0a86e57d247923571b75e0aaf48a1449cf8c543d51fb3e07a4a7d7bfa79316 AS llvm
 
 ARG LLVM_VERSION=22.1.8
 ARG LLVM_ARCHIVE=LLVM-${LLVM_VERSION}-Linux-X64.tar.xz
 ARG LLVM_URL=https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/${LLVM_ARCHIVE}
+ARG LLVM_SHA256=df0e1ecf16caf3489a272a5eea4eec9b0d82878f6477fa309504f918a0006384
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -14,6 +15,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 RUN curl -fL --retry 3 --connect-timeout 20 --progress-bar "${LLVM_URL}" -o "/tmp/${LLVM_ARCHIVE}" \
+    && echo "${LLVM_SHA256}  /tmp/${LLVM_ARCHIVE}" | sha256sum --check --strict \
     && mkdir -p /opt/llvm-full \
     && tar -xJf "/tmp/${LLVM_ARCHIVE}" -C /opt/llvm-full --strip-components=1 \
     && rm "/tmp/${LLVM_ARCHIVE}" \
@@ -26,7 +28,7 @@ RUN curl -fL --retry 3 --connect-timeout 20 --progress-bar "${LLVM_URL}" -o "/tm
     done \
     && cp -a /opt/llvm-full/lib/clang /opt/llvm/lib/
 
-FROM ubuntu:24.04
+FROM ubuntu:24.04@sha256:1e0a86e57d247923571b75e0aaf48a1449cf8c543d51fb3e07a4a7d7bfa79316
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PATH="/opt/llvm/bin:${PATH}"

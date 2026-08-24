@@ -7,8 +7,11 @@ Canonical generation for `irexplorer` uses one controlled Linux environment. Loc
 - Target: Linux/x86-64 from the start.
 - Target triple: `x86_64-unknown-linux-gnu`.
 - Datalayout: `e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128`.
-- Docker base image: Ubuntu 24.04.
-- LLVM source: official LLVM 22.1.8 Linux x86_64 release tarball.
+- Docker base image: Ubuntu 24.04 Linux/amd64, pinned to manifest digest
+  `sha256:1e0a86e57d247923571b75e0aaf48a1449cf8c543d51fb3e07a4a7d7bfa79316`.
+- LLVM source: official `LLVM-22.1.8-Linux-X64.tar.xz`, verified before
+  extraction against SHA-256
+  `df0e1ecf16caf3489a272a5eea4eec9b0d82878f6477fa309504f918a0006384`.
 - Tools: `clang` and `opt` from LLVM 22.1.8.
 - Canonical artefacts: shipped pre-baked examples and golden fixtures.
 
@@ -71,6 +74,13 @@ Run the canonical generator from `irexplorer/` inside the local Python virtual e
 ```
 
 Generated artefacts are written to `artefacts/curated/<example>/`. Each example directory contains the `-O0` IR/bitcode, the 12 teaching-pass IR states, the recompiled `clang -O3` anchor, one YAML pass-remark record per `opt` state (including empty records when LLVM emitted none), captured `clang -Rpass` text, the aggregate `.opt.yaml` optimisation record, and a command manifest.
+
+Generation first writes the complete compiler artefact, model, and
+correspondence snapshot to a temporary sibling directory. Docker overlays that
+directory at the canonical `/workspace/artefacts/curated` path, keeping paths
+inside IR and manifests deterministic. Only after every step succeeds does the
+generator swap the staged tree into place; a failed build is deleted without
+touching the last good snapshot, and a failed install restores its backup.
 
 `docs/curated-artefacts.sha256` records a deterministic aggregate SHA-256 over the 135 generated artefacts, including one serialised full timeline and 13 adjacent correspondence overlays per example. The backend test suite verifies it, so an unintended change to any canonical artefact fails locally before it can become a new fixture. After an intentional Docker regeneration, review the changed artefacts and update this checksum deliberately.
 

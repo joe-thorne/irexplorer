@@ -5,7 +5,9 @@ from __future__ import annotations
 from pathlib import Path
 import shutil
 import subprocess
+import tempfile
 
+from src.backend.toolchain import curated as curated_paths
 from src.backend.toolchain.curated import (
     ARTEFACTS_ROOT,
     EXAMPLES_ROOT,
@@ -19,38 +21,59 @@ from src.backend.toolchain.curated import (
 WORKSPACE_ROOT = Path("/workspace")
 
 
-def generate_all() -> None:
-    """Regenerate all curated artefacts through the pinned Docker toolchain."""
+def generate_all(*, artefacts_root: Path = ARTEFACTS_ROOT) -> None:
+    """Stage and transactionally replace the complete curated snapshot."""
 
-    ARTEFACTS_ROOT.mkdir(parents=True, exist_ok=True)
+    artefacts_root.parent.mkdir(parents=True, exist_ok=True)
+    _recover_interrupted_replacement(artefacts_root)
+    staging_root = Path(
+        tempfile.mkdtemp(
+            prefix=f".{artefacts_root.name}.staging-",
+            dir=artefacts_root.parent,
+        )
+    )
+    try:
+        _generate_snapshot(staging_root)
+        _replace_snapshot(staging_root, artefacts_root)
+    except BaseException:
+        if staging_root.exists():
+            shutil.rmtree(staging_root)
+        raise
+
+
+def _generate_snapshot(staging_root: Path) -> None:
+    """Generate raw artefacts and derived model records in one staged tree."""
+
     for example in list_examples():
         print(f"Generating {example}")
-        generate_example(example)
+        _generate_example(example, artefacts_root=staging_root)
 
     # The compiler artefacts, model snapshots, and comparison overlays share
     # this one offline path: runtime consumes serialised records, never raw IR.
     from src.backend.ingest.curated import bake_curated_model_records
     from src.backend.analysis.curated import bake_curated_comparison_records
 
-    bake_curated_model_records()
-    bake_curated_comparison_records()
+    with curated_paths.using_artefacts_root(staging_root):
+        bake_curated_model_records()
+        bake_curated_comparison_records()
 
 
-def generate_example(example: str) -> None:
+def _generate_example(example: str, *, artefacts_root: Path) -> None:
     source = EXAMPLES_ROOT / f"{example}.c"
     if not source.exists():
         raise ToolchainError(f"Missing curated source: {source}")
 
-    out_dir = ARTEFACTS_ROOT / example
+    out_dir = artefacts_root / example
     if out_dir.exists():
         shutil.rmtree(out_dir)
     out_dir.mkdir(parents=True)
+    canonical_out_dir = ARTEFACTS_ROOT / example
 
     manifest = out_dir / "manifest.txt"
-    _write_manifest_header(manifest, example, source)
+    _write_manifest_header(manifest, example, source, artefacts_root)
 
-    baseline_ll = out_dir / f"{example}_O0.ll"
-    baseline_bc = out_dir / f"{example}_O0.bc"
+    baseline_ll = canonical_out_dir / f"{example}_O0.ll"
+    baseline_bc = canonical_out_dir / f"{example}_O0.bc"
 
     _run_and_record(
         manifest,
@@ -67,6 +90,7 @@ def generate_example(example: str) -> None:
             "-o",
             _container_path(baseline_ll),
         ],
+        artefacts_root=artefacts_root,
     )
     _run_and_record(
         manifest,
@@ -83,14 +107,15 @@ def generate_example(example: str) -> None:
             "-o",
             _container_path(baseline_bc),
         ],
+        artefacts_root=artefacts_root,
     )
 
     previous = baseline_bc
     for state in PASS_STATES[1:-1]:
         if state.pass_pipeline is None:
             raise ToolchainError(f"Pass state '{state.state_id}' has no pass pipeline")
-        output = out_dir / f"{example}_{state.file_suffix}.ll"
-        remarks_output = out_dir / f"{example}_{state.file_suffix}_remarks.yaml"
+        output = canonical_out_dir / f"{example}_{state.file_suffix}.ll"
+        remarks_output = canonical_out_dir / f"{example}_{state.file_suffix}_remarks.yaml"
         _run_and_record(
             manifest,
             [
@@ -105,6 +130,7 @@ def generate_example(example: str) -> None:
                 "-o",
                 _container_path(output),
             ],
+            artefacts_root=artefacts_root,
         )
         previous = output
 
@@ -119,8 +145,9 @@ def generate_example(example: str) -> None:
             "-emit-llvm",
             _container_path(source),
             "-o",
-            _container_path(out_dir / f"{example}_O3.ll"),
+            _container_path(canonical_out_dir / f"{example}_O3.ll"),
         ],
+        artefacts_root=artefacts_root,
     )
     _run_and_record(
         manifest,
@@ -136,20 +163,36 @@ def generate_example(example: str) -> None:
             _container_path(source),
             "-c",
             "-o",
-            _container_path(out_dir / f"{example}.o"),
+            _container_path(canonical_out_dir / f"{example}.o"),
         ],
+        artefacts_root=artefacts_root,
         stderr_path=out_dir / f"{example}_remarks.txt",
     )
 
 
-def _write_manifest_header(manifest: Path, example: str, source: Path) -> None:
+def _write_manifest_header(
+    manifest: Path,
+    example: str,
+    source: Path,
+    artefacts_root: Path,
+) -> None:
     manifest.write_text(
         "\n".join(
             [
                 f"example: {example}",
                 f"source: {source.relative_to(REPO_ROOT)}",
-                f"clang: {_tool_version(['clang', '--version'], line_index=0)}",
-                f"opt: {_tool_version(['opt', '--version'], line_index=1)}",
+                "clang: "
+                + _tool_version(
+                    ["clang", "--version"],
+                    line_index=0,
+                    artefacts_root=artefacts_root,
+                ),
+                "opt: "
+                + _tool_version(
+                    ["opt", "--version"],
+                    line_index=1,
+                    artefacts_root=artefacts_root,
+                ),
                 "targetTriple: x86_64-unknown-linux-gnu",
                 "commands:",
             ]
@@ -162,13 +205,14 @@ def _write_manifest_header(manifest: Path, example: str, source: Path) -> None:
 def _run_and_record(
     manifest: Path,
     command: list[str],
+    artefacts_root: Path,
     stderr_path: Path | None = None,
 ) -> None:
     with manifest.open("a", encoding="utf-8") as manifest_file:
         manifest_file.write(f"  - {_format_command(command)}\n")
 
     result = subprocess.run(
-        _docker_command(command),
+        _docker_command(command, artefacts_root),
         cwd=REPO_ROOT,
         text=True,
         stdout=subprocess.PIPE,
@@ -187,9 +231,13 @@ def _run_and_record(
         )
 
 
-def _tool_version(command: list[str], line_index: int) -> str:
+def _tool_version(
+    command: list[str],
+    line_index: int,
+    artefacts_root: Path,
+) -> str:
     result = subprocess.run(
-        _docker_command(command),
+        _docker_command(command, artefacts_root),
         cwd=REPO_ROOT,
         text=True,
         stdout=subprocess.PIPE,
@@ -206,8 +254,57 @@ def _tool_version(command: list[str], line_index: int) -> str:
     return lines[line_index].strip()
 
 
-def _docker_command(command: list[str]) -> list[str]:
-    return ["docker", "compose", "run", "--rm", "--no-TTY", "toolchain", *command]
+def _docker_command(command: list[str], artefacts_root: Path) -> list[str]:
+    container_root = _container_path(ARTEFACTS_ROOT)
+    return [
+        "docker",
+        "compose",
+        "run",
+        "--rm",
+        "--no-TTY",
+        "--volume",
+        f"{artefacts_root}:{container_root}",
+        "toolchain",
+        *command,
+    ]
+
+
+def _backup_path(artefacts_root: Path) -> Path:
+    return artefacts_root.with_name(f".{artefacts_root.name}.previous")
+
+
+def _recover_interrupted_replacement(artefacts_root: Path) -> None:
+    backup_root = _backup_path(artefacts_root)
+    if not backup_root.exists():
+        return
+    if artefacts_root.exists():
+        raise ToolchainError(
+            f"Previous curated snapshot backup still exists: {backup_root}"
+        )
+    backup_root.replace(artefacts_root)
+
+
+def _replace_snapshot(staging_root: Path, artefacts_root: Path) -> None:
+    """Install a complete staged tree, restoring the previous tree on failure."""
+
+    backup_root = _backup_path(artefacts_root)
+    had_previous = artefacts_root.exists()
+    if had_previous:
+        artefacts_root.replace(backup_root)
+    try:
+        staging_root.replace(artefacts_root)
+    except OSError as exc:
+        if had_previous:
+            try:
+                backup_root.replace(artefacts_root)
+            except OSError as restore_exc:
+                raise ToolchainError(
+                    "Could not install or restore curated snapshot; "
+                    f"backup remains at {backup_root}"
+                ) from restore_exc
+        raise ToolchainError("Could not install staged curated snapshot") from exc
+    if had_previous:
+        shutil.rmtree(backup_root)
 
 
 def _container_path(path: Path) -> str:

@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass
 from pathlib import Path
 import shlex
@@ -10,6 +13,10 @@ import shlex
 REPO_ROOT = Path(__file__).resolve().parents[3]
 EXAMPLES_ROOT = REPO_ROOT / "examples" / "curated"
 ARTEFACTS_ROOT = REPO_ROOT / "artefacts" / "curated"
+_artefacts_root_override: ContextVar[Path | None] = ContextVar(
+    "artefacts_root_override",
+    default=None,
+)
 
 
 class ToolchainError(RuntimeError):
@@ -57,7 +64,18 @@ def list_states() -> tuple[PassState, ...]:
 
 def artefact_dir(example: str) -> Path:
     _require_example(example)
-    return ARTEFACTS_ROOT / example
+    return (_artefacts_root_override.get() or ARTEFACTS_ROOT) / example
+
+
+@contextmanager
+def using_artefacts_root(root: Path) -> Iterator[None]:
+    """Temporarily route offline model baking to a staged artefact tree."""
+
+    token = _artefacts_root_override.set(root)
+    try:
+        yield
+    finally:
+        _artefacts_root_override.reset(token)
 
 
 def source_path(example: str) -> Path:
