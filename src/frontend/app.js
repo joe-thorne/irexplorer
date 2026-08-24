@@ -329,7 +329,7 @@ function renderCfg(side) {
   const markerId = `arrow-${side}`;
   svg.classList.add("cfg-svg");
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
-  svg.setAttribute("role", "img");
+  svg.setAttribute("role", "group");
   svg.setAttribute("aria-label", `Control-flow graph for ${panel.function.name} in ${panel.ir.stateId}`);
   svg.innerHTML = `<defs><marker id="${markerId}" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#60758a" /></marker></defs>`;
   cfg.edges.forEach((edge) => {

@@ -22,7 +22,7 @@ body { background: var(--paper); color: var(--ink); font-family: Inter, ui-sans-
 button, select { font: inherit; }
 button { border: 1px solid #9fb3c8; border-radius: .35rem; background: #fff; color: var(--ink); cursor: pointer; }
 button:hover { background: var(--accent-soft); }
-button:focus-visible, select:focus-visible, .cfg-node:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+button:focus-visible, select:focus-visible, .ir-line:focus-visible, .cfg-node:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
 .skip-link { background: #fff; color: var(--ink); left: 1rem; padding: .55rem .75rem; position: fixed; top: -4rem; z-index: 2; }
 .skip-link:focus { top: 1rem; }
 .site-header { align-items: end; background: #102a43; color: #fff; display: flex; gap: 1rem; justify-content: space-between; padding: 1.5rem max(1.25rem, calc((100% - 1440px) / 2)); }
@@ -32,6 +32,7 @@ button:focus-visible, select:focus-visible, .cfg-node:focus-visible { outline: 3
 .app-shell { margin: 0 auto; max-width: 1440px; padding: 1.25rem; }
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: .7rem; box-shadow: 0 1px 2px rgb(15 23 42 / 7%); padding: 1rem; }
 .eyebrow { color: var(--accent); font-size: .8rem; font-weight: 800; letter-spacing: .08em; margin-bottom: .25rem; text-transform: uppercase; }
+.site-header .eyebrow { color: #67e8f9; }
 .toolbar { align-items: end; display: flex; flex-wrap: wrap; gap: 1rem; }
 .toolbar label, .viewer-controls label { color: var(--ink); display: grid; font-size: .82rem; font-weight: 750; gap: .2rem; }
 select { background: #fff; border: 1px solid #9fb3c8; border-radius: .35rem; color: var(--ink); min-height: 2.25rem; padding: .28rem .45rem; }
@@ -61,7 +62,7 @@ select { background: #fff; border: 1px solid #9fb3c8; border-radius: .35rem; col
 .ir-block-heading { background: transparent; border: 0; border-radius: .2rem; color: var(--ink); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .8rem; font-weight: 800; padding: .15rem .25rem; text-align: left; }
 .ir-block-heading:hover { background: var(--accent-soft); }
 .ir-line { align-items: baseline; border-radius: .2rem; cursor: pointer; display: flex; gap: .7rem; min-width: max-content; padding: .14rem .25rem; }
-.ir-line:hover, .ir-line:focus-visible { background: var(--accent-soft); outline: none; }
+.ir-line:hover, .ir-line:focus-visible { background: var(--accent-soft); }
 .ir-line.is-selected { background: #ffedd5; box-shadow: inset 3px 0 0 var(--focus); }
 .ir-line.is-linked { background: var(--linked-soft); box-shadow: inset 3px 0 0 var(--linked); }
 .line-number { color: #64748b; text-align: right; user-select: none; width: 2.4rem; }

@@ -284,6 +284,8 @@ class FastApiTests(unittest.TestCase):
             "if (!selectionRequestIsCurrent(selectionRequest)) return;",
         ):
             self.assertIn(stale_selection_guard, javascript.text)
+        self.assertIn('svg.setAttribute("role", "group")', javascript.text)
+        self.assertNotIn('svg.setAttribute("role", "img")', javascript.text)
 
         stylesheet = self.client.get("/style.css")
         self.assertEqual(stylesheet.status_code, 200)
@@ -293,6 +295,12 @@ class FastApiTests(unittest.TestCase):
         self.assertIn("@media (prefers-reduced-motion: reduce)", stylesheet.text)
         self.assertIn("@media (forced-colors: active)", stylesheet.text)
         self.assertIn("@media (max-width: 900px)", stylesheet.text)
+        self.assertIn(".site-header .eyebrow { color: #67e8f9; }", stylesheet.text)
+        self.assertIn(
+            "button:focus-visible, select:focus-visible, .ir-line:focus-visible, .cfg-node:focus-visible",
+            stylesheet.text,
+        )
+        self.assertNotIn("outline: none", stylesheet.text)
         self.assertNotIn(".learning-task", stylesheet.text)
 
 
