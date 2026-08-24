@@ -172,9 +172,9 @@ def compose_correspondences(
 ) -> ComposedCorrespondence:
     """Relationally compose two contiguous overlays without persisting them.
 
-    Hyperedges are retained by collecting every reachable later target for one
-    earlier source set. That preserves coverage at both endpoints even when a
-    split or merge crosses the intermediate state.
+    Links that share intermediate nodes form connected components. Each
+    component becomes one endpoint hyperedge, preserving complete coverage
+    when splits or merges join otherwise separate links.
     """
 
     earlier.validate(from_state, intermediate_state)
@@ -185,56 +185,31 @@ def compose_correspondences(
         raise ValueError("correspondences must cover the same node kinds")
 
     links: list[Link] = []
-    covered_to: set[str] = set()
-    for earlier_link in earlier.links:
-        if not earlier_link.from_node_ids:
-            continue
-        following_links = _following_links(earlier_link, later)
+    for earlier_indices, later_indices in _composition_components(earlier, later):
+        component_links = tuple(earlier.links[index] for index in earlier_indices) + tuple(
+            later.links[index] for index in later_indices
+        )
+        source_ids = _unique_node_ids(
+            node_id
+            for index in earlier_indices
+            for node_id in earlier.links[index].from_node_ids
+        )
         target_ids = _unique_node_ids(
             node_id
-            for link in following_links
-            for node_id in link.to_node_ids
+            for index in later_indices
+            for node_id in later.links[index].to_node_ids
         )
-        chain = (earlier_link, *following_links)
-        if target_ids:
-            links.append(
-                Link(
-                    from_node_ids=earlier_link.from_node_ids,
-                    to_node_ids=target_ids,
-                    relation=_coarsened_relation(chain),
-                    confidence=_minimum_confidence(chain),
-                    evidence=_composition_evidence(chain),
-                )
-            )
-            covered_to.update(target_ids)
-        else:
-            links.append(
-                Link(
-                    from_node_ids=earlier_link.from_node_ids,
-                    to_node_ids=(),
-                    relation="removed",
-                    confidence=_minimum_confidence(chain),
-                    evidence=_composition_evidence(chain),
-                )
-            )
-
-    for later_link in later.links:
-        uncovered_target_ids = tuple(
-            node_id for node_id in later_link.to_node_ids if node_id not in covered_to
-        )
-        if not uncovered_target_ids:
+        if not source_ids and not target_ids:
             continue
-        addition_chain = _addition_chain(later_link, earlier)
         links.append(
             Link(
-                from_node_ids=(),
-                to_node_ids=uncovered_target_ids,
-                relation="added",
-                confidence=_minimum_confidence(addition_chain),
-                evidence=_composition_evidence(addition_chain),
+                from_node_ids=source_ids,
+                to_node_ids=target_ids,
+                relation=_composition_relation(source_ids, target_ids, component_links),
+                confidence=_minimum_confidence(component_links),
+                evidence=_composition_evidence(component_links),
             )
         )
-        covered_to.update(uncovered_target_ids)
 
     composed = ComposedCorrespondence(
         from_ordinal=earlier.from_ordinal,
@@ -246,33 +221,51 @@ def compose_correspondences(
     return composed
 
 
-def _following_links(
-    earlier_link: Link,
+def _composition_components(
+    earlier: Correspondence | ComposedCorrespondence,
     later: Correspondence,
-) -> tuple[Link, ...]:
-    """Return the unique later hyperedges reachable from one earlier link."""
+) -> tuple[tuple[tuple[int, ...], tuple[int, ...]], ...]:
+    """Return bipartite link components joined through intermediate nodes."""
 
-    seen: set[int] = set()
-    links: list[Link] = []
-    for node_id in earlier_link.to_node_ids:
-        link = later.links_from.get(node_id)
-        if link is not None and id(link) not in seen:
-            links.append(link)
-            seen.add(id(link))
-    return tuple(links)
+    earlier_count = len(earlier.links)
+    adjacency = [set() for _ in range(earlier_count + len(later.links))]
+    later_index_by_node = {
+        node_id: index
+        for index, link in enumerate(later.links)
+        for node_id in link.from_node_ids
+    }
+    for earlier_index, link in enumerate(earlier.links):
+        for node_id in link.to_node_ids:
+            later_vertex = earlier_count + later_index_by_node[node_id]
+            adjacency[earlier_index].add(later_vertex)
+            adjacency[later_vertex].add(earlier_index)
 
-
-def _addition_chain(later_link: Link, earlier: Correspondence | ComposedCorrespondence) -> tuple[Link, ...]:
-    """Retain confidence from an intermediate addition on an endpoint addition."""
-
-    predecessors: list[Link] = []
-    seen: set[int] = set()
-    for node_id in later_link.from_node_ids:
-        link = earlier.links_to.get(node_id)
-        if link is not None and not link.from_node_ids and id(link) not in seen:
-            predecessors.append(link)
-            seen.add(id(link))
-    return (*predecessors, later_link)
+    components: list[tuple[tuple[int, ...], tuple[int, ...]]] = []
+    visited: set[int] = set()
+    for start in range(len(adjacency)):
+        if start in visited:
+            continue
+        pending = [start]
+        component: list[int] = []
+        while pending:
+            vertex = pending.pop()
+            if vertex in visited:
+                continue
+            visited.add(vertex)
+            component.append(vertex)
+            pending.extend(adjacency[vertex] - visited)
+        component.sort()
+        components.append(
+            (
+                tuple(vertex for vertex in component if vertex < earlier_count),
+                tuple(
+                    vertex - earlier_count
+                    for vertex in component
+                    if vertex >= earlier_count
+                ),
+            )
+        )
+    return tuple(components)
 
 
 def _unique_node_ids(node_ids: Iterable[str]) -> tuple[str, ...]:
@@ -282,6 +275,24 @@ def _unique_node_ids(node_ids: Iterable[str]) -> tuple[str, ...]:
 def _minimum_confidence(links: Iterable[Link]) -> str:
     confidence_rank = {"none": 0, "approximate": 1, "exact": 2}
     return min(links, key=lambda link: confidence_rank[link.confidence]).confidence
+
+
+def _composition_relation(
+    source_ids: tuple[str, ...],
+    target_ids: tuple[str, ...],
+    links: tuple[Link, ...],
+) -> str:
+    if not source_ids:
+        return "added"
+    if not target_ids:
+        return "removed"
+    if len(source_ids) == 1 and len(target_ids) > 1:
+        return "split"
+    if len(source_ids) > 1 and len(target_ids) == 1:
+        return "merged"
+    if len(source_ids) > 1 and len(target_ids) > 1:
+        return "changed"
+    return _coarsened_relation(links)
 
 
 def _coarsened_relation(links: Iterable[Link]) -> str:

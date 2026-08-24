@@ -1,6 +1,7 @@
 import unittest
 
 from src.backend.analysis import (
+    compose_correspondences,
     compose_timeline_correspondences,
     compare_timeline_step,
     is_identity_correspondence,
@@ -9,7 +10,12 @@ from src.backend.analysis import (
 )
 from src.backend.ingest import load_curated_timeline, load_prebaked_curated_timeline
 from src.backend.model import (
+    Correspondence,
+    Edge,
+    Link,
     ModelValidationError,
+    Node,
+    StateGraph,
     deserialise_correspondence,
     deserialise_json,
     serialise_correspondence,
@@ -202,6 +208,184 @@ class EndpointComparisonTests(unittest.TestCase):
                 for link in composed.links
             )
         )
+
+
+class CorrespondenceCompositionTests(unittest.TestCase):
+    def test_composition_preserves_a_split_across_the_intermediate_state(self) -> None:
+        from_state = _function_state(0, "source")
+        intermediate_state = _function_state(1, "left", "right")
+        to_state = _function_state(2, "left-final", "right-final")
+        earlier = _correspondence(
+            0,
+            1,
+            Link(("source",), ("left", "right"), "split", "approximate", "split"),
+        )
+        later = _correspondence(
+            1,
+            2,
+            Link(("left",), ("left-final",), "same", "exact", "left retained"),
+            Link(("right",), ("right-final",), "same", "exact", "right retained"),
+        )
+
+        composed = compose_correspondences(
+            earlier, later, from_state, intermediate_state, to_state
+        )
+
+        composed.validate(from_state, to_state)
+        self.assertEqual(len(composed.links), 1)
+        self.assertEqual(composed.links[0].from_node_ids, ("source",))
+        self.assertEqual(composed.links[0].to_node_ids, ("left-final", "right-final"))
+        self.assertEqual(composed.links[0].relation, "split")
+        self.assertEqual(composed.links[0].confidence, "approximate")
+
+    def test_composition_preserves_a_many_to_one_merge(self) -> None:
+        from_state = _function_state(0, "left", "right")
+        intermediate_state = _function_state(1, "left-mid", "right-mid")
+        to_state = _function_state(2, "merged")
+        earlier = _correspondence(
+            0,
+            1,
+            Link(("left",), ("left-mid",), "same", "exact", "left retained"),
+            Link(("right",), ("right-mid",), "same", "exact", "right retained"),
+        )
+        later = _correspondence(
+            1,
+            2,
+            Link(
+                ("left-mid", "right-mid"),
+                ("merged",),
+                "merged",
+                "approximate",
+                "merged functions",
+            ),
+        )
+
+        composed = compose_correspondences(
+            earlier, later, from_state, intermediate_state, to_state
+        )
+
+        composed.validate(from_state, to_state)
+        self.assertEqual(len(composed.links), 1)
+        self.assertEqual(composed.links[0].from_node_ids, ("left", "right"))
+        self.assertEqual(composed.links[0].to_node_ids, ("merged",))
+        self.assertEqual(composed.links[0].relation, "merged")
+        self.assertEqual(composed.links[0].confidence, "approximate")
+
+    def test_composition_carries_an_intermediate_addition_to_the_endpoint(self) -> None:
+        from_state = _function_state(0, "retained")
+        intermediate_state = _function_state(1, "retained-mid", "new-mid")
+        to_state = _function_state(2, "retained-final", "new-final")
+        earlier = _correspondence(
+            0,
+            1,
+            Link(("retained",), ("retained-mid",), "same", "exact", "retained"),
+            Link((), ("new-mid",), "added", "approximate", "introduced"),
+        )
+        later = _correspondence(
+            1,
+            2,
+            Link(
+                ("retained-mid",),
+                ("retained-final",),
+                "same",
+                "exact",
+                "retained",
+            ),
+            Link(("new-mid",), ("new-final",), "renamed", "exact", "renamed"),
+        )
+
+        composed = compose_correspondences(
+            earlier, later, from_state, intermediate_state, to_state
+        )
+
+        composed.validate(from_state, to_state)
+        addition = next(link for link in composed.links if not link.from_node_ids)
+        self.assertEqual(addition.to_node_ids, ("new-final",))
+        self.assertEqual(addition.relation, "added")
+        self.assertEqual(addition.confidence, "approximate")
+        self.assertIn("added (approximate", addition.evidence or "")
+        self.assertIn("renamed (exact", addition.evidence or "")
+
+    def test_composition_carries_an_intermediate_removal_to_the_endpoint(self) -> None:
+        from_state = _function_state(0, "retained", "doomed")
+        intermediate_state = _function_state(1, "retained-mid", "doomed-mid")
+        to_state = _function_state(2, "retained-final")
+        earlier = _correspondence(
+            0,
+            1,
+            Link(("retained",), ("retained-mid",), "same", "exact", "retained"),
+            Link(("doomed",), ("doomed-mid",), "renamed", "approximate", "renamed"),
+        )
+        later = _correspondence(
+            1,
+            2,
+            Link(
+                ("retained-mid",),
+                ("retained-final",),
+                "same",
+                "exact",
+                "retained",
+            ),
+            Link(("doomed-mid",), (), "removed", "exact", "removed"),
+        )
+
+        composed = compose_correspondences(
+            earlier, later, from_state, intermediate_state, to_state
+        )
+
+        composed.validate(from_state, to_state)
+        removal = next(link for link in composed.links if not link.to_node_ids)
+        self.assertEqual(removal.from_node_ids, ("doomed",))
+        self.assertEqual(removal.relation, "removed")
+        self.assertEqual(removal.confidence, "approximate")
+        self.assertIn("renamed (approximate", removal.evidence or "")
+        self.assertIn("removed (exact", removal.evidence or "")
+
+
+def _correspondence(
+    from_ordinal: int, to_ordinal: int, *links: Link
+) -> Correspondence:
+    return Correspondence(
+        from_ordinal=from_ordinal,
+        to_ordinal=to_ordinal,
+        covered_kinds=("Function",),
+        links=links,
+    )
+
+
+def _function_state(ordinal: int, *function_ids: str) -> StateGraph:
+    nodes = [Node("module", "Module", "module")]
+    edges: list[Edge] = []
+    for order, function_id in enumerate(function_ids):
+        block_id = f"{function_id}/entry"
+        instruction_id = f"{block_id}/ret"
+        nodes.extend(
+            (
+                Node(function_id, "Function", function_id),
+                Node(block_id, "BasicBlock", "entry", {"label": "entry"}),
+                Node(
+                    instruction_id,
+                    "Instruction",
+                    "ret void",
+                    {"opcode": "ret", "is_terminator": True, "successors": ()},
+                ),
+            )
+        )
+        edges.extend(
+            (
+                Edge("module", function_id, "contains", order=order),
+                Edge(function_id, block_id, "contains", order=0),
+                Edge(block_id, instruction_id, "contains", order=0),
+            )
+        )
+    state = StateGraph(
+        ordinal=ordinal,
+        state_id=f"state-{ordinal}",
+        nodes=tuple(nodes),
+        edges=tuple(edges),
+    )
+    state.validate()
+    return state
 
 
 if __name__ == "__main__":
