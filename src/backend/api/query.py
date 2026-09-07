@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from hashlib import sha256
 from pathlib import PurePosixPath
 from threading import RLock
@@ -12,6 +12,7 @@ from src.backend.analysis.compare import (
     ComposedCorrespondence,
     compose_timeline_correspondences,
     is_identity_correspondence,
+    summarise_correspondence,
 )
 from src.backend.analysis.curated import load_prebaked_curated_correspondences
 from src.backend.ingest.curated import load_prebaked_curated_timeline
@@ -207,6 +208,34 @@ class QueryService:
                 for counterpart_id in counterpart_ids
             ],
         }
+
+    def summary(self, example_id: str, from_ordinal: int, to_ordinal: int) -> dict[str, Any]:
+        """Whole-example outcomes in timeline order, with resolvable evidence indices."""
+        loaded = self._example(example_id)
+        lower, higher = sorted((from_ordinal, to_ordinal))
+        before = self._state(example_id, lower)
+        after = self._state(example_id, higher)
+        result = {"exampleId": example_id, "fromOrdinal": lower, "toOrdinal": higher,
+                  "scope": "whole example", "items": [], "links": [], "steps": [],
+                  "states": [s for s in self.list_states(example_id)["states"]
+                             if lower <= s["ordinal"] <= higher]}
+        if lower == higher:
+            return {**result, "context": "Same recorded state; no cross-state change is being compared."}
+        comparison = self._comparison(loaded, lower, higher)
+        step = loaded.timeline.steps[higher - 1]
+        summary = summarise_correspondence(comparison, before, after, step)
+        result.update(context=summary.context,
+                      items=[{"text": item.text, "linkIndices": list(item.link_indices),
+                              "remarkIndices": list(item.remark_indices)} for item in summary.items],
+                      links=[{"fromNodeIds": list(link.from_node_ids),
+                              "toNodeIds": list(link.to_node_ids), "relation": link.relation,
+                              "confidence": link.confidence, "evidence": link.evidence}
+                             for link in comparison.links],
+                      steps=[{"fromOrdinal": s.from_ordinal, "toOrdinal": s.to_ordinal,
+                              "kind": s.kind, "command": s.origin.command,
+                              "remarks": [asdict(r) for r in s.remarks]}
+                             for s in loaded.timeline.steps[lower:higher]])
+        return result
 
     def _example(self, example_id: str) -> LoadedExample:
         if example_id not in curated.list_examples():

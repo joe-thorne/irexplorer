@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="Compare curated LLVM IR optimisation artefacts." />
     <title>irexplorer</title>
-    <link rel="stylesheet" href="/style.css" />
+    <link rel="stylesheet" href="/style.css?v=e3-source-fix-1" />
   </head>
   <body data-study-mode="preview">
     <a class="skip-link" href="#route-heading">Skip to page content</a>
@@ -19,7 +19,7 @@
 
     <main class="app-shell">
       <aside id="preview-controls" class="preview-bar" aria-label="Preview controls" hidden>
-        <strong>E2 · Synthetic study preview</strong>
+        <strong>E3 · Synthetic study preview</strong>
         <span>No answers saved or sent. Refresh resets study progress.</span>
         <a href="#/study">Study preview</a><a href="#/explore">Explore directly</a>
         <button id="preview-reset" type="button">Reset preview</button>
@@ -61,7 +61,11 @@
       <section id="workspace" class="workspace" hidden aria-label="Side-by-side optimisation comparison">
         <section class="comparison-status panel" aria-label="Comparison explanation">
           <p id="comparison-action" class="comparison-action"></p>
+          <p id="pass-purpose"></p>
+          <div id="comparison-outcomes" aria-live="polite"></div>
+          <details id="comparison-evidence"><summary>Full comparison evidence and provenance</summary><div id="comparison-evidence-body"></div></details>
           <p id="selection-status" class="selection-status" aria-live="polite">Select an IR line or CFG block to follow its recorded link.</p>
+          <details id="selection-evidence" hidden><summary>Selected-element evidence</summary><pre></pre></details>
         </section>
 
         <div class="panel-grid">
@@ -69,9 +73,13 @@
             <header class="viewer-heading">
               <h2 id="left-heading">Left panel</h2>
               <div class="viewer-controls">
-                <label for="left-state">State
-                  <select id="left-state" disabled></select>
+                <label class="state-control" for="left-state">Left state
+                  <select id="left-state" aria-describedby="left-state-label" disabled></select>
                 </label>
+                <div class="state-steps" role="group" aria-label="Step left state">
+                  <button id="left-previous" type="button" aria-label="Previous left state" disabled>← Previous</button>
+                  <button id="left-next" type="button" aria-label="Next left state" disabled>Next →</button>
+                </div>
                 <label for="left-view">View
                   <select id="left-view" disabled>
                     <option value="ir">LLVM IR</option>
@@ -80,6 +88,7 @@
                 </label>
               </div>
             </header>
+            <p id="left-state-label" class="state-label"></p>
             <p id="left-description" class="viewer-description"></p>
             <div id="left-viewer" class="viewer-content"></div>
           </section>
@@ -88,9 +97,13 @@
             <header class="viewer-heading">
               <h2 id="right-heading">Right panel</h2>
               <div class="viewer-controls">
-                <label for="right-state">State
-                  <select id="right-state" disabled></select>
+                <label class="state-control" for="right-state">Right state
+                  <select id="right-state" aria-describedby="right-state-label" disabled></select>
                 </label>
+                <div class="state-steps" role="group" aria-label="Step right state">
+                  <button id="right-previous" type="button" aria-label="Previous right state" disabled>← Previous</button>
+                  <button id="right-next" type="button" aria-label="Next right state" disabled>Next →</button>
+                </div>
                 <label for="right-view">View
                   <select id="right-view" disabled>
                     <option value="ir">LLVM IR</option>
@@ -99,6 +112,7 @@
                 </label>
               </div>
             </header>
+            <p id="right-state-label" class="state-label"></p>
             <p id="right-description" class="viewer-description"></p>
             <div id="right-viewer" class="viewer-content"></div>
           </section>
@@ -114,8 +128,9 @@
         <p class="error-message"></p>
       </section>
     </template>
-    <script src="/source.js" defer></script>
-    <script src="/app.js" defer></script>
-    <script src="/preview.js" defer></script>
+    <script src="/source.js?v=e3-source-fix-1" defer></script>
+    <script src="/comparison.js?v=e3-source-fix-1" defer></script>
+    <script src="/app.js?v=e3-source-fix-1" defer></script>
+    <script src="/preview.js?v=e3-source-fix-1" defer></script>
   </body>
 </html>

@@ -24,6 +24,7 @@ from src.backend.api.schemas import (
     StatesResponse,
     SourceResponse,
     SourceMappingsResponse,
+    SummaryResponse,
 )
 
 
@@ -34,6 +35,18 @@ FunctionId = Annotated[str, Query(alias="functionId", min_length=1)]
 NodeId = Annotated[str, Query(alias="nodeId", min_length=1)]
 TargetOrdinal = Annotated[int | None, Query(alias="toOrdinal", ge=0)]
 logger = logging.getLogger(__name__)
+
+
+class PreviewStaticFiles(StaticFiles):
+    """Keep evolving preview HTML and scripts fresh, including conditional reloads."""
+
+    def is_not_modified(self, response_headers, request_headers) -> bool:
+        return False
+
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+        response.headers["Cache-Control"] = "no-store"
+        return response
 
 
 def create_app(
@@ -107,6 +120,12 @@ def create_app(
     def source(example_id: ExampleId) -> dict[str, object]:
         return query_service.source(example_id)
 
+    @app.get("/api/examples/{example_id}/summary", response_model=SummaryResponse)
+    def summary(example_id: ExampleId,
+                from_ordinal: Annotated[int, Query(alias="fromOrdinal", ge=0)],
+                to_ordinal: Annotated[int, Query(alias="toOrdinal", ge=0)]) -> dict[str, object]:
+        return query_service.summary(example_id, from_ordinal, to_ordinal)
+
     @app.get("/api/examples/{example_id}/states/{ordinal}/source-mappings",
              response_model=SourceMappingsResponse)
     def source_mappings(example_id: ExampleId, ordinal: Ordinal,
@@ -143,7 +162,7 @@ def create_app(
     ) -> dict[str, object]:
         return query_service.counterparts(example_id, ordinal, node_id, to_ordinal)
 
-    app.mount("/", StaticFiles(directory=FRONTEND_ROOT, html=True), name="frontend")
+    app.mount("/", PreviewStaticFiles(directory=FRONTEND_ROOT, html=True), name="frontend")
     return app
 
 

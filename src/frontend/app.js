@@ -20,6 +20,7 @@ const appState = {
   refreshId: 0,
   loadId: 0,
   ready: false,
+  summary: null,
   panels: {
     left: { ordinal: 0, viewType: "ir", ir: null, cfg: null, function: null, selectedNodeIds: new Set() },
     right: { ordinal: 1, viewType: "ir", ir: null, cfg: null, function: null, selectedNodeIds: new Set() },
@@ -41,6 +42,9 @@ const elements = {
 
 function panelElements(side) {
   return {
+    previous: document.querySelector(`#${side}-previous`),
+    next: document.querySelector(`#${side}-next`),
+    stateLabel: document.querySelector(`#${side}-state-label`),
     heading: document.querySelector(`#${side}-heading`),
     state: document.querySelector(`#${side}-state`),
     view: document.querySelector(`#${side}-view`),
@@ -161,24 +165,28 @@ function renderStateOptions() {
 }
 
 function stateOptionLabel(state) {
-  if (state.ordinal === 0) return `${state.stateId} — baseline`;
-  if (state.transition?.kind === "recompiled") return `${state.stateId} — recompiled ${state.transition.level} anchor`;
-  const noOp = state.transition?.noOp ? " (no recorded change)" : "";
-  return `${state.stateId} — ${state.transition?.passName || "recorded state"}${noOp}`;
+  if (state.ordinal === 0) return `0 · Unoptimised baseline · ${state.stateId}`;
+  if (state.transition?.kind === "recompiled") return `${state.ordinal} · Separately compiled ${state.transition.level} · ${state.stateId}`;
+  const noOp = state.transition?.noOp ? " · no recorded change" : "";
+  const end = state.stateId === "final_cleanup" ? " · End of teaching chain" : "";
+  return `After pass ${state.ordinal}: ${state.transition?.passName || "recorded pass"} · ${state.stateId}${end}${noOp}`;
 }
 
 async function refreshWorkspace() {
   if (!appState.exampleId) return;
   const refreshId = ++appState.refreshId;
   appState.ready = false;
+  appState.summary = null;
+  renderSummary();
   ++appState.selectionId;
   elements.workspace.setAttribute("aria-busy", "true");
   document.querySelector("#source-status").textContent = "Loading recorded mappings…";
   const apiBase = apiRoot(appState.exampleId);
   try {
-    const [leftIr, rightIr] = await Promise.all([
+    const [leftIr, rightIr, summary] = await Promise.all([
       request(`${apiBase}/states/${appState.panels.left.ordinal}/ir`),
       request(`${apiBase}/states/${appState.panels.right.ordinal}/ir`),
+      request(`${apiBase}/summary?fromOrdinal=${appState.panels.left.ordinal}&toOrdinal=${appState.panels.right.ordinal}`),
     ]);
     if (refreshId !== appState.refreshId) return;
     appState.panels.left.ir = leftIr;
@@ -204,7 +212,9 @@ async function refreshWorkspace() {
     }));
     if (refreshId !== appState.refreshId) return;
     for (const view of views) Object.assign(appState.panels[view.side], view);
+    appState.summary = summary;
     appState.ready = true;
+    renderSummary();
     elements.workspace.setAttribute("aria-busy", "false");
     applySourceHighlights();
     renderComparison();
@@ -253,26 +263,28 @@ function renderComparison() {
   const leftState = stateFor("left");
   const rightState = stateFor("right");
   elements.comparisonAction.textContent = comparisonAction(leftState, rightState);
+  const [from, to] = [leftState, rightState].sort((a, b) => a.ordinal - b.ordinal);
+  document.querySelector("#pass-purpose").textContent = to.ordinal === from.ordinal + 1 && to.transition?.kind === "derived"
+    ? `General pass purpose: ${PASS_ACTIONS[to.transition.passName] || "perform its recorded optimisation action"}. This describes the pass, not an observed outcome.` : "";
+  const evidence = document.querySelector("#selection-evidence");
+  evidence.hidden = !appState.selection?.evidence;
+  evidence.querySelector("pre").textContent = appState.selection?.evidence || "";
   if (!appState.selection) {
     elements.selectionStatus.className = "selection-status";
-    elements.selectionStatus.textContent = "Select an IR line or CFG block to follow its recorded link.";
+    elements.selectionStatus.textContent = "Selection confidence: select an IR line or CFG block to follow its recorded link.";
     return;
   }
   elements.selectionStatus.className = `selection-status${appState.selection.unresolved ? " is-unresolved" : ""}`;
-  elements.selectionStatus.textContent = appState.selection.text;
+  elements.selectionStatus.textContent = `Selection: ${appState.selection.text}`;
 }
 
 function comparisonAction(leftState, rightState) {
   if (leftState.ordinal === rightState.ordinal) return `Both panels show ${leftState.stateId}; no cross-state action is being compared.`;
   const [from, to] = leftState.ordinal < rightState.ordinal ? [leftState, rightState] : [rightState, leftState];
-  if (to.ordinal !== from.ordinal + 1) {
-    return `${from.stateId} → ${to.stateId}: composed comparison across ${to.ordinal - from.ordinal} recorded transitions; no single pass is attributed.`;
-  }
-  if (to.transition?.kind === "recompiled") return `${from.stateId} → ${to.stateId}: separately recompiled ${to.transition.level} anchor, not the result of one pass.`;
-  const passName = to.transition?.passName || "recorded pass";
-  const action = PASS_ACTIONS[passName] || "perform its recorded optimisation action";
-  const noOp = to.transition?.noOp ? " No structural or value-level change was recorded." : "";
-  return `${from.stateId} → ${to.stateId}: ${passName} — ${action}.${noOp}`;
+  const direction = leftState.ordinal > rightState.ordinal ? " Earlier state is on the right; outcomes below follow timeline order." : "";
+  if (to.transition?.kind === "recompiled") return `${from.stateId} → ${to.stateId}: separately compiled ${to.transition.level} output comparison${to.ordinal > from.ordinal + 1 ? ` across ${to.ordinal - from.ordinal} transitions` : ""}; not the result of one pass.${direction}`;
+  if (to.ordinal !== from.ordinal + 1) return `${from.stateId} → ${to.stateId}: composed comparison across ${to.ordinal - from.ordinal} recorded transitions; no single pass is attributed.${direction}`;
+  return `${from.stateId} → ${to.stateId}: pass ${to.ordinal}, ${to.transition?.passName}.${direction}`;
 }
 
 function stateFor(side) {
@@ -283,6 +295,9 @@ function renderPanel(side) {
   const panel = appState.panels[side];
   const controls = elements[side];
   const state = stateFor(side);
+  controls.stateLabel.textContent = stateOptionLabel(state);
+  controls.previous.disabled = panel.ordinal === 0;
+  controls.next.disabled = panel.ordinal === appState.states.length - 1;
   controls.heading.textContent = `${side === "left" ? "Left" : "Right"}: ${state.stateId}`;
   controls.state.value = String(panel.ordinal);
   controls.view.value = panel.viewType;
@@ -348,20 +363,22 @@ function renderCfg(side) {
     return;
   }
   description.textContent = `${panel.ir.stateId} · ${panel.function.name} · ${cfg.blocks.length} basic blocks · ${cfg.edges.length} edges`;
-  const columnCount = Math.min(3, Math.max(1, Math.ceil(Math.sqrt(cfg.blocks.length))));
-  const cellWidth = 185;
-  const cellHeight = 115;
-  const width = Math.max(430, columnCount * cellWidth + 60);
-  const rows = Math.ceil(cfg.blocks.length / columnCount);
-  const height = Math.max(220, rows * cellHeight + 90);
+  const nodeWidth = Math.max(160, ...cfg.blocks.map(block => block.label.length * 7 + 28));
+  const nodeHeight = 48;
+  const blockOrder = new Map(cfg.blocks.map((block, index) => [block.id, index]));
+  const forward = cfg.edges.filter(edge => blockOrder.get(edge.toId) > blockOrder.get(edge.fromId));
+  const backward = cfg.edges.filter(edge => blockOrder.get(edge.toId) <= blockOrder.get(edge.fromId));
+  const nodeX = 35 + forward.length * 24;
+  const width = nodeX + nodeWidth + 85 + backward.length * 24;
+  const height = cfg.blocks.length * 150 + 40;
   const positions = new Map(cfg.blocks.map((block, index) => [block.id, {
-    x: 70 + (index % columnCount) * cellWidth,
-    y: 65 + Math.floor(index / columnCount) * cellHeight,
+    x: nodeX, y: 35 + index * 150,
   }]));
   const namespace = "http://www.w3.org/2000/svg";
   const svg = document.createElementNS(namespace, "svg");
   const markerId = `arrow-${side}`;
   svg.classList.add("cfg-svg");
+  svg.style.width = `${width}px`;
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   svg.setAttribute("role", "group");
   svg.setAttribute("aria-label", `Control-flow graph for ${panel.function.name} in ${panel.ir.stateId}`);
@@ -370,19 +387,34 @@ function renderCfg(side) {
     const from = positions.get(edge.fromId);
     const to = positions.get(edge.toId);
     if (!from || !to) return;
-    const line = document.createElementNS(namespace, "line");
-    line.setAttribute("class", "cfg-edge");
-    line.setAttribute("x1", String(from.x + 54));
-    line.setAttribute("y1", String(from.y + 34));
-    line.setAttribute("x2", String(to.x + 54));
-    line.setAttribute("y2", String(to.y + 34));
-    line.setAttribute("marker-end", `url(#${markerId})`);
-    svg.append(line);
+    const isForward = blockOrder.get(edge.toId) > blockOrder.get(edge.fromId);
+    const laneIndex = (isForward ? forward : backward).indexOf(edge);
+    const laneX = isForward ? nodeX - 24 * (laneIndex + 1) : nodeX + nodeWidth + 30 + 24 * laneIndex;
+    const outgoing = cfg.edges.filter(e => e.fromId === edge.fromId);
+    const incoming = cfg.edges.filter(e => e.toId === edge.toId);
+    const startY = from.y + 8 + 30 * (outgoing.indexOf(edge) + 1) / (outgoing.length + 1);
+    const endY = to.y + 8 + 30 * (incoming.indexOf(edge) + 1) / (incoming.length + 1);
+    const startX = isForward ? from.x : from.x + nodeWidth;
+    const endX = isForward ? to.x - 3 : to.x + nodeWidth + 3;
+    const loop = edge.fromId === edge.toId;
+    const path = document.createElementNS(namespace, "path");
+    path.setAttribute("class", "cfg-edge");
+    path.dataset.fromId = edge.fromId;
+    path.dataset.toId = edge.toId;
+    path.setAttribute("d", loop
+      ? `M ${startX} ${from.y + 10} C ${laneX + 60} ${from.y - 45}, ${laneX + 60} ${from.y + 93}, ${endX} ${from.y + 38}`
+      : `M ${startX} ${startY} H ${laneX} V ${endY} H ${endX}`);
+    path.setAttribute("marker-end", `url(#${markerId})`);
+    const title = document.createElementNS(namespace, "title");
+    title.textContent = `${cfg.blocks.find(b => b.id === edge.fromId).label} → ${cfg.blocks.find(b => b.id === edge.toId).label}: ${edge.label || "unlabelled"}`;
+    path.append(title);
+    svg.append(path);
     if (edge.label) {
       const label = document.createElementNS(namespace, "text");
+      const x = loop ? laneX + 35 : laneX - 5;
+      const y = loop ? from.y + 24 : (startY + endY) / 2;
       label.setAttribute("class", "cfg-edge-label");
-      label.setAttribute("x", String((from.x + to.x) / 2 + 54));
-      label.setAttribute("y", String((from.y + to.y) / 2 + 27));
+      label.setAttribute("transform", `translate(${x}, ${y}) rotate(-90)`);
       label.setAttribute("text-anchor", "middle");
       label.textContent = edge.label;
       svg.append(label);
@@ -404,14 +436,25 @@ function renderCfg(side) {
       if (event.key === "Enter" || event.key === " ") { event.preventDefault(); select(); }
     });
     const rectangle = document.createElementNS(namespace, "rect");
-    rectangle.setAttribute("width", "108"); rectangle.setAttribute("height", "48"); rectangle.setAttribute("rx", "6");
+    rectangle.setAttribute("width", String(nodeWidth)); rectangle.setAttribute("height", String(nodeHeight)); rectangle.setAttribute("rx", "6");
     const label = document.createElementNS(namespace, "text");
-    label.setAttribute("x", "54"); label.setAttribute("y", "29"); label.setAttribute("text-anchor", "middle");
+    label.setAttribute("x", String(nodeWidth / 2)); label.setAttribute("y", "29"); label.setAttribute("text-anchor", "middle");
     label.textContent = block.label;
     node.append(rectangle, label);
     svg.append(node);
   });
   viewer.append(svg);
+  const edgeList = document.createElement("details");
+  const heading = document.createElement("summary");
+  heading.textContent = `Edges as text (${cfg.edges.length})`;
+  const list = document.createElement("ul");
+  for (const edge of cfg.edges) {
+    const item = document.createElement("li");
+    item.textContent = `${cfg.blocks.find(b => b.id === edge.fromId).label} → ${cfg.blocks.find(b => b.id === edge.toId).label}: ${edge.label || "unlabelled"}`;
+    list.append(item);
+  }
+  edgeList.append(heading, list);
+  viewer.append(edgeList);
 }
 
 function selectionClass(side, nodeId, baseClass) {
@@ -457,6 +500,7 @@ async function selectNode(originSide, nodeId) {
       const targetIds = displayNodeIds(target, mapping.counterparts.map((counterpart) => counterpart.id));
       target.selectedNodeIds = new Set(targetIds);
       appState.selection = mappingStatus(originSide, selected, mapping, targetIds.length);
+      appState.selection.evidence = JSON.stringify(mapping, null, 2);
     }
     renderComparison();
     renderPanel(originSide);
@@ -557,6 +601,14 @@ elements.functionSelect.addEventListener("change", () => {
   refreshWorkspace();
 });
 for (const side of ["left", "right"]) {
+  for (const [control, delta] of [["previous", -1], ["next", 1]]) {
+    elements[side][control].addEventListener("click", () => {
+      const ordinal = appState.panels[side].ordinal + delta;
+      if (ordinal < 0 || ordinal >= appState.states.length) return;
+      elements[side].state.value = String(ordinal);
+      elements[side].state.dispatchEvent(new Event("change"));
+    });
+  }
   elements[side].state.addEventListener("change", () => {
     appState.panels[side].ordinal = Number(elements[side].state.value);
     clearSelection();

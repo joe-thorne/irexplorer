@@ -41,3 +41,15 @@ Install direct development dependencies with
 `.venv/bin/python -m pip install -r src/backend/requirements.txt`. For a
 repeatable deployment environment, install the fully resolved
 `src/backend/requirements.lock` instead.
+
+
+## E3 comparison summary query
+
+`GET /api/examples/{example_id}/summary?fromOrdinal=0&toOrdinal=9` exposes the existing `summarise_correspondence` results for the **whole example**, independent of the function selected in the panes. The required ordinals are validated; either pane order is accepted. `fromOrdinal` and `toOrdinal` in the response are sorted into timeline order. Same-state requests return no transformation claims, links or steps, but retain the state's provenance. Reversed panes use the same timeline-order evidence; the browser labels that direction explicitly.
+
+`items` contain `text`, `linkIndices` into this response's `links`, and `remarkIndices` into the final entry of `steps`. `links` preserve original endpoint IDs, relation, confidence and evidence. Adjacent records are read directly; wider overlays are composed transiently. `states` includes every selected-span state with recorded command and transition metadata; `steps` includes every intervening command and original remarks. Remark records retain their model fields (`pass_name`, `name`, `function`, `location`, `raw`). The context distinguishes derived, composed and recompiled comparisons. API version remains 1.0.0; this is an additive preview query. No state mutation, compiler execution, study content, response storage or researcher answer key is involved.
+
+The browser shows up to three existing outcome items, with the remainder and all provenance behind bounded disclosures. Selection confidence/evidence remains separate. New summary requests clear previous outcomes; generation guards prevent delayed responses from overwriting a newer comparison. A failed query hides stale panes and supports reloading the file. See `tests/test_summary_queries.py` and [E3 evidence](../../../docs/evaluation-captures/e3-comparisons.md).
+
+
+E3 source-loading amendment: the preview shell references CSS/JS with `?v=e3-source-fix-1` to bypass legacy cached URLs. `PreviewStaticFiles` sends `Cache-Control: no-store` for successful static responses and serves current bodies even with matching conditional validators. This policy applies to preview static assets, not model queries. Future release caching needs its own asset-versioning decision; do not restore unversioned reusable scripts. See [cache regression evidence](../../../docs/evaluation-captures/e3-cache-fix.md).

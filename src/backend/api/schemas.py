@@ -134,3 +134,45 @@ class SourceMappingsResponse(ApiModel):
     stateId: str
     functionId: str
     mappings: list[SourceMappingResponse]
+
+
+class SummaryItemResponse(ApiModel):
+    text: str
+    linkIndices: list[int]
+    remarkIndices: list[int]
+
+
+class LinkResponse(ApiModel):
+    fromNodeIds: list[str]
+    toNodeIds: list[str]
+    relation: str
+    confidence: str
+    evidence: str | None
+
+
+class RemarkResponse(ApiModel):
+    pass_name: str
+    name: str
+    function: str
+    location: SourceLocationResponse | None
+    raw: str
+
+
+class SummaryStepResponse(ApiModel):
+    fromOrdinal: int
+    toOrdinal: int
+    kind: Literal["derived", "recompiled"]
+    command: str
+    remarks: list[RemarkResponse]
+
+
+class SummaryResponse(ApiModel):
+    exampleId: str
+    fromOrdinal: int
+    toOrdinal: int
+    scope: Literal["whole example"]
+    context: str
+    items: list[SummaryItemResponse]
+    links: list[LinkResponse]
+    steps: list[SummaryStepResponse]
+    states: list[StateResponse]

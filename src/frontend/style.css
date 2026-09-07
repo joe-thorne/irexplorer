@@ -145,3 +145,28 @@ details p { margin: .8rem 0 0; }
   .source-line.is-source, .ir-line.is-source { outline-color: Highlight; }
   .cfg-node.is-source rect { stroke: Highlight; }
 }
+
+/* E3: readable state labels, evidence on demand, and directed CFG lanes. */
+.viewer-heading { align-items: stretch; flex-direction: column; gap: .65rem; }
+.viewer-controls { display: grid; grid-template-columns: minmax(0, 1fr) auto; justify-content: stretch; width: 100%; }
+.viewer-controls .state-control { grid-column: 1 / -1; min-width: 0; }
+.viewer-controls select { max-width: 100%; width: 100%; min-width: 0; }
+.state-steps { display: flex; align-items: end; gap: .5rem; }
+.state-steps button { min-height: 2.25rem; padding: .3rem .6rem; }
+.state-label { min-height: 2.9em; font-size: .9rem; font-weight: 700; margin: .65rem 0 0; overflow-wrap: anywhere; }
+#pass-purpose, #comparison-outcomes p { margin: 0; font-size: .88rem; }
+#comparison-outcomes ul { margin: .25rem 0; padding-left: 1.3rem; }
+.comparison-status details { font-size: .88rem; min-width: 0; }
+#comparison-evidence-body { max-height: 22rem; overflow: auto; padding: .5rem; }
+#comparison-evidence-body details { margin: .6rem 0; }
+.comparison-status pre { max-height: 16rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; background: var(--code-bg); padding: .7rem; }
+.cfg-edge { fill: none; }
+.cfg-edge-label { font-size: 11px; paint-order: stroke; stroke: var(--code-bg); stroke-width: 3px; stroke-linejoin: round; }
+.viewer-content > details { margin: .75rem 0; font-size: .85rem; }
+@media (forced-colors: active) {
+  .cfg-edge { stroke: CanvasText; }
+  .cfg-svg marker path { fill: CanvasText; }
+  .cfg-edge-label { fill: CanvasText; stroke: Canvas; }
+  .cfg-node rect { stroke: CanvasText; fill: Canvas; }
+  .cfg-node text { fill: CanvasText; }
+}

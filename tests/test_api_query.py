@@ -148,6 +148,24 @@ class FastApiTests(unittest.TestCase):
         self.assertEqual(mapping.status_code, 200)
         self.assertEqual(mapping.json()["counterpartOrdinal"], 3)
 
+    def test_preview_assets_bypass_legacy_cache_on_normal_and_conditional_reload(self):
+        for path in ("/", "/index.html", "/app.js", "/app.js?v=e3-source-fix-1",
+                     "/source.js", "/comparison.js", "/preview.js", "/style.css"):
+            with self.subTest(path=path):
+                first = self.client.get(path)
+                self.assertEqual(first.status_code, 200)
+                self.assertEqual(first.headers["cache-control"], "no-store")
+                conditional = self.client.get(path, headers={
+                    "If-None-Match": first.headers["etag"],
+                    "If-Modified-Since": first.headers["last-modified"],
+                })
+                self.assertEqual(conditional.status_code, 200)
+                self.assertEqual(conditional.content, first.content)
+                self.assertEqual(conditional.headers["cache-control"], "no-store")
+        html = self.client.get("/").text
+        for name in ("app.js", "source.js", "comparison.js", "preview.js", "style.css"):
+            self.assertIn(f'/{name}?v=e3-source-fix-1', html)
+
     def test_errors_are_typed_and_controlled(self) -> None:
         for retired_route in (
             "/api/source?ordinal=0",
@@ -223,6 +241,7 @@ class FastApiTests(unittest.TestCase):
                 "/api/examples",
                 "/api/examples/{example_id}/states",
                 "/api/examples/{example_id}/source",
+                "/api/examples/{example_id}/summary",
                 "/api/examples/{example_id}/states/{ordinal}/source-mappings",
                 "/api/examples/{example_id}/states/{ordinal}/ir",
                 "/api/examples/{example_id}/states/{ordinal}/cfg",
@@ -239,7 +258,7 @@ class FastApiTests(unittest.TestCase):
         self.assertEqual(html.status_code, 200)
         self.assertEqual(html.headers["content-type"].split(";")[0], "text/html")
         self.assertIn("irexplorer", html.text)
-        self.assertIn('src="/app.js"', html.text)
+        self.assertIn('src="/app.js?v=e3-source-fix-1"', html.text)
         for element_id in (
             "example-select",
             "function-select",
@@ -274,7 +293,6 @@ class FastApiTests(unittest.TestCase):
             "/api/session",
             "CURATED_LEARNING_TASKS",
             "renderLearningTask",
-            "renderSummary",
         ):
             self.assertNotIn(retired_detail, javascript.text)
 

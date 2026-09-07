@@ -958,7 +958,9 @@ def summarise_correspondence(
     if _is_identity_view(correspondence):
         items.append(
             SummaryItem(
-                "No structural or value-level changes were detected; this pass is retained as a no-op.",
+                ("No structural or value-level changes were detected across these recorded endpoints."
+                 if isinstance(correspondence, ComposedCorrespondence) or (step and step.kind == "recompiled")
+                 else "No structural or value-level changes were detected; this pass is retained as a no-op."),
                 all_indices,
             )
         )

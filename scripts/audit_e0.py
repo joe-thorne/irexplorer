@@ -73,7 +73,7 @@ def content_audit():
     return {'fields': len(expected), 'instrumentVersion': content['instrumentVersion'], 'projectionVersion': content['projectionVersion'], 'sourceSha256': private['sources'], 'participantProjectionSha256': hashlib.sha256((folder / 'e0-participant-content.json').read_bytes()).hexdigest()}
 
 
-def main():
+def main(output: Path | None = None):
     report = {'capturedAt': datetime.now().astimezone().isoformat(), 'implementationRevision': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(), 'content': content_audit()}
     verify_curated_snapshot()
     report['artefactSnapshot'] = (ROOT / 'docs/curated-artefacts.sha256').read_text().strip()
@@ -138,7 +138,7 @@ def main():
             check(client.get(path).status_code == 404, f'Researcher/draft path is public: {path}')
         check(client.post('/api/study/submissions', json={'synthetic': True}).status_code in {404, 405}, 'E0 unexpectedly collects responses')
     report['checks'] = ['60 source-backed participant fields; no researcher properties in projection', '42 states/commands/source debug checksums/functions resolve', 'Pinned aggregate and invariant validation passed', 'T1–T5 evidence assertions passed', 'Researcher files and proposed study endpoint not served']
-    output = ROOT / 'docs/evaluation-captures/e0-task-evidence.json'
+    output = output or ROOT / 'docs/evaluation-captures/e0-task-evidence.json'
     output.write_text(json.dumps(report, indent=2) + '\n')
     print('\n'.join(report['checks']))
 
