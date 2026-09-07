@@ -53,3 +53,9 @@ The browser shows up to three existing outcome items, with the remainder and all
 
 
 E3 source-loading amendment: the preview shell references CSS/JS with `?v=e3-source-fix-1` to bypass legacy cached URLs. `PreviewStaticFiles` sends `Cache-Control: no-store` for successful static responses and serves current bodies even with matching conditional validators. This policy applies to preview static assets, not model queries. Future release caching needs its own asset-versioning decision; do not restore unversioned reusable scripts. See [cache regression evidence](../../../docs/evaluation-captures/e3-cache-fix.md).
+
+## E4 participant content
+
+`GET /api/study/content` is a separate read-only boundary from compiler queries. It returns the versioned participant-only definition from `src/backend/evaluation/participant-content.json`: draft information/consent, 42 survey/consent fields, labelled scales and original section order, plus fixed preview/submission-disabled metadata. Both the plain browser renderer and `evaluation.content.validate_answers` consume that definition. The validator checks raw survey types/ranges/statuses, required P1, conditional/exclusive choices, and text bounds; it does not implement the future submission envelope. No researcher annotation, answer key, response data, private path, or raw Markdown is exposed.
+
+Content responses use `Cache-Control: no-store`; all current frontend assets use `?v=e4-forms-1`, including `study-draft.js`. Survey drafts and crypto-random participant codes are created only after consent and remain in browser `sessionStorage`, or explicit memory-only mode. No POST/submission route exists. See [E4 evidence](../../../docs/evaluation-captures/e4-forms.md). API version remains 1.0.0; tasks/timing and durable collection remain E5/E6.

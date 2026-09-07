@@ -1,6 +1,6 @@
 # E0 proposed source and study API contracts
 
-7 September 2026 · **Source routes implemented in E2; study/summary interfaces remain drafts.** E0's executable audit is `scripts/audit_e0.py`: it verifies the draft field projection, 42 source/state identities, task evidence, and the private/public boundary. Existing runtime OpenAPI remains v1.0.0. E2 has implemented source queries; E3 summaries; E4/E5 forms/tasks; E6 submission. No new dependency or framework is needed in E0.
+7 September 2026 · **Source routes implemented in E2, summaries in E3, and participant content/survey validation in E4; submission remains an E6 draft.** E0's executable audit is `scripts/audit_e0.py`: it verifies the draft field projection, 42 source/state identities, task evidence, and the private/public boundary. Existing runtime OpenAPI remains v1.0.0. E2 has implemented source queries; E3 summaries; E4/E5 forms/tasks; E6 submission. No new dependency or framework is needed in E0.
 
 ## Source (E2)
 
@@ -17,7 +17,7 @@ Propose `GET /api/examples/{example_id}/comparison?fromOrdinal=...&toOrdinal=...
 
 ## Participant definition and workspace setup (E4/E5)
 
-`GET /api/study/content` will return only an explicit allowlist projection of the supported version: participant information, consent, prompts, labelled scales/options, answer types, task goals/setup, and public submission notice. No raw Markdown instrument is served. E0's parent `e0-participant-content.json` is a **field-only draft**, not complete page content; researcher hashes/coding are in a separate file. E4 must assemble full reviewed prose and reconcile D3–D8, then use the same versioned definition for form rendering and backend validation. Do not promote the inherited draft consent wording to release content.
+`GET /api/study/content` now returns only an explicit allowlist projection of the supported version: participant information, consent, prompts, labelled scales/options, answer types, task goals/setup, and public submission notice. No raw Markdown instrument is served. E0's parent `e0-participant-content.json` is a **field-only draft**, not complete page content; researcher hashes/coding are in a separate file. E4 now serves the source-backed information prose and 42 consent/survey fields using the same definition for rendering and Python survey validation; see [E4 mapping](../../Docs/evaluation/e4-content-mapping.md). D3–D8 reconciliation remains a release gate: inherited consent is prominently labelled draft/synthetic-only. E5 supplies task content and E6 validates the final submission envelope. Do not promote the inherited draft consent wording to release content.
 
 Workspace module contract: `applySetup({exampleId, functionName?, left:{ordinal,view}, right:{ordinal,view}})` returns a promise resolved only when those views are ready. The study controller starts timing after that promise and prompt rendering. Setup never includes a selected instruction/block, an expected answer, or a responsible-pass hint. Reject stale setup completion after navigation. T2 has only the permitted starting setup, never an automatic jump to the answer. Direct exploration retains independent controls.
 

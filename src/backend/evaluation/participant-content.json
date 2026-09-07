@@ -1,0 +1,780 @@
+{
+  "instrumentVersion": "v0.1",
+  "contentVersion": "e4-preview-1",
+  "studyVersion": "e4-synthetic-1",
+  "mode": "preview",
+  "submissionEnabled": false,
+  "scales": {
+    "familiarity": [
+      {
+        "value": 1,
+        "label": "Never encountered it"
+      },
+      {
+        "value": 2,
+        "label": "Heard of it, could not use it"
+      },
+      {
+        "value": 3,
+        "label": "Some exposure, would need help"
+      },
+      {
+        "value": 4,
+        "label": "Comfortable"
+      },
+      {
+        "value": 5,
+        "label": "Very comfortable"
+      }
+    ],
+    "agreement": [
+      {
+        "value": 1,
+        "label": "Strongly disagree"
+      },
+      {
+        "value": 2,
+        "label": "Disagree"
+      },
+      {
+        "value": 3,
+        "label": "Neither agree nor disagree"
+      },
+      {
+        "value": 4,
+        "label": "Agree"
+      },
+      {
+        "value": 5,
+        "label": "Strongly agree"
+      }
+    ],
+    "likelihood": [
+      {
+        "value": 1,
+        "label": "Definitely not"
+      },
+      {
+        "value": 2,
+        "label": "Probably not"
+      },
+      {
+        "value": 3,
+        "label": "Maybe"
+      },
+      {
+        "value": 4,
+        "label": "Probably"
+      },
+      {
+        "value": 5,
+        "label": "Definitely"
+      }
+    ]
+  },
+  "information": [
+    {
+      "title": "About this study",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "Understanding what compilers do to your code"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Thanks for taking a look. This is a research study for an undergraduate thesis at the University of Queensland."
+        },
+        {
+          "kind": "paragraph",
+          "text": "When you compile a C program, the compiler does not just translate it — it rewrites it. It deletes work it can prove is pointless, moves calculations out of loops, merges and splits branches, and reshapes the control flow, all before a single instruction of machine code is produced. Most of that happens where nobody can see it. You write the source, you get a binary, and the interesting part in between is invisible."
+        },
+        {
+          "kind": "paragraph",
+          "text": "irexplorer is a web tool that makes that middle part visible. It takes a small C program, compiles it with LLVM one optimisation pass at a time, and lets you look at the program's intermediate representation — the internal form the compiler actually works on — at each step along the way. You can put any two of those steps side by side, read the textual form and the control-flow graph together, and see what a given pass changed."
+        },
+        {
+          "kind": "paragraph",
+          "text": "I am trying to find out whether that actually helps. Specifically: can someone who is not a compiler expert use it to work out what changed, and work out which pass was responsible?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You do not need to know anything about compilers to take part. Being able to read basic C is enough. If you have never seen LLVM intermediate representation before, you are exactly the person this study needs."
+        }
+      ]
+    },
+    {
+      "title": "What taking part involves",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "About 35 minutes, done in your own time, in a browser."
+        },
+        {
+          "kind": "ordered",
+          "items": [
+            "A few questions about your background (about 4 minutes) — what you have studied and how familiar you are with the topics involved. This is so I can describe who took part; there are no right answers.",
+            "Six short tasks using the tool (about 20 minutes) — each one gives you a goal, such as working out what changed between two versions of a program. Some have a correct answer and some are open-ended. You are welcome to say you could not work something out; that is a useful result and it is the tool being tested, not you.",
+            "A closing survey (about 8 minutes) — rating statements about the tool and writing whatever you want to say about it in your own words."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "You can stop at any point, close the tab, and nothing further happens."
+        }
+      ]
+    },
+    {
+      "title": "What is recorded",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "Your answers to the surveys and the tasks, and how long each task took."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Not recorded: your name, your student number, your email address, your IP address, or anything else that identifies you. When you start, you are given a random participant code, and that code is the only thing your responses are attached to. I have no way to connect a set of responses back to a person, which also means that once you submit, I cannot pull your responses back out."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The only background details collected are your degree programme, year of study, which relevant courses you have completed, and your own rating of how familiar you are with a handful of topics. Those are needed because the study's whole claim depends on showing that participants were not already compiler experts."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Free-text answers are read through for anything accidentally identifying before any of it is quoted."
+        }
+      ]
+    },
+    {
+      "title": "What happens to it",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "The results go into my thesis, and into a poster and demonstration for the course. Short quotes from free-text answers may appear, without attribution. Data is kept in de-identified form until the thesis is marked. It is not published anywhere else and it is not shared outside the project."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nothing you do here reaches any course, any teaching staff, or any mark. This is not an assessment of you, and no individual result is reported."
+        }
+      ]
+    },
+    {
+      "title": "Voluntary participation",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "Taking part is entirely voluntary and unpaid. You can decline, or stop partway through, without giving a reason and without any consequence."
+        }
+      ]
+    },
+    {
+      "title": "Questions",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "Researcher: Joe Thorne, BE (Hons) Software, School of Electrical Engineering and Computer Science — s4784727@student.uq.edu.au\nSupervisor: Dr Joel Mackenzie, School of Electrical Engineering and Computer Science"
+        }
+      ]
+    },
+    {
+      "title": "A note on the terms used",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "Three phrases come up repeatedly in the tasks."
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Intermediate representation (IR) — the internal form of your program that the compiler works on, sitting between the C source and the machine code. It looks a bit like a stripped-down assembly language, but it is still target-independent. LLVM's version is what you will be reading.",
+            "Pass — one self-contained transformation the compiler applies to the IR. A real compiler runs dozens of these in sequence. This tool uses a fixed chain of twelve chosen for teaching, so the sequence is short enough to step through.",
+            "Optimisation state — the program as it stands after a particular pass has run. The tool holds one state per step, so you can pick any two and compare them."
+          ]
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Control-flow graph (CFG) — the shape of the program drawn as boxes and arrows: each box is a straight run of instructions, each arrow a jump the program can take."
+          ]
+        }
+      ]
+    }
+  ],
+  "fields": [
+    {
+      "id": "C1",
+      "prompt": "I have read the information above and I understand what taking part involves.",
+      "type": "boolean",
+      "required": true
+    },
+    {
+      "id": "C2",
+      "prompt": "I understand that participation is voluntary and that I can stop at any time without giving a reason.",
+      "type": "boolean",
+      "required": true
+    },
+    {
+      "id": "C3",
+      "prompt": "I understand that my responses are recorded without my name or any other identifying detail, and that once submitted they cannot be withdrawn because they cannot be traced back to me.",
+      "type": "boolean",
+      "required": true
+    },
+    {
+      "id": "C4",
+      "prompt": "I understand that de-identified results, including short quotes from anything I write, may appear in a thesis, poster, and demonstration.",
+      "type": "boolean",
+      "required": true
+    },
+    {
+      "id": "C5",
+      "prompt": "I am 18 years of age or older.",
+      "type": "boolean",
+      "required": true
+    },
+    {
+      "id": "C6",
+      "prompt": "I agree to take part.",
+      "type": "boolean",
+      "required": true
+    },
+    {
+      "id": "P1",
+      "prompt": "Which best describes you?",
+      "type": "single",
+      "required": true,
+      "options": [
+        {
+          "value": 1,
+          "label": "Undergraduate student, computing or software engineering"
+        },
+        {
+          "value": 2,
+          "label": "Undergraduate student, other discipline"
+        },
+        {
+          "value": 3,
+          "label": "Postgraduate student"
+        },
+        {
+          "value": 4,
+          "label": "Working developer"
+        },
+        {
+          "value": 5,
+          "label": "Other — please describe:"
+        }
+      ]
+    },
+    {
+      "id": "P1.other",
+      "prompt": "Other — please describe:",
+      "type": "text",
+      "required": false,
+      "maxLength": 4000,
+      "condition": {
+        "field": "P1",
+        "values": [
+          5
+        ]
+      }
+    },
+    {
+      "id": "P2",
+      "prompt": "If you are a student, what year of your programme are you in?",
+      "type": "single",
+      "required": false,
+      "options": [
+        {
+          "value": 1,
+          "label": "1st"
+        },
+        {
+          "value": 2,
+          "label": "2nd"
+        },
+        {
+          "value": 3,
+          "label": "3rd"
+        },
+        {
+          "value": 4,
+          "label": "4th"
+        },
+        {
+          "value": 5,
+          "label": "5th or beyond"
+        },
+        {
+          "value": 6,
+          "label": "Not applicable"
+        }
+      ],
+      "optionStatuses": {
+        "6": "not_applicable"
+      }
+    },
+    {
+      "id": "P3",
+      "prompt": "Which of these UQ courses have you completed or are you currently enrolled in?",
+      "type": "multiple",
+      "required": false,
+      "options": [
+        {
+          "value": 1,
+          "label": "CSSE2010 — Introduction to Computer Systems"
+        },
+        {
+          "value": 2,
+          "label": "CSSE2310 — Computer Systems Principles and Programming"
+        },
+        {
+          "value": 3,
+          "label": "COMP3506 — Algorithms and Data Structures"
+        },
+        {
+          "value": 4,
+          "label": "CSSE3200 — Software Engineering Studio"
+        },
+        {
+          "value": 5,
+          "label": "COMP4403 — Compilers and Interpreters"
+        },
+        {
+          "value": 6,
+          "label": "None of these"
+        },
+        {
+          "value": 7,
+          "label": "Other relevant course — please name it:"
+        }
+      ],
+      "exclusiveValue": 6
+    },
+    {
+      "id": "P3.other",
+      "prompt": "Other relevant course — please name it:",
+      "type": "text",
+      "required": false,
+      "maxLength": 4000,
+      "condition": {
+        "field": "P3",
+        "values": [
+          7
+        ]
+      }
+    },
+    {
+      "id": "P4",
+      "prompt": "Reading and writing C",
+      "type": "rating",
+      "required": false,
+      "scale": "familiarity"
+    },
+    {
+      "id": "P5",
+      "prompt": "Reading assembly language",
+      "type": "rating",
+      "required": false,
+      "scale": "familiarity"
+    },
+    {
+      "id": "P6",
+      "prompt": "Reading LLVM intermediate representation (IR)",
+      "type": "rating",
+      "required": false,
+      "scale": "familiarity"
+    },
+    {
+      "id": "P7",
+      "prompt": "Control-flow graphs",
+      "type": "rating",
+      "required": false,
+      "scale": "familiarity"
+    },
+    {
+      "id": "P8",
+      "prompt": "What compiler optimisation passes do",
+      "type": "rating",
+      "required": false,
+      "scale": "familiarity"
+    },
+    {
+      "id": "P9",
+      "prompt": "Compiler internals generally",
+      "type": "rating",
+      "required": false,
+      "scale": "familiarity"
+    },
+    {
+      "id": "P10",
+      "prompt": "Have you used any of these before?",
+      "type": "multiple",
+      "required": false,
+      "options": [
+        {
+          "value": 1,
+          "label": "Compiler Explorer / godbolt.org"
+        },
+        {
+          "value": 2,
+          "label": "clang or gcc optimisation flags, deliberately (-O0, -O2, -O3, and similar)"
+        },
+        {
+          "value": 3,
+          "label": "objdump, perf, or a similar tool for inspecting compiled output"
+        },
+        {
+          "value": 4,
+          "label": "LLVM's opt tool directly"
+        },
+        {
+          "value": 5,
+          "label": "A debugger, on compiled C"
+        },
+        {
+          "value": 6,
+          "label": "None of these"
+        }
+      ],
+      "exclusiveValue": 6
+    },
+    {
+      "id": "P11",
+      "prompt": "Have you ever looked at the intermediate representation or the assembly output of a program you wrote, to understand what the compiler did to it?",
+      "type": "single",
+      "required": false,
+      "options": [
+        {
+          "value": 1,
+          "label": "Never"
+        },
+        {
+          "value": 2,
+          "label": "Once or twice"
+        },
+        {
+          "value": 3,
+          "label": "Occasionally"
+        },
+        {
+          "value": 4,
+          "label": "Regularly"
+        }
+      ]
+    },
+    {
+      "id": "P12",
+      "prompt": "Have you worked on a compiler, or on LLVM itself, in a course project, job, or personal project?",
+      "type": "single",
+      "required": false,
+      "options": [
+        {
+          "value": 1,
+          "label": "No"
+        },
+        {
+          "value": 2,
+          "label": "Yes, a course project"
+        },
+        {
+          "value": 3,
+          "label": "Yes, professionally or as a personal project"
+        }
+      ]
+    },
+    {
+      "id": "P12.detail",
+      "prompt": "If you did, what/why?",
+      "type": "text",
+      "required": false,
+      "maxLength": 4000,
+      "condition": {
+        "field": "P12",
+        "values": [
+          2,
+          3
+        ]
+      }
+    },
+    {
+      "id": "P13",
+      "prompt": "Before you start: when a C compiler optimises a program, what kinds of changes do you expect it makes?",
+      "type": "text",
+      "required": false,
+      "maxLength": 4000
+    },
+    {
+      "id": "Q1",
+      "prompt": "I could tell which parts of the program had changed between two states.",
+      "type": "rating",
+      "required": false,
+      "scale": "agreement",
+      "notApplicableLabel": "Not applicable / did not use this"
+    },
+    {
+      "id": "Q2",
+      "prompt": "The summary of what a pass had done matched what I could see in the code.",
+      "type": "rating",
+      "required": false,
+      "scale": "agreement",
+      "notApplicableLabel": "Not applicable / did not use this"
+    },
+    {
+      "id": "Q3",
+      "prompt": "I had trouble telling apart changes that mattered from changes that were only cosmetic.",
+      "type": "rating",
+      "required": false,
+      "scale": "agreement",
+      "notApplicableLabel": "Not applicable / did not use this"
+    },
+    {
+      "id": "Q4",
+      "prompt": "I could work out which pass was responsible for a change I had noticed.",
+      "type": "rating",
+      "required": false,
+      "scale": "agreement",
+      "notApplicableLabel": "Not applicable / did not use this"
+    },
+    {
+      "id": "Q5",
+      "prompt": "Stepping through the passes one at a time helped me more than comparing the start and the end would have.",
+      "type": "rating",
+      "required": false,
+      "scale": "agreement",
+      "notApplicableLabel": "Not applicable / did not use this"
+    },
+    {
+      "id": "Q6",
+      "prompt": "Having the textual form and the control-flow graph available at once helped me understand what had changed.",
+      "type": "rating",
+      "required": false,
+      "scale": "agreement",
+      "notApplicableLabel": "Not applicable / did not use this"
+    },
+    {
+      "id": "Q7",
+      "prompt": "When I selected something in one view, I could find the corresponding thing in the other.",
+      "type": "rating",
+      "required": false,
+      "scale": "agreement",
+      "notApplicableLabel": "Not applicable / did not use this"
+    },
+    {
+      "id": "Q8",
+      "prompt": "I mostly relied on one of the two views and ignored the other.",
+      "type": "rating",
+      "required": false,
+      "scale": "agreement",
+      "notApplicableLabel": "Not applicable / did not use this"
+    },
+    {
+      "id": "Q9",
+      "prompt": "I felt I was in control of what the tool showed me.",
+      "type": "rating",
+      "required": false,
+      "scale": "agreement",
+      "notApplicableLabel": "Not applicable / did not use this"
+    },
+    {
+      "id": "Q10",
+      "prompt": "I was mostly following the instructions rather than exploring on my own.",
+      "type": "rating",
+      "required": false,
+      "scale": "agreement",
+      "notApplicableLabel": "Not applicable / did not use this"
+    },
+    {
+      "id": "Q11",
+      "prompt": "The tool presented the information at a level I could follow.",
+      "type": "rating",
+      "required": false,
+      "scale": "agreement",
+      "notApplicableLabel": "Not applicable / did not use this"
+    },
+    {
+      "id": "Q12",
+      "prompt": "The text, colours, and highlighting were readable.",
+      "type": "rating",
+      "required": false,
+      "scale": "agreement",
+      "notApplicableLabel": "Not applicable / did not use this"
+    },
+    {
+      "id": "Q13",
+      "prompt": "I believe what the tool showed me was really what the compiler did, rather than a simplified illustration of it.",
+      "type": "rating",
+      "required": false,
+      "scale": "agreement",
+      "notApplicableLabel": "Not applicable / did not use this"
+    },
+    {
+      "id": "Q14",
+      "prompt": "Now that you have used the tool: when a C compiler optimises a program, what kinds of changes do you expect it makes?",
+      "type": "text",
+      "required": false,
+      "maxLength": 4000
+    },
+    {
+      "id": "Q15",
+      "prompt": "Was there a moment where something the compiler had done suddenly made sense to you? What was it?",
+      "type": "text",
+      "required": false,
+      "maxLength": 4000
+    },
+    {
+      "id": "Q16",
+      "prompt": "Was there a moment where you were stuck, confused, or unsure what you were looking at? What was happening?",
+      "type": "text",
+      "required": false,
+      "maxLength": 4000
+    },
+    {
+      "id": "Q17",
+      "prompt": "If you could change one thing about the tool, what would it be?",
+      "type": "text",
+      "required": false,
+      "maxLength": 4000
+    },
+    {
+      "id": "Q18",
+      "prompt": "Anything else you want to say.",
+      "type": "text",
+      "required": false,
+      "maxLength": 4000
+    },
+    {
+      "id": "Q19",
+      "prompt": "If a tool like this had been available while you were learning about compilers, or about how your code runs, would you have used it?",
+      "type": "rating",
+      "required": false,
+      "scale": "likelihood"
+    },
+    {
+      "id": "Q20",
+      "prompt": "Which of the three example programs did you spend the most time on?",
+      "type": "single",
+      "required": false,
+      "options": [
+        {
+          "value": 1,
+          "label": "score"
+        },
+        {
+          "value": 2,
+          "label": "binary_search"
+        },
+        {
+          "value": 3,
+          "label": "quick_sort"
+        },
+        {
+          "value": 4,
+          "label": "About the same across them"
+        }
+      ]
+    }
+  ],
+  "preSections": [
+    {
+      "title": "Section A — Background",
+      "fields": [
+        "P1",
+        "P1.other",
+        "P2",
+        "P3",
+        "P3.other"
+      ]
+    },
+    {
+      "title": "Section B — Familiarity",
+      "intro": "For each of the following, how familiar are you?",
+      "fields": [
+        "P4",
+        "P5",
+        "P6",
+        "P7",
+        "P8",
+        "P9",
+        "P10",
+        "P11",
+        "P12",
+        "P12.detail"
+      ]
+    },
+    {
+      "title": "Section C — Expectation",
+      "intro": "2–3 sentences, optional.",
+      "fields": [
+        "P13"
+      ]
+    }
+  ],
+  "postSections": [
+    {
+      "title": "Section A — Rating statements",
+      "intro": "Strongly disagree · Disagree · Neither agree nor disagree · Agree · Strongly agree. Plus a separate Not applicable / did not use this option on every item.",
+      "groups": [
+        {
+          "title": "Seeing what changed",
+          "fields": [
+            "Q1",
+            "Q2",
+            "Q3"
+          ]
+        },
+        {
+          "title": "Working out which pass was responsible",
+          "fields": [
+            "Q4",
+            "Q5"
+          ]
+        },
+        {
+          "title": "The two views together",
+          "fields": [
+            "Q6",
+            "Q7",
+            "Q8"
+          ]
+        },
+        {
+          "title": "Exploring",
+          "fields": [
+            "Q9",
+            "Q10"
+          ]
+        },
+        {
+          "title": "Clarity",
+          "fields": [
+            "Q11",
+            "Q12"
+          ]
+        },
+        {
+          "title": "Trust",
+          "fields": [
+            "Q13"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Section B — In your own words",
+      "intro": "Answer as much or as little as you like. These matter more to the research than the ratings above.",
+      "fields": [
+        "Q14",
+        "Q15",
+        "Q16",
+        "Q17",
+        "Q18"
+      ]
+    },
+    {
+      "title": "Section C — Two closing questions",
+      "fields": [
+        "Q19",
+        "Q20"
+      ]
+    }
+  ]
+}

@@ -134,14 +134,17 @@ def main(output: Path | None = None):
     check(mapping['confidence'] == 'approximate' and mapping['counterparts'], 'T5 example no longer reachable')
     report['T5'] = {'example': 'quick_sort', 'function': 'quick_sort', 'fromOrdinal': 0, 'toOrdinal': 9, 'mapping': mapping}
     with TestClient(create_app()) as client:
-        for path in ['/e0-participant-content.json', '/docs/evaluation-captures/e0-task-evidence.json', '/scripts/audit_e0.py', '/api/study/content']:
+        for path in ['/e0-participant-content.json', '/docs/evaluation-captures/e0-task-evidence.json', '/scripts/audit_e0.py']:
             check(client.get(path).status_code == 404, f'Researcher/draft path is public: {path}')
         check(client.post('/api/study/submissions', json={'synthetic': True}).status_code in {404, 405}, 'E0 unexpectedly collects responses')
-    report['checks'] = ['60 source-backed participant fields; no researcher properties in projection', '42 states/commands/source debug checksums/functions resolve', 'Pinned aggregate and invariant validation passed', 'T1–T5 evidence assertions passed', 'Researcher files and proposed study endpoint not served']
+    report['checks'] = ['60 source-backed participant fields; no researcher properties in projection', '42 states/commands/source debug checksums/functions resolve', 'Pinned aggregate and invariant validation passed', 'T1–T5 evidence assertions passed', 'Researcher files not served; study submission remains disabled']
     output = output or ROOT / 'docs/evaluation-captures/e0-task-evidence.json'
     output.write_text(json.dumps(report, indent=2) + '\n')
     print('\n'.join(report['checks']))
 
 
 if __name__ == '__main__':
-    main()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--output', type=Path)
+    main(parser.parse_args().output)

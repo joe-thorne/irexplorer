@@ -13,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHttpException
 
 from src.backend.api.query import DataUnavailableError, QueryError, QueryService
+from src.backend.evaluation.content import participant_content
 from src.backend.api.schemas import (
     CfgResponse,
     CounterpartsResponse,
@@ -161,6 +162,10 @@ def create_app(
         to_ordinal: TargetOrdinal = None,
     ) -> dict[str, object]:
         return query_service.counterparts(example_id, ordinal, node_id, to_ordinal)
+
+    @app.get("/api/study/content")
+    def study_content() -> JSONResponse:
+        return JSONResponse(participant_content(), headers={"Cache-Control": "no-store"})
 
     app.mount("/", PreviewStaticFiles(directory=FRONTEND_ROOT, html=True), name="frontend")
     return app
