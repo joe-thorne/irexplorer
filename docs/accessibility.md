@@ -51,3 +51,10 @@ Current [desktop/narrow captures and observations](evaluation-captures/e0-baseli
 The preview route shell focuses the new screen heading on navigation, updates the document title, labels progress with `aria-current="step"`, and uses native labelled inputs, buttons, links, and disclosures. In-page skip/comparison links move focus without changing the study route. Synthetic response placeholders are read-only and labelled. Desktop task content is bounded and scrollable; narrow task details collapse initially on route entry and can expand, while the goal and primary action remain visible outside the disclosure. Each narrow viewer is bounded to 320px with local scrolling.
 
 [Current evidence](evaluation-captures/e1-preview.md): 33 browser assertions, including native automated Tab/Enter events, heading focus, narrow disclosure expansion, and no page-wide overflow at 390px. All seven screenshots were visually inspected. This was isolated headless Chrome because the in-app runtime had no browser available. Physical keyboard, screen-reader, zoom/media variations, and complete S1.8 remain E7 checks; no broader accessibility conformance is claimed. C07 CFG defects remain E3 work. E1 layout is ready for Joe's review.
+
+
+## E2 source coordination, 7 September 2026
+
+Source uses native line buttons with file/line/text accessible names, pressed state, a native details disclosure, and a live status. Dashed gold debug-location outlines remain separate from existing correspondence selection; CFG source marks use dashed strokes with forced-colour support. Source and pane scroll operations stay inside their bounded viewers. The source summary retains file/line/column anchors when collapsed. All recorded matches remain highlighted, and missing mappings are explicit.
+
+[E2 evidence](evaluation-captures/e2-source.md): 31 browser assertions pass, including native Enter selection, 390px bounds, reverse navigation, and synthetic task integration; four captures were visually inspected. Physical keyboard/Space, screen-reader, zoom, and broader media checks remain E7. E2 is ready for source-panel review; no broader conformance claim is made.

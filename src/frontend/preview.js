@@ -36,7 +36,6 @@
     progress.hidden = explore || exited;
     document.querySelector("#explore-heading").hidden = !explore;
     document.querySelector(".skip-link").href = explore ? "#explore-heading" : "#route-heading";
-    document.querySelector("#source-placeholder").hidden = !preview;
     layout.classList.toggle("with-task", index === 2);
     progress.innerHTML = `<ol>${names.map((name, n) => `<li${n === index ? ' aria-current="step"' : ''}>${n + 1}. ${n <= unlocked ? `<a href="#${routes[n]}">${name}</a>` : name}</li>`).join("")}</ol>`;
     if (explore) {
@@ -54,7 +53,7 @@
     } else if (index === 2) {
       content = heading("Preview task") + `<p class="eyebrow">Screen 3 of 5 · Synthetic goal</p><p><strong>Goal:</strong> Try comparing a curated example using the two panes.</p><details class="task-details" open><summary>Instructions and response placeholder</summary><p>Choose a file, then change the state or IR/CFG view in either pane. Select an IR instruction or CFG block to inspect its recorded link.</p><p>This is not T0–T6. The ordered study tasks and timing arrive in E5.</p>${sample("Preview response area")}</details><div class="screen-actions">${button("next", "Continue to post-survey", true)}<a href="#/study/pre">Back to pre-survey</a><a href="#workspace">Go to comparison</a></div>`;
     } else if (index === 3) {
-      content = heading("Post-survey") + `<p class="eyebrow">Screen 4 of 5 · Form placeholder</p><p>Q1–Q20 will appear here with the original response options, including separate not-applicable choices.</p>${sample("Example comments layout")}<p>No submission is available in E1. The next button shows a simulated receipt without sending a request.</p><div class="screen-actions">${button("receipt", "Show simulated receipt", true)}<a href="#/study/tasks/preview">Back to preview task</a></div>`;
+      content = heading("Post-survey") + `<p class="eyebrow">Screen 4 of 5 · Form placeholder</p><p>Q1–Q20 will appear here with the original response options, including separate not-applicable choices.</p>${sample("Example comments layout")}<p>No submission is available in this preview. The next button shows a simulated receipt without sending a request.</p><div class="screen-actions">${button("receipt", "Show simulated receipt", true)}<a href="#/study/tasks/preview">Back to preview task</a></div>`;
     } else {
       content = heading("Simulated receipt") + `<p class="eyebrow">Screen 5 of 5 · Preview only</p><p><strong>Nothing was submitted or saved.</strong> This previews the position of the receipt screen; durable acknowledgement and retry behaviour arrive in E6.</p>${button("restart", "Restart preview", true)} <a href="#/explore">Explore curated artefacts</a>`;
     }

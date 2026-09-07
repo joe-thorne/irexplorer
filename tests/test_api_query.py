@@ -222,6 +222,8 @@ class FastApiTests(unittest.TestCase):
                 "/api/health",
                 "/api/examples",
                 "/api/examples/{example_id}/states",
+                "/api/examples/{example_id}/source",
+                "/api/examples/{example_id}/states/{ordinal}/source-mappings",
                 "/api/examples/{example_id}/states/{ordinal}/ir",
                 "/api/examples/{example_id}/states/{ordinal}/cfg",
                 "/api/examples/{example_id}/states/{ordinal}/counterparts",
@@ -273,7 +275,6 @@ class FastApiTests(unittest.TestCase):
             "CURATED_LEARNING_TASKS",
             "renderLearningTask",
             "renderSummary",
-            "renderSource",
         ):
             self.assertNotIn(retired_detail, javascript.text)
 

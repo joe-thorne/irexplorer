@@ -119,7 +119,7 @@ try {
   const injected = await send('Page.addScriptToEvaluateOnNewDocument', {source: `document.addEventListener('readystatechange', () => { if (document.readyState === 'interactive') document.body.dataset.studyMode = 'live'; });`});
   await send('Page.navigate', {url:'http://127.0.0.1:8000/?e1-check#/study/post?mode=preview'});
   await until(`document.querySelector('#explore-heading') && !document.querySelector('#workspace-shell').hidden`);
-  await check('Non-preview build hides controls and disables study routes', `location.hash === '#/explore' && document.querySelector('#preview-controls').hidden && document.querySelector('#study-screen').hidden && document.querySelector('#source-placeholder').hidden`);
+  await check('Non-preview build hides controls and disables study routes', `location.hash === '#/explore' && document.querySelector('#preview-controls').hidden && document.querySelector('#study-screen').hidden && !document.querySelector('#source-panel').hidden`);
   await send('Page.removeScriptToEvaluateOnNewDocument', {identifier: injected.identifier});
   if(requests.some(r => !['GET','HEAD'].includes(r.method))) throw new Error('Unexpected write request');
   checks.push('No write requests during full journey, receipt, reset, or exit');

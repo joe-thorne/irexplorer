@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from hashlib import sha256
+from pathlib import PurePosixPath
 from threading import RLock
 from typing import Any
 
@@ -79,6 +81,38 @@ class QueryService:
                 for state in loaded.timeline.states
             ]
         }
+
+    def source(self, example_id: str) -> dict[str, Any]:
+        self._example(example_id)
+        try:
+            text = curated.verified_source(example_id)
+        except (OSError, ValueError, RuntimeError) as exc:
+            raise DataUnavailableError(example_id) from exc
+        return {"exampleId": example_id, "file": f"{example_id}.c", "text": text,
+                "sha256": sha256(text.encode("utf-8")).hexdigest(), "inputVerified": True}
+
+    def source_mappings(self, example_id: str, ordinal: int, function_id: str) -> dict[str, Any]:
+        state = self._state(example_id, ordinal)
+        function = self._node(state, function_id)
+        if function.kind != "Function":
+            raise QueryError(f"unknown function in state {ordinal}: {function_id}")
+        blocks = set(state.contains_children.get(function_id, ()))
+        mappings = []
+        for edge in state.edges:
+            if edge.relation != "sourceMap":
+                continue
+            block_id = state.contains_parent.get(edge.from_id)
+            if block_id not in blocks:
+                continue
+            location = state.by_id[edge.from_id].attributes.get("source")
+            if location is None:
+                continue
+            mappings.append({"instructionId": edge.from_id, "blockId": block_id,
+                             "location": {"file": PurePosixPath(location.file).name,
+                                          "line": location.line, "column": location.column},
+                             "evidence": "debugLoc"})
+        return {"exampleId": example_id, "ordinal": ordinal, "stateId": state.state_id,
+                "functionId": function_id, "mappings": mappings}
 
     def ir(self, example_id: str, ordinal: int) -> dict[str, Any]:
         state = self._state(example_id, ordinal)

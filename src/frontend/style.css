@@ -109,7 +109,6 @@ button:disabled { cursor: default; opacity: .5; }
 .sample-answer { display: grid; gap: .5rem; font-weight: 700; }
 textarea { background: var(--paper); border: 1px solid #9fb3c8; border-radius: .35rem; color: var(--muted); font: inherit; padding: .7rem; resize: vertical; width: 100%; }
 .form-note { color: var(--muted); font-size: .85rem; margin: .5rem 0; }
-.source-placeholder { margin-top: .75rem; border-style: dashed; }
 summary { cursor: pointer; font-weight: 700; }
 details p { margin: .8rem 0 0; }
 .task-details .sample-answer { margin-top: 1rem; }
@@ -131,4 +130,18 @@ details p { margin: .8rem 0 0; }
   .toolbar label, .toolbar select { min-width: 0; width: 100%; }
   .viewer-controls, .viewer-controls label { width: 100%; }
   #study-progress ol { font-size: .8rem; gap: .3rem .7rem; }
+}
+
+.source-panel { margin-top: .75rem; }
+.source-lines { max-height: 240px; overflow: auto; }
+.source-line { display: flex; width: 100%; min-width: max-content; gap: .75rem; border: 0; border-radius: 0; padding: .15rem .4rem; text-align: left; background: transparent; color: inherit; }
+.source-line code { white-space: pre; }
+.source-line .line-number { min-width: 2ch; }
+.source-line.is-source, .ir-line.is-source { background: #fff0c2; outline: 2px dashed #846000; outline-offset: -2px; }
+.ir-block.is-source > .ir-block-heading { text-decoration: underline dotted 2px; }
+.cfg-node.is-source rect { stroke: #846000; stroke-width: 4px; stroke-dasharray: 5 3; }
+@media (max-width: 700px) { .source-lines { max-height: 180px; } }
+@media (forced-colors: active) {
+  .source-line.is-source, .ir-line.is-source { outline-color: Highlight; }
+  .cfg-node.is-source rect { stroke: Highlight; }
 }

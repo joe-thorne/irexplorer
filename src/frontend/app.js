@@ -18,6 +18,8 @@ const appState = {
   selection: null,
   selectionId: 0,
   refreshId: 0,
+  loadId: 0,
+  ready: false,
   panels: {
     left: { ordinal: 0, viewType: "ir", ir: null, cfg: null, function: null, selectedNodeIds: new Set() },
     right: { ordinal: 1, viewType: "ir", ir: null, cfg: null, function: null, selectedNodeIds: new Set() },
@@ -104,12 +106,25 @@ async function loadExamples() {
 async function loadExample() {
   const exampleId = elements.exampleSelect.value;
   if (!exampleId) return;
+  const loadId = ++appState.loadId;
+  ++appState.refreshId;
+  appState.ready = false;
   clearSelection();
+  sourceState.data = null;
+  sourceState.anchors = [];
+  renderSource();
+  elements.workspace.hidden = true;
   elements.exampleSelect.disabled = true;
   announce(`Loading ${exampleId}…`);
   try {
     clearError();
-    appState.states = (await request(`${apiRoot(exampleId)}/states`)).states;
+    const [states, source] = await Promise.all([
+      request(`${apiRoot(exampleId)}/states`), request(`${apiRoot(exampleId)}/source`),
+    ]);
+    if (loadId !== appState.loadId) return;
+    appState.states = states.states;
+    sourceState.data = source;
+    renderSource();
     appState.exampleId = exampleId;
     appState.functionName = null;
     appState.panels.left.ordinal = 0;
@@ -120,13 +135,16 @@ async function loadExample() {
     elements.left.view.value = "ir";
     elements.right.view.value = "ir";
     await refreshWorkspace();
+    if (loadId !== appState.loadId || !appState.ready) return;
     elements.emptyState.hidden = true;
     elements.workspace.hidden = false;
     announce(`${exampleId} is ready. Configure either panel, then select an artefact to follow its recorded link.`);
   } catch (error) {
+    if (loadId !== appState.loadId) return;
+    document.querySelector("#source-status").textContent = `Source unavailable: ${error.message} Choose a file to retry.`;
     showError(error);
   } finally {
-    elements.exampleSelect.disabled = false;
+    if (loadId === appState.loadId) elements.exampleSelect.disabled = false;
   }
 }
 
@@ -152,6 +170,10 @@ function stateOptionLabel(state) {
 async function refreshWorkspace() {
   if (!appState.exampleId) return;
   const refreshId = ++appState.refreshId;
+  appState.ready = false;
+  ++appState.selectionId;
+  elements.workspace.setAttribute("aria-busy", "true");
+  document.querySelector("#source-status").textContent = "Loading recorded mappings…";
   const apiBase = apiRoot(appState.exampleId);
   try {
     const [leftIr, rightIr] = await Promise.all([
@@ -170,18 +192,30 @@ async function refreshWorkspace() {
       panel.function = panel.ir.functions.find((fn) => fn.name === appState.functionName) || null;
       panel.cfg = null;
     }
-    const cfgRequests = ["left", "right"].map(async (side) => {
+    const views = await Promise.all(["left", "right"].map(async (side) => {
       const panel = appState.panels[side];
-      if (panel.viewType !== "cfg" || !panel.function) return;
-      panel.cfg = await request(`${apiBase}/states/${panel.ordinal}/cfg?functionId=${encodeURIComponent(panel.function.id)}`);
-    });
-    await Promise.all(cfgRequests);
+      const base = `${apiBase}/states/${panel.ordinal}`;
+      const query = `?functionId=${encodeURIComponent(panel.function.id)}`;
+      const [cfg, mappings] = await Promise.all([
+        panel.viewType === "cfg" ? request(`${base}/cfg${query}`) : Promise.resolve(null),
+        request(`${base}/source-mappings${query}`),
+      ]);
+      return { side, cfg, mappings: mappings.mappings };
+    }));
     if (refreshId !== appState.refreshId) return;
+    for (const view of views) Object.assign(appState.panels[view.side], view);
+    appState.ready = true;
+    elements.workspace.setAttribute("aria-busy", "false");
+    applySourceHighlights();
     renderComparison();
     renderPanel("left");
     renderPanel("right");
   } catch (error) {
-    if (refreshId === appState.refreshId) showError(error);
+    if (refreshId === appState.refreshId) {
+      elements.workspace.setAttribute("aria-busy", "false");
+      document.querySelector("#source-status").textContent = `Mappings unavailable: ${error.message} Choose the file again to retry.`;
+      showError(error);
+    }
   }
 }
 
@@ -381,11 +415,13 @@ function renderCfg(side) {
 }
 
 function selectionClass(side, nodeId, baseClass) {
+  if (appState.panels[side].sourceNodeIds?.has(nodeId)) baseClass += " is-source";
   if (!appState.panels[side].selectedNodeIds.has(nodeId)) return baseClass;
   return `${baseClass} ${appState.selection?.originSide === side ? "is-selected" : "is-linked"}`;
 }
 
 async function selectNode(originSide, nodeId) {
+  if (!appState.ready) return;
   const targetSide = originSide === "left" ? "right" : "left";
   const origin = appState.panels[originSide];
   const target = appState.panels[targetSide];
@@ -402,6 +438,7 @@ async function selectNode(originSide, nodeId) {
   origin.selectedNodeIds = new Set([nodeId]);
   const selected = nodeContext(origin.ir, nodeId);
   if (!selected) return;
+  revealNodeSource(originSide, nodeId);
   try {
     if (origin.ordinal === target.ordinal) {
       const targetIds = displayNodeIds(target, [nodeId]);
@@ -424,6 +461,7 @@ async function selectNode(originSide, nodeId) {
     renderComparison();
     renderPanel(originSide);
     renderPanel(targetSide);
+    elements[originSide].viewer.querySelector(`[data-node-id="${CSS.escape(nodeId)}"]`)?.focus({ preventScroll: true });
     if (target.selectedNodeIds.size) scrollToLinkedNode(targetSide);
   } catch (error) {
     if (!selectionRequestIsCurrent(selectionRequest)) return;
@@ -479,7 +517,7 @@ function formatNode(context) {
 function scrollToLinkedNode(side) {
   requestAnimationFrame(() => {
     const node = elements[side].viewer.querySelector(".is-linked, .is-selected");
-    node?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    scrollWithin(elements[side].viewer, node);
   });
 }
 
@@ -514,6 +552,7 @@ function apiRoot(exampleId) {
 elements.exampleSelect.addEventListener("change", loadExample);
 elements.functionSelect.addEventListener("change", () => {
   appState.functionName = elements.functionSelect.value;
+  sourceState.anchors = [];
   clearSelection();
   refreshWorkspace();
 });

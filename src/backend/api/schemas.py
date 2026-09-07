@@ -105,3 +105,32 @@ class CounterpartsResponse(ApiModel):
     confidence: str
     evidence: str | None
     counterparts: list[NodeResponse]
+
+
+class SourceResponse(ApiModel):
+    exampleId: str
+    file: str
+    text: str
+    sha256: str
+    inputVerified: Literal[True]
+
+
+class SourceLocationResponse(ApiModel):
+    file: str
+    line: int
+    column: int
+
+
+class SourceMappingResponse(ApiModel):
+    instructionId: str
+    blockId: str
+    location: SourceLocationResponse
+    evidence: Literal["debugLoc"]
+
+
+class SourceMappingsResponse(ApiModel):
+    exampleId: str
+    ordinal: int
+    stateId: str
+    functionId: str
+    mappings: list[SourceMappingResponse]

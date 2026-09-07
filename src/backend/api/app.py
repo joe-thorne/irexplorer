@@ -22,6 +22,8 @@ from src.backend.api.schemas import (
     HealthResponse,
     IrResponse,
     StatesResponse,
+    SourceResponse,
+    SourceMappingsResponse,
 )
 
 
@@ -100,6 +102,16 @@ def create_app(
     @app.get("/api/examples/{example_id}/states", response_model=StatesResponse)
     def list_states(example_id: ExampleId) -> dict[str, object]:
         return query_service.list_states(example_id)
+
+    @app.get("/api/examples/{example_id}/source", response_model=SourceResponse)
+    def source(example_id: ExampleId) -> dict[str, object]:
+        return query_service.source(example_id)
+
+    @app.get("/api/examples/{example_id}/states/{ordinal}/source-mappings",
+             response_model=SourceMappingsResponse)
+    def source_mappings(example_id: ExampleId, ordinal: Ordinal,
+                        function_id: FunctionId) -> dict[str, object]:
+        return query_service.source_mappings(example_id, ordinal, function_id)
 
     @app.get(
         "/api/examples/{example_id}/states/{ordinal}/ir",

@@ -1,10 +1,10 @@
 # E0 proposed source and study API contracts
 
-7 September 2026 · **Draft interfaces, not installed routes.** E0's executable audit is `scripts/audit_e0.py`: it verifies the draft field projection, 42 source/state identities, task evidence, and the private/public boundary. Existing runtime OpenAPI remains v1.0.0. E2 implements source queries; E3 summaries; E4/E5 forms/tasks; E6 submission. No new dependency or framework is needed in E0.
+7 September 2026 · **Source routes implemented in E2; study/summary interfaces remain drafts.** E0's executable audit is `scripts/audit_e0.py`: it verifies the draft field projection, 42 source/state identities, task evidence, and the private/public boundary. Existing runtime OpenAPI remains v1.0.0. E2 has implemented source queries; E3 summaries; E4/E5 forms/tasks; E6 submission. No new dependency or framework is needed in E0.
 
 ## Source (E2)
 
-Keep existing example/state/IR/CFG/counterpart routes. Add only:
+E2 retains existing example/state/IR/CFG/counterpart routes and implements:
 
 - `GET /api/examples/{example_id}/source`: `{exampleId, file, text, sha256, inputVerified}`. `file` is the canonical logical file name, not a client filesystem path. Read via `curated.read_source`; verify bytes against the pinned IR's DIFile checksum before returning `inputVerified: true`. E0 verifies all 14 states per example. A mismatch is a sanitised `503`, never a false source claim.
 - `GET /api/examples/{example_id}/states/{ordinal}/source-mappings?functionId=...`: `{exampleId, ordinal, stateId, functionId, mappings: [{instructionId, blockId, location: {file, line, column}, evidence: "debugLoc"}]}`. Return the selected function's full, bounded mapping set, allowing both directions without another selection route. The backend resolves containing blocks and anchors. Do not attach cross-state confidence to a source location or add source nodes to the model.

@@ -8,6 +8,8 @@ from contextvars import ContextVar
 from dataclasses import dataclass
 from pathlib import Path
 import shlex
+import hashlib
+import re
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -92,6 +94,21 @@ def read_source(example: str) -> str:
     """Read a canonical curated source input through the toolchain boundary."""
 
     return source_path(example).read_text(encoding="utf-8")
+
+
+def verified_source(example: str) -> str:
+    """Check canonical input against every pinned compilation's debug checksum."""
+    text = read_source(example)
+    digest = hashlib.md5(text.encode("utf-8")).hexdigest()
+    for state in PASS_STATES:
+        checksums = re.findall(
+            r'!DIFile\(filename: "[^"\n]*' + re.escape(example)
+            + r'\.c"[^\n]*checksumkind: CSK_MD5, checksum: "([0-9a-f]+)"',
+            read_ir(example, state.state_id),
+        )
+        if not checksums or set(checksums) != {digest}:
+            raise ToolchainError("Curated source does not match the pinned input.")
+    return text
 
 
 def ir_path(example: str, state_id: str) -> Path:

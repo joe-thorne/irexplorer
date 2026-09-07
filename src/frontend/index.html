@@ -19,7 +19,7 @@
 
     <main class="app-shell">
       <aside id="preview-controls" class="preview-bar" aria-label="Preview controls" hidden>
-        <strong>E1 · Synthetic layout preview</strong>
+        <strong>E2 · Synthetic study preview</strong>
         <span>No answers saved or sent. Refresh resets study progress.</span>
         <a href="#/study">Study preview</a><a href="#/explore">Explore directly</a>
         <button id="preview-reset" type="button">Reset preview</button>
@@ -42,9 +42,11 @@
         </label>
       </section>
 
-      <details id="source-placeholder" class="panel source-placeholder" open>
-        <summary>C source · layout placeholder</summary>
-        <p>Read-only C source will appear here in E2, with links to recorded IR and CFG locations. No source data or mapping is shown in this preview.</p>
+      <details id="source-panel" class="panel source-panel" open>
+        <summary id="source-summary">C source · choose a curated file</summary>
+        <p>Compiler debug-location evidence can map one line to several instructions. It does not establish cross-state identity or prove removal when absent.</p>
+        <p id="source-status" role="status">Choose a curated file to view its verified source.</p>
+        <div id="source-lines" class="source-lines" aria-label="Read-only C source"></div>
       </details>
 
       <p id="notice" class="notice" role="status" aria-live="polite">
@@ -112,6 +114,7 @@
         <p class="error-message"></p>
       </section>
     </template>
+    <script src="/source.js" defer></script>
     <script src="/app.js" defer></script>
     <script src="/preview.js" defer></script>
   </body>
