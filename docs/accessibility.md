@@ -18,7 +18,7 @@ of the lean workspace. No live compiler or user-code path is enabled.
   its function-scoped CFG and full structured IR response.
 
 The model cost envelope remains the one recorded in
-`../deliverables/5-system-plan/layer3-data-model.md` §8.4. The interface avoids
+`../../Docs/system-plan/layer3-data-model.md` §8.4. The interface avoids
 an additional whole-timeline or whole-program rendering path: it holds two
 selected state responses and renders one shared function per pane. Below
 900px, the panels stack into one column.
@@ -40,3 +40,14 @@ integrity. `evaluation-captures/s3-4-walkthrough.md` records the earlier
 rendered Chrome checks, but it predates S3.5. Complete a fresh physical
 Tab/Enter/Space walkthrough of the current workspace before a public
 demonstration.
+
+## E0 baseline, 7 September 2026
+
+Current [desktop/narrow captures and observations](evaluation-captures/e0-baseline.md) now exist. Headless browser checks confirm T3 selected-block coordination and T5 approximate-confidence text, with no page-wide horizontal overflow at 390px. They also expose hidden arrowheads, overlapping edges/labels, and a zero-length self-loop in the current CFG renderer (C07, E3). These affect T3/T4 interpretation and must be fixed before pilot use. Long stacked panes remain C08. This is baseline evidence only; physical keyboard, screen-reader, media preferences, zoom, and complete E7 checks remain outstanding.
+
+
+## E1 layout and navigation, 7 September 2026
+
+The preview route shell focuses the new screen heading on navigation, updates the document title, labels progress with `aria-current="step"`, and uses native labelled inputs, buttons, links, and disclosures. In-page skip/comparison links move focus without changing the study route. Synthetic response placeholders are read-only and labelled. Desktop task content is bounded and scrollable; narrow task details collapse initially on route entry and can expand, while the goal and primary action remain visible outside the disclosure. Each narrow viewer is bounded to 320px with local scrolling.
+
+[Current evidence](evaluation-captures/e1-preview.md): 33 browser assertions, including native automated Tab/Enter events, heading focus, narrow disclosure expansion, and no page-wide overflow at 390px. All seven screenshots were visually inspected. This was isolated headless Chrome because the in-app runtime had no browser available. Physical keyboard, screen-reader, zoom/media variations, and complete S1.8 remain E7 checks; no broader accessibility conformance is claimed. C07 CFG defects remain E3 work. E1 layout is ready for Joe's review.

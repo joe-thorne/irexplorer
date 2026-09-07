@@ -2,11 +2,11 @@
 
 Implementation of the thesis prototype: compiles curated C/C++ via `clang`/`opt` and presents LLVM IR artefacts (textual diffs, CFG views, pass timeline, change summaries) for students and non-expert developers.
 
-For thesis context, aims, and process, see `../CLAUDE.md`. Design basis: `../deliverables/5-system-plan/` (system-design.md, layer3-data-model.md) and requirements in `../docs/application_requirements.md`.
+For thesis context, aims, and process, see `../CLAUDE.md`. Design basis: `../Docs/system-plan/` (system-design.md, layer3-data-model.md) and requirements in `../Docs/application_requirements.md`.
 
 ## Status
 
-Phase 3 in progress (S2.1–S2.6 and S3.5 are complete; a refreshed browser walkthrough and the S1.8 verification gate remain). Architecture: Option C — a browser JavaScript single-page front-end (`src/frontend/`, static HTML/CSS/JS assets) served by a local Python backend (`src/backend/`) that owns artefact generation, the internal model, comparison, and a `localhost` model-query API (collapsible to a hosted web app later). Build order, decisions, and rules: `../deliverables/5-system-plan/implementation-plan.md`. Canonical generation environment: `docs/environment.md`.
+Phase 3 in progress (S2.1–S2.6 and S3.5 are complete; E0 baseline captures exist, while final browser/accessibility and S1.8 verification remain). Architecture: Option C — a browser JavaScript single-page front-end (`src/frontend/`, static HTML/CSS/JS assets) served by a local Python backend (`src/backend/`) that owns artefact generation, the internal model, comparison, and a `localhost` model-query API (collapsible to a hosted web app later). Build order, decisions, and rules: `../Docs/system-plan/implementation-plan.md`. Canonical generation environment: `docs/environment.md`.
 
 Built and under green tests:
 
@@ -26,7 +26,7 @@ Built and under green tests:
 - **S2.6** — `docs/input-isolation.md` fixes the design-only gate for future user-supplied C: strict admission, a fresh no-network resource-bounded worker, sanitised controlled failures, ephemeral retention, and preconditions for activation. The current service has no source-analysis route, does not invoke a live toolchain, and remains curated/pre-baked by default; a localhost test locks that boundary.
 - **S3.5** — direct two-panel comparison workspace. One curated file and, when needed, a shared function are selected above two independently configurable IR/CFG and state panes. Selecting an IR instruction or basic block follows the correspondence in either direction, highlights the target line or block, and states the adjacent pass/action, recompiled anchor, or composed-comparison limitation. The former guided timeline, learning tasks, source view, summaries, disclosures, filters, and server-side focus state are removed rather than retained as dormant code.
 
-Next: record a fresh desktop, narrow-screen, and physical-keyboard walkthrough of S3.5. S1.8 MVP verification documentation also remains outstanding; live arbitrary input is Phase 5 only after the S2.6 activation gate.
+Next: review E1 in `../Docs/evaluation/e1-review.md`, then implement E2 from `../Docs/system-plan/web-evaluation-implementation-plan.md`. Joe reviewed E0 with no amendments; no instrument correction was explicitly accepted. E0 records current S3.5 desktop/narrow captures, a 60-field instrument audit, pinned task evidence, source/study API drafts, and proposed storage ADR 0002. E1 adds a preview-only route shell (`preview.js`), bounded task/sidebar and pane layout, and source/form/receipt placeholders around the unchanged curated workspace. E2–E8 are not implemented. Preview: `http://127.0.0.1:8000/#/study`; direct exploration: `/#/explore`. Verification: 33 browser assertions and 52 backend tests pass; see `docs/evaluation-captures/e1-preview.md`. The baseline reveals CFG arrow/self-loop/label defects assigned to E3; physical-keyboard and full S1.8 acceptance remain E7 work. The earlier guided interface remains historical. Live arbitrary input is Phase 5 only after the S2.6 activation gate.
 
 Run the backend tests from this directory with the project virtual environment: `.venv/bin/python -m unittest discover -s tests -v`.
 
@@ -66,7 +66,7 @@ Adapted from the Karpathy-skills `CLAUDE.md` (https://github.com/multica-ai/andr
 
 ## AI disclosure (required — Joe's rule)
 
-Every session that gives meaningful assistance **must** be logged in `../docs/AI_reference.md` (the log lives in the parent thesis repo). Add the entry yourself or remind Joe before finishing. Format:
+Every session that gives meaningful assistance **must** be logged in `../Docs/AI_reference.md` (the log lives in the parent thesis repo). Add the entry yourself or remind Joe before finishing. Format:
 
 ```
 - DD MMM YY

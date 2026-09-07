@@ -1,0 +1,57 @@
+{
+  "capturedAt": "2026-09-07T00:19:06.765Z",
+  "baselineRevision": "cb794d335476643eeeb1cab5ff0f07babb6647ed",
+  "frontendSha256": {
+    "index.html": "38df885941f250812edc838ee7cfe5ae5722b4c1d491a59eccda5dff584f391f",
+    "style.css": "a0237e40f5c5022c744c8380b22bcaf2bd4dfc31d845c0345096015076e8a289",
+    "app.js": "a935f8e07f5f62780f14f809bd35d1d7c0b1fca0e0043711fdfe51038b034213"
+  },
+  "version": {
+    "protocolVersion": "1.3",
+    "product": "Chrome/152.0.7977.82",
+    "revision": "@d04cdb24d67b081f6cf80200ffc5233f44b61109",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36",
+    "jsVersion": "15.2.124.21"
+  },
+  "desktop": [
+    1440,
+    1000
+  ],
+  "narrowViewport": [
+    390,
+    844
+  ],
+  "narrow": {
+    "width": 390,
+    "documentWidth": 390,
+    "left": {
+      "x": 37,
+      "y": 793.203125,
+      "width": 316,
+      "height": 1353.5625,
+      "top": 793.203125,
+      "right": 353,
+      "bottom": 2146.765625,
+      "left": 37
+    },
+    "right": {
+      "x": 37,
+      "y": 2421.296875,
+      "width": 316,
+      "height": 579.1875,
+      "top": 2421.296875,
+      "right": 353,
+      "bottom": 3000.484375,
+      "left": 37
+    }
+  },
+  "t3": "IR instruction %cmp is selected in both views of simplifycfg.",
+  "t4ZeroLengthSelfEdges": 1,
+  "t5": "IR instruction %cmp → linked counterpart in indvars (changed; approximate confidence).",
+  "errors": [],
+  "limitations": [
+    "Headless CDP fallback; Browser runtime had no available browser.",
+    "Not a physical keyboard, screen-reader, or complete accessibility walkthrough.",
+    "No study flow or response storage exists in E0."
+  ]
+}

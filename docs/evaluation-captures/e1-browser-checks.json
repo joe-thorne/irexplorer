@@ -1,0 +1,196 @@
+{
+  "capturedAt": "2026-09-07T00:29:21.385Z",
+  "baselineRevision": "cb794d335476643eeeb1cab5ff0f07babb6647ed",
+  "frontendSha256": {
+    "index.html": "8dafc39a220d4e95269d046a482d426df4001be8ceb9bb32260185e837524fb8",
+    "style.css": "66d5db5bab81096c5dfca4c5042e09818b0f4785fcf661e4b8a781aaff9659c2",
+    "app.js": "a935f8e07f5f62780f14f809bd35d1d7c0b1fca0e0043711fdfe51038b034213",
+    "preview.js": "a132e8da4ac1828a6b4f3920ea94eb34fcf703198698cf99258f6ee5c4d119bd"
+  },
+  "version": {
+    "protocolVersion": "1.3",
+    "product": "Chrome/152.0.7977.82",
+    "revision": "@d04cdb24d67b081f6cf80200ffc5233f44b61109",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36",
+    "jsVersion": "15.2.124.21"
+  },
+  "checks": [
+    "Focus: Information and consent",
+    "Task deep link gates before consent",
+    "Post deep link gates before consent",
+    "Focus: Preview declined",
+    "Focus: Information and consent",
+    "Focus: Pre-survey",
+    "Focus: Information and consent",
+    "Focus: Pre-survey",
+    "Focus: Preview task",
+    "All 14 states remain reachable in both panes",
+    "Workspace has selected an instruction",
+    "Comparison focus link retains task route",
+    "Keyboard Enter skip link focuses page heading",
+    "Tab from task heading reaches disclosure",
+    "Focus: Pre-survey",
+    "Focus: Preview task",
+    "Narrow task details initially compact",
+    "No page-wide overflow at 390px",
+    "Both narrow panes bounded to 320px",
+    "Narrow instructions expand",
+    "Focus: Post-survey",
+    "Focus: Simulated receipt",
+    "Receipt explicitly disclaims saving",
+    "Refresh resets consent and progress",
+    "Focus: Pre-survey",
+    "Focus: Preview stopped",
+    "Focus: Information and consent",
+    "Focus: Pre-survey",
+    "Focus: Information and consent",
+    "Direct explore hides study and progress",
+    "Preview creates no browser storage",
+    "Non-preview build hides controls and disables study routes",
+    "No write requests during full journey, receipt, reset, or exit"
+  ],
+  "desktop": {
+    "left": {
+      "x": 341,
+      "y": 785.4375,
+      "width": 506,
+      "height": 512,
+      "top": 785.4375,
+      "right": 847,
+      "bottom": 1297.4375,
+      "left": 341
+    },
+    "right": {
+      "x": 897,
+      "y": 785.4375,
+      "width": 506,
+      "height": 381.5625,
+      "top": 785.4375,
+      "right": 1403,
+      "bottom": 1167,
+      "left": 897
+    },
+    "task": {
+      "x": 20,
+      "y": 259.59375,
+      "width": 288,
+      "height": 875.90625,
+      "top": 259.59375,
+      "right": 308,
+      "bottom": 1135.5,
+      "left": 20
+    }
+  },
+  "narrow": {
+    "width": 390,
+    "documentWidth": 390,
+    "left": {
+      "x": 29,
+      "y": 1509.59375,
+      "width": 332,
+      "height": 320,
+      "top": 1509.59375,
+      "right": 361,
+      "bottom": 1829.59375,
+      "left": 29
+    },
+    "right": {
+      "x": 29,
+      "y": 2097.71875,
+      "width": 332,
+      "height": 252.078125,
+      "top": 2097.71875,
+      "right": 361,
+      "bottom": 2349.796875,
+      "left": 29
+    }
+  },
+  "requests": [
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:8000/api/examples/score/states"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:8000/api/examples/score/states/0/ir"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:8000/api/examples/score/states/1/ir"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:8000/api/examples/score/states/0/ir"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:8000/api/examples/score/states/1/ir"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:8000/api/examples/score/states/1/cfg?functionId=fn0"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:8000/api/examples/score/states/0/counterparts?nodeId=fn0%2Fbb0%2Fi0&toOrdinal=1"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:8000/"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:8000/style.css"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:8000/app.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:8000/preview.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:8000/api/examples"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:8000/api/examples/quick_sort/states"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:8000/api/examples/quick_sort/states/0/ir"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:8000/api/examples/quick_sort/states/1/ir"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:8000/?e1-check"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:8000/style.css"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:8000/app.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:8000/preview.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:8000/api/examples"
+    }
+  ],
+  "errors": [],
+  "limitations": [
+    "Isolated headless Chrome CDP fallback; in-app runtime reported no browsers.",
+    "Keyboard events automated; physical keyboard and assistive technology checks remain E7.",
+    "E1 is a preview-only build; E6 must supply server-controlled modes and durable submission."
+  ]
+}

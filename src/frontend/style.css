@@ -86,3 +86,49 @@ select { background: #fff; border: 1px solid #9fb3c8; border-radius: .35rem; col
 @media (forced-colors: active) { .ir-block.is-selected, .ir-block.is-linked, .ir-line.is-selected, .ir-line.is-linked, .cfg-node.is-selected rect, .cfg-node.is-linked rect { border: 2px solid CanvasText; box-shadow: none; } .cfg-node.is-linked rect { stroke-dasharray: 5 3; } }
 @media (max-width: 900px) { .panel-grid { grid-template-columns: 1fr; } }
 @media (max-width: 700px) { .site-header, .viewer-heading { align-items: stretch; flex-direction: column; } .header-note { text-align: left; } .viewer-controls { justify-content: start; } .viewer-controls label, .viewer-controls select { max-width: none; width: 100%; } .viewer-content { min-height: 18rem; } }
+
+/* E1 route shell. Code panes retain their independent state and scrolling. */
+[hidden] { display: none !important; }
+a { color: var(--accent); }
+a:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visible,
+[tabindex="-1"]:focus { outline: 3px solid var(--focus); outline-offset: 3px; }
+.preview-bar { align-items: center; background: #e6f3f5; border: 1px solid #8fb5be; border-radius: .5rem; display: flex; flex-wrap: wrap; gap: .6rem 1rem; margin-bottom: 1rem; padding: .7rem 1rem; font-size: .85rem; }
+.preview-bar span { flex: 1 1 20rem; }
+.preview-bar button, .screen-actions button, .study-utilities button, .study-screen > button { padding: .55rem .8rem; }
+#study-progress ol { display: flex; flex-wrap: wrap; gap: .5rem 1rem; list-style: none; padding: 0; }
+#study-progress li { color: var(--muted); border-bottom: 3px solid transparent; padding: .3rem 0; }
+#study-progress [aria-current="step"] { border-color: var(--accent); color: var(--ink); font-weight: 800; }
+.study-screen { max-width: 48rem; margin: 0 auto; padding: 1.5rem; }
+.study-screen h2 { margin-bottom: .6rem; }
+.acknowledgement { display: flex; align-items: start; gap: .7rem; }
+.acknowledgement input { width: 1.2rem; height: 1.2rem; flex-shrink: 0; }
+.screen-actions, .study-utilities { align-items: center; display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1.2rem; }
+.study-utilities { border-top: 1px solid var(--line); padding-top: 1rem; font-size: .85rem; }
+button.primary { background: var(--accent); color: white; border-color: var(--accent); font-weight: 700; }
+button:disabled { cursor: default; opacity: .5; }
+.sample-answer { display: grid; gap: .5rem; font-weight: 700; }
+textarea { background: var(--paper); border: 1px solid #9fb3c8; border-radius: .35rem; color: var(--muted); font: inherit; padding: .7rem; resize: vertical; width: 100%; }
+.form-note { color: var(--muted); font-size: .85rem; margin: .5rem 0; }
+.source-placeholder { margin-top: .75rem; border-style: dashed; }
+summary { cursor: pointer; font-weight: 700; }
+details p { margin: .8rem 0 0; }
+.task-details .sample-answer { margin-top: 1rem; }
+.with-task { display: grid; grid-template-columns: 18rem minmax(0, 1fr); gap: 1rem; align-items: start; }
+.with-task .study-screen { position: sticky; top: 1rem; padding: 1rem; max-height: calc(100vh - 2rem); overflow: auto; }
+#workspace-shell { min-width: 0; }
+.viewer-content { max-height: 32rem; }
+.with-task .viewer-heading { align-items: stretch; flex-direction: column; gap: .6rem; }
+.with-task .viewer-controls { justify-content: start; }
+@media (max-width: 1100px) {
+  .with-task { grid-template-columns: minmax(0, 1fr); }
+  .with-task .study-screen { position: static; width: 100%; max-width: none; max-height: none; }
+}
+@media (max-width: 700px) {
+  .app-shell { padding: .75rem; }
+  .site-header { padding: 1rem; }
+  .study-screen { padding: 1rem; }
+  .viewer-content { min-height: 14rem; max-height: 20rem; }
+  .toolbar label, .toolbar select { min-width: 0; width: 100%; }
+  .viewer-controls, .viewer-controls label { width: 100%; }
+  #study-progress ol { font-size: .8rem; gap: .3rem .7rem; }
+}
