@@ -1,4 +1,4 @@
-"""FastAPI application for read-only curated model queries."""
+"""Same-origin application: immutable compiler queries and isolated study collection."""
 
 from __future__ import annotations
 
@@ -13,7 +13,8 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHttpException
 
 from src.backend.api.query import DataUnavailableError, QueryError, QueryService
-from src.backend.evaluation.content import participant_content
+from src.backend.evaluation.service import Config, StudyService
+from src.backend.evaluation.router import router as study_router
 from src.backend.api.schemas import (
     CfgResponse,
     CounterpartsResponse,
@@ -54,6 +55,7 @@ def create_app(
     service: QueryService | None = None,
     *,
     include_docs: bool = True,
+    study_config: Config | None = None,
 ) -> FastAPI:
     """Create the same-origin API and static frontend application."""
 
@@ -61,7 +63,7 @@ def create_app(
     app = FastAPI(
         title="irexplorer curated query API",
         version="1.0.0",
-        description="Read-only queries over pre-baked compiler optimisation records.",
+        description="Read-only curated compiler queries plus isolated final-only study submissions.",
         docs_url="/docs" if include_docs else None,
         redoc_url=None,
     )
@@ -163,9 +165,7 @@ def create_app(
     ) -> dict[str, object]:
         return query_service.counterparts(example_id, ordinal, node_id, to_ordinal)
 
-    @app.get("/api/study/content")
-    def study_content() -> JSONResponse:
-        return JSONResponse(participant_content(), headers={"Cache-Control": "no-store"})
+    app.include_router(study_router(StudyService(study_config or Config.environment())))
 
     app.mount("/", PreviewStaticFiles(directory=FRONTEND_ROOT, html=True), name="frontend")
     return app

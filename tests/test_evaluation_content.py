@@ -12,9 +12,9 @@ class EvaluationContentTests(unittest.TestCase):
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.headers['cache-control'], 'no-store')
             content = response.json()
-            self.assertEqual(content, participant_content())
+            self.assertEqual(content, {**participant_content(), 'submissionEnabled': True})
             self.assertEqual(content['mode'], 'preview')
-            self.assertFalse(content['submissionEnabled'])
+            self.assertTrue(content['submissionEnabled'])
             self.assertEqual(len(content['fields']), 60)
             allowed = {'id', 'prompt', 'type', 'required', 'options', 'scale', 'notApplicableLabel', 'maxLength', 'exclusiveValue', 'optionStatuses', 'condition', 'inabilityLabel'}
             for field in content['fields']:
@@ -23,7 +23,7 @@ class EvaluationContentTests(unittest.TestCase):
                 self.assertNotIn(forbidden, response.text)
             for path in ['/participant-content.json', '/src/backend/evaluation/participant-content.json', '/docs/evaluation-captures/e0-task-evidence.json']:
                 self.assertEqual(client.get(path).status_code, 404)
-            self.assertIn(client.post('/api/study/submissions', json={'pre': {}}).status_code, (404, 405))
+            self.assertIn(client.post('/api/study/submissions', json={'pre': {}}).status_code, (403,))
 
     def test_required_optional_and_separate_nonanswer_states(self):
         answered = lambda value: {'status': 'answered', 'value': value}

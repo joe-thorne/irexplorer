@@ -1,6 +1,7 @@
-// E5 local study journey. E6 supplies final submission.
+// Study journey with local drafts and final-only synthetic submission.
 (async () => {
   const D = window.StudyDraft;
+  const submission = window.StudySubmit.controller();
   const preview = document.body.dataset.studyMode === 'preview';
   const screen = document.querySelector('#study-screen');
   const workspace = document.querySelector('#workspace-shell');
@@ -101,10 +102,11 @@
     if (replace || location.hash === `#${route}`) { history.replaceState(null, '', `#${route}`); render(); }
     else location.hash = route;
   }
-  function maximum() { return !draft ? 0 : !draft.preComplete ? 1 : !D.tasksComplete(draft) ? 2 : !draft.reviewReady ? 3 : 4; }
+  function maximum() { if (submission.state) return 4; return !draft ? 0 : !draft.preComplete ? 1 : !D.tasksComplete(draft) ? 2 : !draft.reviewReady ? 3 : 4; }
   function save() { if (draft) store.save(draft); updateStorage(); }
   function updateStorage() {
     const area = screen.querySelector('#draft-status');
+    if (submission.state) { if (area) area.hidden = true; return; }
     if (!area || !store) return;
     const signature = [store.mode, store.issue, store.stale, store.unreadable, !!draft].join('|');
     if (area.dataset.signature === signature) return;
@@ -140,13 +142,20 @@
     return sections.map(s => `<section><h3>${esc(s.title)}</h3>${s.blocks.map(b => b.kind === 'paragraph' ? `<p>${esc(b.text)}</p>` : `<${b.kind === 'ordered' ? 'ol' : 'ul'}>${b.items.map(i => `<li>${esc(i)}</li>`).join('')}</${b.kind === 'ordered' ? 'ol' : 'ul'}>`).join('')}</section>`).join('');
   }
   function info() {
-    return `<p class="preview-warning"><strong>Draft v0.1 — synthetic review only.</strong> The inherited withdrawal, eligibility, storage/use and contact wording below is awaiting confirmation. It is not release consent. Use invented answers only.</p><div class="participant-information">${informationSections(content.information.slice(0, -1))}</div><h3>Consent</h3><p>Please confirm each of the following before starting.</p><p>For this synthetic preview, the boxes rehearse consent only. Stop/discard removes the local draft; nothing can be submitted. After submission behaviour remains pending review and E6.</p>${content.fields.filter(f => f.id.startsWith('C')).map(f => `<label class="acknowledgement" for="${f.id}"><input id="${f.id}" type="checkbox"${draft ? ' checked disabled' : ''}>${esc(f.prompt)}</label>`).join('')}<p id="consent-error" role="alert"></p><div class="screen-actions">${button('start', draft ? 'Return to study' : 'Continue to pre-survey', true)}${!draft ? button('decline', 'Decline and exit') : ''}</div><div class="participant-information">${informationSections(content.information.slice(-1))}</div>`;
+    return `<p class="preview-warning"><strong>Draft v0.1 — synthetic review only.</strong> The inherited withdrawal, eligibility, storage/use and contact wording below is awaiting confirmation. It is not release consent. Use invented answers only.</p><div class="participant-information">${informationSections(content.information.slice(0, -1))}</div><h3>Consent</h3><p>Please confirm each of the following before starting.</p><p>For this synthetic preview, the boxes rehearse consent only. Before submission, Stop/discard removes the local draft. Submit responses sends the complete synthetic session to an isolated preview store. After an attempt, retain this tab and retry for a receipt. Participant withdrawal wording remains subject to review.</p>${content.fields.filter(f => f.id.startsWith('C')).map(f => `<label class="acknowledgement" for="${f.id}"><input id="${f.id}" type="checkbox"${draft ? ' checked disabled' : ''}>${esc(f.prompt)}</label>`).join('')}<p id="consent-error" role="alert"></p><div class="screen-actions">${button('start', draft ? 'Return to study' : 'Continue to pre-survey', true)}${!draft ? button('decline', 'Decline and exit') : ''}</div><div class="participant-information">${informationSections(content.information.slice(-1))}</div>`;
   }
   function review() {
-    return heading('Review responses — submission pending') + `<p><strong>Nothing has been submitted.</strong> Your synthetic responses stay in this browser. Final submission and a durable receipt will be connected in E6.</p><p>The completed study will send consent, survey and task responses, task durations, and the random participant code together only when you select Submit responses. Review the final notice before any real participation.</p><p>You can correct background answers and post-survey answers below. P13 stays locked.</p><div class="screen-actions">${button('edit-pre', 'Edit background answers')}<a href="#/study/post">Edit post-survey answers</a><button type="button" disabled>Submit responses — pending E6</button></div>${taskReview()}${['pre', 'post'].map(stage => `<details class="response-review"><summary>${stage === 'pre' ? 'Pre-survey' : 'Post-survey'} answers</summary><dl>${D.fieldsFor(content, stage).filter(f => D.visible(f, draft[stage])).map(f => { const a = draft[stage][f.id]; let value = 'Unanswered'; if (a.status === 'not_applicable') value = f.notApplicableLabel || 'Not applicable'; if (a.status === 'answered') value = f.type === 'text' ? a.value : (Array.isArray(a.value) ? a.value : [a.value]).map(v => (f.options || content.scales[f.scale]).find(o => o.value === v).label).join('; '); return `<dt>${esc(f.id + '. ' + f.prompt)}</dt><dd>${esc(value)}</dd>`; }).join('')}</dl></details>`).join('')}`;
+    return heading('Review responses') + (submission.issue ? `<p role="alert">${esc(submission.issue)}</p>` : '') + `<p><strong>Nothing has been submitted.</strong> Select Submit responses to save this complete synthetic session in the preview database. It includes consent, survey and task answers, outcomes, active durations, interruption flags, random codes, and study versions. The server adds the application revision and artefact checksum. No clickstream is collected.</p><p>After an attempt, answers are frozen for retry. A failed connection may still have saved them. A receipt confirms durable storage; it does not delete the server record. Use invented answers only. In memory-only mode, keep this page open until you have a receipt; refresh cannot recover a failed attempt.</p><p>You can correct background answers and post-survey answers below. P13 stays locked.</p><div class="screen-actions">${button('edit-pre', 'Edit background answers')}<a href="#/study/post">Edit post-survey answers</a>${content.submissionEnabled ? button('submit-responses', 'Submit responses', true) : '<button disabled>Participant collection disabled</button>'}</div>${taskReview()}${['pre', 'post'].map(stage => `<details class="response-review"><summary>${stage === 'pre' ? 'Pre-survey' : 'Post-survey'} answers</summary><dl>${D.fieldsFor(content, stage).filter(f => D.visible(f, draft[stage])).map(f => { const a = draft[stage][f.id]; let value = 'Unanswered'; if (a.status === 'not_applicable') value = f.notApplicableLabel || 'Not applicable'; if (a.status === 'answered') value = f.type === 'text' ? a.value : (Array.isArray(a.value) ? a.value : [a.value]).map(v => (f.options || content.scales[f.scale]).find(o => o.value === v).label).join('; '); return `<dt>${esc(f.id + '. ' + f.prompt)}</dt><dd>${esc(value)}</dd>`; }).join('')}</dl></details>`).join('')}`;
+  }
+  function submissionHtml() {
+    const state = submission.state;
+    if (state.kind === 'receipt') return heading('Responses received') + `<p>Your synthetic responses were committed to the preview database.</p><p>Receipt: <code>${esc(state.receipt.receiptId)}</code></p><p>Participant code: <code>${esc(state.receipt.participantCode)}</code></p><p>Keep this code when discussing the synthetic record with the researcher. Participant withdrawal arrangements remain pending review.</p>${submission.issue ? `<p role="alert">${esc(submission.issue)}</p>${button('cleanup-receipt', 'Retry local cleanup')}` : `<p>Local answer drafts have been cleared. Only this receipt remains in the tab.</p>${button('new-study', 'Start another synthetic session')}`}`;
+    return heading(submission.busy ? 'Submitting responses…' : 'Receipt not yet confirmed') + `<p role="status">${submission.busy ? 'Wait for the server receipt. Answers are frozen for this attempt.' : 'A response record may already exist. Retry with the same submission ID and answers.'}</p><p>Participant code: <code>${esc(state.payload.participantCode)}</code></p>${submission.issue ? `<p role="alert">${esc(submission.issue)}</p>` : ''}${submission.busy ? '' : button('retry-submit', 'Retry submission', true)}<p>Keep this tab open. Stop/discard is unavailable after an attempt because it cannot erase a server record.</p>`;
   }
   function render() {
+    document.querySelector('#preview-reset').disabled = !!submission.state;
     const route = location.hash.slice(1) || '/explore', explore = route === '/explore';
+    if (loaded && submission.state && !explore && route !== '/study/complete') return go('/study/complete', true);
     leaveTask(route);
     const exited = ['/study/declined', '/study/stopped'].includes(route);
     const requestedTask = /^\/study\/tasks\/(T[0-6])$/.exec(route)?.[1];
@@ -165,13 +174,15 @@
     } else {
       progress.innerHTML = `<ol>${names.map((name, n) => `<li${n === index ? ' aria-current="step"' : ''}>${n + 1}. ${n <= maximum() ? `<a href="#${n === 2 && draft ? taskRoute() : routes[n]}">${name}</a>` : name}</li>`).join('')}</ol>`;
       let html;
-      if (exited) html = heading(route.endsWith('declined') ? 'Preview declined' : 'Preview stopped') + `<p>No response record was created. The local trial has been discarded.</p>${button('restart', 'Start a new preview', true)} <a href="#/explore">Explore curated artefacts</a>`;
+      if (submission.state) html = submissionHtml();
+      else if (submission.recoveryBlocked) html = heading('Submission recovery unavailable') + `<p role="alert">${esc(submission.issue)}</p>${button('retry-content', 'Retry recovery')}<p>Memory-only continuation starts a new synthetic session; an older submission may already exist. Refresh cannot recover this new session.</p>${button('memory', 'Continue in memory only')}`;
+      else if (exited) html = heading(route.endsWith('declined') ? 'Preview declined' : 'Preview stopped') + `<p>No response record was created. The local trial has been discarded.</p>${button('restart', 'Start a new preview', true)} <a href="#/explore">Explore curated artefacts</a>`;
       else if (index === 0) html = heading('Information and consent') + info();
       else if (index === 1) html = heading('Pre-survey') + `<p>Approximately 4 minutes. Every item is optional except P1.</p>${draft.p13Locked ? '<p>P13 was locked when the T0 orientation started. Background corrections do not change it.</p>' : '<p>P13 will be locked when you start the T0 orientation.</p>'}` + survey('pre');
       else if (index === 2) html = taskHtml(requestedTask);
-      else if (index === 3) html = heading('Post-survey') + `<p>Approximately 8 minutes. All items may be left unanswered. Answers stay local until final submission is available.</p>` + survey('post');
+      else if (index === 3) html = heading('Post-survey') + `<p>Approximately 8 minutes. All items may be left unanswered. Answers stay local until you select Submit responses.</p>` + survey('post');
       else html = review();
-      screen.innerHTML = (!exited ? html.replace('</h2>', '</h2><div id="draft-status" class="draft-status" tabindex="-1"></div>') : html) + (draft && !exited ? `<p class="participant-code">Participant code: ${esc(draft.participantCode)}</p><div class="study-utilities"><a href="#/study">Information</a>${button('stop', 'Stop and discard trial')}</div>` : '');
+      screen.innerHTML = (!exited ? html.replace('</h2>', '</h2><div id="draft-status" class="draft-status" tabindex="-1"></div>') : html) + (draft && !exited && !submission.state ? `<p class="participant-code">Participant code: ${esc(draft.participantCode)}</p><div class="study-utilities"><a href="#/study">Information</a>${button('stop', 'Stop and discard trial')}</div>` : '');
       updateStorage(); showErrors();
       if (index === 2) enterTask(requestedTask);
     }
@@ -238,14 +249,16 @@
       const response = await fetch('/api/study/content', { cache: 'no-store' });
       if (!response.ok) throw new Error('Content unavailable');
       content = await response.json();
-      if (content.mode !== 'preview' || content.submissionEnabled !== false || content.contentVersion !== 'e5-preview-1') throw new Error('Unsupported content');
-      store = D.storage(content); draft = store.read();
+      if (!['preview', 'pilot', 'live'].includes(content.mode) || content.contentVersion !== 'e5-preview-1') throw new Error('Unsupported content');
+      store = D.storage(content); submission.read(); draft = store.read();
+      if (submission.state?.kind === 'receipt' && submission.cleanup(() => store.discard())) draft = null;
       if (draft) { const t = draft.tasks[D.currentTask(draft)]; if (t.started && t.status === 'pending') { t.interrupted = true; store.save(draft); } }
       loaded = true;
     } catch { loadError = true; }
     render();
   }
   function discard(route) {
+    if (submission.state || submission.recoveryBlocked) { render(); return; }
     clock?.stop(true); save();
     if (store && !store.discard()) {
       if (setupReady && !document.hidden) clock?.resume();
@@ -276,6 +289,17 @@
     if (!action || !preview) return;
     if (action === 'retry-content') { load(); return; }
     if (!loaded) return;
+    if (action === 'submit-responses' && content.submissionEnabled && draft) {
+      const promise = submission.submit(draft, store.mode === 'memory'); render();
+      promise.then(() => { if (submission.state?.kind === 'receipt' && submission.cleanup(() => store.discard())) draft = null; render(); }); return;
+    }
+    if (action === 'retry-submit' && submission.state?.kind === 'pending') {
+      const promise = submission.submit(null); render(); promise.then(() => { if (submission.state?.kind === 'receipt' && submission.cleanup(() => store.discard())) draft = null; render(); }); return;
+    }
+    if (action === 'cleanup-receipt') { if (submission.cleanup(() => store.discard())) draft = null; render(); return; }
+    if (action === 'new-study' && !submission.issue && submission.clearReceipt()) { draft = null; go('/study', true); return; }
+    if (action === 'memory' && !submission.state && store.memory()) { submission.memory(); render(); return; }
+    if (submission.state || submission.recoveryBlocked) return;
     if (action === 'start') {
       if (!available()) return;
       if (!draft) {

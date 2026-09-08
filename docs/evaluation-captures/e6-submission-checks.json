@@ -1,0 +1,14 @@
+{
+  "checks": [
+    "Uncertain acknowledgement retains frozen envelope",
+    "Fractional E5 duration rounded once",
+    "Refresh and edited original cannot alter retry payload or ID",
+    "Identical retry receives receipt",
+    "Receipt cleanup failure is explicit",
+    "Acknowledged payload replaced with minimal receipt",
+    "Failed retry-copy storage sends nothing",
+    "Explicit memory-only submission supported",
+    "Double click produces one in-flight request",
+    "Oversized duration retained locally without an invalid network attempt"
+  ]
+}

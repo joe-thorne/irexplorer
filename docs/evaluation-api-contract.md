@@ -1,6 +1,6 @@
 # E0 proposed source and study API contracts
 
-7 September 2026 · **Source routes implemented in E2, summaries in E3, and participant content/survey validation in E4 and task content/validation/timing in E5; submission remains an E6 draft.** E0's executable audit is `scripts/audit_e0.py`: it verifies the draft field projection, 42 source/state identities, task evidence, and the private/public boundary. Existing runtime OpenAPI remains v1.0.0. E2 has implemented source queries; E3 summaries; E4/E5 forms/tasks; E6 submission. No new dependency or framework is needed in E0.
+7 September 2026 · **Source routes implemented in E2, summaries in E3, and participant content/survey validation in E4 and task content/validation/timing in E5; E6 submission is now implemented for synthetic review.** E0's executable audit is `scripts/audit_e0.py`: it verifies the draft field projection, 42 source/state identities, task evidence, and the private/public boundary. Existing runtime OpenAPI remains v1.0.0. E2 has implemented source queries; E3 summaries; E4/E5 forms/tasks; E6 submission. No new dependency or framework is needed in E0.
 
 ## Source (E2)
 
@@ -23,16 +23,16 @@ Implemented workspace seam: `window.StudyWorkspace.open({example, left:{ordinal,
 
 E5's [task/content/duration contract](../../Docs/evaluation/e5-task-contract.md) documents draft schema 2, preview versions, fixed-order locking, original item/status mapping, pause/hide/refresh behaviour, checkpoint limitations, and the export definition E6 must carry forward. Local durations are accumulated monotonic milliseconds, potentially fractional; submission normalisation/bounds below remain proposed E6 work. No response write API or export is implemented in E5.
 
-## Final submission (E6)
+## Final submission (E6, implemented 8 September 2026)
 
-Propose `POST /api/study/submissions`, `Content-Type: application/json`, intended same origin; reject cross-origin requests and validate a configured origin in deployments. No permissive CORS. Same-origin defence does not assert participant identity. Enforce body size while reading, including chunked requests, before parsing JSON.
+Implemented `POST /api/study/submissions`, `Content-Type: application/json`, intended same origin; reject cross-origin requests and validate a configured origin in deployments. No permissive CORS. Same-origin defence does not assert participant identity. Enforce body size while reading, including chunked requests, before parsing JSON.
 
-Envelope (proposed schema version 1):
+Envelope (storage schema/canonicalisation version 1):
 
 ```text
 submissionId: UUID (crypto random, stable across retries)
 participantCode: UUID (separate crypto random)
-studyVersion, instrumentVersion: supported strings
+studyVersion, contentVersion, instrumentVersion: supported strings
 consent: {version, acknowledgements: {C1:true, …, C6:true}}
 pre: {P1: Answer, …, P13: Answer, existing conditional detail fields}
 tasks: [{id:T0…T6, status, durationMs, interrupted, answers:{itemId:Answer}}]
@@ -52,3 +52,10 @@ CLI export/backup/restore/delete are researcher operations, never HTTP endpoints
 ## Verification ownership
 
 E0 verifies source bytes and all IDs against current models and preserves source-instrument hashes. E2 tests actual endpoint shapes, missing/one-to-many mappings, stale requests, and no user-source route. E4 verifies optionality and status behaviour in the browser. E5 verifies setup readiness, order/locking, timing, and public payloads. E6 tests validation, concurrency, idempotency, persistence, failure, and export/restore. E7/E8 verify full accessibility, live configuration, infrastructure logging, and release wording. Draft interfaces above are not evidence those later behaviours work.
+
+
+### E6 implementation notes
+
+The exact envelope above rejects unknown keys and requires all item IDs, using explicit unanswered values for optional blanks. Status `skipped` applies to whole tasks, not individual answers. T0 is completed only. Duration rounding occurs once in the browser; the server requires bounded integers. Streaming requests are bounded at 128 KiB and 15 seconds; missing or foreign Origin is 403, malformed/duplicate-key/non-finite JSON is 422, and a read timeout is 408. Success/error responses are no-store. Participant-content GET overlays server mode/submissionEnabled onto the unchanged E5 definition. The endpoint has no public GET/list/export counterpart. API version remains 1.0.0 with the additive study route; compiler-query paths remain GET-only.
+
+The [operations runbook](evaluation-operations.md) documents configuration, SQLite schema, canonicalisation, export codebook, backup/restore, and retention commands. [E6 verification](evaluation-captures/e6-submission.md) supersedes historical disabled-submission assertions; original E0 source/field/model checks are retained. Pilot/live are recognised but disabled in this synthetic revision.

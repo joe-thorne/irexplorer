@@ -1,10 +1,10 @@
 # ADR 0002 — Separate, final-only study collection
 
-**Status:** Proposed for E0 review, 7 September 2026. No collection code or database is enabled. Extends [ADR 0001](0001-fastapi-stateless-curated-api.md) only for the requested study boundary; compiler queries remain stateless.
+**Status:** Implemented for synthetic E6 review, 8 September 2026. Pilot/live collection remains disabled. Extends [ADR 0001](0001-fastapi-stateless-curated-api.md) only for the requested study boundary; compiler queries remain stateless.
 
 ## Context and decision
 
-The entire evaluation will run in the prototype. Survey/task responses are mutable research records; the immutable compiler model and its per-example query cache must never store them. Add a separate `src/backend/evaluation/` service/router in E6. Plain browser study modules own navigation, forms, drafts, and timing; workspace modules own only view/selection state. The shared, reviewed participant definition supplies rendering and server validation. Researcher notes, expected answers, stratification, and reverse-scoring metadata stay out of served assets and public APIs.
+The entire evaluation will run in the prototype. Survey/task responses are mutable research records; the immutable compiler model and its per-example query cache must never store them. E6 adds a separate `src/backend/evaluation/` service/router. Plain browser study modules own navigation, forms, drafts, and timing; workspace modules own only view/selection state. The shared, reviewed participant definition supplies rendering and server validation. Researcher notes, expected answers, stratification, and reverse-scoring metadata stay out of served assets and public APIs.
 
 After explicit consent, generate a cryptographically random participant code and keep a tab-scoped draft in `sessionStorage`. No answers or identifiers are created before consent. Refresh in the same tab is supported; closing the tab is not a supported recovery procedure. Browser session restoration can retain tab storage, so do not promise that closing always erases it. Provide an explicit Stop/discard action that removes the draft. When storage fails, explain the limitation and require explicit memory-only continuation. Do not send drafts on unload. Abandoned/incomplete sessions have no server response record; their exclusion is an analysis limitation.
 
@@ -25,3 +25,8 @@ The proposed participant wording and withdrawal-code policy are in the parent [E
 ## Consequences and alternatives
 
 Local drafts avoid collecting abandoned answers, but lose incomplete-session evidence and do not support cross-device recovery. SQLite fits a single host; multi-host collection would need a new storage decision. Continuous server autosave and an external survey platform were considered unnecessary for the authorised final-only workflow. Participant accounts, clickstream/keystrokes, audio/video/screen recording, and arbitrary source submission are outside scope. The mutable service is a bounded addition to the application, with no mutation of `QueryService`, `StateGraph`, or correspondence records.
+
+
+## E6 implementation record
+
+SQLite schema/canonicalisation version 1, exact request validation, final-only browser retry/receipt state, and researcher export/backup/restore/deletion are implemented. See [operations and release configuration](../evaluation-operations.md) and [verification](../evaluation-captures/e6-submission.md). The original participant definition and instruments remain unchanged; server configuration overlays collection mode/enabled status. E5 fractional durations round once at submission, to integer milliseconds within the proposed 24-hour bound. Preview is synthetic-only; recognised pilot/live modes cannot collect until the participant release is reviewed and versioned.

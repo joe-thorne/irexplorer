@@ -90,3 +90,7 @@ E5 layout amendment (8 Sep): task-route focus now uses an explicit independent s
 E5 C30 (8 Sep): labelled Graph zoom controls now expose true Fit width and explicit 50–150% scales. Fit can enlarge small graphs as well as shrink wide ones; numeric zoom choices retain larger-text inspection through bounded viewer scrolling. Seventeen browser checks include state/keyboard-selection persistence and 390 px fit. See [zoom amendment](evaluation-captures/e5-zoom-amendment.md).
 
 E5 C31: CFGs now use layered layout and horizontal edge labels. Directed paths are keyboard-focusable with endpoint/condition accessible labels; hover or focus isolates a route without altering block selection. Existing visible focus outlines and the textual edge list remain. Browser checks cover keyboard tracing and selection; spoken screen-reader assessment remains an E7 review item.
+
+## E6 submission and receipt, 8 September 2026
+
+Explicit Submit/Retry/Cleanup buttons and focused screen headings distinguish review, in-flight, uncertain, and acknowledged states. The 390px retry/receipt pages wrap random codes and contain no horizontal page overflow. Reset is disabled after an attempt; route guards prevent editing frozen answers. Four inspected captures and 43 browser assertions are recorded in [E6 evidence](evaluation-captures/e6-submission.md). Full physical-keyboard/spoken screen-reader and final accessibility remain E7; synthetic browser checks do not establish human completion time.

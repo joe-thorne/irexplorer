@@ -216,3 +216,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Study data must also be configured outside both repositories.
+*.sqlite3
+*.sqlite3-*
+research-data/
