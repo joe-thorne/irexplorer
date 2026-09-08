@@ -1,0 +1,51 @@
+{
+  "date": "2026-09-08T00:26:10.167Z",
+  "revision": "8a88cdcdbb86547fd5d396cf0e34bca9fccd6a37",
+  "sourceHashes": {
+    "index.html": "e7793954c1092aa2d2cfc98bfece6981641419fa88feb080592d61f230ec5ea0",
+    "style.css": "923c3251b7a851ca1a5dd43cb1dae302912615c529f20244adde0e3b85ccf5cb",
+    "app.js": "d90ce3b086b257e76f6f7d3fb959896619b8dce447decc164701e8f5512a6f5b",
+    "preview.js": "2592d7800f9d4bda5454f6381ba0b56773f71c24cd46b0327530a06645d69e40",
+    "study-draft.js": "9b1b6005426feb973e9c8a87925064d3ae0657b3332c9cc259d32827387e1a9e",
+    "source.js": "683b6781656227568414a96fdd94393a3c07e2c551314e91d85fefe3edfa7bf0",
+    "comparison.js": "ddf5e4e1c39ae5d35845fecf19e0a9b6887b17888bf87a4c9c5f5a82d3d2cd6a",
+    "task-clock.js": "59a401a9426d23eeeea527cc52f90c516b86421d23b8d9582a34a4726370adaa"
+  },
+  "baseline": true,
+  "scroll": {
+    "top": 0,
+    "heading": 276.59375,
+    "panel": 259.59375
+  },
+  "dimensions": [
+    {
+      "side": "left",
+      "viewerWidth": 504,
+      "graphWidth": 496,
+      "graphHeight": 1090,
+      "viewBox": "0 0 496 1090",
+      "nodes": 7,
+      "edges": 9
+    },
+    {
+      "side": "right",
+      "viewerWidth": 504,
+      "graphWidth": 622,
+      "graphHeight": 1240,
+      "viewBox": "0 0 622 1240",
+      "nodes": 8,
+      "edges": 11
+    }
+  ],
+  "count": 7,
+  "checks": [
+    "Focus: Pre-survey",
+    "T0 prompt ready with route focus",
+    "T1 prompt ready with route focus",
+    "Task panel is independently scrolled before continuing",
+    "T2 prompt ready with route focus",
+    "T3 prompt ready with route focus",
+    "T4 prompt ready with route focus"
+  ],
+  "runtimeExceptions": 0
+}

@@ -1,0 +1,16 @@
+test_application_serves_the_lean_browser_frontend (tests.test_api_query.FastApiTests.test_application_serves_the_lean_browser_frontend) ... ok
+test_errors_are_typed_and_controlled (tests.test_api_query.FastApiTests.test_errors_are_typed_and_controlled) ... ok
+test_openapi_documents_only_the_read_only_query_surface (tests.test_api_query.FastApiTests.test_openapi_documents_only_the_read_only_query_surface) ... ok
+test_prebaked_data_failure_is_logged_and_sanitised (tests.test_api_query.FastApiTests.test_prebaked_data_failure_is_logged_and_sanitised) ... ok
+test_preview_assets_bypass_legacy_cache_on_normal_and_conditional_reload (tests.test_api_query.FastApiTests.test_preview_assets_bypass_legacy_cache_on_normal_and_conditional_reload) ... ok
+test_stateless_routes_supply_the_two_panel_data (tests.test_api_query.FastApiTests.test_stateless_routes_supply_the_two_panel_data) ... ok
+test_concurrent_queries_cannot_replace_another_examples_data (tests.test_api_query.QueryServiceTests.test_concurrent_queries_cannot_replace_another_examples_data) ... ok
+test_invalid_queries_are_controlled (tests.test_api_query.QueryServiceTests.test_invalid_queries_are_controlled) ... ok
+test_largest_curated_function_remains_scoped_and_queryable (tests.test_api_query.QueryServiceTests.test_largest_curated_function_remains_scoped_and_queryable) ... ok
+test_prebaked_data_failures_are_not_reported_as_missing_queries (tests.test_api_query.QueryServiceTests.test_prebaked_data_failures_are_not_reported_as_missing_queries) ... ok
+test_queries_are_scoped_to_immutable_prebaked_examples (tests.test_api_query.QueryServiceTests.test_queries_are_scoped_to_immutable_prebaked_examples) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.384s
+
+OK

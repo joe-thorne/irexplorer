@@ -1,4 +1,4 @@
-"""Shared survey definition and validation, independent of compiler queries."""
+"""Shared participant definition and answer validation, independent of compiler queries."""
 import json
 from pathlib import Path
 
@@ -9,20 +9,20 @@ def participant_content():
     definition = json.loads(Path(__file__).with_name('participant-content.json').read_text())
     return {key: definition[key] for key in (
         'instrumentVersion', 'contentVersion', 'studyVersion', 'mode', 'submissionEnabled',
-        'scales', 'information', 'fields', 'preSections', 'postSections',
+        'scales', 'information', 'fields', 'preSections', 'postSections', 'tasks', 'taskIntroduction',
     )}
 
 
 def validate_answers(stage, answers, *, complete=False):
-    """Validate E4 raw survey values; E6 still owns the submission envelope.
+    """Validate E4/E5 raw survey and task values; E6 still owns the submission envelope.
 
     Return item errors without echoing answers. Missing optional items remain
     unanswered. In-progress drafts may omit P1; a completed pre-survey may not.
     """
     content = participant_content()
-    if stage not in ('pre', 'post') or not isinstance(answers, dict):
+    if stage not in ('pre', 'post', *[f'T{i}' for i in range(7)]) or not isinstance(answers, dict):
         return {'stage': 'Invalid survey.'}
-    fields = {f['id']: f for f in content['fields'] if f['id'].startswith('P' if stage == 'pre' else 'Q')}
+    fields = {f['id']: f for f in content['fields'] if f['id'].startswith('P' if stage == 'pre' else 'Q' if stage == 'post' else stage)}
     errors = {key: 'Unknown item.' for key in answers.keys() - fields.keys()}
     for key, field in fields.items():
         answer = answers.get(key, {'status': 'unanswered', 'value': None})
@@ -34,10 +34,10 @@ def validate_answers(stage, answers, *, complete=False):
             if complete and field['required']:
                 errors[key] = 'Choose an answer for P1.'
             continue
-        if status == 'not_applicable' and value is None and (field.get('notApplicableLabel') or field.get('optionStatuses')):
+        if value is None and ((status == 'not_applicable' and (field.get('notApplicableLabel') or status in field.get('optionStatuses', {}).values())) or (status == 'could_not_work_out' and (field.get('inabilityLabel') or status in field.get('optionStatuses', {}).values()))):
             continue
         valid = status == 'answered'
-        if field['type'] == 'text':
+        if field['type'] in ('text', 'short_text'):
             valid = valid and isinstance(value, str) and bool(value.strip()) and len(value) <= field['maxLength']
         else:
             options = field.get('options') or content['scales'][field['scale']]

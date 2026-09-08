@@ -1,0 +1,895 @@
+{
+  "capturedAt": "2026-09-08T09:44:31.522184+10:00",
+  "implementationRevision": "8a88cdcdbb86547fd5d396cf0e34bca9fccd6a37",
+  "content": {
+    "fields": 60,
+    "instrumentVersion": "v0.1",
+    "projectionVersion": "e0-draft-1",
+    "sourceSha256": {
+      "00-participant-information.md": "0f7a5666926a566405026ce3b9d91191a3a134d8de2ea8b1007ebb0703978f24",
+      "01-pre-survey.md": "c603512040c4932896335c6f0ba6aa48911b5a3bea158fdc81054f10ed139f32",
+      "02-task-runsheet.md": "fa324b7aa3d9f8489cfa68d4ccda0512956d13162b87b68bf3ef739b4ad2a807",
+      "03-post-survey.md": "18ec67844f41f711ae5346513ccd2508a1cd2b4ba15617742d626604e65ef807"
+    },
+    "participantProjectionSha256": "fdc4c09fc0f5d5c84f3909005db42510f1f4c21a48ab7eeb65702282f16ebf83"
+  },
+  "artefactSnapshot": "# SHA-256 over each generated file's repository-relative path and SHA-256.\n# Update only after deliberately regenerating the pinned Docker snapshot and\n# reviewing the resulting artefact changes.\nfiles=135\nsha256=5df7d29081f47cedc5514b971e96f62b4ccdc67af3ef126bfd968f0e6cfa2b7f",
+  "examples": {
+    "binary_search": {
+      "sourceFile": "examples/curated/binary_search.c",
+      "sourceMd5": "0b3f215bd3150ba37f1d3f81c36b6227",
+      "sourceSha256": "bcd2ce5ffa80d05052b986312b0c2395842abd04aa72127d128aced697ddb0de",
+      "states": [
+        {
+          "ordinal": 0,
+          "stateId": "O0",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "binary_search"
+            }
+          ],
+          "sourceMappings": 49
+        },
+        {
+          "ordinal": 1,
+          "stateId": "mem2reg",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "binary_search"
+            }
+          ],
+          "sourceMappings": 25
+        },
+        {
+          "ordinal": 2,
+          "stateId": "instcombine",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "binary_search"
+            }
+          ],
+          "sourceMappings": 25
+        },
+        {
+          "ordinal": 3,
+          "stateId": "simplifycfg",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "binary_search"
+            }
+          ],
+          "sourceMappings": 24
+        },
+        {
+          "ordinal": 4,
+          "stateId": "gvn",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "binary_search"
+            }
+          ],
+          "sourceMappings": 24
+        },
+        {
+          "ordinal": 5,
+          "stateId": "cleanup",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "binary_search"
+            }
+          ],
+          "sourceMappings": 24
+        },
+        {
+          "ordinal": 6,
+          "stateId": "loop_canonical",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "binary_search"
+            }
+          ],
+          "sourceMappings": 24
+        },
+        {
+          "ordinal": 7,
+          "stateId": "loop_rotate",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "binary_search"
+            }
+          ],
+          "sourceMappings": 25
+        },
+        {
+          "ordinal": 8,
+          "stateId": "licm",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "binary_search"
+            }
+          ],
+          "sourceMappings": 25
+        },
+        {
+          "ordinal": 9,
+          "stateId": "indvars",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "binary_search"
+            }
+          ],
+          "sourceMappings": 25
+        },
+        {
+          "ordinal": 10,
+          "stateId": "loop_cleanup",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "binary_search"
+            }
+          ],
+          "sourceMappings": 23
+        },
+        {
+          "ordinal": 11,
+          "stateId": "vectorize",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "binary_search"
+            }
+          ],
+          "sourceMappings": 26
+        },
+        {
+          "ordinal": 12,
+          "stateId": "final_cleanup",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "binary_search"
+            }
+          ],
+          "sourceMappings": 23
+        },
+        {
+          "ordinal": 13,
+          "stateId": "O3",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "binary_search"
+            }
+          ],
+          "sourceMappings": 23
+        }
+      ]
+    },
+    "quick_sort": {
+      "sourceFile": "examples/curated/quick_sort.c",
+      "sourceMd5": "5efe0dbb3421cb59fd9034792cd513b7",
+      "sourceSha256": "05cb23e616efefc4e73ff97d3e0445ac859bf15752c5de34776c77f2d85cb1b8",
+      "states": [
+        {
+          "ordinal": 0,
+          "stateId": "O0",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "quick_sort"
+            },
+            {
+              "id": "fn1",
+              "name": "partition"
+            }
+          ],
+          "sourceMappings": 103
+        },
+        {
+          "ordinal": 1,
+          "stateId": "mem2reg",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "quick_sort"
+            },
+            {
+              "id": "fn1",
+              "name": "partition"
+            }
+          ],
+          "sourceMappings": 54
+        },
+        {
+          "ordinal": 2,
+          "stateId": "instcombine",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "quick_sort"
+            },
+            {
+              "id": "fn1",
+              "name": "partition"
+            }
+          ],
+          "sourceMappings": 54
+        },
+        {
+          "ordinal": 3,
+          "stateId": "simplifycfg",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "quick_sort"
+            },
+            {
+              "id": "fn1",
+              "name": "partition"
+            }
+          ],
+          "sourceMappings": 53
+        },
+        {
+          "ordinal": 4,
+          "stateId": "gvn",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "quick_sort"
+            },
+            {
+              "id": "fn1",
+              "name": "partition"
+            }
+          ],
+          "sourceMappings": 39
+        },
+        {
+          "ordinal": 5,
+          "stateId": "cleanup",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "quick_sort"
+            },
+            {
+              "id": "fn1",
+              "name": "partition"
+            }
+          ],
+          "sourceMappings": 39
+        },
+        {
+          "ordinal": 6,
+          "stateId": "loop_canonical",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "quick_sort"
+            },
+            {
+              "id": "fn1",
+              "name": "partition"
+            }
+          ],
+          "sourceMappings": 39
+        },
+        {
+          "ordinal": 7,
+          "stateId": "loop_rotate",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "quick_sort"
+            },
+            {
+              "id": "fn1",
+              "name": "partition"
+            }
+          ],
+          "sourceMappings": 41
+        },
+        {
+          "ordinal": 8,
+          "stateId": "licm",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "quick_sort"
+            },
+            {
+              "id": "fn1",
+              "name": "partition"
+            }
+          ],
+          "sourceMappings": 41
+        },
+        {
+          "ordinal": 9,
+          "stateId": "indvars",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "quick_sort"
+            },
+            {
+              "id": "fn1",
+              "name": "partition"
+            }
+          ],
+          "sourceMappings": 42
+        },
+        {
+          "ordinal": 10,
+          "stateId": "loop_cleanup",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "quick_sort"
+            },
+            {
+              "id": "fn1",
+              "name": "partition"
+            }
+          ],
+          "sourceMappings": 41
+        },
+        {
+          "ordinal": 11,
+          "stateId": "vectorize",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "quick_sort"
+            },
+            {
+              "id": "fn1",
+              "name": "partition"
+            }
+          ],
+          "sourceMappings": 42
+        },
+        {
+          "ordinal": 12,
+          "stateId": "final_cleanup",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "quick_sort"
+            },
+            {
+              "id": "fn1",
+              "name": "partition"
+            }
+          ],
+          "sourceMappings": 41
+        },
+        {
+          "ordinal": 13,
+          "stateId": "O3",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "quick_sort"
+            }
+          ],
+          "sourceMappings": 62
+        }
+      ]
+    },
+    "score": {
+      "sourceFile": "examples/curated/score.c",
+      "sourceMd5": "5160dd22049a214b2c2adf12988e5154",
+      "sourceSha256": "24fdcae286a9ce18f90789fcc0e099cc38b5655751a151525df24c2a651d0563",
+      "states": [
+        {
+          "ordinal": 0,
+          "stateId": "O0",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "score"
+            }
+          ],
+          "sourceMappings": 32
+        },
+        {
+          "ordinal": 1,
+          "stateId": "mem2reg",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "score"
+            }
+          ],
+          "sourceMappings": 12
+        },
+        {
+          "ordinal": 2,
+          "stateId": "instcombine",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "score"
+            }
+          ],
+          "sourceMappings": 8
+        },
+        {
+          "ordinal": 3,
+          "stateId": "simplifycfg",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "score"
+            }
+          ],
+          "sourceMappings": 5
+        },
+        {
+          "ordinal": 4,
+          "stateId": "gvn",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "score"
+            }
+          ],
+          "sourceMappings": 5
+        },
+        {
+          "ordinal": 5,
+          "stateId": "cleanup",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "score"
+            }
+          ],
+          "sourceMappings": 4
+        },
+        {
+          "ordinal": 6,
+          "stateId": "loop_canonical",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "score"
+            }
+          ],
+          "sourceMappings": 4
+        },
+        {
+          "ordinal": 7,
+          "stateId": "loop_rotate",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "score"
+            }
+          ],
+          "sourceMappings": 4
+        },
+        {
+          "ordinal": 8,
+          "stateId": "licm",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "score"
+            }
+          ],
+          "sourceMappings": 4
+        },
+        {
+          "ordinal": 9,
+          "stateId": "indvars",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "score"
+            }
+          ],
+          "sourceMappings": 4
+        },
+        {
+          "ordinal": 10,
+          "stateId": "loop_cleanup",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "score"
+            }
+          ],
+          "sourceMappings": 4
+        },
+        {
+          "ordinal": 11,
+          "stateId": "vectorize",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "score"
+            }
+          ],
+          "sourceMappings": 4
+        },
+        {
+          "ordinal": 12,
+          "stateId": "final_cleanup",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "score"
+            }
+          ],
+          "sourceMappings": 4
+        },
+        {
+          "ordinal": 13,
+          "stateId": "O3",
+          "functions": [
+            {
+              "id": "fn0",
+              "name": "score"
+            }
+          ],
+          "sourceMappings": 4
+        }
+      ]
+    }
+  },
+  "T1": {
+    "0": {
+      "instructions": 41,
+      "blocks": 4,
+      "opcodes": [
+        "alloca",
+        "alloca",
+        "alloca",
+        "alloca",
+        "alloca",
+        "alloca",
+        "alloca",
+        "store",
+        "store",
+        "load",
+        "mul",
+        "store",
+        "load",
+        "load",
+        "mul",
+        "load",
+        "load",
+        "mul",
+        "sub",
+        "store",
+        "load",
+        "sub",
+        "store",
+        "load",
+        "load",
+        "mul",
+        "store",
+        "load",
+        "load",
+        "icmp",
+        "br",
+        "load",
+        "store",
+        "br",
+        "load",
+        "load",
+        "add",
+        "store",
+        "br",
+        "load",
+        "ret"
+      ]
+    },
+    "12": {
+      "instructions": 5,
+      "blocks": 1,
+      "opcodes": [
+        "shl",
+        "add",
+        "mul",
+        "call",
+        "ret"
+      ]
+    }
+  },
+  "T2": {
+    "sourceLine": 3,
+    "lineEvidence": {
+      "0": [
+        {
+          "id": "fn0/bb0/i12",
+          "text": "%1 = load i32, ptr %scale.addr, align 4, !dbg !26"
+        },
+        {
+          "id": "fn0/bb0/i13",
+          "text": "%2 = load i32, ptr %scale.addr, align 4, !dbg !27"
+        },
+        {
+          "id": "fn0/bb0/i14",
+          "text": "%mul1 = mul nsw i32 %1, %2, !dbg !28"
+        },
+        {
+          "id": "fn0/bb0/i15",
+          "text": "%3 = load i32, ptr %scale.addr, align 4, !dbg !29"
+        },
+        {
+          "id": "fn0/bb0/i16",
+          "text": "%4 = load i32, ptr %scale.addr, align 4, !dbg !30"
+        },
+        {
+          "id": "fn0/bb0/i17",
+          "text": "%mul2 = mul nsw i32 %3, %4, !dbg !31"
+        },
+        {
+          "id": "fn0/bb0/i18",
+          "text": "%sub = sub nsw i32 %mul1, %mul2, !dbg !32"
+        },
+        {
+          "id": "fn0/bb0/i19",
+          "text": "store i32 %sub, ptr %wasted, align 4, !dbg !25"
+        }
+      ],
+      "1": [
+        {
+          "id": "fn0/bb0/i1",
+          "text": "%mul1 = mul nsw i32 %scale, %scale, !dbg !21"
+        },
+        {
+          "id": "fn0/bb0/i2",
+          "text": "%mul2 = mul nsw i32 %scale, %scale, !dbg !22"
+        },
+        {
+          "id": "fn0/bb0/i3",
+          "text": "%sub = sub nsw i32 %mul1, %mul2, !dbg !23"
+        }
+      ],
+      "2": [],
+      "12": []
+    },
+    "firstAbsentOrdinal": 2,
+    "stateId": "instcombine"
+  },
+  "T3": {
+    "ordinal": 3,
+    "stateId": "simplifycfg",
+    "instructionId": "fn0/bb1/i2",
+    "text": "%cmp = icmp slt i32 %lo.0, %hi.0, !dbg !27",
+    "blockId": "fn0/bb1",
+    "blockLabel": "while.cond",
+    "outgoing": [
+      {
+        "label": "true",
+        "block": "while.body"
+      },
+      {
+        "label": "false",
+        "block": "while.end"
+      }
+    ]
+  },
+  "T4": {
+    "before": {
+      "ordinal": 6,
+      "functionId": "fn0",
+      "blocks": [
+        {
+          "id": "fn0/bb0",
+          "label": "entry"
+        },
+        {
+          "id": "fn0/bb1",
+          "label": "while.cond"
+        },
+        {
+          "id": "fn0/bb2",
+          "label": "while.body"
+        },
+        {
+          "id": "fn0/bb3",
+          "label": "while.end"
+        },
+        {
+          "id": "fn0/bb4",
+          "label": "land.lhs.true"
+        },
+        {
+          "id": "fn0/bb5",
+          "label": "if.end8"
+        },
+        {
+          "id": "fn0/bb6",
+          "label": "return"
+        }
+      ],
+      "edges": [
+        {
+          "fromId": "fn0/bb0",
+          "toId": "fn0/bb1",
+          "label": "unconditional"
+        },
+        {
+          "fromId": "fn0/bb1",
+          "toId": "fn0/bb2",
+          "label": "true"
+        },
+        {
+          "fromId": "fn0/bb1",
+          "toId": "fn0/bb3",
+          "label": "false"
+        },
+        {
+          "fromId": "fn0/bb2",
+          "toId": "fn0/bb1",
+          "label": "unconditional"
+        },
+        {
+          "fromId": "fn0/bb3",
+          "toId": "fn0/bb4",
+          "label": "true"
+        },
+        {
+          "fromId": "fn0/bb3",
+          "toId": "fn0/bb5",
+          "label": "false"
+        },
+        {
+          "fromId": "fn0/bb4",
+          "toId": "fn0/bb6",
+          "label": "true"
+        },
+        {
+          "fromId": "fn0/bb4",
+          "toId": "fn0/bb5",
+          "label": "false"
+        },
+        {
+          "fromId": "fn0/bb5",
+          "toId": "fn0/bb6",
+          "label": "unconditional"
+        }
+      ]
+    },
+    "after": {
+      "ordinal": 7,
+      "functionId": "fn0",
+      "blocks": [
+        {
+          "id": "fn0/bb0",
+          "label": "entry"
+        },
+        {
+          "id": "fn0/bb1",
+          "label": "while.body.lr.ph"
+        },
+        {
+          "id": "fn0/bb2",
+          "label": "while.body"
+        },
+        {
+          "id": "fn0/bb3",
+          "label": "while.cond.while.end_crit_edge"
+        },
+        {
+          "id": "fn0/bb4",
+          "label": "while.end"
+        },
+        {
+          "id": "fn0/bb5",
+          "label": "land.lhs.true"
+        },
+        {
+          "id": "fn0/bb6",
+          "label": "if.end8"
+        },
+        {
+          "id": "fn0/bb7",
+          "label": "return"
+        }
+      ],
+      "edges": [
+        {
+          "fromId": "fn0/bb0",
+          "toId": "fn0/bb1",
+          "label": "true"
+        },
+        {
+          "fromId": "fn0/bb0",
+          "toId": "fn0/bb4",
+          "label": "false"
+        },
+        {
+          "fromId": "fn0/bb1",
+          "toId": "fn0/bb2",
+          "label": "unconditional"
+        },
+        {
+          "fromId": "fn0/bb2",
+          "toId": "fn0/bb2",
+          "label": "true"
+        },
+        {
+          "fromId": "fn0/bb2",
+          "toId": "fn0/bb3",
+          "label": "false"
+        },
+        {
+          "fromId": "fn0/bb3",
+          "toId": "fn0/bb4",
+          "label": "unconditional"
+        },
+        {
+          "fromId": "fn0/bb4",
+          "toId": "fn0/bb5",
+          "label": "true"
+        },
+        {
+          "fromId": "fn0/bb4",
+          "toId": "fn0/bb6",
+          "label": "false"
+        },
+        {
+          "fromId": "fn0/bb5",
+          "toId": "fn0/bb7",
+          "label": "true"
+        },
+        {
+          "fromId": "fn0/bb5",
+          "toId": "fn0/bb6",
+          "label": "false"
+        },
+        {
+          "fromId": "fn0/bb6",
+          "toId": "fn0/bb7",
+          "label": "unconditional"
+        }
+      ]
+    }
+  },
+  "T5": {
+    "example": "quick_sort",
+    "function": "quick_sort",
+    "fromOrdinal": 0,
+    "toOrdinal": 9,
+    "mapping": {
+      "ordinal": 0,
+      "nodeId": "fn0/bb0/i9",
+      "counterpartOrdinal": 9,
+      "relation": "changed",
+      "confidence": "approximate",
+      "evidence": "composed path: changed (approximate; composed path: changed (approximate; composed path: changed (approximate; composed path: changed (approximate; composed path: changed (approximate; composed path: changed (approximate; composed path: changed (approximate; composed path: renamed (approximate; unique debug source location and opcode) \u2192 same (exact; unique structural, source, and value-flow signature)) \u2192 same (exact; unique structural, source, and value-flow signature)) \u2192 same (exact; unique structural, source, and value-flow signature)) \u2192 same (exact; unique structural, source, and value-flow signature)) \u2192 same (exact; unique structural, source, and value-flow signature)) \u2192 same (exact; unique structural, source, and value-flow signature)) \u2192 same (exact; unique structural, source, and value-flow signature)) \u2192 same (exact; unique structural, source, and value-flow signature)",
+      "counterparts": [
+        {
+          "id": "fn0/bb0/i0",
+          "kind": "Instruction",
+          "displayName": "%cmp"
+        }
+      ]
+    }
+  },
+  "checks": [
+    "60 source-backed participant fields; no researcher properties in projection",
+    "42 states/commands/source debug checksums/functions resolve",
+    "Pinned aggregate and invariant validation passed",
+    "T1\u2013T5 evidence assertions passed",
+    "Researcher files not served; study submission remains disabled"
+  ]
+}

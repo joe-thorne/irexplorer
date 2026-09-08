@@ -75,3 +75,18 @@ Consent uses six initially unchecked native labelled checkboxes. Each survey que
 Recovery/failed-save notices appear at the top of each study screen; memory-only continuation is explicit. Errors do not claim successful persistence or deletion. The route heading and progress remain labelled, with an independently usable direct workspace.
 
 [E4 evidence](evaluation-captures/e4-forms.md): 78 browser assertions pass, including Chrome's accessibility-tree question/option names, native Space/arrow/Enter operation, labels/legends/notes/errors, and no page-wide overflow at 390px. Seven captures were visually inspected. Narrow scale choices stack with full labels. This verifies browser semantics, not spoken screen-reader output; physical keyboard/spoken screen-reader, zoom/media/contrast and the complete final journey remain E7 checks. E4 is ready for Joe's form/recovery review; E0–E3 paragraphs above preserve historical states.
+
+
+## E5 tasks and timing, 8 September 2026
+
+The full task area uses original question legends, native labelled choices/textareas, inline bound errors, and explicit read-only completed responses. Focus links move between goal, workspace, and response disclosure without replacing the task route; narrow instructions and answers expand independently. A compact saved-draft notice avoids repeating a large warning block during tasks, and saved outcomes use human-readable labels. Pause/Resume excludes explicit pauses and hidden-tab time without a countdown or forced task completion.
+
+[E5 evidence](evaluation-captures/e5-tasks.md) records 89 browser assertions and eight visually inspected captures, including native Enter navigation, accessible question-group names, 390px overflow, response-disclosure focus, and failure/recovery cases. These are browser semantics and controlled timing checks, not spoken screen-reader or human timing validation. Joe's task-area/physical-keyboard rehearsal is the E5 review point; final accessibility/zoom/media/contrast and S1.8 remain E7.
+
+
+E5 layout amendment (8 Sep): task-route focus now uses an explicit independent sidebar/page scroll reset, so the heading does not depend on implicit focus scrolling. Labelled per-pane Graph size controls offer Fit width and Actual size; native Enter selection remains functional after scaling. The [amendment evidence](evaluation-captures/e5-layout-amendment.md) includes 75 browser assertions and four inspected captures at desktop and 390 px. Very narrow fitted graphs can use Actual size for larger text. Joe's retest and the existing E7 accessibility gates remain open.
+
+
+E5 C30 (8 Sep): labelled Graph zoom controls now expose true Fit width and explicit 50–150% scales. Fit can enlarge small graphs as well as shrink wide ones; numeric zoom choices retain larger-text inspection through bounded viewer scrolling. Seventeen browser checks include state/keyboard-selection persistence and 390 px fit. See [zoom amendment](evaluation-captures/e5-zoom-amendment.md).
+
+E5 C31: CFGs now use layered layout and horizontal edge labels. Directed paths are keyboard-focusable with endpoint/condition accessible labels; hover or focus isolates a route without altering block selection. Existing visible focus outlines and the textual edge list remain. Browser checks cover keyboard tracing and selection; spoken screen-reader assessment remains an E7 review item.

@@ -1,0 +1,25 @@
+{
+  "checks": [
+    "Consent is mandatory before identifiers/draft creation",
+    "Missing P1 blocks completion; other pre/post items optional",
+    "Unanswered and not applicable stay distinct from neutral",
+    "Mutually exclusive and conditional values rejected when inconsistent",
+    "Unicode limit counts code points; oversized draft can recover without truncation",
+    "Bad versions, consent, types, progress and unknown fields cannot unlock routes",
+    "Reading empty storage creates no data",
+    "Draft recovery preserves identifier and answer/lock state",
+    "Incomplete background correction preserves a previously locked P13",
+    "Quota failure removes old snapshot and requires explicit memory continuation",
+    "Discard failure cannot claim that saved data was removed",
+    "Damaged/older draft requires explicit discard",
+    "Fixed task inventory: T0 has no fields; T5/T6 have no invented confidence",
+    "Task inability and not-applicable preserve null independently from numeric answers",
+    "Skipped/inability tasks retain partial responses and optional missing confidence",
+    "Corrupt timing, unknown outcomes, skipped T0 and out-of-order progress fail closed",
+    "Task Unicode bounds retain oversized drafts; completion validates without truncation",
+    "Timing starts only on resume, checkpoints accumulate once, repeated resume cannot double count",
+    "Hide/pause and refresh downtime excluded; recovered accumulation counted once",
+    "Completion freezes time and cannot acquire an interruption on read-only navigation"
+  ],
+  "count": 20
+}

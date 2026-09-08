@@ -15,11 +15,11 @@ class EvaluationContentTests(unittest.TestCase):
             self.assertEqual(content, participant_content())
             self.assertEqual(content['mode'], 'preview')
             self.assertFalse(content['submissionEnabled'])
-            self.assertEqual(len(content['fields']), 42)
-            allowed = {'id', 'prompt', 'type', 'required', 'options', 'scale', 'notApplicableLabel', 'maxLength', 'exclusiveValue', 'optionStatuses', 'condition'}
+            self.assertEqual(len(content['fields']), 60)
+            allowed = {'id', 'prompt', 'type', 'required', 'options', 'scale', 'notApplicableLabel', 'maxLength', 'exclusiveValue', 'optionStatuses', 'condition', 'inabilityLabel'}
             for field in content['fields']:
                 self.assertLessEqual(set(field), allowed)
-            for forbidden in ['(R)', '[confirm', 'stratification', 'reverse-scored', 'marking key', 'expected answer', 'T2a']:
+            for forbidden in ['(R)', '[confirm', 'stratification', 'reverse-scored', 'marking key', 'expected answer']:
                 self.assertNotIn(forbidden, response.text)
             for path in ['/participant-content.json', '/src/backend/evaluation/participant-content.json', '/docs/evaluation-captures/e0-task-evidence.json']:
                 self.assertEqual(client.get(path).status_code, 404)
@@ -55,3 +55,45 @@ class EvaluationContentTests(unittest.TestCase):
         self.assertIn('researcherScore', validate_answers('post', {'researcherScore': a(5)}))
         self.assertIn('Q14', validate_answers('post', {'Q14': {'status': 'answered', 'value': 'x', 'extra': True}}))
         self.assertEqual(validate_answers('post', {'Q14': a('  <script>\n=SUM(A1)  ')}), {})
+
+    def test_task_inventory_setups_and_original_response_structure(self):
+        content = participant_content()
+        self.assertEqual([t['id'] for t in content['tasks']], [f'T{i}' for i in range(7)])
+        tasks = {t['id']: t for t in content['tasks']}
+        self.assertEqual(tasks['T0']['fields'], [])
+        self.assertEqual(tasks['T1']['fields'], ['T1a', 'T1b'])
+        self.assertEqual(tasks['T5']['fields'], ['T5a', 'T5b', 'T5c'])
+        self.assertEqual(tasks['T6']['fields'], ['T6a', 'T6b', 'T6c'])
+        self.assertEqual(tasks['T6']['setup'], {})
+        self.assertEqual(tasks['T1']['setup']['right']['ordinal'], 12)
+        self.assertEqual(tasks['T2']['setup']['left']['ordinal'], 0)
+        self.assertEqual(tasks['T2']['setup']['right']['ordinal'], 0)
+        self.assertEqual(tasks['T3']['setup']['left'], {'ordinal': 3, 'view': 'ir'})
+        self.assertEqual(tasks['T3']['setup']['right'], {'ordinal': 3, 'view': 'cfg'})
+        self.assertEqual(tasks['T4']['setup']['left'], {'ordinal': 6, 'view': 'cfg'})
+        self.assertEqual(tasks['T4']['setup']['right'], {'ordinal': 7, 'view': 'cfg'})
+        self.assertEqual(tasks['T5']['setup']['right']['ordinal'], 9)
+        self.assertEqual([f['id'] for f in content['fields'] if f.get('scale') == 'confidence'], ['T1b', 'T2c', 'T3c', 'T4d'])
+        for task in tasks.values():
+            self.assertEqual(set(task), {'id', 'title', 'goal', 'instructions', 'fields', 'setup'})
+            self.assertTrue(task['goal'])
+            self.assertTrue(task['instructions'])
+            self.assertLessEqual(set(task['setup']), {'example', 'left', 'right'})
+            for side in ('left', 'right'):
+                if side in task['setup']:
+                    self.assertEqual(set(task['setup'][side]), {'ordinal', 'view'})
+
+    def test_task_partial_answers_inability_and_not_applicable(self):
+        a = lambda value: {'status': 'answered', 'value': value}
+        for stage in [f'T{i}' for i in range(7)]:
+            self.assertEqual(validate_answers(stage, {}, complete=True), {})
+        for task, field, status in [('T2', 'T2a', 'could_not_work_out'), ('T3', 'T3a', 'could_not_work_out'), ('T4', 'T4a', 'could_not_work_out'), ('T4', 'T4c', 'not_applicable')]:
+            self.assertEqual(validate_answers(task, {field: {'status': status, 'value': None}}), {})
+        for task, field, answer in [('T2', 'T2a', a(11)), ('T2', 'T2a', {'status': 'not_applicable', 'value': None}), ('T4', 'T4d', a(True)), ('T5', 'T5a', a(4)), ('T6', 'T6a', {'status': 'could_not_work_out', 'value': None})]:
+            self.assertIn(field, validate_answers(task, {field: answer}))
+        self.assertIn('T1a', validate_answers('T0', {'T1a': a('No orientation answers')}))
+        self.assertIn('T5confidence', validate_answers('T5', {'T5confidence': a(5)}))
+        self.assertEqual(validate_answers('T6', {'T6a': a('Synthetic\n<script>\n=SUM(A1)')}), {})
+        self.assertEqual(validate_answers('T3', {'T3a': a('🙂' * 256)}), {})
+        self.assertIn('T3a', validate_answers('T3', {'T3a': a('🙂' * 257)}))
+        self.assertIn('T6a', validate_answers('T6', {'T6a': a('x' * 4001)}))

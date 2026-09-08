@@ -1,7 +1,7 @@
 {
   "instrumentVersion": "v0.1",
-  "contentVersion": "e4-preview-1",
-  "studyVersion": "e4-synthetic-1",
+  "contentVersion": "e5-preview-1",
+  "studyVersion": "e5-synthetic-1",
   "mode": "preview",
   "submissionEnabled": false,
   "scales": {
@@ -47,6 +47,28 @@
       {
         "value": 5,
         "label": "Strongly agree"
+      }
+    ],
+    "confidence": [
+      {
+        "value": 1,
+        "label": "Not at all"
+      },
+      {
+        "value": 2,
+        "label": "Slightly"
+      },
+      {
+        "value": 3,
+        "label": "Moderately"
+      },
+      {
+        "value": 4,
+        "label": "Very"
+      },
+      {
+        "value": 5,
+        "label": "Completely"
       }
     ],
     "likelihood": [
@@ -671,6 +693,213 @@
           "label": "About the same across them"
         }
       ]
+    },
+    {
+      "id": "T1a",
+      "prompt": "Name two things that are different between the two sides. Describe them however makes sense to you — you do not need to use compiler terminology.",
+      "type": "text",
+      "required": false,
+      "maxLength": 4000
+    },
+    {
+      "id": "T1b",
+      "prompt": "How confident are you that those two things are really differences?",
+      "type": "rating",
+      "required": false,
+      "scale": "confidence"
+    },
+    {
+      "id": "T2a",
+      "prompt": "After which pass is the computation gone?",
+      "type": "single",
+      "required": false,
+      "options": [
+        {
+          "value": 1,
+          "label": "mem2reg"
+        },
+        {
+          "value": 2,
+          "label": "instcombine"
+        },
+        {
+          "value": 3,
+          "label": "simplifycfg"
+        },
+        {
+          "value": 4,
+          "label": "gvn"
+        },
+        {
+          "value": 5,
+          "label": "loop-simplify / lcssa"
+        },
+        {
+          "value": 6,
+          "label": "loop-rotate"
+        },
+        {
+          "value": 7,
+          "label": "licm"
+        },
+        {
+          "value": 8,
+          "label": "indvars"
+        },
+        {
+          "value": 9,
+          "label": "loop-vectorize"
+        },
+        {
+          "value": 10,
+          "label": "It was already gone in the unoptimised version"
+        },
+        {
+          "value": 11,
+          "label": "I could not work this out"
+        }
+      ],
+      "optionStatuses": {
+        "11": "could_not_work_out"
+      }
+    },
+    {
+      "id": "T2b",
+      "prompt": "What did the tool show you that led you to that answer?",
+      "type": "text",
+      "required": false,
+      "maxLength": 4000
+    },
+    {
+      "id": "T2c",
+      "prompt": "How confident are you?",
+      "type": "rating",
+      "required": false,
+      "scale": "confidence"
+    },
+    {
+      "id": "T3a",
+      "prompt": "Which block of the control-flow graph does that comparison sit in? Give the block's label as the tool shows it.",
+      "type": "short_text",
+      "required": false,
+      "maxLength": 256,
+      "inabilityLabel": "I could not work this out"
+    },
+    {
+      "id": "T3b",
+      "prompt": "How many arrows leave that block, and where does each one go?",
+      "type": "text",
+      "required": false,
+      "maxLength": 4000
+    },
+    {
+      "id": "T3c",
+      "prompt": "How confident are you?",
+      "type": "rating",
+      "required": false,
+      "scale": "confidence"
+    },
+    {
+      "id": "T4a",
+      "prompt": "Describe what happened to the shape of the graph.",
+      "type": "text",
+      "required": false,
+      "maxLength": 4000,
+      "inabilityLabel": "I could not work this out"
+    },
+    {
+      "id": "T4b",
+      "prompt": "In plain terms, what do you think that change achieves? There is no penalty for guessing wrong here — the question is what the view suggested to you.",
+      "type": "text",
+      "required": false,
+      "maxLength": 4000
+    },
+    {
+      "id": "T4c",
+      "prompt": "Would you have spotted this change from the textual view alone?",
+      "type": "rating",
+      "required": false,
+      "scale": "likelihood",
+      "notApplicableLabel": "I did not look at the textual view"
+    },
+    {
+      "id": "T4d",
+      "prompt": "How confident are you in your answer to T4a?",
+      "type": "rating",
+      "required": false,
+      "scale": "confidence"
+    },
+    {
+      "id": "T5a",
+      "prompt": "Did you find one?",
+      "type": "single",
+      "required": false,
+      "options": [
+        {
+          "value": 1,
+          "label": "Yes"
+        },
+        {
+          "value": 2,
+          "label": "No"
+        },
+        {
+          "value": 3,
+          "label": "I am not sure"
+        }
+      ]
+    },
+    {
+      "id": "T5b",
+      "prompt": "If yes, what did the tool tell you, and what did you take it to mean?",
+      "type": "text",
+      "required": false,
+      "maxLength": 4000
+    },
+    {
+      "id": "T5c",
+      "prompt": "Did seeing that make you trust the rest of what the tool showed you more, less, or neither?",
+      "type": "single",
+      "required": false,
+      "options": [
+        {
+          "value": 1,
+          "label": "More"
+        },
+        {
+          "value": 2,
+          "label": "Less"
+        },
+        {
+          "value": 3,
+          "label": "Neither"
+        },
+        {
+          "value": 4,
+          "label": "Not sure"
+        }
+      ]
+    },
+    {
+      "id": "T6a",
+      "prompt": "What did you look at?",
+      "type": "text",
+      "required": false,
+      "maxLength": 4000
+    },
+    {
+      "id": "T6b",
+      "prompt": "Did anything surprise you about what the compiler did?",
+      "type": "text",
+      "required": false,
+      "maxLength": 4000
+    },
+    {
+      "id": "T6c",
+      "prompt": "Was there anything you wanted to do that the tool would not let you do?",
+      "type": "text",
+      "required": false,
+      "maxLength": 4000
     }
   ],
   "preSections": [
@@ -775,6 +1004,153 @@
         "Q19",
         "Q20"
       ]
+    }
+  ],
+  "taskIntroduction": [
+    "You will be working with three small C programs that are already loaded into the tool. You do not need to write any code, and you do not need to compile anything yourself — that has been done for you.",
+    "Each program has fourteen recorded states: an unoptimised baseline, twelve successive states produced by running the teaching passes on the preceding output, and a separately compiled -O3 state for comparison.",
+    "If a task defeats you, say so and move on. Six tasks in twenty minutes is a deliberately brisk pace and nobody is expected to finish all of them cleanly."
+  ],
+  "tasks": [
+    {
+      "id": "T0",
+      "title": "Orientation",
+      "goal": "get your bearings before anything is asked of you.",
+      "instructions": "Open the example called score. Set the left pane to the unoptimised state and the right pane to the state after the first pass, mem2reg. Then:\n\n- Scroll both panes.\n- Switch the right pane from the IR view to the control-flow graph and back.\n- Click on a line in the IR and see what happens in the other pane.\n\nThere is nothing to submit. Move on when the layout makes sense to you.",
+      "fields": [],
+      "setup": {
+        "example": "score",
+        "left": {
+          "ordinal": 0,
+          "view": "ir"
+        },
+        "right": {
+          "ordinal": 1,
+          "view": "ir"
+        }
+      }
+    },
+    {
+      "id": "T1",
+      "title": "What changed?",
+      "goal": "work out what the optimiser did to a program overall, before worrying about how it did it.",
+      "instructions": "Staying with score, set the left pane to the unoptimised state and the right pane to the final state at the end of the pass chain. Both panes on the IR view.",
+      "fields": [
+        "T1a",
+        "T1b"
+      ],
+      "setup": {
+        "example": "score",
+        "left": {
+          "ordinal": 0,
+          "view": "ir"
+        },
+        "right": {
+          "ordinal": 12,
+          "view": "ir"
+        }
+      }
+    },
+    {
+      "id": "T2",
+      "title": "Which pass did it?",
+      "goal": "trace a specific change back to the pass responsible for it.",
+      "instructions": "The score program contains this line:\n\nint wasted = scale * scale - scale * scale;\n\n\nWhatever scale is, that value is always zero, and by the end of the pass chain the computation is gone entirely.\n\nStep through the states from the beginning and find the point where it disappears.",
+      "fields": [
+        "T2a",
+        "T2b",
+        "T2c"
+      ],
+      "setup": {
+        "example": "score",
+        "left": {
+          "ordinal": 0,
+          "view": "ir"
+        },
+        "right": {
+          "ordinal": 0,
+          "view": "ir"
+        }
+      }
+    },
+    {
+      "id": "T3",
+      "title": "Following a line into the graph",
+      "goal": "move between the two representations of the same program.",
+      "instructions": "Open binary_search. Put the IR view in the left pane and the control-flow graph in the right pane, both showing the state after simplifycfg (the third pass).\n\nFind the comparison that decides whether the loop keeps running — the lo < hi test — and select it in the IR.",
+      "fields": [
+        "T3a",
+        "T3b",
+        "T3c"
+      ],
+      "setup": {
+        "example": "binary_search",
+        "left": {
+          "ordinal": 3,
+          "view": "ir"
+        },
+        "right": {
+          "ordinal": 3,
+          "view": "cfg"
+        }
+      }
+    },
+    {
+      "id": "T4",
+      "title": "A change in the shape of the program",
+      "goal": "notice a structural change, not just a textual one.",
+      "instructions": "Still on binary_search, put the control-flow graph in both panes. Set the left pane to the state after loop-simplify / lcssa and the right pane to the state after loop-rotate.",
+      "fields": [
+        "T4a",
+        "T4b",
+        "T4c",
+        "T4d"
+      ],
+      "setup": {
+        "example": "binary_search",
+        "left": {
+          "ordinal": 6,
+          "view": "cfg"
+        },
+        "right": {
+          "ordinal": 7,
+          "view": "cfg"
+        }
+      }
+    },
+    {
+      "id": "T5",
+      "title": "When the tool is not sure",
+      "goal": "see whether the tool tells you what it does not know.",
+      "instructions": "Open quick_sort — the largest of the three examples, with two functions and a recursive call. Compare any two states that are not next to each other in the sequence, for example the unoptimised state against the state after indvars.\n\nLook for a place where the tool indicates that it cannot link something across the two states with certainty, or that a correspondence is only partial.",
+      "fields": [
+        "T5a",
+        "T5b",
+        "T5c"
+      ],
+      "setup": {
+        "example": "quick_sort",
+        "left": {
+          "ordinal": 0,
+          "view": "ir"
+        },
+        "right": {
+          "ordinal": 9,
+          "view": "ir"
+        }
+      }
+    },
+    {
+      "id": "T6",
+      "title": "Open exploration",
+      "goal": "use the tool for whatever you actually find interesting.",
+      "instructions": "Five minutes, any example, any pair of states, any view. Nothing is being checked.",
+      "fields": [
+        "T6a",
+        "T6b",
+        "T6c"
+      ],
+      "setup": {}
     }
   ]
 }

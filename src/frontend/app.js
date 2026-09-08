@@ -107,9 +107,10 @@ async function loadExamples() {
   }
 }
 
-async function loadExample() {
+async function loadExample(setup = null) {
   const exampleId = elements.exampleSelect.value;
   if (!exampleId) return;
+  const retainedFunction = setup?.example && appState.exampleId === exampleId ? appState.functionName : null;
   const loadId = ++appState.loadId;
   ++appState.refreshId;
   appState.ready = false;
@@ -130,19 +131,26 @@ async function loadExample() {
     sourceState.data = source;
     renderSource();
     appState.exampleId = exampleId;
-    appState.functionName = null;
+    appState.functionName = retainedFunction;
     appState.panels.left.ordinal = 0;
     appState.panels.left.viewType = "ir";
     appState.panels.right.ordinal = Math.min(1, appState.states.length - 1);
     appState.panels.right.viewType = "ir";
+    for (const side of ["left", "right"]) {
+      if (setup?.[side]) {
+        appState.panels[side].ordinal = setup[side].ordinal;
+        appState.panels[side].viewType = setup[side].view;
+      }
+    }
     renderStateOptions();
-    elements.left.view.value = "ir";
-    elements.right.view.value = "ir";
+    elements.left.view.value = appState.panels.left.viewType;
+    elements.right.view.value = appState.panels.right.viewType;
     await refreshWorkspace();
     if (loadId !== appState.loadId || !appState.ready) return;
     elements.emptyState.hidden = true;
     elements.workspace.hidden = false;
     announce(`${exampleId} is ready. Configure either panel, then select an artefact to follow its recorded link.`);
+    document.dispatchEvent(new Event("workspace-ready"));
   } catch (error) {
     if (loadId !== appState.loadId) return;
     document.querySelector("#source-status").textContent = `Source unavailable: ${error.message} Choose a file to retry.`;
@@ -363,17 +371,18 @@ function renderCfg(side) {
     return;
   }
   description.textContent = `${panel.ir.stateId} · ${panel.function.name} · ${cfg.blocks.length} basic blocks · ${cfg.edges.length} edges`;
-  const nodeWidth = Math.max(160, ...cfg.blocks.map(block => block.label.length * 7 + 28));
-  const nodeHeight = 48;
-  const blockOrder = new Map(cfg.blocks.map((block, index) => [block.id, index]));
-  const forward = cfg.edges.filter(edge => blockOrder.get(edge.toId) > blockOrder.get(edge.fromId));
-  const backward = cfg.edges.filter(edge => blockOrder.get(edge.toId) <= blockOrder.get(edge.fromId));
-  const nodeX = 35 + forward.length * 24;
-  const width = nodeX + nodeWidth + 85 + backward.length * 24;
-  const height = cfg.blocks.length * 150 + 40;
-  const positions = new Map(cfg.blocks.map((block, index) => [block.id, {
-    x: nodeX, y: 35 + index * 150,
-  }]));
+  // Layout depends on topology, never on pane width. Zoom scales the finished drawing.
+  const graph = new dagre.graphlib.Graph({ multigraph: true });
+  graph.setGraph({ rankdir: "TB", nodesep: 36, edgesep: 18, ranksep: 32, marginx: 24, marginy: 24 });
+  cfg.blocks.forEach(block => graph.setNode(block.id, { width: Math.max(100, block.label.length * 7.3 + 28), height: 48 }));
+  cfg.edges.forEach((edge, index) => graph.setEdge(edge.fromId, edge.toId,
+    { width: (edge.label || "").length * 6.5, height: edge.label ? 16 : 0, labelpos: "c" }, String(index)));
+  dagre.layout(graph);
+  const { width, height } = graph.graph();
+  const positions = new Map(cfg.blocks.map(block => {
+    const node = graph.node(block.id);
+    return [block.id, { ...node, x: node.x - node.width / 2, y: node.y - node.height / 2 }];
+  }));
   const namespace = "http://www.w3.org/2000/svg";
   const svg = document.createElementNS(namespace, "svg");
   const markerId = `arrow-${side}`;
@@ -382,39 +391,54 @@ function renderCfg(side) {
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   svg.setAttribute("role", "group");
   svg.setAttribute("aria-label", `Control-flow graph for ${panel.function.name} in ${panel.ir.stateId}`);
+  const sizeLabel = document.createElement("label");
+  sizeLabel.className = "cfg-size";
+  sizeLabel.htmlFor = `${side}-cfg-size`;
+  sizeLabel.textContent = "Graph zoom";
+  const size = document.createElement("select");
+  size.id = `${side}-cfg-size`;
+  size.setAttribute("aria-label", `${side === "left" ? "Left" : "Right"} graph zoom`);
+  size.append(new Option("Fit width", "fit"), new Option("50%", "50"), new Option("75%", "75"),
+    new Option("100% (actual size)", "actual"), new Option("125%", "125"), new Option("150%", "150"));
+  size.value = panel.cfgSize || "fit";
+  const applySize = () => {
+    svg.style.maxWidth = "none";
+    svg.style.width = size.value === "fit" ? "100%" : `${width * (size.value === "actual" ? 1 : Number(size.value) / 100)}px`;
+  };
+  applySize();
+  size.addEventListener("change", () => { panel.cfgSize = size.value; applySize(); });
+  sizeLabel.append(size);
+  viewer.append(sizeLabel);
   svg.innerHTML = `<defs><marker id="${markerId}" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#60758a" /></marker></defs>`;
-  cfg.edges.forEach((edge) => {
-    const from = positions.get(edge.fromId);
-    const to = positions.get(edge.toId);
-    if (!from || !to) return;
-    const isForward = blockOrder.get(edge.toId) > blockOrder.get(edge.fromId);
-    const laneIndex = (isForward ? forward : backward).indexOf(edge);
-    const laneX = isForward ? nodeX - 24 * (laneIndex + 1) : nodeX + nodeWidth + 30 + 24 * laneIndex;
-    const outgoing = cfg.edges.filter(e => e.fromId === edge.fromId);
-    const incoming = cfg.edges.filter(e => e.toId === edge.toId);
-    const startY = from.y + 8 + 30 * (outgoing.indexOf(edge) + 1) / (outgoing.length + 1);
-    const endY = to.y + 8 + 30 * (incoming.indexOf(edge) + 1) / (incoming.length + 1);
-    const startX = isForward ? from.x : from.x + nodeWidth;
-    const endX = isForward ? to.x - 3 : to.x + nodeWidth + 3;
-    const loop = edge.fromId === edge.toId;
+  let hoveredEdge = null, focusedEdge = null;
+  const traceEdge = () => {
+    const active = hoveredEdge || focusedEdge;
+    svg.classList.toggle("is-tracing", Boolean(active));
+    svg.querySelectorAll(".cfg-edge").forEach(path => path.classList.toggle("is-traced", path === active));
+  };
+  cfg.edges.forEach((edge, index) => {
+    const route = graph.edge({ v: edge.fromId, w: edge.toId, name: String(index) });
     const path = document.createElementNS(namespace, "path");
     path.setAttribute("class", "cfg-edge");
     path.dataset.fromId = edge.fromId;
     path.dataset.toId = edge.toId;
-    path.setAttribute("d", loop
-      ? `M ${startX} ${from.y + 10} C ${laneX + 60} ${from.y - 45}, ${laneX + 60} ${from.y + 93}, ${endX} ${from.y + 38}`
-      : `M ${startX} ${startY} H ${laneX} V ${endY} H ${endX}`);
+    path.setAttribute("d", route.points.map((p, i) => `${i ? "L" : "M"} ${p.x} ${p.y}`).join(" "));
+    path.setAttribute("tabindex", "0");
+    path.addEventListener("mouseenter", () => { hoveredEdge = path; traceEdge(); });
+    path.addEventListener("mouseleave", () => { hoveredEdge = null; traceEdge(); });
+    path.addEventListener("focus", () => { focusedEdge = path; traceEdge(); });
+    path.addEventListener("blur", () => { focusedEdge = null; traceEdge(); });
     path.setAttribute("marker-end", `url(#${markerId})`);
     const title = document.createElementNS(namespace, "title");
     title.textContent = `${cfg.blocks.find(b => b.id === edge.fromId).label} → ${cfg.blocks.find(b => b.id === edge.toId).label}: ${edge.label || "unlabelled"}`;
+    path.setAttribute("aria-label", title.textContent);
     path.append(title);
     svg.append(path);
     if (edge.label) {
       const label = document.createElementNS(namespace, "text");
-      const x = loop ? laneX + 35 : laneX - 5;
-      const y = loop ? from.y + 24 : (startY + endY) / 2;
       label.setAttribute("class", "cfg-edge-label");
-      label.setAttribute("transform", `translate(${x}, ${y}) rotate(-90)`);
+      label.setAttribute("x", route.x);
+      label.setAttribute("y", route.y + 4);
       label.setAttribute("text-anchor", "middle");
       label.textContent = edge.label;
       svg.append(label);
@@ -436,9 +460,9 @@ function renderCfg(side) {
       if (event.key === "Enter" || event.key === " ") { event.preventDefault(); select(); }
     });
     const rectangle = document.createElementNS(namespace, "rect");
-    rectangle.setAttribute("width", String(nodeWidth)); rectangle.setAttribute("height", String(nodeHeight)); rectangle.setAttribute("rx", "6");
+    rectangle.setAttribute("width", String(point.width)); rectangle.setAttribute("height", String(point.height)); rectangle.setAttribute("rx", "6");
     const label = document.createElementNS(namespace, "text");
-    label.setAttribute("x", String(nodeWidth / 2)); label.setAttribute("y", "29"); label.setAttribute("text-anchor", "middle");
+    label.setAttribute("x", String(point.width / 2)); label.setAttribute("y", "29"); label.setAttribute("text-anchor", "middle");
     label.textContent = block.label;
     node.append(rectangle, label);
     svg.append(node);
@@ -621,4 +645,20 @@ for (const side of ["left", "right"]) {
   });
 }
 
-loadExamples();
+const examplesReady = loadExamples();
+
+// Study setup seam: presentation configuration only. No answers, node selection,
+// persistence, compiler parsing, or task-specific matching belongs in the workspace.
+window.StudyWorkspace = {
+  get ready() { return appState.ready && !elements.workspace.hidden; },
+  async open(setup) {
+    await examplesReady;
+    if (!setup.example) return this.ready;
+    elements.exampleSelect.value = setup.example;
+    const pending = loadExample(setup), loadId = appState.loadId;
+    await pending;
+    if (loadId !== appState.loadId) return false;
+    return this.ready && appState.exampleId === setup.example && ['left', 'right'].every(side =>
+      !setup[side] || (appState.panels[side].ordinal === setup[side].ordinal && appState.panels[side].viewType === setup[side].view));
+  },
+};
