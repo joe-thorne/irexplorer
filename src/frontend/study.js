@@ -12,13 +12,13 @@
   const button = (action, text, primary = false) => `<button type="button" data-action="${action}"${primary ? ' class="primary"' : ''}>${text}</button>`;
   const heading = text => `<h2 id="route-heading" tabindex="-1">${text}</h2>`;
   let content, store, draft = null, editingPre = false, errors = {}, loaded = false, loadError = false;
-  let activeTask = null, clock = null, setupToken = 0, setupLoading = false, setupReady = false;
+  let activeTask = null, clock = null, setupReady = false;
   const answersFor = stage => stage.startsWith('T') ? draft.tasks[stage].answers : draft[stage];
   const outcomeLabel = status => ({ completed: 'Completed', skipped: 'Skipped', could_not_work_out: 'Could not work this out', pending: 'In progress' })[status];
   const taskRoute = () => '/study/tasks/' + D.currentTask(draft);
   function leaveTask(route) {
     if (!activeTask || route === '/study/tasks/' + activeTask) return;
-    clock?.stop(true); save(); clock = null; activeTask = null; ++setupToken;
+    clock?.stop(true); save(); clock = null; activeTask = null;
   }
   function taskHtml(id) {
     const task = content.tasks.find(t => t.id === id), record = draft.tasks[id];
@@ -28,7 +28,7 @@
       <details id="task-instructions" class="task-details"${matchMedia('(max-width: 1100px)').matches ? '' : ' open'}><summary>Setup and instructions</summary>
       ${id === 'T0' ? content.taskIntroduction.map(p => `<p>${esc(p)}</p>`).join('') : ''}<p class="task-prose">${esc(task.instructions)}</p>
       ${id === 'T1' ? '<p>End of teaching chain: ordinal 12, final_cleanup. Separately compiled -O3 is the next state.</p>' : ''}
-      ${Object.keys(task.setup).length ? button('task-setup', 'Open task setup') : '<p>Choose any example, states, function, and views. Five minutes is guidance; continue whenever you are ready.</p>'}</details>
+      ${Object.keys(task.setup).length ? '<p>Choose the source and set both states and views yourself using the workspace controls.</p>' : '<p>Choose any example, states, function, and views. Five minutes is guidance; continue whenever you are ready.</p>'}</details>
       <p id="task-timing" class="form-note" role="status"></p>${!locked ? button('pause-task', record.paused ? 'Resume task' : 'Pause task') : ''}
       <details class="task-details task-responses"${matchMedia('(max-width: 1100px)').matches ? '' : ' open'}><summary id="task-responses">${locked ? 'Saved responses (read-only)' : 'Responses and continue'}</summary>
       <a href="#route-heading">Back to goal</a><p>${locked ? `Recorded outcome: ${esc(outcomeLabel(record.status))}. Responses are locked.` : 'You may leave fields unanswered. Choosing inability or skipping is a valid outcome. Continuing locks this task’s responses.'}</p>
@@ -42,7 +42,7 @@
     if (!activeTask || !draft) return;
     const t = draft.tasks[activeTask], status = screen.querySelector('#task-timing');
     if (!status) return;
-    status.textContent = t.status !== 'pending' ? `Saved active duration: ${(t.durationMs / 1000).toFixed(1)} seconds${t.interrupted ? ' · interrupted' : ''}.` : setupLoading ? (clock?.running ? 'Preparing workspace. Active timing continues during exploration.' : 'Preparing workspace; timing has not resumed.') : !setupReady ? 'Timing is waiting for a usable workspace. Open task setup to retry, or choose a file for open exploration.' : t.paused ? 'Paused. Resume when ready; paused time is excluded.' : 'Timing active · hidden tabs and pauses excluded · no time limit.';
+    status.textContent = t.status !== 'pending' ? `Saved active duration: ${(t.durationMs / 1000).toFixed(1)} seconds${t.interrupted ? ' · interrupted' : ''}.` : !setupReady ? 'Choose a source and both states and views to begin. Timing starts when the comparison is ready.' : t.paused ? 'Paused. Resume when ready; paused time is excluded.' : 'Timing active · hidden tabs and pauses excluded · no time limit.';
     const pause = screen.querySelector('[data-action="pause-task"]');
     if (pause) { pause.textContent = t.paused ? 'Resume task' : 'Pause task'; pause.disabled = !t.started || !setupReady; }
     const inputs = screen.querySelector('.task-inputs');
@@ -56,24 +56,13 @@
     if (!document.hidden && !t.paused) clock?.resume();
     save(); updateTaskStatus();
   }
-  async function openTaskSetup(id) {
-    if (!id) return;
-    const token = ++setupToken;
-    setupLoading = true; setupReady = false;
-    updateTaskStatus();
-    try {
-      const ready = await window.StudyWorkspace.open(content.tasks.find(t => t.id === id).setup);
-      if (token !== setupToken || activeTask !== id) return;
-      setupReady = ready;
-    } catch { if (token !== setupToken) return; setupReady = false; }
-    setupLoading = false; startClock(); updateTaskStatus();
-  }
   function enterTask(id) {
     if (activeTask === id) { updateTaskStatus(); return; }
     activeTask = id; draft.p13Locked = true; save();
     const t = draft.tasks[id]; clock = window.TaskClock(t);
-    setupReady = false; setupLoading = false;
-    if (t.status === 'pending') openTaskSetup(id); else updateTaskStatus();
+    setupReady = false;
+    if (t.status === 'pending') window.StudyWorkspace.reset();
+    updateTaskStatus();
   }
   function finishTask(id, status) {
     if (!id || !draft || !available()) return;
@@ -88,7 +77,7 @@
     return `<details class="response-review"><summary>Task outcomes and active durations</summary><ul>${content.tasks.map(task => { const t = draft.tasks[task.id]; return `<li><a href="#/study/tasks/${task.id}">${task.id}: ${esc(outcomeLabel(t.status))}</a> · ${(t.durationMs / 1000).toFixed(1)} seconds${t.interrupted ? ' · interrupted' : ''}</li>`; }).join('')}</ul><p>Durations include visible reading, exploration, and answering. They exclude hidden tabs, explicit pauses, and refresh downtime; they are not pure comprehension times.</p></details>`;
   }
   document.addEventListener('workspace-ready', () => {
-    if (activeTask === 'T6' && !setupLoading && window.StudyWorkspace.ready) { setupReady = true; startClock(); }
+    if (activeTask && window.StudyWorkspace.ready) { setupReady = true; startClock(); }
   });
   document.addEventListener('visibilitychange', () => {
     if (!clock) return;
@@ -261,7 +250,7 @@
       if (setupReady && !document.hidden) clock?.resume();
       updateStorage(); screen.querySelector('#draft-status')?.focus(); return;
     }
-    clock = null; activeTask = null; ++setupToken;
+    clock = null; activeTask = null;
     draft = null; errors = {}; editingPre = false; go(route, true);
   }
   screen.addEventListener('click', event => {
@@ -306,7 +295,7 @@
         save();
       }
       if (available()) go(maximum() === 2 ? taskRoute() : routes[maximum()]);
-    } else if (action === 'task-setup') { openTaskSetup(activeTask); }
+    }
     else if (action === 'pause-task' && activeTask) {
       const t = draft.tasks[activeTask];
       if (t.status !== 'pending' || !t.started) return;

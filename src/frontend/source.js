@@ -5,7 +5,8 @@ function renderSource() {
   const viewer = document.querySelector('#source-lines');
   viewer.replaceChildren();
   const data = sourceState.data;
-  document.querySelector('#source-summary').textContent = data ? `C source · ${data.file} · verified input` : 'C source · loading';
+  document.querySelector('#source-summary').textContent = data ? `C source · ${data.file}` : 'C source';
+  document.querySelector("#source-prompt").hidden = Boolean(data);
   if (!data) return;
   const lines = data.text.split('\n');
   lines.forEach((text, index) => {
@@ -49,11 +50,9 @@ function applySourceHighlights(message = '') {
     panel.sourceNodeIds = new Set(matches.flatMap(m => [m.instructionId, m.blockId]));
     counts.push(`${side}: ${matches.length ? `${new Set(matches.map(m => m.instructionId)).size} mapped instructions` : 'No recorded source mapping'}`);
   }
-  const locations = anchors.map(a => `${a.file}:${a.line}${a.column === undefined ? '' : ':' + a.column}`);
-  document.querySelector('#source-summary').textContent = `C source · ${data.file}${locations.length ? ' · ' + locations.join(', ') : ' · verified input'}`;
   document.querySelector('#source-status').textContent = message || (anchors.length
-    ? `debugLoc · ${counts.join('; ')}. All matches are highlighted in the selected function; absence does not establish removal.`
-    : 'Verified canonical input. Select a C line, IR instruction, or CFG block.');
+    ? `C → left: ${anchors.map(a => a.file + ':' + a.line).join(', ')} · ${counts[0].replace('left: ', '')}. Right: ${counts[1].replace('right: ', '')}. These are source-location matches; missing matches do not prove removal.`
+    : 'C → left: select a C line, IR instruction, or CFG block to see its source mapping.');
   for (const line of document.querySelectorAll('.source-line')) {
     const selected = anchors.some(a => a.file === data.file && a.line === Number(line.dataset.line));
     line.classList.toggle('is-source', selected);

@@ -42,8 +42,7 @@
 
       <details id="source-panel" class="panel source-panel" open>
         <summary id="source-summary">C source · choose a curated file</summary>
-        <p>Compiler debug-location evidence can map one line to several instructions. It does not establish cross-state identity or prove removal when absent.</p>
-        <p id="source-status" role="status">Choose a curated file to view its verified source.</p>
+        <p id="source-prompt" role="status">Choose a curated file to view its source.</p>
         <div id="source-lines" class="source-lines" aria-label="Read-only C source"></div>
       </details>
 
@@ -58,12 +57,11 @@
 
       <section id="workspace" class="workspace" hidden aria-label="Side-by-side optimisation comparison">
         <section class="comparison-status panel" aria-label="Comparison explanation">
+          <p id="left-purpose"></p>
+          <p id="right-purpose"></p>
+          <p id="source-status" role="status"></p>
           <p id="comparison-action" class="comparison-action"></p>
-          <p id="pass-purpose"></p>
-          <div id="comparison-outcomes" aria-live="polite"></div>
-          <details id="comparison-evidence"><summary>Full comparison evidence and provenance</summary><div id="comparison-evidence-body"></div></details>
-          <p id="selection-status" class="selection-status" aria-live="polite">Select an IR line or CFG block to follow its recorded link.</p>
-          <details id="selection-evidence" hidden><summary>Selected-element evidence</summary><pre></pre></details>
+          <p id="selection-status" class="selection-status" aria-live="polite"></p>
         </section>
 
         <div class="panel-grid">

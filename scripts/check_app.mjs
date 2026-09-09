@@ -54,6 +54,18 @@ async function select(selector, selected) {
   await value(`(() => { const e = document.querySelector(${JSON.stringify(selector)}); e.value = ${JSON.stringify(selected)}; e.dispatchEvent(new Event('change', { bubbles: true })); })()`);
 }
 async function task(id) {
+  await until(`document.querySelector('#survey-form')?.dataset.stage === '${id}'`);
+  await check(`${id} requires a fresh source choice`, `document.querySelector('#example-select').value === '' && !window.StudyWorkspace.ready`);
+  const setup = {
+    T0: ['score', '0', '1', 'ir', 'ir'], T1: ['score', '0', '12', 'ir', 'ir'],
+    T2: ['score', '0', '0', 'ir', 'ir'], T3: ['binary_search', '3', '3', 'ir', 'cfg'],
+    T4: ['binary_search', '6', '7', 'cfg', 'cfg'], T5: ['quick_sort', '0', '9', 'ir', 'ir'],
+    T6: ['score', '0', '1', 'ir', 'ir'],
+  }[id];
+  await select('#example-select', setup[0]);
+  await until(`!document.querySelector('#workspace').hidden && !document.querySelector('#example-select').disabled`);
+  await check(`${id} requires explicit states and views`, `['left', 'right'].every(side => document.querySelector('#' + side + '-state').value === '' && document.querySelector('#' + side + '-view').value === '')`);
+  for (const [selector, selected] of [['#left-state', setup[1]], ['#right-state', setup[2]], ['#left-view', setup[3]], ['#right-view', setup[4]]]) await select(selector, selected);
   await until(`document.querySelector('#survey-form')?.dataset.stage === '${id}' && !document.querySelector('.task-inputs').disabled`);
   await check(`${id} keeps task goal focused`, `location.hash === '#/study/tasks/${id}' && document.activeElement.id === 'route-heading'`);
 }
@@ -70,13 +82,16 @@ try {
   await select('#example-select', 'score');
   await until('window.StudyWorkspace?.ready');
   await check('All three curated examples are available', `document.querySelectorAll('#example-select option').length === 4`);
+  await check('Source box contains only source and heading', `document.querySelector('#source-prompt').hidden && !/Compiler debug|debugLoc/.test(document.querySelector('#source-panel').innerText)`);
+  await check('Comparison has no expandable evidence', `document.querySelectorAll('.comparison-status details').length === 0`);
+  await check('IR symbols offer novice hover help', `[...document.querySelectorAll('#left-viewer .token-value[title]')].some(token => token.title.includes('%')) && document.querySelector('#left-viewer .token-opcode[title]') !== null`);
   await click('.source-line[data-line="3"]');
   await check('Source line highlights mapped IR in both panes', `document.querySelectorAll('.source-line.is-source').length === 1 && document.querySelectorAll('#left-viewer .is-source, #right-viewer .is-source').length > 0`);
   await select('#right-state', '2'); await until('window.StudyWorkspace.ready');
   await check('Source absence is explicit after instcombine', `document.querySelector('#source-status').textContent.includes('No recorded source mapping')`);
   await value(`document.querySelector('#left-viewer .ir-line').focus()`); await key('Enter', 'Enter', 13);
-  await until(`document.querySelector('#selection-status').textContent.includes('Selection:')`);
-  await check('Keyboard Enter follows an IR correspondence', `document.querySelector('#selection-status').textContent.includes('Selection:')`);
+  await until(`document.querySelector('#selection-status').textContent.includes('Left ↔ right:')`);
+  await check('Keyboard Enter follows an IR correspondence', `document.querySelector('#selection-status').textContent.includes('Left ↔ right:')`);
   await select('#left-view', 'cfg'); await select('#right-view', 'cfg'); await until('window.StudyWorkspace.ready');
   await value(`document.querySelector('#left-viewer .cfg-edge').focus()`); await check('Keyboard-focusable CFG route is visibly isolated', `document.querySelector('#left-viewer svg').classList.contains('is-tracing')`);
   await value('document.activeElement.blur()');
@@ -88,7 +103,7 @@ try {
   await value(`window.testFetch = window.fetch; window.fetch = async (...args) => { if (String(args[0]).includes('/source')) throw Error('Synthetic source outage'); return window.testFetch(...args); };`);
   await select('#example-select', 'binary_search'); await until(`document.querySelector('#source-status').textContent.includes('Source unavailable')`);
   await value('window.fetch = window.testFetch'); await select('#example-select', 'binary_search'); await until('window.StudyWorkspace.ready');
-  await check('Source loading failure can be recovered', `document.querySelector('#source-status').textContent.includes('Verified canonical input')`);
+  await check('Source loading failure can be recovered', `document.querySelector('#source-status').textContent.includes('select a C line')`);
 
   await snap('workspace.png');
   await route('/study'); await screen('Information and consent');

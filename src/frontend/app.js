@@ -20,6 +20,7 @@ const appState = {
   refreshId: 0,
   loadId: 0,
   ready: false,
+  manualSetup: false,
   summary: null,
   panels: {
     left: { ordinal: 0, viewType: "ir", ir: null, cfg: null, function: null, selectedNodeIds: new Set() },
@@ -145,6 +146,33 @@ async function loadExample(setup = null) {
     renderStateOptions();
     elements.left.view.value = appState.panels.left.viewType;
     elements.right.view.value = appState.panels.right.viewType;
+    if (appState.manualSetup) {
+      for (const side of ["left", "right"]) {
+        appState.panels[side].ordinal = null;
+        appState.panels[side].viewType = "";
+        const placeholder = new Option("Choose a state…", "");
+        placeholder.disabled = true;
+        elements[side].state.prepend(placeholder);
+        elements[side].state.value = "";
+        if (!elements[side].view.querySelector('option[value=""]')) {
+          const viewPlaceholder = new Option("Choose a view…", "");
+          viewPlaceholder.disabled = true;
+          elements[side].view.prepend(viewPlaceholder);
+        }
+        elements[side].view.value = "";
+        elements[side].viewer.replaceChildren();
+        elements[side].description.textContent = "";
+        elements[side].stateLabel.textContent = "";
+        elements[side].heading.textContent = side === "left" ? "Left panel" : "Right panel";
+        elements[side].previous.disabled = elements[side].next.disabled = true;
+      }
+      appState.summary = null;
+      renderSummary();
+      elements.emptyState.hidden = true;
+      elements.workspace.hidden = false;
+      announce("Choose the states and views described in the task instructions.");
+      return;
+    }
     await refreshWorkspace();
     if (loadId !== appState.loadId || !appState.ready) return;
     elements.emptyState.hidden = true;
@@ -181,7 +209,7 @@ function stateOptionLabel(state) {
 }
 
 async function refreshWorkspace() {
-  if (!appState.exampleId) return;
+  if (!appState.exampleId || Object.values(appState.panels).some(panel => panel.ordinal === null || !panel.viewType)) return;
   const refreshId = ++appState.refreshId;
   appState.ready = false;
   appState.summary = null;
@@ -228,6 +256,7 @@ async function refreshWorkspace() {
     renderComparison();
     renderPanel("left");
     renderPanel("right");
+    document.dispatchEvent(new Event("workspace-ready"));
   } catch (error) {
     if (refreshId === appState.refreshId) {
       elements.workspace.setAttribute("aria-busy", "false");
@@ -271,32 +300,26 @@ function renderComparison() {
   const leftState = stateFor("left");
   const rightState = stateFor("right");
   elements.comparisonAction.textContent = comparisonAction(leftState, rightState);
-  const [from, to] = [leftState, rightState].sort((a, b) => a.ordinal - b.ordinal);
-  document.querySelector("#pass-purpose").textContent = to.ordinal === from.ordinal + 1 && to.transition?.kind === "derived"
-    ? `General pass purpose: ${PASS_ACTIONS[to.transition.passName] || "perform its recorded optimisation action"}. This describes the pass, not an observed outcome.` : "";
-  const evidence = document.querySelector("#selection-evidence");
-  evidence.hidden = !appState.selection?.evidence;
-  evidence.querySelector("pre").textContent = appState.selection?.evidence || "";
   if (!appState.selection) {
     elements.selectionStatus.className = "selection-status";
-    elements.selectionStatus.textContent = "Selection confidence: select an IR line or CFG block to follow its recorded link.";
+    elements.selectionStatus.textContent = sourceState.anchors.length ? "Left ↔ right: the highlighted instructions share the selected C source location. Select an IR instruction or CFG block to inspect its recorded cross-state relation." : "Left ↔ right: select an IR instruction or CFG block to follow its recorded link.";
     return;
   }
   elements.selectionStatus.className = `selection-status${appState.selection.unresolved ? " is-unresolved" : ""}`;
-  elements.selectionStatus.textContent = `Selection: ${appState.selection.text}`;
+  elements.selectionStatus.textContent = `Left ↔ right: ${appState.selection.text}`;
 }
 
 function comparisonAction(leftState, rightState) {
   if (leftState.ordinal === rightState.ordinal) return `Both panels show ${leftState.stateId}; no cross-state action is being compared.`;
   const [from, to] = leftState.ordinal < rightState.ordinal ? [leftState, rightState] : [rightState, leftState];
-  const direction = leftState.ordinal > rightState.ordinal ? " Earlier state is on the right; outcomes below follow timeline order." : "";
+  const direction = leftState.ordinal > rightState.ordinal ? " Earlier state is on the right; the comparison follows timeline order." : "";
   if (to.transition?.kind === "recompiled") return `${from.stateId} → ${to.stateId}: separately compiled ${to.transition.level} output comparison${to.ordinal > from.ordinal + 1 ? ` across ${to.ordinal - from.ordinal} transitions` : ""}; not the result of one pass.${direction}`;
   if (to.ordinal !== from.ordinal + 1) return `${from.stateId} → ${to.stateId}: composed comparison across ${to.ordinal - from.ordinal} recorded transitions; no single pass is attributed.${direction}`;
   return `${from.stateId} → ${to.stateId}: pass ${to.ordinal}, ${to.transition?.passName}.${direction}`;
 }
 
 function stateFor(side) {
-  return appState.states.find((state) => state.ordinal === appState.panels[side].ordinal);
+  return appState.states?.find((state) => state.ordinal === appState.panels[side].ordinal);
 }
 
 function renderPanel(side) {
@@ -338,6 +361,7 @@ function renderIr(side) {
     heading.type = "button";
     heading.className = "ir-block-heading";
     heading.textContent = `${block.label}:`;
+    heading.title = "Basic block: a named sequence of instructions entered at the start and ending with a control-flow instruction.";
     heading.setAttribute("aria-pressed", String(panel.selectedNodeIds.has(block.id)));
     heading.addEventListener("click", () => selectNode(side, block.id));
     blockElement.append(heading);
@@ -464,7 +488,9 @@ function renderCfg(side) {
     const label = document.createElementNS(namespace, "text");
     label.setAttribute("x", String(point.width / 2)); label.setAttribute("y", "29"); label.setAttribute("text-anchor", "middle");
     label.textContent = block.label;
-    node.append(rectangle, label);
+    const title = document.createElementNS(namespace, "title");
+    title.textContent = "Basic block " + block.label + ": instructions executed in sequence. Arrows show where control can go next.";
+    node.append(title, rectangle, label);
     svg.append(node);
   });
   viewer.append(svg);
@@ -600,13 +626,67 @@ function stripDebug(text) {
   return String(text || "").replace(/,?\s*!dbg\s*!\d+/g, "");
 }
 
+const IR_HELP = Object.freeze({
+  alloca: "Allocate memory on the stack for this function call.",
+  load: "Read a value from memory.", store: "Write a value to memory.",
+  br: "Branch: jump to a basic block, optionally choosing between two targets using a condition.",
+  ret: "Return from the function, optionally with a result.",
+  call: "Call another function.", define: "Begin a function definition.",
+  phi: "Choose a value according to which predecessor block control arrived from.",
+  select: "Choose one of two values using a condition, without branching.",
+  icmp: "Compare integers or pointers and produce an i1 true/false result.",
+  fcmp: "Compare floating-point values and produce an i1 true/false result.",
+  add: "Add two values.", sub: "Subtract the second value from the first.",
+  mul: "Multiply two values.", shl: "Shift bits left.",
+  lshr: "Shift bits right, filling with zeroes.", ashr: "Shift bits right, preserving the sign.",
+  sdiv: "Signed integer division.", udiv: "Unsigned integer division.",
+  srem: "Signed integer remainder.", urem: "Unsigned integer remainder.",
+  and: "Bitwise AND.", or: "Bitwise OR.", xor: "Bitwise exclusive OR.",
+  getelementptr: "Calculate an address within an object; this does not read memory.",
+  sext: "Extend an integer to more bits, preserving its sign.",
+  zext: "Extend an integer to more bits, filling with zeroes.",
+  trunc: "Keep the low bits to produce a narrower integer.",
+  bitcast: "Reinterpret a value using a compatible type without changing its bits.",
+  ptr: "Pointer: an address in memory.", void: "No return value.",
+  label: "A basic-block destination for control flow.",
+  switch: "Choose a destination block by comparing a value with several cases.",
+  unreachable: "Execution must never reach this instruction.",
+  tail: "Marks a call that may be eligible for tail-call optimisation.",
+  nsw: "No signed wrap: signed overflow makes the result poison (an invalid value).",
+  nuw: "No unsigned wrap: unsigned overflow makes the result poison (an invalid value).",
+  inbounds: "Adds address-calculation constraints; violating them produces poison.",
+  align: "The guaranteed memory alignment, measured in bytes.",
+  eq: "Equal.", ne: "Not equal.", slt: "Signed less than.", sle: "Signed less than or equal.",
+  sgt: "Signed greater than.", sge: "Signed greater than or equal.",
+  ult: "Unsigned less than.", ule: "Unsigned less than or equal.",
+  ugt: "Unsigned greater than.", uge: "Unsigned greater than or equal.",
+  true: "Boolean true (1).", false: "Boolean false (0).",
+  null: "A null pointer.", undef: "An unspecified value.",
+  poison: "An invalid value that can propagate and lead to undefined behaviour.",
+});
+
 function highlightIr(text) {
-  const escaped = escapeHtml(text);
-  return escaped
-    .replace(/(%[A-Za-z0-9._]+|@[-A-Za-z0-9._]+)/g, '<span class="token-value">$1</span>')
-    .replace(/\b(alloca|store|load|br|ret|call|add|sub|mul|shl|icmp|define|tail)\b/g, '<span class="token-opcode">$1</span>')
-    .replace(/\b(i1|i8|i16|i32|i64|ptr|void|label)\b/g, '<span class="token-keyword">$1</span>')
-    .replace(/(?<![A-Za-z0-9_])-?\d+\b/g, '<span class="token-number">$&</span>');
+  // Tokenise raw text once: subsequent replacements must never alter generated markup.
+  const tokens = String(text).match(/[%@](?:"[^"]*"|[-A-Za-z0-9$._]+)|[A-Za-z_][A-Za-z_0-9.]*|-?\d+(?:\.\d+)?|[^\w\s]|\s+/g) || [];
+  return tokens.map((token, index) => {
+    let help = IR_HELP[token], kind = "opcode";
+    if (token.startsWith("%")) {
+      help = tokens.slice(0, index).filter(t => t.trim()).at(-1) === "label"
+        ? "% names a local basic block here: a destination for control flow."
+        : "% names a local value (an SSA variable) or basic block. Each SSA value is defined once.";
+      kind = "value";
+    } else if (token.startsWith("@")) {
+      help = "@ names a global symbol, such as a function or global variable."; kind = "value";
+    } else if (/^i\d+$/.test(token)) {
+      help = "An integer type with " + token.slice(1) + " bits." + (token === "i1" ? " Commonly used for true/false conditions." : ""); kind = "keyword";
+    } else if (/^-?\d/.test(token)) {
+      help = "A numeric constant; its meaning depends on the surrounding instruction or type."; kind = "number";
+    } else if (token === "=") help = "Names the result of the instruction on the right with the SSA value on the left.";
+    else if (token === "[") help = "Starts a group, such as a phi value/predecessor pair or an array type.";
+    else if (token === "]") help = "Ends this group.";
+    else if (token === ",") help = "Separates operands or entries.";
+    return help ? '<span class="token-' + kind + '" title="' + escapeHtml(help) + '">' + escapeHtml(token) + '</span>' : escapeHtml(token);
+  }).join("");
 }
 
 function escapeHtml(text) {
@@ -651,14 +731,26 @@ const examplesReady = loadExamples();
 // persistence, compiler parsing, or task-specific matching belongs in the workspace.
 window.StudyWorkspace = {
   get ready() { return appState.ready && !elements.workspace.hidden; },
-  async open(setup) {
-    await examplesReady;
-    if (!setup.example) return this.ready;
-    elements.exampleSelect.value = setup.example;
-    const pending = loadExample(setup), loadId = appState.loadId;
-    await pending;
-    if (loadId !== appState.loadId) return false;
-    return this.ready && appState.exampleId === setup.example && ['left', 'right'].every(side =>
-      !setup[side] || (appState.panels[side].ordinal === setup[side].ordinal && appState.panels[side].viewType === setup[side].view));
+  reset() {
+    ++appState.loadId;
+    ++appState.refreshId;
+    appState.manualSetup = true;
+    appState.ready = false;
+    appState.exampleId = null;
+    appState.states = null;
+    appState.summary = null;
+    appState.functionName = null;
+    clearSelection();
+    sourceState.data = null;
+    sourceState.anchors = [];
+    renderSource();
+    elements.exampleSelect.value = "";
+    elements.exampleSelect.disabled = false;
+    elements.functionControl.hidden = true;
+    elements.workspace.hidden = true;
+    elements.workspace.setAttribute("aria-busy", "false");
+    clearError();
+    elements.emptyState.hidden = false;
+    announce("Choose a source, then select the states and views in the task instructions.");
   },
 };
