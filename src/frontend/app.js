@@ -16,7 +16,7 @@ const appState = {
   states: null,
   functionName: null,
   selection: null,
-  selectionId: 0,
+  selectionInput: null,
   refreshId: 0,
   loadId: 0,
   ready: false,
@@ -210,11 +210,13 @@ function stateOptionLabel(state) {
 
 async function refreshWorkspace() {
   if (!appState.exampleId || Object.values(appState.panels).some(panel => panel.ordinal === null || !panel.viewType)) return;
+  let selectionInput = appState.selectionInput;
+  if (selectionInput?.kind === "node" && selectionInput.ordinal !== appState.panels[selectionInput.side].ordinal)
+    selectionInput = sourceState.anchors.length ? { kind: "source", anchors: sourceState.anchors } : null;
   const refreshId = ++appState.refreshId;
   appState.ready = false;
   appState.summary = null;
   renderSummary();
-  ++appState.selectionId;
   elements.workspace.setAttribute("aria-busy", "true");
   document.querySelector("#source-status").textContent = "Loading recorded mappings…";
   const apiBase = apiRoot(appState.exampleId);
@@ -252,10 +254,14 @@ async function refreshWorkspace() {
     appState.ready = true;
     renderSummary();
     elements.workspace.setAttribute("aria-busy", "false");
-    applySourceHighlights();
-    renderComparison();
-    renderPanel("left");
-    renderPanel("right");
+    if (selectionInput) selectWorkspace(selectionInput, { scroll: false });
+    else {
+      clearSelection();
+      applySourceHighlights();
+      renderComparison();
+      renderPanel("left");
+      renderPanel("right");
+    }
     document.dispatchEvent(new Event("workspace-ready"));
   } catch (error) {
     if (refreshId === appState.refreshId) {
@@ -278,22 +284,15 @@ function renderFunctionOptions(names) {
 }
 
 function clearSelection() {
-  appState.selectionId += 1;
   appState.selection = null;
-  for (const panel of Object.values(appState.panels)) panel.selectedNodeIds = new Set();
-}
-
-function selectionRequestIsCurrent(selectionRequest) {
-  return selectionRequest.id === appState.selectionId
-    && selectionRequest.exampleId === appState.exampleId
-    && selectionRequest.originOrdinal === appState.panels[selectionRequest.originSide].ordinal
-    && selectionRequest.targetOrdinal === appState.panels[selectionRequest.targetSide].ordinal;
-}
-
-function mappingMatchesSelectionRequest(mapping, selectionRequest) {
-  return mapping.ordinal === selectionRequest.originOrdinal
-    && mapping.nodeId === selectionRequest.nodeId
-    && mapping.counterpartOrdinal === selectionRequest.targetOrdinal;
+  appState.selectionInput = null;
+  sourceState.anchors = [];
+  sourceState.rangeStart = null;
+  for (const panel of Object.values(appState.panels)) {
+    panel.selectedNodeIds = new Set();
+    panel.selectedInstructionIds = new Set();
+    panel.sourceNodeIds = new Set();
+  }
 }
 
 function renderComparison() {
@@ -302,7 +301,7 @@ function renderComparison() {
   elements.comparisonAction.textContent = comparisonAction(leftState, rightState);
   if (!appState.selection) {
     elements.selectionStatus.className = "selection-status";
-    elements.selectionStatus.textContent = sourceState.anchors.length ? "Left ↔ right: the highlighted instructions share the selected C source location. Select an IR instruction or CFG block to inspect its recorded cross-state relation." : "Left ↔ right: select an IR instruction or CFG block to follow its recorded link.";
+    elements.selectionStatus.textContent = "Left ↔ right: select C lines, an IR instruction, or a CFG block to trace its recorded relations.";
     return;
   }
   elements.selectionStatus.className = `selection-status${appState.selection.unresolved ? " is-unresolved" : ""}`;
@@ -489,7 +488,12 @@ function renderCfg(side) {
     label.setAttribute("x", String(point.width / 2)); label.setAttribute("y", "29"); label.setAttribute("text-anchor", "middle");
     label.textContent = block.label;
     const title = document.createElementNS(namespace, "title");
-    title.textContent = "Basic block " + block.label + ": instructions executed in sequence. Arrows show where control can go next.";
+    const memberIds = instructionIds(panel, block.id);
+    const tracedCount = memberIds.filter(id => panel.selectedInstructionIds?.has(id)).length;
+    title.textContent = "Basic block " + block.label + ": instructions executed in sequence. Arrows show where control can go next."
+      + (appState.selection ? ` ${tracedCount} of ${memberIds.length} instructions belong to the current trace.` : "");
+    node.setAttribute("aria-label", `Select basic block ${block.label}`
+      + (appState.selection ? `; ${tracedCount} of ${memberIds.length} instructions in the current trace` : ""));
     node.append(title, rectangle, label);
     svg.append(node);
   });
@@ -511,72 +515,6 @@ function selectionClass(side, nodeId, baseClass) {
   if (appState.panels[side].sourceNodeIds?.has(nodeId)) baseClass += " is-source";
   if (!appState.panels[side].selectedNodeIds.has(nodeId)) return baseClass;
   return `${baseClass} ${appState.selection?.originSide === side ? "is-selected" : "is-linked"}`;
-}
-
-async function selectNode(originSide, nodeId) {
-  if (!appState.ready) return;
-  const targetSide = originSide === "left" ? "right" : "left";
-  const origin = appState.panels[originSide];
-  const target = appState.panels[targetSide];
-  clearSelection();
-  const selectionRequest = {
-    id: appState.selectionId,
-    exampleId: appState.exampleId,
-    originSide,
-    targetSide,
-    originOrdinal: origin.ordinal,
-    targetOrdinal: target.ordinal,
-    nodeId,
-  };
-  origin.selectedNodeIds = new Set([nodeId]);
-  const selected = nodeContext(origin.ir, nodeId);
-  if (!selected) return;
-  revealNodeSource(originSide, nodeId);
-  try {
-    if (origin.ordinal === target.ordinal) {
-      const targetIds = displayNodeIds(target, [nodeId]);
-      target.selectedNodeIds = new Set(targetIds);
-      appState.selection = {
-        originSide,
-        unresolved: false,
-        text: `${formatNode(selected)} is selected in both views of ${stateFor(originSide).stateId}.`,
-      };
-    } else {
-      const mapping = await request(`${apiRoot(selectionRequest.exampleId)}/states/${selectionRequest.originOrdinal}/counterparts?nodeId=${encodeURIComponent(nodeId)}&toOrdinal=${selectionRequest.targetOrdinal}`);
-      if (!selectionRequestIsCurrent(selectionRequest)) return;
-      if (!mappingMatchesSelectionRequest(mapping, selectionRequest)) {
-        throw new Error("The counterpart response did not match the current selection.");
-      }
-      const targetIds = displayNodeIds(target, mapping.counterparts.map((counterpart) => counterpart.id));
-      target.selectedNodeIds = new Set(targetIds);
-      appState.selection = mappingStatus(originSide, selected, mapping, targetIds.length);
-      appState.selection.evidence = JSON.stringify(mapping, null, 2);
-    }
-    renderComparison();
-    renderPanel(originSide);
-    renderPanel(targetSide);
-    elements[originSide].viewer.querySelector(`[data-node-id="${CSS.escape(nodeId)}"]`)?.focus({ preventScroll: true });
-    if (target.selectedNodeIds.size) scrollToLinkedNode(targetSide);
-  } catch (error) {
-    if (!selectionRequestIsCurrent(selectionRequest)) return;
-    appState.selection = { originSide, unresolved: true, text: `No cross-state mapping is available: ${error.message}` };
-    renderComparison();
-    renderPanel(originSide);
-    renderPanel(targetSide);
-  }
-}
-
-function mappingStatus(originSide, selected, mapping, displayedCount) {
-  const targetState = stateFor(originSide === "left" ? "right" : "left");
-  if (mapping.confidence === "none") {
-    return { originSide, unresolved: true, text: `${formatNode(selected)} has no resolved counterpart in ${targetState.stateId}; matching completed without enough evidence to identify one.` };
-  }
-  if (!mapping.counterparts.length) {
-    return { originSide, unresolved: true, text: `${formatNode(selected)} has no counterpart in ${targetState.stateId}: it is ${mapping.relation}.` };
-  }
-  const confidence = `${mapping.confidence} confidence`;
-  const quantity = displayedCount === 1 ? "linked counterpart" : `${displayedCount} linked counterparts`;
-  return { originSide, unresolved: false, text: `${formatNode(selected)} → ${quantity} in ${targetState.stateId} (${mapping.relation}; ${confidence}).` };
 }
 
 function displayNodeIds(panel, nodeIds) {
@@ -606,13 +544,6 @@ function formatNode(context) {
   if (context.instruction) return `IR instruction ${context.instruction.displayName}`;
   if (context.block) return `Basic block ${context.block.label}`;
   return `Function ${context.function.name}`;
-}
-
-function scrollToLinkedNode(side) {
-  requestAnimationFrame(() => {
-    const node = elements[side].viewer.querySelector(".is-linked, .is-selected");
-    scrollWithin(elements[side].viewer, node);
-  });
 }
 
 function emptyViewer(message) {
@@ -715,12 +646,10 @@ for (const side of ["left", "right"]) {
   }
   elements[side].state.addEventListener("change", () => {
     appState.panels[side].ordinal = Number(elements[side].state.value);
-    clearSelection();
     refreshWorkspace();
   });
   elements[side].view.addEventListener("change", () => {
     appState.panels[side].viewType = elements[side].view.value;
-    clearSelection();
     refreshWorkspace();
   });
 }

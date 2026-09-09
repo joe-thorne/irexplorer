@@ -1,5 +1,5 @@
-// Recorded source evidence only; correspondence selection stays in the workspace.
-const sourceState = { data: null, anchors: [] };
+// Source rendering and source-location context for the shared instruction trace.
+const sourceState = { data: null, anchors: [], rangeStart: null };
 
 function renderSource() {
   const viewer = document.querySelector('#source-lines');
@@ -22,15 +22,12 @@ function renderSource() {
     const code = document.createElement('code');
     code.textContent = text || ' ';
     line.append(number, code);
-    line.addEventListener('click', () => {
-      if (!appState.ready) return;
-      clearSelection();
-      sourceState.anchors = [{ file: data.file, line: index + 1 }];
-      applySourceHighlights();
-      renderComparison();
-      for (const side of ['left', 'right']) {
-        renderPanel(side);
-        scrollWithin(elements[side].viewer, elements[side].viewer.querySelector('.ir-line.is-source, .cfg-node.is-source'));
+    line.title = 'Select this source line. Shift-click another line to select a range.';
+    line.addEventListener('click', event => selectSourceLine(index + 1, event.shiftKey));
+    line.addEventListener('keydown', event => {
+      if (event.shiftKey && (event.key === 'Enter' || event.key === ' ')) {
+        event.preventDefault();
+        selectSourceLine(index + 1, true);
       }
     });
     viewer.append(line);
@@ -41,8 +38,7 @@ function applySourceHighlights(message = '') {
   const data = sourceState.data;
   if (!data) return;
   const anchors = sourceState.anchors;
-  const matchesAnchor = location => anchors.some(a => a.file === location.file && a.line === location.line
-    && (a.column === undefined || a.column === location.column));
+  const matchesAnchor = location => sourceMatches(location, anchors);
   const counts = [];
   for (const side of ['left', 'right']) {
     const panel = appState.panels[side];
@@ -52,21 +48,11 @@ function applySourceHighlights(message = '') {
   }
   document.querySelector('#source-status').textContent = message || (anchors.length
     ? `C → left: ${anchors.map(a => a.file + ':' + a.line).join(', ')} · ${counts[0].replace('left: ', '')}. Right: ${counts[1].replace('right: ', '')}. These are source-location matches; missing matches do not prove removal.`
-    : 'C → left: select a C line, IR instruction, or CFG block to see its source mapping.');
+    : appState.selection ? 'C → left: no recorded source location for this selection. The cross-state trace is shown below.' : 'C → left: select a C line, IR instruction, or CFG block. Shift-click C lines to select a range.');
   for (const line of document.querySelectorAll('.source-line')) {
     const selected = anchors.some(a => a.file === data.file && a.line === Number(line.dataset.line));
     line.classList.toggle('is-source', selected);
     line.setAttribute('aria-pressed', String(selected));
-  }
-}
-
-function revealNodeSource(side, nodeId) {
-  const matches = (appState.panels[side].mappings || []).filter(m => m.instructionId === nodeId || m.blockId === nodeId);
-  sourceState.anchors = [...new Map(matches.map(m => [JSON.stringify(m.location), m.location])).values()];
-  applySourceHighlights(matches.length ? '' : 'No recorded source mapping for this selection. This does not establish removal.');
-  if (matches.length) {
-    document.querySelector('#source-panel').open = true;
-    scrollWithin(document.querySelector('#source-lines'), document.querySelector('.source-line.is-source'));
   }
 }
 
