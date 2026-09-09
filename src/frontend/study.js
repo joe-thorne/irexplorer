@@ -1,8 +1,7 @@
-// Study journey with local drafts and final-only synthetic submission.
+// Study journey with local drafts and final-only submission.
 (async () => {
   const D = window.StudyDraft;
   const submission = window.StudySubmit.controller();
-  const preview = document.body.dataset.studyMode === 'preview';
   const screen = document.querySelector('#study-screen');
   const workspace = document.querySelector('#workspace-shell');
   const progress = document.querySelector('#study-progress');
@@ -114,7 +113,7 @@
     area.classList.toggle('storage-ok', store.mode === 'local');
     if (store.mode === 'blocked' || store.mode === 'invalid') {
       area.innerHTML = `<p role="alert">${esc(store.issue)}${store.stale ? ' A previous saved copy may remain.' : ''}</p>${draft ? button('retry-storage', 'Retry local save') : ''}${!store.stale && store.mode !== 'invalid' ? button('memory', 'Continue in memory only') : ''}${store.stale ? button('stop', 'Retry discard saved draft') : ''}`;
-    } else area.innerHTML = `<p role="status">${store.mode === 'memory' ? 'Memory only: refreshing or leaving this page loses this trial. Nothing is sent.' + (store.unreadable ? ' Any older saved copy could not be checked or removed.' : '') : draft ? layout.classList.contains('with-task') ? 'Saved in this tab · refresh to recover · nothing sent. Closing the tab is not a supported recovery workflow.' : 'Draft saved in this tab. Refresh here to recover; closing the tab is not a supported recovery workflow. Nothing is sent.' : 'After consent, this preview saves a draft in this tab. Refresh here to recover; closing the tab is not a supported recovery workflow.'}</p>`;
+    } else area.innerHTML = `<p role="status">${store.mode === 'memory' ? 'Memory only: keep this tab open. Refreshing loses your answers.' + (store.unreadable ? ' Any older saved copy could not be checked or removed.' : '') : draft ? 'Saved in this tab. You can refresh; keep the tab open until you submit.' : 'After consent, your answers are saved in this tab until submission. Keep the tab open.'}</p>`;
   }
   function available() { if (store.mode === 'local' || store.mode === 'memory') return true; screen.querySelector('#draft-status')?.focus(); return false; }
   function fieldHtml(field, stage) {
@@ -142,18 +141,17 @@
     return sections.map(s => `<section><h3>${esc(s.title)}</h3>${s.blocks.map(b => b.kind === 'paragraph' ? `<p>${esc(b.text)}</p>` : `<${b.kind === 'ordered' ? 'ol' : 'ul'}>${b.items.map(i => `<li>${esc(i)}</li>`).join('')}</${b.kind === 'ordered' ? 'ol' : 'ul'}>`).join('')}</section>`).join('');
   }
   function info() {
-    return `<p class="preview-warning"><strong>Draft v0.1 — synthetic review only.</strong> The inherited withdrawal, eligibility, storage/use and contact wording below is awaiting confirmation. It is not release consent. Use invented answers only.</p><div class="participant-information">${informationSections(content.information.slice(0, -1))}</div><h3>Consent</h3><p>Please confirm each of the following before starting.</p><p>For this synthetic preview, the boxes rehearse consent only. Before submission, Stop/discard removes the local draft. Submit responses sends the complete synthetic session to an isolated preview store. After an attempt, retain this tab and retry for a receipt. Participant withdrawal wording remains subject to review.</p>${content.fields.filter(f => f.id.startsWith('C')).map(f => `<label class="acknowledgement" for="${f.id}"><input id="${f.id}" type="checkbox"${draft ? ' checked disabled' : ''}>${esc(f.prompt)}</label>`).join('')}<p id="consent-error" role="alert"></p><div class="screen-actions">${button('start', draft ? 'Return to study' : 'Continue to pre-survey', true)}${!draft ? button('decline', 'Decline and exit') : ''}</div><div class="participant-information">${informationSections(content.information.slice(-1))}</div>`;
+    return `<div class="participant-information">${informationSections(content.information.slice(0, -1))}</div><h3>Consent</h3><p>Please confirm each of the following before starting.</p><p>Your answers stay in this tab until you submit. You can stop and discard them before submission.</p>${content.fields.filter(f => f.id.startsWith('C')).map(f => `<label class="acknowledgement" for="${f.id}"><input id="${f.id}" type="checkbox"${draft ? ' checked disabled' : ''}>${esc(f.prompt)}</label>`).join('')}<p id="consent-error" role="alert"></p><div class="screen-actions">${button('start', draft ? 'Return to study' : 'Continue to pre-survey', true)}${!draft ? button('decline', 'Decline and exit') : ''}</div><div class="participant-information">${informationSections(content.information.slice(-1))}</div>`;
   }
   function review() {
-    return heading('Review responses') + (submission.issue ? `<p role="alert">${esc(submission.issue)}</p>` : '') + `<p><strong>Nothing has been submitted.</strong> Select Submit responses to save this complete synthetic session in the preview database. It includes consent, survey and task answers, outcomes, active durations, interruption flags, random codes, and study versions. The server adds the application revision and artefact checksum. No clickstream is collected.</p><p>After an attempt, answers are frozen for retry. A failed connection may still have saved them. A receipt confirms durable storage; it does not delete the server record. Use invented answers only. In memory-only mode, keep this page open until you have a receipt; refresh cannot recover a failed attempt.</p><p>You can correct background answers and post-survey answers below. P13 stays locked.</p><div class="screen-actions">${button('edit-pre', 'Edit background answers')}<a href="#/study/post">Edit post-survey answers</a>${content.submissionEnabled ? button('submit-responses', 'Submit responses', true) : '<button disabled>Participant collection disabled</button>'}</div>${taskReview()}${['pre', 'post'].map(stage => `<details class="response-review"><summary>${stage === 'pre' ? 'Pre-survey' : 'Post-survey'} answers</summary><dl>${D.fieldsFor(content, stage).filter(f => D.visible(f, draft[stage])).map(f => { const a = draft[stage][f.id]; let value = 'Unanswered'; if (a.status === 'not_applicable') value = f.notApplicableLabel || 'Not applicable'; if (a.status === 'answered') value = f.type === 'text' ? a.value : (Array.isArray(a.value) ? a.value : [a.value]).map(v => (f.options || content.scales[f.scale]).find(o => o.value === v).label).join('; '); return `<dt>${esc(f.id + '. ' + f.prompt)}</dt><dd>${esc(value)}</dd>`; }).join('')}</dl></details>`).join('')}`;
+    return heading('Review responses') + (submission.issue ? `<p role="alert">${esc(submission.issue)}</p>` : '') + `<p><strong>Nothing has been submitted.</strong> Select Submit responses to save your consent, survey and task answers, outcomes, and active task durations. Your session is identified by a random participant code.</p><p>Once submission begins, answers are locked. If the connection fails, keep this tab open and retry. A receipt confirms that your responses were saved.</p><p>You can correct background answers and post-survey answers below. P13 stays locked.</p><div class="screen-actions">${button('edit-pre', 'Edit background answers')}<a href="#/study/post">Edit post-survey answers</a>${content.submissionEnabled ? button('submit-responses', 'Submit responses', true) : '<button disabled>Participant collection disabled</button>'}</div>${taskReview()}${['pre', 'post'].map(stage => `<details class="response-review"><summary>${stage === 'pre' ? 'Pre-survey' : 'Post-survey'} answers</summary><dl>${D.fieldsFor(content, stage).filter(f => D.visible(f, draft[stage])).map(f => { const a = draft[stage][f.id]; let value = 'Unanswered'; if (a.status === 'not_applicable') value = f.notApplicableLabel || 'Not applicable'; if (a.status === 'answered') value = f.type === 'text' ? a.value : (Array.isArray(a.value) ? a.value : [a.value]).map(v => (f.options || content.scales[f.scale]).find(o => o.value === v).label).join('; '); return `<dt>${esc(f.id + '. ' + f.prompt)}</dt><dd>${esc(value)}</dd>`; }).join('')}</dl></details>`).join('')}`;
   }
   function submissionHtml() {
     const state = submission.state;
-    if (state.kind === 'receipt') return heading('Responses received') + `<p>Your synthetic responses were committed to the preview database.</p><p>Receipt: <code>${esc(state.receipt.receiptId)}</code></p><p>Participant code: <code>${esc(state.receipt.participantCode)}</code></p><p>Keep this code when discussing the synthetic record with the researcher. Participant withdrawal arrangements remain pending review.</p>${submission.issue ? `<p role="alert">${esc(submission.issue)}</p>${button('cleanup-receipt', 'Retry local cleanup')}` : `<p>Local answer drafts have been cleared. Only this receipt remains in the tab.</p>${button('new-study', 'Start another synthetic session')}`}`;
+    if (state.kind === 'receipt') return heading('Responses received') + `<p>Your responses have been saved.</p><p>Receipt: <code>${esc(state.receipt.receiptId)}</code></p><p>Participant code: <code>${esc(state.receipt.participantCode)}</code></p><p>Keep your participant code and receipt for reference.</p>${submission.issue ? `<p role="alert">${esc(submission.issue)}</p>${button('cleanup-receipt', 'Retry local cleanup')}` : `<p>Local answer drafts have been cleared. Only this receipt remains in the tab.</p>${button('new-study', 'Start another session')}`}`;
     return heading(submission.busy ? 'Submitting responses…' : 'Receipt not yet confirmed') + `<p role="status">${submission.busy ? 'Wait for the server receipt. Answers are frozen for this attempt.' : 'A response record may already exist. Retry with the same submission ID and answers.'}</p><p>Participant code: <code>${esc(state.payload.participantCode)}</code></p>${submission.issue ? `<p role="alert">${esc(submission.issue)}</p>` : ''}${submission.busy ? '' : button('retry-submit', 'Retry submission', true)}<p>Keep this tab open. Stop/discard is unavailable after an attempt because it cannot erase a server record.</p>`;
   }
   function render() {
-    document.querySelector('#preview-reset').disabled = !!submission.state;
     const route = location.hash.slice(1) || '/explore', explore = route === '/explore';
     if (loaded && submission.state && !explore && route !== '/study/complete') return go('/study/complete', true);
     leaveTask(route);
@@ -161,7 +159,6 @@
     const requestedTask = /^\/study\/tasks\/(T[0-6])$/.exec(route)?.[1];
     const index = requestedTask ? 2 : routes.indexOf(route);
     if (loaded && draft?.preComplete && requestedTask && Number(requestedTask.slice(1)) > Number(D.currentTask(draft).slice(1))) return go(taskRoute(), true);
-    if (!preview && !explore) return go('/explore', true);
     if (loaded && !explore && !exited && (index < 0 || index > maximum())) return go(maximum() === 2 ? taskRoute() : routes[maximum()], true);
     screen.hidden = explore; workspace.hidden = !explore && (!loaded || index !== 2);
     progress.hidden = explore || exited || !loaded;
@@ -175,18 +172,18 @@
       progress.innerHTML = `<ol>${names.map((name, n) => `<li${n === index ? ' aria-current="step"' : ''}>${n + 1}. ${n <= maximum() ? `<a href="#${n === 2 && draft ? taskRoute() : routes[n]}">${name}</a>` : name}</li>`).join('')}</ol>`;
       let html;
       if (submission.state) html = submissionHtml();
-      else if (submission.recoveryBlocked) html = heading('Submission recovery unavailable') + `<p role="alert">${esc(submission.issue)}</p>${button('retry-content', 'Retry recovery')}<p>Memory-only continuation starts a new synthetic session; an older submission may already exist. Refresh cannot recover this new session.</p>${button('memory', 'Continue in memory only')}`;
-      else if (exited) html = heading(route.endsWith('declined') ? 'Preview declined' : 'Preview stopped') + `<p>No response record was created. The local trial has been discarded.</p>${button('restart', 'Start a new preview', true)} <a href="#/explore">Explore curated artefacts</a>`;
+      else if (submission.recoveryBlocked) html = heading('Submission recovery unavailable') + `<p role="alert">${esc(submission.issue)}</p>${button('retry-content', 'Retry recovery')}<p>Memory-only continuation starts a new session; an older submission may already exist. Refresh cannot recover this new session.</p>${button('memory', 'Continue in memory only')}`;
+      else if (exited) html = heading(route.endsWith('declined') ? 'Study declined' : 'Study stopped') + `<p>No response record was created. The local draft has been discarded.</p>${button('restart', 'Start a new session', true)} <a href="#/explore">Explore curated artefacts</a>`;
       else if (index === 0) html = heading('Information and consent') + info();
       else if (index === 1) html = heading('Pre-survey') + `<p>Approximately 4 minutes. Every item is optional except P1.</p>${draft.p13Locked ? '<p>P13 was locked when the T0 orientation started. Background corrections do not change it.</p>' : '<p>P13 will be locked when you start the T0 orientation.</p>'}` + survey('pre');
       else if (index === 2) html = taskHtml(requestedTask);
       else if (index === 3) html = heading('Post-survey') + `<p>Approximately 8 minutes. All items may be left unanswered. Answers stay local until you select Submit responses.</p>` + survey('post');
       else html = review();
-      screen.innerHTML = (!exited ? html.replace('</h2>', '</h2><div id="draft-status" class="draft-status" tabindex="-1"></div>') : html) + (draft && !exited && !submission.state ? `<p class="participant-code">Participant code: ${esc(draft.participantCode)}</p><div class="study-utilities"><a href="#/study">Information</a>${button('stop', 'Stop and discard trial')}</div>` : '');
+      screen.innerHTML = (!exited ? html.replace('</h2>', '</h2><div id="draft-status" class="draft-status" tabindex="-1"></div>') : html) + (draft && !exited && !submission.state ? `<p class="participant-code">Participant code: ${esc(draft.participantCode)}</p><div class="study-utilities"><a href="#/study">Information</a>${button('stop', 'Stop and discard answers')}</div>` : '');
       updateStorage(); showErrors();
       if (index === 2) enterTask(requestedTask);
     }
-    document.title = `${screen.querySelector('h2').textContent} · irexplorer preview`;
+    document.title = `${screen.querySelector('h2').textContent} · irexplorer`;
     screen.querySelector('h2').focus({ preventScroll: true });
     // The desktop task sidebar scrolls independently of the page. Reset both
     // explicitly rather than relying on a browser's focus-scroll behaviour.
@@ -249,7 +246,7 @@
       const response = await fetch('/api/study/content', { cache: 'no-store' });
       if (!response.ok) throw new Error('Content unavailable');
       content = await response.json();
-      if (!['preview', 'pilot', 'live'].includes(content.mode) || content.contentVersion !== 'e5-preview-1') throw new Error('Unsupported content');
+      if (!['local', 'preview', 'pilot', 'live'].includes(content.mode) || content.contentVersion !== 'e5-preview-1') throw new Error('Unsupported content');
       store = D.storage(content); submission.read(); draft = store.read();
       if (submission.state?.kind === 'receipt' && submission.cleanup(() => store.discard())) draft = null;
       if (draft) { const t = draft.tasks[D.currentTask(draft)]; if (t.started && t.status === 'pending') { t.interrupted = true; store.save(draft); } }
@@ -286,7 +283,7 @@
       delete errors[clear]; showErrors(); save(); return;
     }
     const action = event.target.closest('[data-action]')?.dataset.action;
-    if (!action || !preview) return;
+    if (!action) return;
     if (action === 'retry-content') { load(); return; }
     if (!loaded) return;
     if (action === 'submit-responses' && content.submissionEnabled && draft) {
@@ -322,8 +319,6 @@
     else if (action === 'memory' && store.memory()) { updateStorage(); }
     else if (action === 'retry-storage' && draft) { store.retry(draft); render(); }
   });
-  document.querySelector('#preview-controls').hidden = !preview;
-  document.querySelector('#preview-reset').addEventListener('click', () => { if (preview && loaded) discard('/study'); });
   document.addEventListener('click', event => {
     const target = event.target.closest('a[href^="#"]')?.getAttribute('href');
     if (!target || target.startsWith('#/')) return;
@@ -331,5 +326,12 @@
     event.preventDefault(); const disclosure = element.closest('details'); if (disclosure) disclosure.open = true; element.tabIndex = -1; element.focus(); element.scrollIntoView({ block: 'start' });
   });
   window.addEventListener('hashchange', () => { errors = {}; render(); });
-  if (preview) await load(); else render();
+  fetch('/api/release', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(release => {
+    if (release) {
+      const label = document.querySelector('#app-version');
+      label.textContent = release.version === 'development' ? 'Development' : `v${release.version}`;
+      label.title = release.revision;
+    }
+  }).catch(() => {});
+  await load();
 })();

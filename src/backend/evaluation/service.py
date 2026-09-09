@@ -10,6 +10,7 @@ import uuid
 from dataclasses import dataclass
 
 from .content import participant_content, validate_answers
+from src.backend.release import metadata
 
 ROOT = Path(__file__).resolve().parents[3]
 UUID = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$', re.I)
@@ -26,10 +27,10 @@ class Config:
     directory: Path
     mode: str = 'preview'
     origin: str = 'http://127.0.0.1:8000'
-    app_revision: str = 'e6-submission-1'
+    app_revision: str = metadata()['revision']
 
     def __post_init__(self):
-        if self.mode not in ('preview', 'pilot', 'live'):
+        if self.mode not in ('local', 'preview', 'pilot', 'live'):
             raise ValueError('Unsupported collection mode')
         if self.directory.resolve().is_relative_to(ROOT.parent):
             raise ValueError('Study storage must be outside the project repositories')
@@ -38,9 +39,8 @@ class Config:
 
     @property
     def enabled(self):
-        # The inherited consent is synthetic-only. E7/E8 must version/freeze it
-        # before participant collection can be enabled, even by an operator.
-        return self.mode == 'preview'
+        # Local assessment and legacy preview stores are separate from research data.
+        return self.mode in ('local', 'preview')
 
     @property
     def path(self):
@@ -52,7 +52,7 @@ class Config:
         return cls(Path(os.environ.get('IREXPLORER_STUDY_DIR', default)),
                    os.environ.get('IREXPLORER_STUDY_MODE', 'preview'),
                    os.environ.get('IREXPLORER_STUDY_ORIGIN', 'http://127.0.0.1:8000'),
-                   os.environ.get('IREXPLORER_APP_REVISION', 'e6-submission-1'))
+                   os.environ.get('IREXPLORER_APP_REVISION', metadata()['revision']))
 
 
 def canonical(value):

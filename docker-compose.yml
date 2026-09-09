@@ -1,5 +1,30 @@
 services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: app
+      args:
+        APP_VERSION: ${IREXPLORER_VERSION:-0.1.0}
+    image: irexplorer:${IREXPLORER_VERSION:-0.1.0}
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      IREXPLORER_STUDY_ORIGIN: http://localhost:8000
+      IREXPLORER_STUDY_MODE: local
+      IREXPLORER_STUDY_DIR: /data
+    volumes:
+      - study-data:/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    restart: unless-stopped
   toolchain:
+    profiles: [toolchain]
     build:
       context: .
       dockerfile: Dockerfile.toolchain
@@ -8,3 +33,6 @@ services:
     working_dir: /workspace
     volumes:
       - .:/workspace
+
+volumes:
+  study-data:

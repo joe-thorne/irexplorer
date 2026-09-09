@@ -10,3 +10,10 @@ build
 *.ll
 *.o
 *.opt.yaml
+!artefacts/curated/**/*.ll
+!artefacts/curated/**/*.opt.yaml
+.env*
+*.sqlite3*
+research-data
+docs/evaluation-captures
+.DS_Store

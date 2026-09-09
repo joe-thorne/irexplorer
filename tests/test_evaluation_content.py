@@ -1,13 +1,18 @@
 """E4 participant boundary and survey contract; no collection API."""
 import unittest
+from pathlib import Path
+import tempfile
 from fastapi.testclient import TestClient
 from src.backend.api.app import create_app
 from src.backend.evaluation.content import participant_content, validate_answers
+from src.backend.evaluation.service import Config
 
 
 class EvaluationContentTests(unittest.TestCase):
     def test_public_content_is_preview_only_and_participant_only(self):
-        with TestClient(create_app()) as client:
+        with tempfile.TemporaryDirectory() as directory, TestClient(create_app(
+            study_config=Config(Path(directory), mode='preview')
+        )) as client:
             response = client.get('/api/study/content')
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.headers['cache-control'], 'no-store')

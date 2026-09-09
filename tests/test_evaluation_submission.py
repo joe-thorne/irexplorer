@@ -139,5 +139,26 @@ class SubmissionTests(unittest.TestCase):
         db=sqlite3.connect(self.config.path);db.execute('PRAGMA user_version=99');db.close()
         self.assertEqual(self.post().status_code,503)
 
+    def test_local_collection_is_separate_and_records_server_release(self):
+        local = Config(Path(self.tmp.name), mode='local', origin='http://testserver',
+                       app_revision='0.1.0+tested-source')
+        with TestClient(create_app(study_config=local)) as client:
+            self.assertEqual(client.get('/api/study/content').json()['mode'], 'local')
+            first = client.post('/api/study/submissions', json=self.payload,
+                                headers={'Origin': local.origin})
+            self.assertEqual(first.status_code, 201)
+            release = client.get('/api/release')
+            self.assertEqual(release.status_code, 200)
+            self.assertEqual(release.headers['cache-control'], 'no-store')
+            self.assertIn('version', release.json())
+            self.assertNotIn('files', release.json())
+        self.assertFalse(self.config.path.exists())
+        self.assertEqual(StudyService(local).submit(self.payload), (first.json(), False))
+        destination = Path(self.tmp.name) / 'local-export'
+        self.assertEqual(export(local.path, destination), 1)
+        record = json.loads((destination / 'responses.json').read_text())[0]
+        self.assertEqual(record['release']['mode'], 'local')
+        self.assertEqual(record['release']['appRevision'], '0.1.0+tested-source')
+
 
 if __name__ == '__main__': unittest.main()

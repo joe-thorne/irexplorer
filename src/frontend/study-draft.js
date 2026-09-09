@@ -84,7 +84,7 @@ window.StudyDraft = (() => {
         let raw;
         try { raw = getStorage().getItem(KEY); } catch { mode = 'blocked'; unreadable = true; issue = 'Browser storage is unavailable. Any older saved copy could not be checked.'; return null; }
         if (!raw) return null;
-        try { return decode(raw, content); } catch { mode = 'invalid'; issue = 'A damaged or incompatible draft could not be restored. Discard it to start a new preview.'; stale = true; return null; }
+        try { return decode(raw, content); } catch { mode = 'invalid'; issue = 'A damaged or incompatible draft could not be restored. Discard it to start a new session.'; stale = true; return null; }
       },
       save(draft) {
         if (mode === 'memory') return true;

@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="Compare curated LLVM IR optimisation artefacts." />
     <title>irexplorer</title>
-    <link rel="stylesheet" href="/style.css?v=e6-submission-1" />
+    <link rel="stylesheet" href="/style.css" />
   </head>
-  <body data-study-mode="preview">
+  <body>
     <a class="skip-link" href="#route-heading">Skip to page content</a>
     <header class="site-header">
       <div>
@@ -18,12 +18,10 @@
     </header>
 
     <main class="app-shell">
-      <aside id="preview-controls" class="preview-bar" aria-label="Preview controls" hidden>
-        <strong>E6 · Synthetic study preview</strong>
-        <span>Invented answers only · local drafts · final submission to preview storage.</span>
-        <a href="#/study">Study preview</a><a href="#/explore">Explore directly</a>
-        <button id="preview-reset" type="button">Reset preview</button>
-      </aside>
+      <nav class="app-navigation" aria-label="Application">
+        <a href="#/explore">Explore</a><a href="#/study">Study</a>
+        <span id="app-version" class="app-version"></span>
+      </nav>
       <nav id="study-progress" aria-label="Study progress" hidden></nav>
       <div id="journey-layout">
         <section id="study-screen" class="panel study-screen" aria-labelledby="route-heading" hidden></section>
@@ -128,13 +126,13 @@
         <p class="error-message"></p>
       </section>
     </template>
-    <script src="/source.js?v=e6-submission-1" defer></script>
-    <script src="/comparison.js?v=e6-submission-1" defer></script>
-    <script src="/vendor/dagre-1.1.5.min.js?v=e6-submission-1" defer></script>
-    <script src="/app.js?v=e6-submission-1" defer></script>
-    <script src="/study-draft.js?v=e6-submission-1" defer></script>
-    <script src="/task-clock.js?v=e6-submission-1" defer></script>
-    <script src="/study-submit.js?v=e6-submission-1" defer></script>
-    <script src="/preview.js?v=e6-submission-1" defer></script>
+    <script src="/source.js" defer></script>
+    <script src="/comparison.js" defer></script>
+    <script src="/vendor/dagre-1.1.5.min.js" defer></script>
+    <script src="/app.js" defer></script>
+    <script src="/study-draft.js" defer></script>
+    <script src="/task-clock.js" defer></script>
+    <script src="/study-submit.js" defer></script>
+    <script src="/study.js" defer></script>
   </body>
 </html>

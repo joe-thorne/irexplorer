@@ -94,3 +94,9 @@ E5 C31: CFGs now use layered layout and horizontal edge labels. Directed paths a
 ## E6 submission and receipt, 8 September 2026
 
 Explicit Submit/Retry/Cleanup buttons and focused screen headings distinguish review, in-flight, uncertain, and acknowledged states. The 390px retry/receipt pages wrap random codes and contain no horizontal page overflow. Reset is disabled after an attempt; route guards prevent editing frozen answers. Four inspected captures and 43 browser assertions are recorded in [E6 evidence](evaluation-captures/e6-submission.md). Full physical-keyboard/spoken screen-reader and final accessibility remain E7; synthetic browser checks do not establish human completion time.
+
+## E7 complete synthetic accessibility rehearsal, 9 September 2026
+
+The current `e7-walkthrough-1` preview identifies its visible asset and trusted server revision consistently. Its [E7 record](evaluation-captures/e7-walkthrough.md) contains 27 behavioural assertions and zero runtime exceptions from an isolated current Chrome profile. It exercises keyboard Space on consent and Enter on an IR correspondence; route-heading focus through the consent, survey, task, review, uncertainty, retry, and receipt screens; source/CFG focus; source failure/recovery; reduced-motion and forced-colours emulation; 390 px width with 200% emulated page scale; and a second tab without the first tab's session storage. Two desktop/narrow captures were visually inspected.
+
+This establishes current browser behaviour, not a spoken screen-reader result or a physical-keyboard assessment. Joe must perform the remaining physical Tab/Enter/Space and, where available, spoken screen-reader walkthrough before accepting E7. The browser record does not validate a human completion duration, deployment/proxy accessibility, or the unresolved participant-facing/ethics conditions. Pilot/live collection remains disabled.

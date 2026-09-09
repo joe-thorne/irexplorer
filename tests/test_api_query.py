@@ -148,9 +148,9 @@ class FastApiTests(unittest.TestCase):
         self.assertEqual(mapping.status_code, 200)
         self.assertEqual(mapping.json()["counterpartOrdinal"], 3)
 
-    def test_preview_assets_bypass_legacy_cache_on_normal_and_conditional_reload(self):
-        for path in ("/", "/index.html", "/app.js", "/app.js?v=e6-submission-1",
-                     "/vendor/dagre-1.1.5.min.js", "/source.js", "/comparison.js", "/preview.js", "/study-draft.js", "/task-clock.js", "/style.css"):
+    def test_app_assets_bypass_legacy_cache_on_normal_and_conditional_reload(self):
+        for path in ("/", "/index.html", "/app.js", "/app.js?v=e7-walkthrough-1",
+                     "/vendor/dagre-1.1.5.min.js", "/source.js", "/comparison.js", "/study.js", "/study-draft.js", "/task-clock.js", "/style.css"):
             with self.subTest(path=path):
                 first = self.client.get(path)
                 self.assertEqual(first.status_code, 200)
@@ -163,8 +163,8 @@ class FastApiTests(unittest.TestCase):
                 self.assertEqual(conditional.content, first.content)
                 self.assertEqual(conditional.headers["cache-control"], "no-store")
         html = self.client.get("/").text
-        for name in ("vendor/dagre-1.1.5.min.js", "app.js", "source.js", "comparison.js", "preview.js", "study-draft.js", "task-clock.js", "style.css"):
-            self.assertIn(f'/{name}?v=e6-submission-1', html)
+        for name in ("vendor/dagre-1.1.5.min.js", "app.js", "source.js", "comparison.js", "study.js", "study-draft.js", "task-clock.js", "style.css"):
+            self.assertIn(f'/{name}"', html)
 
     def test_errors_are_typed_and_controlled(self) -> None:
         for retired_route in (
@@ -238,6 +238,7 @@ class FastApiTests(unittest.TestCase):
             set(schema.json()["paths"]),
             {
                 "/api/health",
+                "/api/release",
                 "/api/study/content",
                 "/api/study/submissions",
                 "/api/examples",
@@ -260,7 +261,7 @@ class FastApiTests(unittest.TestCase):
         self.assertEqual(html.status_code, 200)
         self.assertEqual(html.headers["content-type"].split(";")[0], "text/html")
         self.assertIn("irexplorer", html.text)
-        self.assertIn('src="/app.js?v=e6-submission-1"', html.text)
+        self.assertIn('src="/app.js"', html.text)
         for element_id in (
             "example-select",
             "function-select",

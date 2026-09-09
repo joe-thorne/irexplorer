@@ -15,6 +15,7 @@ from starlette.exceptions import HTTPException as StarletteHttpException
 from src.backend.api.query import DataUnavailableError, QueryError, QueryService
 from src.backend.evaluation.service import Config, StudyService
 from src.backend.evaluation.router import router as study_router
+from src.backend.release import metadata
 from src.backend.api.schemas import (
     CfgResponse,
     CounterpartsResponse,
@@ -39,8 +40,8 @@ TargetOrdinal = Annotated[int | None, Query(alias="toOrdinal", ge=0)]
 logger = logging.getLogger(__name__)
 
 
-class PreviewStaticFiles(StaticFiles):
-    """Keep evolving preview HTML and scripts fresh, including conditional reloads."""
+class AppStaticFiles(StaticFiles):
+    """Load current assets on every visit, including across container upgrades."""
 
     def is_not_modified(self, response_headers, request_headers) -> bool:
         return False
@@ -111,6 +112,10 @@ def create_app(
     def health() -> dict[str, str]:
         return {"status": "ok"}
 
+    @app.get("/api/release")
+    def release() -> JSONResponse:
+        return JSONResponse(metadata(), headers={"Cache-Control": "no-store"})
+
     @app.get("/api/examples", response_model=ExamplesResponse)
     def list_examples() -> dict[str, object]:
         return query_service.list_examples()
@@ -167,7 +172,7 @@ def create_app(
 
     app.include_router(study_router(StudyService(study_config or Config.environment())))
 
-    app.mount("/", PreviewStaticFiles(directory=FRONTEND_ROOT, html=True), name="frontend")
+    app.mount("/", AppStaticFiles(directory=FRONTEND_ROOT, html=True), name="frontend")
     return app
 
 

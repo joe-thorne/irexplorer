@@ -93,9 +93,9 @@ select { background: #fff; border: 1px solid #9fb3c8; border-radius: .35rem; col
 a { color: var(--accent); }
 a:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visible,
 [tabindex="-1"]:focus { outline: 3px solid var(--focus); outline-offset: 3px; }
-.preview-bar { align-items: center; background: #e6f3f5; border: 1px solid #8fb5be; border-radius: .5rem; display: flex; flex-wrap: wrap; gap: .6rem 1rem; margin-bottom: 1rem; padding: .7rem 1rem; font-size: .85rem; }
-.preview-bar span { flex: 1 1 20rem; }
-.preview-bar button, .screen-actions button, .study-utilities button, .study-screen > button { padding: .55rem .8rem; }
+.app-navigation { display: flex; align-items: center; gap: 1.2rem; margin-bottom: 1rem; }
+.app-version { margin-left: auto; color: #526477; font-size: .8rem; }
+.screen-actions button, .study-utilities button, .study-screen > button { padding: .55rem .8rem; }
 #study-progress ol { display: flex; flex-wrap: wrap; gap: .5rem 1rem; list-style: none; padding: 0; }
 #study-progress li { color: var(--muted); border-bottom: 3px solid transparent; padding: .3rem 0; }
 #study-progress [aria-current="step"] { border-color: var(--accent); color: var(--ink); font-weight: 800; }
@@ -193,7 +193,7 @@ details p { margin: .8rem 0 0; }
 .field-error, #form-errors, #consent-error { color: #9b1c1c; font-weight: 700; }
 .field-error:empty, #form-errors:empty, #consent-error:empty { display: none; }
 [aria-invalid="true"] { outline: 2px solid #9b1c1c; outline-offset: 2px; }
-.draft-status, .preview-warning { background: #fef5df; border: 1px solid #b88737; border-radius: .4rem; margin: 1rem 0; padding: 1rem; }
+.draft-status { background: #fef5df; border: 1px solid #b88737; border-radius: .4rem; margin: 1rem 0; padding: 1rem; }
 .draft-status p { margin-bottom: .5rem; }
 .draft-status p:last-child { margin-bottom: 0; }
 .draft-status button { padding: .55rem; margin: .3rem; }
