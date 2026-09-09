@@ -217,7 +217,12 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# Study data must also be configured outside both repositories.
+# Study data must be configured outside the repository.
 *.sqlite3
 *.sqlite3-*
 research-data/
+
+# Generated release identity and local verification output
+/release.json
+/test-results/
+/playwright-report/

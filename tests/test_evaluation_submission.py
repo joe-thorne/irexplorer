@@ -42,6 +42,21 @@ class SubmissionTests(unittest.TestCase):
     def post(self, p=None, **kwargs):
         return self.client.post('/api/study/submissions', json=p or self.payload, headers={'Origin': 'http://testserver'}, **kwargs)
 
+    def test_storage_boundary_is_independent_of_parent_checkout(self):
+        # A standalone checkout may share its parent with a legitimate data directory.
+        checkout = Path(self.tmp.name).resolve() / 'application'
+        checkout.mkdir()
+        with patch('src.backend.evaluation.service.ROOT', checkout):
+            sibling = Path(self.tmp.name) / 'data'
+            self.assertEqual(Config(sibling).directory, sibling)
+            for directory in (checkout, checkout / 'data', checkout / 'src/frontend/data'):
+                with self.subTest(directory=directory), self.assertRaises(ValueError):
+                    Config(directory)
+            alias = Path(self.tmp.name) / 'alias'
+            alias.symlink_to(checkout, target_is_directory=True)
+            with self.assertRaises(ValueError):
+                Config(alias / 'data')
+
     def test_commit_retry_conflict_restart_and_minimal_receipt(self):
         first = self.post(); self.assertEqual(first.status_code, 201)
         self.assertEqual(set(first.json()), {'receiptId', 'participantCode', 'submissionId', 'studyVersion'})

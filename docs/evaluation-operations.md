@@ -1,6 +1,6 @@
 # Study collection and researcher operations
 
-9 September 2026. The local container stores assessment sessions separately from compiler queries. Start/stop, export, backup, and reset commands are in the [README](../README.md). Use `http://localhost:8000` consistently: `localhost` and `127.0.0.1` are different submission origins.
+The local container stores assessment sessions separately from compiler queries. Start/stop, export, backup, and reset commands are in the [README](../README.md). Use `http://localhost:8000` consistently: `localhost` and `127.0.0.1` are different submission origins.
 
 | Setting | Container behaviour |
 |---|---|
@@ -12,6 +12,10 @@
 SQLite schema and canonicalisation remain version 1. Writes are transactional, duplicate retries return the original receipt, and conflicting reuse is rejected. Server acknowledgement follows commit. Directories use mode 0700 and database files 0600. Local collection starts on first submission. Application changes do not rewrite existing records or their release metadata.
 
 The image binds Uvicorn inside the container, while Compose publishes only the Mac's localhost port. Access logging is disabled. This local baseline does not configure hosted infrastructure or amend the study instruments.
+
+## Host Python configuration
+
+The Python runner defaults to origin `http://127.0.0.1:8000` and mode `preview`. Set `IREXPLORER_STUDY_DIR` to an absolute writable directory outside the repository to choose storage explicitly. Set `IREXPLORER_STUDY_MODE=local` and `IREXPLORER_STUDY_ORIGIN=http://127.0.0.1:8000` for a host local run. These environment variables apply to the process at startup. Run the CLI below with `.venv/bin/python -m src.backend.evaluation.cli` and the corresponding database path when using host Python.
 
 ## Export and codebook
 
@@ -42,9 +46,9 @@ docker compose run --rm --no-deps app python -m src.backend.evaluation.cli delet
 docker compose run --rm --no-deps app python -m src.backend.evaluation.cli purge /data/my-restored.sqlite3 --confirm
 ```
 
-Participant deletion removes matching rows with SQLite secure deletion and compacts the database. Perform deletion on each retained backup or replace affected backups, remove/recreate exports, and update any separate coding/assistance files. `purge` accepts explicitly named database/JSON/CSV files; it never recursively deletes a directory. Stop collection first. Database sidecars are removed with the named database. Inventory host snapshots and separately copied files too. File removal cannot promise physical erasure from SSDs or host snapshots. Joe/Joel still need to agree the withdrawal cutoff and retention endpoint; The local build leaves those instrument decisions unchanged.
+Participant deletion removes matching rows with SQLite secure deletion and compacts the database. Perform deletion on each retained backup or replace affected backups, remove/recreate exports, and update any separate coding/assistance files. `purge` accepts explicitly named database/JSON/CSV files; it never recursively deletes a directory. Stop collection first. Database sidecars are removed with the named database. Inventory host snapshots and separately copied files too. File removal cannot promise physical erasure from SSDs or host snapshots. A hosted study must define its withdrawal cutoff and retention endpoint separately.
 
-The application runner disables Uvicorn access logs. Study errors are controlled, do not echo answers/paths, and the study package logs no request bodies, IPs, or participant IDs. Synthetic testing found no answer/identifier in request URLs, browser runtime exceptions, or application diagnostics. This is not an audit of the old preview process or future proxy/host logs. Hosting would require separate infrastructure configuration and verification.
+The application runner disables Uvicorn access logs. Study errors are controlled, do not echo answers/paths, and the study package logs no request bodies, IPs, or participant IDs. Synthetic testing found no answer/identifier in request URLs, browser runtime exceptions, or application diagnostics. This does not configure proxy or host logs. Hosting would require separate infrastructure configuration and verification.
 
 ## Failure and receipt behaviour
 
@@ -52,4 +56,4 @@ Only Submit responses sends answers. Before it, Stop/discard removes local draft
 
 An acknowledged receipt replaces the frozen payload, then the original answer draft is removed. Failure in either cleanup step stays visible and offers retry; success is not falsely described as local erasure. An explicitly selected memory-only session can submit but cannot promise refresh recovery, and unavailable storage can require cleanup retry. Keep the tab and receipt code. Corrupt/unreadable submission recovery blocks normal progression and offers recovery retry or explicitly acknowledged memory-only continuation; a previous server record may exist.
 
-Use the local build for assessment; participant release remains a separate decision.
+The included flow supports local evaluation. Pilot and live collection remain disabled.

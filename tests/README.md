@@ -1,8 +1,47 @@
 # Tests
 
-Test coverage grows with implementation risk.
-Start with boundary smoke tests, then add model invariant, ingestion, analysis, and end-to-end fixture tests.
+Run from the application repository root. All application tests use included fixtures and synthetic responses; no thesis checkout or external instruments are required.
 
-E5 extends `test_evaluation_content.py` to tasks and shared answer validation. Current commands: `node scripts/check_e5_drafts.mjs` for local draft/timing contracts, `.venv/bin/python scripts/build_e5_content.py --check` for source-backed participant content and unchanged instrument hashes (requires parent checkout), and `node scripts/capture_e5.mjs` for synthetic browser checks against isolated headless Chrome on port 9227 and the review server on 8000. Current evidence is `docs/evaluation-captures/e5-tasks.md`. The E5 builder extends the E4 survey builder; older build/check/capture scripts retain their step-specific historical assumptions and evidence.
+## Backend
 
-E6: `.venv/bin/python -m unittest discover -s tests -v` includes the isolated submission validation/storage/export suite. `node scripts/check_e6_submission.mjs` checks frozen retry and cleanup failure semantics; `node scripts/capture_e6.mjs` runs two synthetic journeys against the E6 server on 8006 and an isolated headless Chrome on 9239. It includes lost acknowledgement after commit and offline retry. Run `scripts/audit_e0.py --output docs/evaluation-captures/e6-model-audit.json` to retain the original source/model/instrument checks without overwriting E0 evidence; the old no-write assertion now checks the origin boundary. E5 step-specific capture scripts still have historical disabled-submission expectations. See the [E6 runbook](../docs/evaluation-operations.md).
+With the Python environment described in the application README:
+
+```sh
+.venv/bin/python -m unittest discover -s tests -v
+```
+
+Or run the same suite in the pinned application environment:
+
+```sh
+docker build --target test -t irexplorer-test .
+docker run --rm --read-only --tmpfs /tmp --network none irexplorer-test
+```
+
+The suite covers compiler fixtures and invariants, ingestion, correspondence, source and summary queries, API boundaries, study validation, transactional submission retries, export, and backup/restore. Compiler generation tests inspect the generation contract without regenerating the shipped fixtures.
+
+## Study state
+
+With Node 22 or later, these standalone checks require no server or browser and write no evidence files:
+
+```sh
+node scripts/check_study_drafts.mjs
+node scripts/check_study_submission.mjs
+```
+
+## Browser regression
+
+Start the application with Docker Compose, then start a separate headless Chrome instance with a temporary profile and remote debugging on port 9239. For example, on Linux:
+
+```sh
+google-chrome --headless --no-first-run --no-default-browser-check --disable-background-networking --user-data-dir="$(mktemp -d)" --remote-debugging-port=9239 about:blank
+```
+
+Use your platform's Chrome executable if named differently. In another terminal:
+
+```sh
+node scripts/check_app.mjs
+```
+
+The script requires Node 22 or later. It checks default Explore navigation, coordinated views, study navigation, retry/receipt behaviour, and independent browser tabs. It submits synthetic data, so use a disposable local instance and study volume. `IREXPLORER_ORIGIN` overrides the default `http://localhost:8000`. Results go to stdout; optionally set `IREXPLORER_CHECK_OUTPUT` to a directory outside the repository for JSON and screenshots. Close the temporary Chrome process after testing.
+
+Automated checks do not establish complete accessibility conformance or replace physical keyboard and spoken screen-reader testing.

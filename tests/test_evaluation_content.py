@@ -26,7 +26,7 @@ class EvaluationContentTests(unittest.TestCase):
                 self.assertLessEqual(set(field), allowed)
             for forbidden in ['(R)', '[confirm', 'stratification', 'reverse-scored', 'marking key', 'expected answer']:
                 self.assertNotIn(forbidden, response.text)
-            for path in ['/participant-content.json', '/src/backend/evaluation/participant-content.json', '/docs/evaluation-captures/e0-task-evidence.json']:
+            for path in ['/participant-content.json', '/src/backend/evaluation/participant-content.json', '/tests/private-fixture.json']:
                 self.assertEqual(client.get(path).status_code, 404)
             self.assertIn(client.post('/api/study/submissions', json={'pre': {}}).status_code, (403,))
 

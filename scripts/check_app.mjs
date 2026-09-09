@@ -62,9 +62,11 @@ try {
   await send('Runtime.enable'); await send('Page.enable'); await send('Network.enable');
   await send('Emulation.setFocusEmulationEnabled', { enabled: true });
   await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
-  await send('Page.navigate', { url: `${base}/#/explore` });
+  await send('Page.navigate', { url: `${base}/` });
   await until(`document.readyState === 'complete'`);
   await until(`document.querySelectorAll('#example-select option').length === 4`);
+  await until(`document.title === 'Explore · irexplorer'`);
+  await check('Default page opens Explore without entering Study', `!location.hash && document.querySelector('#study-screen').hidden && !document.querySelector('#explore-heading').hidden`);
   await select('#example-select', 'score');
   await until('window.StudyWorkspace?.ready');
   await check('All three curated examples are available', `document.querySelectorAll('#example-select option').length === 4`);

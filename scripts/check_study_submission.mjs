@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { webcrypto } from 'node:crypto';
 import vm from 'node:vm';
 const context={window:{},crypto:webcrypto,structuredClone,TextEncoder,AbortSignal,fetch};
@@ -28,5 +28,4 @@ await s.submit(d,true);assert.equal(s.state.kind,'receipt');checks.push('Explici
 fail=false;values.clear();let release;const gate=new Promise(r=>release=r);let count=0;
 s=S.controller(()=>storage,async(...args)=>{count++;await gate;return send(...args);});const first=s.submit(d);await s.submit(d);assert.equal(count,1);release();await first;checks.push('Double click produces one in-flight request');
 values.clear();s=S.controller(()=>storage,send);d.tasks.T0.durationMs=86400001;await s.submit(d);assert.equal(s.state,null);checks.push('Oversized duration retained locally without an invalid network attempt');
-await writeFile(new URL('../docs/evaluation-captures/e6-submission-checks.json',import.meta.url),JSON.stringify({checks},null,2));
 console.log(`${checks.length} submission checks pass`);

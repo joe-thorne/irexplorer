@@ -28,17 +28,14 @@ docker compose build toolchain
 docker compose run --rm toolchain ./scripts/smoke-toolchain.sh
 ```
 
-Verified local image size after pruning: about 880 MB. The retained LLVM release binaries and clang resource headers dominate the image.
-
 ## Local Workflow
 
 - Local canonical generation runs through Docker, even on macOS.
 - Homebrew LLVM 22.1.8 on macOS is acceptable for ad hoc exploration only.
-- Existing seminar artefacts target `arm64-apple-macosx26.0.0`; they are examples, not canonical golden data.
 - Local Python tools and modules must run inside a virtual environment and be reproducible from a requirements file. Direct backend dependencies belong in `src/backend/requirements.txt`; `src/backend/requirements.lock` pins the fully resolved FastAPI deployment environment.
 - The toolchain container does not provide Python; it is only for canonical LLVM generation.
 
-## Phase 1 Curated Examples
+## Curated Examples
 
 - `score.c`: compact arithmetic and branch example.
 - `binary_search`: single-function loop and CFG example.
@@ -65,7 +62,7 @@ No-op states remain in the model and are rendered compactly.
 
 ## Command Templates
 
-The generator records the exact command line with each generated artefact. These templates define the canonical shape; S1.2 owns the concrete invocation code.
+The generator records the exact command line with each generated artefact. These templates define the canonical command shape.
 
 Run the canonical generator from `irexplorer/` inside the local Python virtual environment:
 

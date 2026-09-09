@@ -15,5 +15,4 @@ build
 .env*
 *.sqlite3*
 research-data
-docs/evaluation-captures
 .DS_Store

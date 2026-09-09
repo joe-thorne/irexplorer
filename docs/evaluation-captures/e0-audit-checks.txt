@@ -1,7 +1,0 @@
-PASS: reject missing participant field
-PASS: reject researcher answer key property
-PASS: reject unsourced prompt
-PASS: reject altered P1 requiredness
-PASS: reject altered task order
-PASS: original content: 60 fields
-All probes used in-memory copies; no instrument or draft file was modified.

@@ -1,6 +1,6 @@
 # ADR 0001 — FastAPI and stateless curated queries
 
-**Status:** Accepted — 03 Aug 2026. E6 adds isolated study persistence under [ADR 0002](0002-final-only-study-storage.md); the compiler-query decisions below remain unchanged.
+**Status:** Accepted — 03 Aug 2026. The application adds isolated study persistence under [ADR 0002](0002-final-only-study-storage.md); the compiler-query decisions below remain unchanged.
 
 ## Context
 
@@ -46,6 +46,4 @@ Routes change from a stateful session plus unscoped queries to:
 - `GET /api/examples/{exampleId}/states/{ordinal}/cfg?functionId=...`; and
 - `GET /api/examples/{exampleId}/states/{ordinal}/counterparts?nodeId=...`.
 
-This is deliberately a boundary migration.  The separate worker, quota, and
-confinement requirements in `docs/input-isolation.md` remain the activation
-gate for any future user-supplied source capability.
+User-supplied source compilation is not supported by the runtime. Adding it would require a separately designed isolated worker and resource limits.

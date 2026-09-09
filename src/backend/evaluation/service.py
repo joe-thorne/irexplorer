@@ -32,8 +32,8 @@ class Config:
     def __post_init__(self):
         if self.mode not in ('local', 'preview', 'pilot', 'live'):
             raise ValueError('Unsupported collection mode')
-        if self.directory.resolve().is_relative_to(ROOT.parent):
-            raise ValueError('Study storage must be outside the project repositories')
+        if self.directory.resolve().is_relative_to(ROOT):
+            raise ValueError('Study storage must be outside the application repository')
         if not re.fullmatch(r'https?://[^/]+', self.origin):
             raise ValueError('Configure an exact origin without a trailing slash')
 

@@ -1,6 +1,6 @@
 // Behavioural state/validation tests using built-in Node APIs; synthetic values only.
 import assert from 'node:assert/strict';
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 import { webcrypto } from 'node:crypto';
 const content = JSON.parse(await readFile(new URL('../src/backend/evaluation/participant-content.json', import.meta.url)));
@@ -122,5 +122,4 @@ check('Completion freezes time and cannot acquire an interruption on read-only n
   let now=0;const r={durationMs:0,status:'pending',started:true,paused:false,interrupted:false};const c=context.window.TaskClock(r,()=>now);
   c.resume();now=20;c.stop();r.status='completed';c.stop(true);c.resume();now=50;c.checkpoint();assert.equal(r.durationMs,20);assert.equal(r.interrupted,false);
 });
-await writeFile(new URL('../docs/evaluation-captures/e5-draft-checks.json', import.meta.url), JSON.stringify({ checks, count: checks.length }, null, 2) + '\n');
 console.log(`${checks.length} draft/validation/timing checks passed.`);
