@@ -346,7 +346,7 @@ function renderIr(side) {
   const { viewer, description } = elements[side];
   const fn = panel.function;
   const instructionCount = fn.blocks.reduce((count, block) => count + block.instructions.length, 0);
-  description.textContent = `${panel.ir.stateId} · ${fn.name} · ${fn.blocks.length} basic blocks · ${instructionCount} instructions`;
+  description.textContent = `${panel.ir.stateId} · ${fn.name} · ${fn.blocks.length} basic blocks · ${instructionCount} instructions · Dotted underlines: hover or focus for help.`;
   const signature = document.createElement("code");
   signature.className = "ir-signature";
   signature.innerHTML = highlightIr(stripDebug(fn.signature));
@@ -360,7 +360,7 @@ function renderIr(side) {
     heading.type = "button";
     heading.className = "ir-block-heading";
     heading.textContent = `${block.label}:`;
-    heading.title = "Basic block: a named sequence of instructions entered at the start and ending with a control-flow instruction.";
+    heading.dataset.help = "Basic block: a named sequence of instructions entered at the start and ending with a control-flow instruction.";
     heading.setAttribute("aria-pressed", String(panel.selectedNodeIds.has(block.id)));
     heading.addEventListener("click", () => selectNode(side, block.id));
     blockElement.append(heading);
@@ -616,7 +616,7 @@ function highlightIr(text) {
     else if (token === "[") help = "Starts a group, such as a phi value/predecessor pair or an array type.";
     else if (token === "]") help = "Ends this group.";
     else if (token === ",") help = "Separates operands or entries.";
-    return help ? '<span class="token-' + kind + '" title="' + escapeHtml(help) + '">' + escapeHtml(token) + '</span>' : escapeHtml(token);
+    return help ? '<span class="token-' + kind + ' ir-help" tabindex="0" data-help="' + escapeHtml(help) + '">' + escapeHtml(token) + '</span>' : escapeHtml(token);
   }).join("");
 }
 

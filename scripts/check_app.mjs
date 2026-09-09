@@ -84,7 +84,19 @@ try {
   await check('All three curated examples are available', `document.querySelectorAll('#example-select option').length === 4`);
   await check('Source box contains only source and heading', `document.querySelector('#source-prompt').hidden && !/Compiler debug|debugLoc/.test(document.querySelector('#source-panel').innerText)`);
   await check('Comparison has no expandable evidence', `document.querySelectorAll('.comparison-status details').length === 0`);
-  await check('IR symbols offer novice hover help', `[...document.querySelectorAll('#left-viewer .token-value[title]')].some(token => token.title.includes('%')) && document.querySelector('#left-viewer .token-opcode[title]') !== null`);
+  await check('IR symbols offer novice hover help', `[...document.querySelectorAll('#left-viewer .token-value[data-help]')].some(token => token.dataset.help.includes('%')) && document.querySelector('#left-viewer .token-opcode[data-help]') !== null`);
+
+  await check('Help tokens have visible dotted underlines and a help cursor', `(() => { const s = getComputedStyle(document.querySelector('.ir-help')); return s.textDecorationStyle === 'dotted' && s.cursor === 'help'; })()`);
+  await value(`window.helpToken = document.querySelector('#left-viewer .ir-help'); window.helpStarted = performance.now(); helpToken.dispatchEvent(new PointerEvent('pointerover', { bubbles: true }));`);
+  await check('Hover help uses a short intentional delay', `document.querySelector('#ir-help-tooltip').hidden`);
+  await until(`!document.querySelector('#ir-help-tooltip').hidden`);
+  await check('Help appears promptly and describes the hovered token', `performance.now() - helpStarted < 600 && document.querySelector('#ir-help-tooltip').textContent === helpToken.dataset.help && !helpToken.hasAttribute('title')`);
+  await key('Escape', 'Escape', 27);
+  await check('Escape dismisses help', `document.querySelector('#ir-help-tooltip').hidden`);
+  await value('helpToken.focus()');
+  await until(`!document.querySelector('#ir-help-tooltip').hidden`);
+  await check('Keyboard focus exposes accessible help', `document.activeElement.getAttribute('aria-describedby') === 'ir-help-tooltip'`);
+  await value('helpToken.blur()');
   await click('.source-line[data-line="3"]');
   await check('Source line highlights mapped IR in both panes', `document.querySelectorAll('.source-line.is-source').length === 1 && document.querySelectorAll('#left-viewer .is-source, #right-viewer .is-source').length > 0`);
 
@@ -138,6 +150,17 @@ try {
   await value('window.fetch = window.testFetch'); await select('#example-select', 'binary_search'); await until('window.StudyWorkspace.ready');
   await check('Source loading failure can be recovered', `document.querySelector('#source-status').textContent.includes('select a C line')`);
 
+
+  await select('#example-select', 'quick_sort'); await until('window.StudyWorkspace.ready');
+  await select('#left-state', '8'); await select('#right-state', '9'); await until('window.StudyWorkspace.ready');
+  await value(`window.mergeGroup = appState.summary.links.find(link => link.relation === 'merged');`);
+  await check('Curated comparison includes a two-to-one group', `mergeGroup.fromNodeIds.length === 2 && mergeGroup.toNodeIds.length === 1`);
+  const groupFunction = await value(`appState.panels.left.ir.functions.find(fn => fn.blocks.some(block => block.instructions.some(i => i.id === mergeGroup.fromNodeIds[0]))).name`);
+  await select('#function-select', groupFunction); await until('window.StudyWorkspace.ready');
+  await value(`selectNode('left', mergeGroup.fromNodeIds[0])`);
+  await check('Selecting either merged input highlights the complete group', `appState.panels.left.selectedInstructionIds.size === 2 && appState.panels.right.selectedInstructionIds.size === 1 && document.querySelector('#selection-status').textContent.includes('merged')`);
+  await value(`selectNode('right', mergeGroup.toNodeIds[0])`);
+  await check('Selecting the merged result traces both inputs', `appState.panels.left.selectedInstructionIds.size === 2 && appState.panels.right.selectedInstructionIds.size === 1`);
   await snap('workspace.png');
   await route('/study'); await screen('Information and consent');
   await check('Clean study interface and release label', `document.querySelector('#app-version').textContent === 'v${release.version}' && !/synthetic|preview|not.live|E7/i.test(document.body.innerText) && !location.search`);

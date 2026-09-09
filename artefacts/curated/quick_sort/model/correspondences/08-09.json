@@ -140,6 +140,18 @@
       ]
     },
     {
+      "confidence": "approximate",
+      "evidence": "connected expression 2\u21921 at /workspace/examples/curated/quick_sort.c:8:13; matched basic block, corresponding external value inputs and equal result-use signatures; structural correspondence, not proven semantic equivalence",
+      "fromNodeIds": [
+        "fn1/bb2/i2",
+        "fn1/bb2/i3"
+      ],
+      "relation": "merged",
+      "toNodeIds": [
+        "fn1/bb2/i2"
+      ]
+    },
+    {
       "confidence": "exact",
       "evidence": "unique structural, source, and value-flow signature",
       "fromNodeIds": [
@@ -614,17 +626,6 @@
     },
     {
       "confidence": "approximate",
-      "evidence": "unique debug source location and opcode",
-      "fromNodeIds": [
-        "fn1/bb2/i3"
-      ],
-      "relation": "renamed",
-      "toNodeIds": [
-        "fn1/bb2/i2"
-      ]
-    },
-    {
-      "confidence": "approximate",
       "evidence": "unique opcode and layout position in matched basic block",
       "fromNodeIds": [
         "fn1/bb2/i0"
@@ -633,15 +634,6 @@
       "toNodeIds": [
         "fn1/bb2/i0"
       ]
-    },
-    {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
-      "fromNodeIds": [
-        "fn1/bb2/i2"
-      ],
-      "relation": "removed",
-      "toNodeIds": []
     },
     {
       "confidence": "none",

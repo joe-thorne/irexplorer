@@ -299,13 +299,13 @@ class FastApiTests(unittest.TestCase):
         ):
             self.assertNotIn(retired_detail, javascript.text)
 
-        for stale_selection_guard in (
-            "selectionId",
-            "selectionRequestIsCurrent",
-            "mappingMatchesSelectionRequest",
-            "if (!selectionRequestIsCurrent(selectionRequest)) return;",
-        ):
-            self.assertIn(stale_selection_guard, javascript.text)
+        # Selection now consumes the already-loaded comparison synchronously.
+        # Serve both frontend modules; behaviour/races are covered in browser checks.
+        for path in ("/selection.js", "/tooltips.js"):
+            self.assertIn(f'src="{path}"', html.text)
+            response = self.client.get(path)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.headers["content-type"].split(";")[0], "text/javascript")
         self.assertIn('svg.setAttribute("role", "group")', javascript.text)
         self.assertNotIn('svg.setAttribute("role", "img")', javascript.text)
 

@@ -554,6 +554,9 @@ def _match_instructions(
     function_pairs: dict[str, str],
     block_pairs: dict[str, str],
 ) -> None:
+    _match_instruction_groups(
+        unmatched_from, unmatched_to, links, from_state, to_state, block_pairs
+    )
     for from_block, to_block in block_pairs.items():
         _match_unique_in_context(
             unmatched_from,
@@ -719,6 +722,120 @@ def _match_unique_in_context(
     return pairs
 
 
+# Memory operations, calls, PHIs and terminators need specialised evidence.
+_GROUP_OPCODES = frozenset({
+    "add", "sub", "mul", "shl", "lshr", "ashr", "and", "or", "xor",
+    "sdiv", "udiv", "srem", "urem", "icmp", "fcmp", "select",
+    "sext", "zext", "trunc", "bitcast", "getelementptr",
+    "fadd", "fsub", "fmul", "fdiv", "frem", "fneg",
+})
+
+
+def _expression_boundary(
+    state: StateGraph, nodes: list[Node], block_context: dict[str, str]
+) -> tuple | None:
+    """Corroborate a connected expression with its inputs and result users."""
+    ids = {node.stable_id for node in nodes}
+    neighbours = {node_id: set() for node_id in ids}
+    inputs: set[tuple] = set()
+    outputs: set[tuple] = set()
+    function = _function_for_node(state, nodes[0])
+    definitions = {node.attributes.get("result"): node for node in state.nodes
+                   if node.kind == "Instruction"
+                   and _function_for_node(state, node) == function}
+
+    def signature(node: Node) -> tuple:
+        return (node.attributes.get("source"), node.attributes.get("opcode"),
+                _normalised_instruction_text(node))
+
+    for node in nodes:
+        for operand in node.attributes.get("operands", ()):
+            definition = definitions.get(operand)
+            if definition is None:
+                inputs.add(("external", operand))
+            elif definition.stable_id not in ids:
+                parent = state.contains_parent[definition.stable_id]
+                if parent not in block_context:
+                    return None
+                # Induction-variable rewrites can widen a PHI while retaining
+                # its slot in the matched block. Keep that evidence approximate.
+                text = _normalised_instruction_text(definition)
+                if definition.attributes.get("opcode") == "phi":
+                    text = re.sub(r"\bi\d+\b", "iN", text)
+                inputs.add(("definition", block_context[parent],
+                            _contains_position(state, definition),
+                            definition.attributes.get("source"),
+                            definition.attributes.get("opcode"), text))
+        for edge in state.value_flow_successors.get(node.stable_id, ()):
+            if edge.to_id in ids:
+                neighbours[node.stable_id].add(edge.to_id)
+                neighbours[edge.to_id].add(node.stable_id)
+            else:
+                outputs.add((signature(state.by_id[edge.to_id]), edge.label))
+    visited: set[str] = set()
+    pending = [nodes[0].stable_id]
+    while pending:
+        current = pending.pop()
+        if current not in visited:
+            visited.add(current)
+            pending.extend(neighbours[current] - visited)
+    if visited != ids or not inputs or not outputs:
+        return None
+    return (frozenset(inputs), frozenset(outputs))
+
+
+def _match_instruction_groups(
+    unmatched_from: dict[str, Node],
+    unmatched_to: dict[str, Node],
+    links: list[Link],
+    from_state: StateGraph,
+    to_state: StateGraph,
+    block_pairs: dict[str, str],
+) -> None:
+    """Recognise 1→N/N→1 expressions before pairwise matches consume members.
+
+    Require exact source locations, matched block context, connected def-use
+    structure and equal external input/result-use boundaries. These are
+    approximate structural correspondences, not proofs of equivalence.
+    Recompiled anchors do not use this derived-state heuristic.
+    """
+    def groups(state: StateGraph, block: str, unmatched: dict[str, Node]) -> dict:
+        result: dict[object, list[Node]] = defaultdict(list)
+        for node_id in state.contains_children.get(block, ()):
+            node = unmatched.get(node_id)
+            if node is None or node.attributes.get("opcode") not in _GROUP_OPCODES:
+                continue
+            source = node.attributes.get("source")
+            if source is not None and source.line > 0 and source.column > 0:
+                result[source].append(node)
+        return result
+
+    for from_block, to_block in block_pairs.items():
+        before = groups(from_state, from_block, unmatched_from)
+        after = groups(to_state, to_block, unmatched_to)
+        for source in sorted(before.keys() & after.keys(), key=str):
+            old, new = before[source], after[source]
+            if min(len(old), len(new)) != 1 or len(old) == len(new):
+                continue
+            boundary = _expression_boundary(from_state, old, {key: key for key in block_pairs})
+            if boundary is None or boundary != _expression_boundary(to_state, new, {value: key for key, value in block_pairs.items()}):
+                continue
+            links.append(Link(
+                from_node_ids=tuple(node.stable_id for node in old),
+                to_node_ids=tuple(node.stable_id for node in new),
+                relation="split" if len(old) == 1 else "merged",
+                confidence="approximate",
+                evidence=(f"connected expression {len(old)}→{len(new)} at "
+                          f"{source.file}:{source.line}:{source.column}; matched basic block, "
+                          "corresponding external value inputs and equal result-use signatures; "
+                          "structural correspondence, not proven semantic equivalence"),
+            ))
+            for node in old:
+                del unmatched_from[node.stable_id]
+            for node in new:
+                del unmatched_to[node.stable_id]
+
+
 def _match_source_rewrites_in_context(
     unmatched_from: dict[str, Node],
     unmatched_to: dict[str, Node],
@@ -781,9 +898,17 @@ def _append_unmatched_links(
     """Account for every unresolved node without inventing a counterpart."""
 
     inverse_function_pairs = {to_id: from_id for from_id, to_id in function_pairs.items()}
+    # Consuming an approximate group must not turn other ambiguous candidates
+    # into exact additions/removals just because its members left the pool.
+    from_candidates = list(unmatched_from.values())
+    to_candidates = list(unmatched_to.values())
+    for link in links:
+        if link.relation in {"split", "merged"}:
+            from_candidates.extend(from_state.by_id[node_id] for node_id in link.from_node_ids)
+            to_candidates.extend(to_state.by_id[node_id] for node_id in link.to_node_ids)
     for node in tuple(unmatched_from.values()):
         confidence = "none" if _has_plausible_target(
-            node, unmatched_to.values(), from_state, to_state, function_pairs
+            node, to_candidates, from_state, to_state, function_pairs
         ) else "exact"
         evidence = (
             "candidate counterparts were inspected but no unique hybrid match exists"
@@ -802,7 +927,7 @@ def _append_unmatched_links(
     for node in tuple(unmatched_to.values()):
         confidence = "none" if _has_plausible_target(
             node,
-            unmatched_from.values(),
+            from_candidates,
             to_state,
             from_state,
             inverse_function_pairs,
@@ -1002,6 +1127,17 @@ def summarise_correspondence(
                         indices,
                     )
                 )
+
+        for relation in ("split", "merged"):
+            indices = _link_indices(correspondence, from_state, to_state,
+                                    relation=relation, kind="Instruction")
+            if indices:
+                before_count = sum(len(correspondence.links[i].from_node_ids) for i in indices)
+                after_count = sum(len(correspondence.links[i].to_node_ids) for i in indices)
+                items.append(SummaryItem(
+                    f"{len(indices)} instruction groups {relation}: "
+                    f"{before_count} → {after_count} instructions"
+                    f"{_confidence_phrase(correspondence, indices)}.", indices))
 
         changed_blocks = _link_indices(
             correspondence,

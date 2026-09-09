@@ -225,3 +225,34 @@ details p { margin: .8rem 0 0; }
 .cfg-edge { stroke-width: 2; stroke-linejoin: round; cursor: crosshair; }
 .cfg-svg.is-tracing .cfg-edge { opacity: .18; }
 .cfg-svg.is-tracing .cfg-edge.is-traced { opacity: 1; stroke-width: 4; }
+
+/* Underlines advertise help without changing IR token colours. */
+.ir-help, .ir-block-heading[data-help] {
+  cursor: help;
+  text-decoration: underline dotted;
+  text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
+  text-underline-offset: .22em;
+}
+.ir-help:hover, .ir-help:focus-visible {
+  background: var(--accent-soft);
+  border-radius: 2px;
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.ir-help-tooltip {
+  position: fixed;
+  z-index: 100;
+  max-width: min(360px, calc(100vw - 16px));
+  padding: .6rem .8rem;
+  border: 1px solid #486581;
+  border-radius: .4rem;
+  background: #102a43;
+  color: white;
+  box-shadow: 0 4px 14px #102a4333;
+  font: .875rem/1.45 Inter, ui-sans-serif, system-ui, sans-serif;
+  white-space: normal;
+}
+@media (forced-colors: active) {
+  .ir-help { text-decoration-color: LinkText; }
+  .ir-help-tooltip { border-color: CanvasText; }
+}

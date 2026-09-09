@@ -2,4 +2,4 @@
 # Update only after deliberately regenerating the pinned Docker snapshot and
 # reviewing the resulting artefact changes.
 files=135
-sha256=5df7d29081f47cedc5514b971e96f62b4ccdc67af3ef126bfd968f0e6cfa2b7f
+sha256=77c90967aadc26429bacece4d04385fbd69ce8eeef0601382372ae56cb66e1ba
