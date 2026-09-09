@@ -100,7 +100,7 @@ try {
   await click('.source-line[data-line="3"]');
   await check('Source line highlights mapped IR in both panes', `document.querySelectorAll('.source-line.is-source').length === 1 && document.querySelectorAll('#left-viewer .is-source, #right-viewer .is-source').length > 0`);
 
-  await check('C selection follows recorded cross-state links', `appState.selection?.trace.links.length > 0 && document.querySelector('#selection-status').textContent.includes('Recorded relations')`);
+  await check('C selection follows recorded cross-state links', `appState.selection?.trace.links.length > 0 && document.querySelector('#selection-status').textContent.includes('recorded link')`);
   await value(`document.querySelector('.source-line[data-line="5"]').dispatchEvent(new MouseEvent('click', { bubbles: true, shiftKey: true }))`);
   await check('Shift-click selects the complete C range', `JSON.stringify(sourceState.anchors.map(a => a.line)) === '[3,4,5]' && document.querySelectorAll('.source-line.is-source').length === 3`);
   await value(`document.querySelector('.source-line[data-line="6"]').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', shiftKey: true, bubbles: true }))`);
@@ -125,8 +125,24 @@ try {
   await click('.source-line[data-line="3"]');
   await select('#right-state', '1'); await until('window.StudyWorkspace.ready');
   await select('#right-state', '2'); await until('window.StudyWorkspace.ready');
-  await check('Source absence is explicit after instcombine', `document.querySelector('#source-status').textContent.includes('No recorded source mapping')`);
+  await check('Source absence in Right is reflected by the trace count', `document.querySelector('#right-trace-count').textContent === '0'`);
 
+
+  await check('Cancellation explanation labels the interpretation as likely', `document.querySelector('#optimisation-explanations').textContent.includes('Algebraic simplification · likely')`);
+  await click('.source-line[data-line="2"]');
+  await check('Selection shows optimisation name, purpose and concrete change', `(() => { const text = document.querySelector('#optimisation-explanations').textContent; return text.includes('Strength reduction') && text.includes('Purpose:') && text.includes('What changed: Multiplication by 32 becomes a left shift by 5.'); })()`);
+  await check('Multiple intermediate transformations can explain one source selection', `document.querySelector('#optimisation-explanations').textContent.includes('Local-variable promotion')`);
+  await value(`window.explanationText = document.querySelector('#optimisation-explanations').textContent`);
+  await select('#left-state', '2'); await select('#right-state', '0'); await until('window.StudyWorkspace.ready');
+  await check('Reversing panes preserves chronological optimisation explanations', `document.querySelector('#optimisation-explanations').textContent === window.explanationText`);
+  await select('#left-state', '0'); await select('#right-state', '12'); await until('window.StudyWorkspace.ready');
+  await check('Long comparisons identify the intermediate transition', `(() => { const event = appState.summary.optimisations.find(e => e.name === 'Strength reduction'); return event.fromOrdinal === 1 && event.toOrdinal === 2 && document.querySelector('#optimisation-explanations').textContent.includes(event.fromStateId + ' → ' + event.toStateId); })()`);
+  await click('.source-line[data-line="4"]');
+  await check('Changing selection removes unrelated explanations', `!document.querySelector('#optimisation-explanations').textContent.includes('Strength reduction') && document.querySelector('#optimisation-explanations').textContent.includes('Arithmetic canonicalisation')`);
+  await select('#left-state', '12'); await until('window.StudyWorkspace.ready');
+  await check('Same-state selection has an explicit no-change explanation', `document.querySelector('#optimisation-explanations').textContent.includes('Same state: no optimisation change')`);
+  await select('#left-state', '0'); await select('#right-state', '2'); await until('window.StudyWorkspace.ready');
+  await click('.source-line[data-line="3"]');
   await check('C selection recomputes against a newly selected state', `appState.selectionInput.kind === 'source' && appState.selection.trace.links.every(link => appState.summary.links.includes(link))`);
   await select('#left-state', '2'); await select('#right-state', '0'); await until('window.StudyWorkspace.ready');
   await click('#right-viewer .ir-line');
@@ -135,8 +151,8 @@ try {
   await check('Changing the origin state clears stale instruction IDs', `!appState.selectionInput || appState.selectionInput.kind === 'source' || appState.selectionInput.ordinal === appState.panels.right.ordinal`);
   await select('#left-state', '0'); await select('#right-state', '2'); await until('window.StudyWorkspace.ready');
   await value(`document.querySelector('#left-viewer .ir-line').focus()`); await key('Enter', 'Enter', 13);
-  await until(`document.querySelector('#selection-status').textContent.includes('Left ↔ right:')`);
-  await check('Keyboard Enter follows an IR correspondence', `document.querySelector('#selection-status').textContent.includes('Left ↔ right:')`);
+  await until(`Boolean(appState.selection?.trace)`);
+  await check('Keyboard Enter follows an IR correspondence', `Boolean(appState.selection?.trace)`);
   await select('#left-view', 'cfg'); await select('#right-view', 'cfg'); await until('window.StudyWorkspace.ready');
   await value(`document.querySelector('#left-viewer .cfg-edge').focus()`); await check('Keyboard-focusable CFG route is visibly isolated', `document.querySelector('#left-viewer svg').classList.contains('is-tracing')`);
   await value('document.activeElement.blur()');
@@ -148,7 +164,7 @@ try {
   await value(`window.testFetch = window.fetch; window.fetch = async (...args) => { if (String(args[0]).includes('/source')) throw Error('Synthetic source outage'); return window.testFetch(...args); };`);
   await select('#example-select', 'binary_search'); await until(`document.querySelector('#source-status').textContent.includes('Source unavailable')`);
   await value('window.fetch = window.testFetch'); await select('#example-select', 'binary_search'); await until('window.StudyWorkspace.ready');
-  await check('Source loading failure can be recovered', `document.querySelector('#source-status').textContent.includes('select a C line')`);
+  await check('Source loading failure can be recovered', `document.querySelector('#source-status').textContent.includes('Select a C line')`);
 
 
   await select('#example-select', 'quick_sort'); await until('window.StudyWorkspace.ready');
@@ -161,6 +177,9 @@ try {
   await check('Selecting either merged input highlights the complete group', `appState.panels.left.selectedInstructionIds.size === 2 && appState.panels.right.selectedInstructionIds.size === 1 && document.querySelector('#selection-status').textContent.includes('merged')`);
   await value(`selectNode('right', mergeGroup.toNodeIds[0])`);
   await check('Selecting the merged result traces both inputs', `appState.panels.left.selectedInstructionIds.size === 2 && appState.panels.right.selectedInstructionIds.size === 1`);
+  await check('Grouped rewrite has a succinct explanation', `document.querySelector('#optimisation-explanations').textContent.includes('Induction-variable widening · likely') && document.querySelector('#optimisation-explanations').textContent.includes('64-bit loop index')`);
+  await check('Comparison separates states, selection and transitions', `document.querySelectorAll('.comparison-state').length === 2 && document.querySelector('#selection-context').textContent.includes('Right panel') && document.querySelector('#ir-transition-heading').closest('section').contains(document.querySelector('#optimisation-explanations')) && document.querySelector('#source-transition-heading').closest('section').contains(document.querySelector('#source-status'))`);
+  await check('Source mapping text only describes Left', `!document.querySelector('#source-status').textContent.includes('Right:')`);
   await snap('workspace.png');
   await route('/study'); await screen('Information and consent');
   await check('Clean study interface and release label', `document.querySelector('#app-version').textContent === 'v${release.version}' && !/synthetic|preview|not.live|E7/i.test(document.body.innerText) && !location.search`);

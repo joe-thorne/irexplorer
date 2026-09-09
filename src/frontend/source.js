@@ -39,16 +39,19 @@ function applySourceHighlights(message = '') {
   if (!data) return;
   const anchors = sourceState.anchors;
   const matchesAnchor = location => sourceMatches(location, anchors);
-  const counts = [];
   for (const side of ['left', 'right']) {
     const panel = appState.panels[side];
     const matches = (panel.mappings || []).filter(m => matchesAnchor(m.location));
     panel.sourceNodeIds = new Set(matches.flatMap(m => [m.instructionId, m.blockId]));
-    counts.push(`${side}: ${matches.length ? `${new Set(matches.map(m => m.instructionId)).size} mapped instructions` : 'No recorded source mapping'}`);
   }
+  const leftMatches = new Set((appState.panels.left.mappings || [])
+    .filter(mapping => matchesAnchor(mapping.location)).map(mapping => mapping.instructionId)).size;
   document.querySelector('#source-status').textContent = message || (anchors.length
-    ? `C → left: ${anchors.map(a => a.file + ':' + a.line).join(', ')} · ${counts[0].replace('left: ', '')}. Right: ${counts[1].replace('right: ', '')}. These are source-location matches; missing matches do not prove removal.`
-    : appState.selection ? 'C → left: no recorded source location for this selection. The cross-state trace is shown below.' : 'C → left: select a C line, IR instruction, or CFG block. Shift-click C lines to select a range.');
+    ? leftMatches ? leftMatches + " " + (leftMatches === 1 ? "instruction in Left maps" : "instructions in Left map")
+      + " to the selected C location" + (anchors.length === 1 ? "." : "s.")
+      : "No recorded source mapping in Left. Missing mappings do not establish removal."
+    : appState.selection ? "No recorded C source location for this selection."
+      : "Select a C line to see its mapped instructions in Left. Shift-click to select a range.");
   for (const line of document.querySelectorAll('.source-line')) {
     const selected = anchors.some(a => a.file === data.file && a.line === Number(line.dataset.line));
     line.classList.toggle('is-source', selected);

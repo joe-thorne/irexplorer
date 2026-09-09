@@ -256,3 +256,37 @@ details p { margin: .8rem 0 0; }
   .ir-help { text-decoration-color: LinkText; }
   .ir-help-tooltip { border-color: CanvasText; }
 }
+
+.optimisation-explanation {
+  border-left: 3px solid var(--accent);
+  padding: .4rem .75rem;
+  margin-top: .7rem;
+  background: var(--code-bg);
+}
+.optimisation-explanation p { margin: .25rem 0; }
+.optimisation-explanation small, .optimisation-note { color: var(--muted); }
+
+/* Comparison hierarchy: states, current selection, then two distinct transitions. */
+.comparison-status { display: block; padding: 1rem; }
+.comparison-section-title { font-size: 1rem; margin: 0 0 .65rem; }
+.comparison-states { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.comparison-state { padding: .8rem 1rem; background: var(--code-bg); border: 1px solid var(--line); border-radius: .4rem; min-width: 0; }
+.comparison-label { display: block; color: var(--muted); font-size: .8rem; font-weight: 700; margin-bottom: .25rem; }
+.comparison-state h3, .comparison-transition h3 { font-size: 1rem; margin: 0 0 .35rem; }
+.comparison-state p { margin: 0; color: var(--muted); }
+.current-selection { padding: .85rem 0; margin: .35rem 0 .75rem; border-bottom: 1px solid var(--line); }
+.current-selection p { margin: 0; overflow-wrap: anywhere; }
+.comparison-transitions { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 1.25rem; }
+.comparison-transition { min-width: 0; }
+.comparison-transition + .comparison-transition { border-left: 1px solid var(--line); padding-left: 1.25rem; }
+.transition-caption { font-size: .85rem; color: var(--muted); margin: 0 0 .65rem; }
+#source-status { margin: 0; }
+.trace-counts { display: flex; gap: 1.5rem; margin: 0 0 .65rem; }
+.trace-counts[hidden] { display: none; }
+.trace-counts dt { color: var(--muted); font-size: .8rem; }
+.trace-counts dd { margin: .15rem 0 0; font-size: 1.15rem; font-weight: 700; }
+.comparison-transition .selection-status { font-size: .9rem; }
+@media (max-width: 700px) {
+  .comparison-states, .comparison-transitions { grid-template-columns: 1fr; }
+  .comparison-transition + .comparison-transition { border-left: 0; border-top: 1px solid var(--line); padding: 1rem 0 0; }
+}

@@ -166,12 +166,27 @@ class SummaryStepResponse(ApiModel):
     remarks: list[RemarkResponse]
 
 
+class OptimisationResponse(ApiModel):
+    name: str
+    purpose: str
+    change: str
+    certainty: Literal["detected", "likely"]
+    fromOrdinal: int
+    toOrdinal: int
+    fromStateId: str
+    toStateId: str
+    fromNodeIds: list[str]
+    toNodeIds: list[str]
+    linkIndices: list[int]
+
+
 class SummaryResponse(ApiModel):
     exampleId: str
     fromOrdinal: int
     toOrdinal: int
     scope: Literal["whole example"]
     context: str
+    optimisations: list[OptimisationResponse]
     items: list[SummaryItemResponse]
     links: list[LinkResponse]
     steps: list[SummaryStepResponse]

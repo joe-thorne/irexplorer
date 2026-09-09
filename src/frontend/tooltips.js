@@ -49,7 +49,16 @@
   });
   document.addEventListener('keydown', event => { if (event.key === 'Escape') hide(); });
   document.addEventListener('click', hide);
-  document.addEventListener('scroll', hide, true);
+  document.addEventListener('scroll', () => {
+    // Focusing a token may scroll it into view after focusin. Reposition its
+    // help instead of cancelling the keyboard-triggered tooltip.
+    const focused = active === document.activeElement ? active : null;
+    hide();
+    if (focused) {
+      const bounds = focused.getBoundingClientRect();
+      if (bounds.bottom > 0 && bounds.top < innerHeight) show(focused, 0);
+    }
+  }, true);
   window.addEventListener('resize', hide);
   new MutationObserver(() => { if (active && !active.isConnected) hide(); })
     .observe(document.querySelector('#workspace'), { childList: true, subtree: true });

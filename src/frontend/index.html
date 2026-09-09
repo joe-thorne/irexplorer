@@ -57,11 +57,41 @@
 
       <section id="workspace" class="workspace" hidden aria-label="Side-by-side optimisation comparison">
         <section class="comparison-status panel" aria-label="Comparison explanation">
-          <p id="left-purpose"></p>
-          <p id="right-purpose"></p>
-          <p id="source-status" role="status"></p>
-          <p id="comparison-action" class="comparison-action"></p>
-          <p id="selection-status" class="selection-status" aria-live="polite"></p>
+          <h2 class="comparison-section-title">Selected states</h2>
+          <div class="comparison-states">
+            <section class="comparison-state" aria-labelledby="left-selected-state">
+              <span class="comparison-label">Left panel</span>
+              <h3 id="left-selected-state"></h3>
+              <p id="left-purpose"></p>
+            </section>
+            <section class="comparison-state" aria-labelledby="right-selected-state">
+              <span class="comparison-label">Right panel</span>
+              <h3 id="right-selected-state"></h3>
+              <p id="right-purpose"></p>
+            </section>
+          </div>
+          <div class="current-selection">
+            <span class="comparison-label">Current selection</span>
+            <p id="selection-context"></p>
+          </div>
+          <h2 class="comparison-section-title">Transitions</h2>
+          <div class="comparison-transitions">
+            <section class="comparison-transition" aria-labelledby="source-transition-heading">
+              <h3 id="source-transition-heading">C → Left</h3>
+              <p class="transition-caption">Source mapping</p>
+              <p id="source-status" role="status"></p>
+            </section>
+            <section class="comparison-transition" aria-labelledby="ir-transition-heading">
+              <h3 id="ir-transition-heading">Left → Right</h3>
+              <p id="comparison-action" class="transition-caption"></p>
+              <dl id="trace-counts" class="trace-counts" hidden>
+                <div><dt>Left instructions</dt><dd id="left-trace-count"></dd></div>
+                <div><dt>Right instructions</dt><dd id="right-trace-count"></dd></div>
+              </dl>
+              <p id="selection-status" class="selection-status" aria-live="polite"></p>
+              <div id="optimisation-explanations" aria-live="polite"></div>
+            </section>
+          </div>
         </section>
 
         <div class="panel-grid">

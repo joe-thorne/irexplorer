@@ -14,6 +14,7 @@ from src.backend.analysis.compare import (
     is_identity_correspondence,
     summarise_correspondence,
 )
+from src.backend.analysis.optimisations import explain_comparison
 from src.backend.analysis.curated import load_prebaked_curated_correspondences
 from src.backend.ingest.curated import load_prebaked_curated_timeline
 from src.backend.model.correspondence import Correspondence
@@ -216,7 +217,7 @@ class QueryService:
         before = self._state(example_id, lower)
         after = self._state(example_id, higher)
         result = {"exampleId": example_id, "fromOrdinal": lower, "toOrdinal": higher,
-                  "scope": "whole example", "items": [], "links": [], "steps": [],
+                  "scope": "whole example", "items": [], "links": [], "steps": [], "optimisations": [],
                   "states": [s for s in self.list_states(example_id)["states"]
                              if lower <= s["ordinal"] <= higher]}
         if lower == higher:
@@ -224,7 +225,8 @@ class QueryService:
         comparison = self._comparison(loaded, lower, higher)
         step = loaded.timeline.steps[higher - 1]
         summary = summarise_correspondence(comparison, before, after, step)
-        result.update(context=summary.context,
+        result.update(optimisations=explain_comparison(loaded.timeline, loaded.correspondences, comparison),
+                      context=summary.context,
                       items=[{"text": item.text, "linkIndices": list(item.link_indices),
                               "remarkIndices": list(item.remark_indices)} for item in summary.items],
                       links=[{"fromNodeIds": list(link.from_node_ids),

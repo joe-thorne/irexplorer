@@ -296,25 +296,46 @@ function clearSelection() {
 }
 
 function renderComparison() {
+  renderOptimisations();
   const leftState = stateFor("left");
   const rightState = stateFor("right");
   elements.comparisonAction.textContent = comparisonAction(leftState, rightState);
-  if (!appState.selection) {
+  const input = appState.selectionInput;
+  const context = document.querySelector("#selection-context");
+  const trace = appState.selection?.trace;
+  document.querySelector("#trace-counts").hidden = !trace;
+  if (!trace) {
+    context.textContent = "Select a C line, IR instruction, or CFG block to trace it.";
     elements.selectionStatus.className = "selection-status";
-    elements.selectionStatus.textContent = "Left ↔ right: select C lines, an IR instruction, or a CFG block to trace its recorded relations.";
+    elements.selectionStatus.textContent = "The recorded correspondence and detected optimisations will appear here.";
     return;
   }
-  elements.selectionStatus.className = `selection-status${appState.selection.unresolved ? " is-unresolved" : ""}`;
-  elements.selectionStatus.textContent = `Left ↔ right: ${appState.selection.text}`;
+  const source = [...new Set(sourceState.anchors.map(a => a.file + ":" + a.line))].join(", ");
+  context.textContent = input.kind === "source" ? "C source · " + source
+    : (input.side === "left" ? "Left" : "Right") + " panel · "
+      + formatNode(nodeContext(appState.panels[input.side].ir, input.nodeId)) + (source ? " · " + source : "");
+  for (const side of ["left", "right"])
+    document.querySelector("#" + side + "-trace-count").textContent = trace.members[side].size;
+  elements.selectionStatus.className = "selection-status" + (trace.unresolved ? " is-unresolved" : "");
+  const relations = new Map();
+  for (const link of trace.links) {
+    const label = link.confidence === "none" ? "unresolved" : link.relation + " · " + link.confidence + " confidence";
+    relations.set(label, (relations.get(label) || 0) + 1);
+  }
+  elements.selectionStatus.textContent = trace.sameState ? "The same instructions are highlighted in both views."
+    : [...relations].map(([label, count]) => count + " recorded " + (count === 1 ? "link" : "links") + ": " + label + ".").join(" ")
+      + (trace.unresolved ? " Some instructions cannot be traced with the available evidence." : "");
 }
 
 function comparisonAction(leftState, rightState) {
-  if (leftState.ordinal === rightState.ordinal) return `Both panels show ${leftState.stateId}; no cross-state action is being compared.`;
+  if (leftState.ordinal === rightState.ordinal) return "Same state · two views";
   const [from, to] = leftState.ordinal < rightState.ordinal ? [leftState, rightState] : [rightState, leftState];
-  const direction = leftState.ordinal > rightState.ordinal ? " Earlier state is on the right; the comparison follows timeline order." : "";
-  if (to.transition?.kind === "recompiled") return `${from.stateId} → ${to.stateId}: separately compiled ${to.transition.level} output comparison${to.ordinal > from.ordinal + 1 ? ` across ${to.ordinal - from.ordinal} transitions` : ""}; not the result of one pass.${direction}`;
-  if (to.ordinal !== from.ordinal + 1) return `${from.stateId} → ${to.stateId}: composed comparison across ${to.ordinal - from.ordinal} recorded transitions; no single pass is attributed.${direction}`;
-  return `${from.stateId} → ${to.stateId}: pass ${to.ordinal}, ${to.transition?.passName}.${direction}`;
+  const direction = leftState.ordinal > rightState.ordinal
+    ? "Tracing backwards. Explanations describe the forward change (Right → Left)." : "";
+  const scope = to.transition?.kind === "recompiled" ? "Separate compilation comparison."
+    : to.ordinal === from.ordinal + 1 ? "One recorded pass."
+    : (to.ordinal - from.ordinal) + " recorded passes.";
+  return scope + (direction ? " " + direction : "");
 }
 
 function stateFor(side) {
