@@ -554,6 +554,9 @@ def _match_instructions(
     function_pairs: dict[str, str],
     block_pairs: dict[str, str],
 ) -> None:
+    _match_minmax_rewrites(
+        unmatched_from, unmatched_to, links, from_state, to_state, block_pairs
+    )
     _match_instruction_groups(
         unmatched_from, unmatched_to, links, from_state, to_state, block_pairs
     )
@@ -720,6 +723,101 @@ def _match_unique_in_context(
         del unmatched_to[to_node.stable_id]
         pairs[from_node.stable_id] = to_node.stable_id
     return pairs
+
+
+# Deliberately limited to scalar integer patterns with ordinary SSA operands.
+_MINMAX_VALUE = r"(%[-A-Za-z0-9_.$]+|-?\d+)"
+
+
+def _minmax_expression(state: StateGraph, node: Node) -> tuple | None:
+    """Return (operation, type, operands, members) for a recognised idiom."""
+    def body(item: Node) -> str:
+        text = _DEBUG_REF_RE.sub("", str(item.attributes.get("text", "")))
+        return text.split("=", 1)[-1].strip()
+
+    value = _MINMAX_VALUE
+    call = re.fullmatch(
+        rf"(?:tail )?call (i\d+) @llvm\.([su](?:min|max))\.(i\d+)"
+        rf"\(\1 {value}, \1 {value}\)", body(node))
+    if call and call[1] == call[3]:
+        return call[2], call[1], tuple(sorted((call[4], call[5]))), [node]
+    select = re.fullmatch(rf"select i1 {value}, (i\d+) {value}, \2 {value}", body(node))
+    if not select:
+        return None
+    block = state.contains_parent[node.stable_id]
+    definitions = [state.by_id[key] for key in state.contains_children[block]
+                   if state.by_id[key].attributes.get("result") == select[1]]
+    if len(definitions) != 1:
+        return None
+    cmp = definitions[0]
+    match = re.fullmatch(rf"icmp ([su](?:gt|ge|lt|le)) (i\d+) {value}, {value}", body(cmp))
+    if not match or match[2] != select[2] or match[3] == match[4]:
+        return None
+    if (select[3], select[4]) == (match[3], match[4]):
+        direct = True
+    elif (select[3], select[4]) == (match[4], match[3]):
+        direct = False
+    else:
+        return None
+    # A comparison with other users has not been wholly absorbed by the call.
+    users = state.value_flow_successors.get(cmp.stable_id, ())
+    if not users or any(edge.to_id != node.stable_id for edge in users):
+        return None
+    maximum = (match[1][1] == "g") == direct
+    operation = match[1][0] + ("max" if maximum else "min")
+    return operation, match[2], tuple(sorted((match[3], match[4]))), [cmp, node]
+
+
+def _match_minmax_rewrites(
+    unmatched_from: dict[str, Node], unmatched_to: dict[str, Node],
+    links: list[Link], from_state: StateGraph, to_state: StateGraph,
+    block_pairs: dict[str, str],
+) -> None:
+    """Match unique min/max idioms without depending on debug locations.
+
+    Operand identity, connected value flow and surviving users corroborate the
+    recognised pattern. Keep correspondence approximate, as for other groups.
+    """
+    def candidates(state, block, unmatched, context):
+        result = defaultdict(list)
+        for node_id in state.contains_children.get(block, ()):
+            node = unmatched.get(node_id)
+            if node is None or node.attributes.get("opcode") not in {"select", "call"}:
+                continue
+            expression = _minmax_expression(state, node)
+            if expression is None:
+                continue
+            operation, type_, operands, members = expression
+            if any(member.stable_id not in unmatched for member in members):
+                continue
+            boundary = _expression_boundary(state, members, context)
+            if boundary is not None:
+                result[(operation, type_, operands, boundary)].append(members)
+        return result
+
+    for old_block, new_block in block_pairs.items():
+        before = candidates(from_state, old_block, unmatched_from,
+                            {key: key for key in block_pairs})
+        after = candidates(to_state, new_block, unmatched_to,
+                           {value: key for key, value in block_pairs.items()})
+        for key in sorted(before.keys() & after.keys(), key=str):
+            if len(before[key]) != 1 or len(after[key]) != 1:
+                continue
+            old, new = before[key][0], after[key][0]
+            if sorted((len(old), len(new))) != [1, 2]:
+                continue
+            links.append(Link(
+                from_node_ids=tuple(node.stable_id for node in old),
+                to_node_ids=tuple(node.stable_id for node in new),
+                relation="merged" if len(old) == 2 else "split",
+                confidence="approximate",
+                evidence=(f"recognised integer {key[0]} compare/select intrinsic rewrite; "
+                          "matched block, predicate, types, operands and result-use boundary"),
+            ))
+            for node in old:
+                del unmatched_from[node.stable_id]
+            for node in new:
+                del unmatched_to[node.stable_id]
 
 
 # Memory operations, calls, PHIs and terminators need specialised evidence.

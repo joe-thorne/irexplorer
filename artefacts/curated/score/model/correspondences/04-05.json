@@ -30,6 +30,18 @@
       ]
     },
     {
+      "confidence": "approximate",
+      "evidence": "recognised integer smin compare/select intrinsic rewrite; matched block, predicate, types, operands and result-use boundary",
+      "fromNodeIds": [
+        "fn0/bb0/i3",
+        "fn0/bb0/i4"
+      ],
+      "relation": "merged",
+      "toNodeIds": [
+        "fn0/bb0/i3"
+      ]
+    },
+    {
       "confidence": "exact",
       "evidence": "unique structural, source, and value-flow signature",
       "fromNodeIds": [
@@ -71,33 +83,6 @@
       "relation": "renamed",
       "toNodeIds": [
         "fn0/bb0/i2"
-      ]
-    },
-    {
-      "confidence": "exact",
-      "evidence": "no target node shares the structural matcher signature",
-      "fromNodeIds": [
-        "fn0/bb0/i3"
-      ],
-      "relation": "removed",
-      "toNodeIds": []
-    },
-    {
-      "confidence": "exact",
-      "evidence": "no target node shares the structural matcher signature",
-      "fromNodeIds": [
-        "fn0/bb0/i4"
-      ],
-      "relation": "removed",
-      "toNodeIds": []
-    },
-    {
-      "confidence": "exact",
-      "evidence": "no source node shares the structural matcher signature",
-      "fromNodeIds": [],
-      "relation": "added",
-      "toNodeIds": [
-        "fn0/bb0/i3"
       ]
     }
   ],

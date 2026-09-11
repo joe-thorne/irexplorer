@@ -123,3 +123,61 @@ class InstructionGroupTests(unittest.TestCase):
         ]
         self.assertTrue(added_extensions)
         self.assertTrue(all(link.confidence == "none" for link in added_extensions))
+
+
+class MinMaxRewriteTests(unittest.TestCase):
+    pair = """  %cmp = icmp sgt i32 %x, %y
+  %result = select i1 %cmp, i32 %y, i32 %x
+  ret i32 %result"""
+    call = """  %result = call i32 @llvm.smin.i32(i32 %x, i32 %y)
+  ret i32 %result"""
+
+    def test_predicates_operand_orders_and_reverse_direction(self):
+        for sign in ('s', 'u'):
+            for predicate in ('gt', 'ge', 'lt', 'le'):
+                for swapped in (False, True):
+                    pair = self.pair.replace('sgt', sign + predicate)
+                    if swapped:
+                        pair = pair.replace('i32 %y, i32 %x', 'i32 %x, i32 %y')
+                    operation = sign + ('max' if (predicate[0] == 'g') == swapped else 'min')
+                    call = self.call.replace('smin', operation)
+                    for before, after, relation in ((pair, call, 'merged'), (call, pair, 'split')):
+                        with self.subTest(operation=operation, predicate=predicate, swapped=swapped, relation=relation):
+                            a, b = state(before, 0), state(after, 1)
+                            result = compare_states(a, b)
+                            result.correspondence.validate(a, b)
+                            self.assertEqual([link.relation for link in grouped(result)], [relation])
+
+    def test_rejects_near_misses(self):
+        for pair, call in (
+            (self.pair, self.call.replace('smin', 'smax')),
+            (self.pair, self.call.replace('smin', 'umin')),
+            (self.pair, self.call.replace('i32 %y)', 'i32 7)')),
+            (self.pair, self.call.replace('@llvm.smin.i32', '@ordinary')),
+            (self.pair.replace('i32 %y, i32 %x', 'i32 7, i32 %x'), self.call),
+            (self.pair.replace('  ret', '  %other = select i1 %cmp, i32 %x, i32 %y\n  ret'), self.call),
+            (self.pair, self.call.replace('ret i32 %result', '%use = add i32 %result, 1\n  ret i32 %use')),
+            (self.pair, self.call.replace('smin.i32', 'smin.i64')),
+        ):
+            with self.subTest(pair=pair, call=call):
+                self.assertFalse(grouped(compare_states(state(pair, 0), state(call, 1))))
+
+    def test_score_cleanup_links_both_original_instructions(self):
+        timeline = load_prebaked_curated_timeline('score')
+        result = compare_timeline_step(timeline, 4)
+        links = grouped(result)
+        self.assertEqual(len(links), 1)
+        self.assertEqual([timeline.state(4).by_id[node].attributes['opcode']
+                          for node in links[0].from_node_ids], ['icmp', 'select'])
+        self.assertEqual([timeline.state(5).by_id[node].attributes['opcode']
+                          for node in links[0].to_node_ids], ['call'])
+
+    def test_baked_score_counterparts_in_both_directions(self):
+        service = QueryService()
+        group = next(link for link in service.summary('score', 4, 5)['links']
+                     if link['relation'] == 'merged')
+        reverse = service.counterparts('score', 5, group['toNodeIds'][0], 4)
+        self.assertEqual([node['id'] for node in reverse['counterparts']], group['fromNodeIds'])
+        for node in group['fromNodeIds']:
+            forward = service.counterparts('score', 4, node, 5)
+            self.assertEqual([item['id'] for item in forward['counterparts']], group['toNodeIds'])
