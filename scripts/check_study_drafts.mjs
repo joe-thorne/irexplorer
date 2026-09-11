@@ -75,7 +75,7 @@ check('Fixed task inventory: T0 has no fields; T5/T6 have no invented confidence
   assert.equal(D.fieldsFor(content, 'T6').some(f => f.scale === 'confidence'), false);
 });
 check('Task inability and not-applicable preserve null independently from numeric answers', () => {
-  for (const [stage, id, status] of [['T2','T2a','could_not_work_out'], ['T3','T3a','could_not_work_out'], ['T4','T4a','could_not_work_out'], ['T4','T4c','not_applicable']]) {
+  for (const [stage, id, status] of [['T2','T2a','could_not_work_out'], ['T3','T3a','could_not_work_out'], ['T4','T4a','could_not_work_out'], ['T5','T5a','could_not_work_out']]) {
     assert.equal(Object.keys(D.validate(content, stage, {[id]: {status, value:null}})).length, 0);
   }
   assert.equal(Object.keys(D.validate(content, 'T2', {T2a: answered(11)})).join(), 'T2a');
@@ -104,6 +104,23 @@ check('Task Unicode bounds retain oversized drafts; completion validates without
   d.tasks.T3.started=true;d.tasks.T3.answers.T3a=answered('🙂'.repeat(257));
   assert.equal(Object.keys(D.validate(content,'T3',d.tasks.T3.answers)).join(),'T3a');
   assert.equal(D.decode(JSON.stringify(d),content).tasks.T3.answers.T3a.value,d.tasks.T3.answers.T3a.value);
+});
+check('Pre-setup skip and inability survive recovery without fabricated answers or time', () => {
+  const d=D.create(content,consent);d.pre.P1=answered(1);d.preComplete=true;d.p13Locked=true;
+  Object.assign(d.tasks.T0,{started:true,status:'completed'});
+  d.tasks.T1.status='skipped';d.tasks.T2.status='could_not_work_out';
+  const restored=D.decode(JSON.stringify(d),content);
+  assert.equal(D.currentTask(restored),'T3');assert.equal(restored.tasks.T1.started,false);
+  assert.equal(restored.tasks.T2.durationMs,0);
+  for (const change of [x=>x.tasks.T1.status='completed', x=>x.tasks.T1.durationMs=1,
+    x=>x.tasks.T1.answers.T1a=answered('Not reached'), x=>x.p13Locked=false]) {
+    const bad=JSON.parse(JSON.stringify(d));change(bad);assert.throws(()=>D.decode(JSON.stringify(bad),content));
+  }
+});
+check('v0.2 representation selections and old draft identities stay distinct', () => {
+  assert.equal(Object.keys(D.validate(content,'post',{Q8:answered([1,2,3])})).length,0);
+  for (const value of [1,[1,4]]) assert.equal(Object.keys(D.validate(content,'post',{Q8:answered(value)})).join(),'Q8');
+  const d=D.create(content,consent);d.instrumentVersion='v0.1';assert.throws(()=>D.decode(JSON.stringify(d),content));
 });
 check('Timing starts only on resume, checkpoints accumulate once, repeated resume cannot double count', () => {
   let now=100;const r={durationMs:0,status:'pending',started:true,paused:false,interrupted:false};

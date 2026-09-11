@@ -17,6 +17,7 @@ const send=async(url,options)=>{calls.push(options.body);const p=JSON.parse(opti
 const checks=[];
 let s=S.controller(()=>storage,send);
 await s.submit(d);assert.equal(s.state.kind,'pending');checks.push('Uncertain acknowledgement retains frozen envelope');
+assert.equal(JSON.parse(calls[0]).tasks[0].setupReached,true);
 assert.equal(JSON.parse(calls[0]).tasks[0].durationMs,124);checks.push('Fractional E5 duration rounded once');
 d.pre.P1.value=2;
 s=S.controller(()=>storage,send);s.read();await s.submit(d);assert.equal(calls[0],calls[1]);checks.push('Refresh and edited original cannot alter retry payload or ID');

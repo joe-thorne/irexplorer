@@ -1,7 +1,7 @@
 {
-  "instrumentVersion": "v0.1",
-  "contentVersion": "e5-preview-1",
-  "studyVersion": "e5-synthetic-1",
+  "instrumentVersion": "v0.2",
+  "contentVersion": "v0.2-preview-1",
+  "studyVersion": "v0.2-synthetic-1",
   "mode": "preview",
   "submissionEnabled": false,
   "scales": {
@@ -526,153 +526,169 @@
     },
     {
       "id": "Q1",
-      "prompt": "I could tell which parts of the program had changed between two states.",
       "type": "rating",
       "required": false,
       "scale": "agreement",
-      "notApplicableLabel": "Not applicable / did not use this"
+      "notApplicableLabel": "Not applicable / did not use this",
+      "prompt": "I could tell which parts of the program had changed between two states."
     },
     {
       "id": "Q2",
-      "prompt": "The summary of what a pass had done matched what I could see in the code.",
       "type": "rating",
       "required": false,
       "scale": "agreement",
-      "notApplicableLabel": "Not applicable / did not use this"
+      "notApplicableLabel": "Not applicable / did not use this",
+      "prompt": "The explanation for my selection matched the change I could see in the IR."
     },
     {
       "id": "Q3",
-      "prompt": "I had trouble telling apart changes that mattered from changes that were only cosmetic.",
       "type": "rating",
       "required": false,
       "scale": "agreement",
-      "notApplicableLabel": "Not applicable / did not use this"
+      "notApplicableLabel": "Not applicable / did not use this",
+      "prompt": "I had trouble understanding what the highlighting meant."
     },
     {
       "id": "Q4",
-      "prompt": "I could work out which pass was responsible for a change I had noticed.",
       "type": "rating",
       "required": false,
       "scale": "agreement",
-      "notApplicableLabel": "Not applicable / did not use this"
+      "notApplicableLabel": "Not applicable / did not use this",
+      "prompt": "I could work out which pass was responsible for a change I had noticed."
     },
     {
       "id": "Q5",
-      "prompt": "Stepping through the passes one at a time helped me more than comparing the start and the end would have.",
       "type": "rating",
       "required": false,
       "scale": "agreement",
-      "notApplicableLabel": "Not applicable / did not use this"
+      "notApplicableLabel": "Not applicable / did not use this",
+      "prompt": "Comparing consecutive states helped me identify when a change occurred."
     },
     {
       "id": "Q6",
-      "prompt": "Having the textual form and the control-flow graph available at once helped me understand what had changed.",
       "type": "rating",
       "required": false,
       "scale": "agreement",
-      "notApplicableLabel": "Not applicable / did not use this"
+      "notApplicableLabel": "Not applicable / did not use this",
+      "prompt": "Having the IR and the control-flow graph available at once helped me understand what had changed."
     },
     {
       "id": "Q7",
-      "prompt": "When I selected something in one view, I could find the corresponding thing in the other.",
       "type": "rating",
       "required": false,
       "scale": "agreement",
-      "notApplicableLabel": "Not applicable / did not use this"
+      "notApplicableLabel": "Not applicable / did not use this",
+      "prompt": "Selecting code helped me locate related instructions in another view."
     },
     {
       "id": "Q8",
-      "prompt": "I mostly relied on one of the two views and ignored the other.",
-      "type": "rating",
+      "type": "multiple",
       "required": false,
-      "scale": "agreement",
-      "notApplicableLabel": "Not applicable / did not use this"
+      "options": [
+        {
+          "value": 1,
+          "label": "C source"
+        },
+        {
+          "value": 2,
+          "label": "IR"
+        },
+        {
+          "value": 3,
+          "label": "CFG"
+        },
+        {
+          "value": 4,
+          "label": "Not sure"
+        }
+      ],
+      "exclusiveValue": 4,
+      "prompt": "Which representations did you use to answer the tasks?"
     },
     {
       "id": "Q9",
-      "prompt": "I felt I was in control of what the tool showed me.",
       "type": "rating",
       "required": false,
       "scale": "agreement",
-      "notApplicableLabel": "Not applicable / did not use this"
+      "notApplicableLabel": "Not applicable / did not use this",
+      "prompt": "I felt I was in control of what the tool showed me."
     },
     {
       "id": "Q10",
-      "prompt": "I was mostly following the instructions rather than exploring on my own.",
       "type": "rating",
       "required": false,
       "scale": "agreement",
-      "notApplicableLabel": "Not applicable / did not use this"
+      "notApplicableLabel": "Not applicable / did not use this",
+      "prompt": "During the open exploration task, I could investigate a question of my own."
     },
     {
       "id": "Q11",
-      "prompt": "The tool presented the information at a level I could follow.",
       "type": "rating",
       "required": false,
       "scale": "agreement",
-      "notApplicableLabel": "Not applicable / did not use this"
+      "notApplicableLabel": "Not applicable / did not use this",
+      "prompt": "The tool presented the information at a level I could follow."
     },
     {
       "id": "Q12",
-      "prompt": "The text, colours, and highlighting were readable.",
       "type": "rating",
       "required": false,
       "scale": "agreement",
-      "notApplicableLabel": "Not applicable / did not use this"
+      "notApplicableLabel": "Not applicable / did not use this",
+      "prompt": "The highlighting helped me distinguish selected instructions from other instructions."
     },
     {
       "id": "Q13",
-      "prompt": "I believe what the tool showed me was really what the compiler did, rather than a simplified illustration of it.",
       "type": "rating",
       "required": false,
       "scale": "agreement",
-      "notApplicableLabel": "Not applicable / did not use this"
+      "notApplicableLabel": "Not applicable / did not use this",
+      "prompt": "I could tell when the tool was uncertain about a correspondence."
     },
     {
       "id": "Q14",
-      "prompt": "Now that you have used the tool: when a C compiler optimises a program, what kinds of changes do you expect it makes?",
       "type": "text",
       "required": false,
-      "maxLength": 4000
+      "maxLength": 4000,
+      "prompt": "Now that you have used the tool: when a C compiler optimises a program, what kinds of changes do you expect it makes?"
     },
     {
       "id": "Q15",
-      "prompt": "Was there a moment where something the compiler had done suddenly made sense to you? What was it?",
       "type": "text",
       "required": false,
-      "maxLength": 4000
+      "maxLength": 4000,
+      "prompt": "Was there a moment where something the compiler had done suddenly made sense to you? What was it?"
     },
     {
       "id": "Q16",
-      "prompt": "Was there a moment where you were stuck, confused, or unsure what you were looking at? What was happening?",
       "type": "text",
       "required": false,
-      "maxLength": 4000
+      "maxLength": 4000,
+      "prompt": "Was there a moment where you were stuck, confused, or unsure what you were looking at? What was happening?"
     },
     {
       "id": "Q17",
-      "prompt": "If you could change one thing about the tool, what would it be?",
       "type": "text",
       "required": false,
-      "maxLength": 4000
+      "maxLength": 4000,
+      "prompt": "If you could change one thing about the tool, what would it be?"
     },
     {
       "id": "Q18",
-      "prompt": "Anything else you want to say.",
       "type": "text",
       "required": false,
-      "maxLength": 4000
+      "maxLength": 4000,
+      "prompt": "If you used the IR word help or optimisation explanations, what helped or confused you? You may also leave any other comment."
     },
     {
       "id": "Q19",
-      "prompt": "If a tool like this had been available while you were learning about compilers, or about how your code runs, would you have used it?",
       "type": "rating",
       "required": false,
-      "scale": "likelihood"
+      "scale": "likelihood",
+      "prompt": "If a tool like this had been available while you were learning about compilers, or about how your code runs, would you have used it?"
     },
     {
       "id": "Q20",
-      "prompt": "Which of the three example programs did you spend the most time on?",
       "type": "single",
       "required": false,
       "options": [
@@ -691,26 +707,30 @@
         {
           "value": 4,
           "label": "About the same across them"
+        },
+        {
+          "value": 5,
+          "label": "Did not explore"
         }
-      ]
+      ],
+      "prompt": "During open exploration, which example did you spend the most time on?"
     },
     {
       "id": "T1a",
-      "prompt": "Name two things that are different between the two sides. Describe them however makes sense to you — you do not need to use compiler terminology.",
       "type": "text",
       "required": false,
-      "maxLength": 4000
+      "maxLength": 4000,
+      "prompt": "Name two changes you can see in the instructions or control flow. Describe them in your own words."
     },
     {
       "id": "T1b",
-      "prompt": "How confident are you that those two things are really differences?",
       "type": "rating",
       "required": false,
-      "scale": "confidence"
+      "scale": "confidence",
+      "prompt": "How confident are you that those two things are really differences?"
     },
     {
       "id": "T2a",
-      "prompt": "After which pass is the computation gone?",
       "type": "single",
       "required": false,
       "options": [
@@ -761,104 +781,112 @@
       ],
       "optionStatuses": {
         "11": "could_not_work_out"
-      }
+      },
+      "prompt": "After which recorded pass is the arithmetic for wasted first absent?"
     },
     {
       "id": "T2b",
-      "prompt": "What did the tool show you that led you to that answer?",
-      "type": "text",
-      "required": false,
-      "maxLength": 4000
-    },
-    {
-      "id": "T2c",
-      "prompt": "How confident are you?",
-      "type": "rating",
-      "required": false,
-      "scale": "confidence"
-    },
-    {
-      "id": "T3a",
-      "prompt": "Which block of the control-flow graph does that comparison sit in? Give the block's label as the tool shows it.",
-      "type": "short_text",
-      "required": false,
-      "maxLength": 256,
-      "inabilityLabel": "I could not work this out"
-    },
-    {
-      "id": "T3b",
-      "prompt": "How many arrows leave that block, and where does each one go?",
-      "type": "text",
-      "required": false,
-      "maxLength": 4000
-    },
-    {
-      "id": "T3c",
-      "prompt": "How confident are you?",
-      "type": "rating",
-      "required": false,
-      "scale": "confidence"
-    },
-    {
-      "id": "T4a",
-      "prompt": "Describe what happened to the shape of the graph.",
       "type": "text",
       "required": false,
       "maxLength": 4000,
-      "inabilityLabel": "I could not work this out"
+      "prompt": "What do you see immediately before and after that pass that supports your answer? If you used an explanation, describe how it relates to the instructions you compared."
+    },
+    {
+      "id": "T2c",
+      "type": "rating",
+      "required": false,
+      "scale": "confidence",
+      "prompt": "How confident are you?"
+    },
+    {
+      "id": "T3a",
+      "type": "short_text",
+      "required": false,
+      "maxLength": 256,
+      "inabilityLabel": "I could not work this out",
+      "prompt": "Which block of the control-flow graph does that comparison sit in? Give the block's label as the tool shows it."
+    },
+    {
+      "id": "T3b",
+      "type": "text",
+      "required": false,
+      "maxLength": 4000,
+      "prompt": "How many arrows leave that block, and where does each one go?"
+    },
+    {
+      "id": "T3c",
+      "type": "rating",
+      "required": false,
+      "scale": "confidence",
+      "prompt": "How confident are you?"
+    },
+    {
+      "id": "T4a",
+      "type": "text",
+      "required": false,
+      "maxLength": 4000,
+      "inabilityLabel": "I could not work this out",
+      "prompt": "Describe a change in the branches or loop path between these states. Refer to a block or arrow that supports your answer."
     },
     {
       "id": "T4b",
-      "prompt": "In plain terms, what do you think that change achieves? There is no penalty for guessing wrong here — the question is what the view suggested to you.",
       "type": "text",
       "required": false,
-      "maxLength": 4000
+      "maxLength": 4000,
+      "prompt": "What do you think this change does to the way the loop runs? It is fine to say you are unsure."
     },
     {
       "id": "T4c",
-      "prompt": "Would you have spotted this change from the textual view alone?",
-      "type": "rating",
-      "required": false,
-      "scale": "likelihood",
-      "notApplicableLabel": "I did not look at the textual view"
-    },
-    {
-      "id": "T4d",
-      "prompt": "How confident are you in your answer to T4a?",
-      "type": "rating",
-      "required": false,
-      "scale": "confidence"
-    },
-    {
-      "id": "T5a",
-      "prompt": "Did you find one?",
       "type": "single",
       "required": false,
       "options": [
         {
           "value": 1,
-          "label": "Yes"
+          "label": "CFG"
         },
         {
           "value": 2,
-          "label": "No"
+          "label": "IR"
         },
         {
           "value": 3,
+          "label": "Both"
+        },
+        {
+          "value": 4,
+          "label": "Neither"
+        },
+        {
+          "value": 5,
           "label": "I am not sure"
         }
-      ]
+      ],
+      "prompt": "Which view helped you identify this change?"
+    },
+    {
+      "id": "T4d",
+      "type": "rating",
+      "required": false,
+      "scale": "confidence",
+      "prompt": "How confident are you in your answer to T4a?"
+    },
+    {
+      "id": "T5a",
+      "type": "text",
+      "required": false,
+      "maxLength": 4000,
+      "inabilityLabel": "I could not work this out",
+      "prompt": "What relationship does the tool show for this selection?"
     },
     {
       "id": "T5b",
-      "prompt": "If yes, what did the tool tell you, and what did you take it to mean?",
       "type": "text",
       "required": false,
-      "maxLength": 4000
+      "maxLength": 4000,
+      "prompt": "What does its confidence wording tell you about what you can conclude?"
     },
     {
       "id": "T5c",
-      "prompt": "Did seeing that make you trust the rest of what the tool showed you more, less, or neither?",
       "type": "single",
       "required": false,
       "options": [
@@ -872,34 +900,39 @@
         },
         {
           "value": 3,
-          "label": "Neither"
+          "label": "No change"
         },
         {
           "value": 4,
           "label": "Not sure"
+        },
+        {
+          "value": 5,
+          "label": "Did not find the information"
         }
-      ]
+      ],
+      "prompt": "How did this information affect your trust in the correspondence?"
     },
     {
       "id": "T6a",
-      "prompt": "What did you look at?",
       "type": "text",
       "required": false,
-      "maxLength": 4000
+      "maxLength": 4000,
+      "prompt": "What did you choose to investigate, and what did you find?"
     },
     {
       "id": "T6b",
-      "prompt": "Did anything surprise you about what the compiler did?",
       "type": "text",
       "required": false,
-      "maxLength": 4000
+      "maxLength": 4000,
+      "prompt": "Did anything surprise you about what the compiler did?"
     },
     {
       "id": "T6c",
-      "prompt": "Was there anything you wanted to do that the tool would not let you do?",
       "type": "text",
       "required": false,
-      "maxLength": 4000
+      "maxLength": 4000,
+      "prompt": "Was there anything you wanted to do that the tool would not let you do?"
     }
   ],
   "preSections": [
@@ -940,7 +973,7 @@
   "postSections": [
     {
       "title": "Section A — Rating statements",
-      "intro": "Strongly disagree · Disagree · Neither agree nor disagree · Agree · Strongly agree. Plus a separate Not applicable / did not use this option on every item.",
+      "intro": "For rating statements: Strongly disagree · Disagree · Neither agree nor disagree · Agree · Strongly agree, plus Not applicable / did not use this. Q8 asks which representations you used.",
       "groups": [
         {
           "title": "Seeing what changed",
@@ -958,7 +991,7 @@
           ]
         },
         {
-          "title": "The two views together",
+          "title": "Using the representations together",
           "fields": [
             "Q6",
             "Q7",
@@ -980,7 +1013,7 @@
           ]
         },
         {
-          "title": "Trust",
+          "title": "Understanding uncertainty",
           "fields": [
             "Q13"
           ]
@@ -1006,17 +1039,9 @@
       ]
     }
   ],
-  "taskIntroduction": [
-    "You will be working with three small C programs that are already loaded into the tool. You do not need to write any code, and you do not need to compile anything yourself — that has been done for you.",
-    "Each program has fourteen recorded states: an unoptimised baseline, twelve successive states produced by running the teaching passes on the preceding output, and a separately compiled -O3 state for comparison.",
-    "If a task defeats you, say so and move on. Six tasks in twenty minutes is a deliberately brisk pace and nobody is expected to finish all of them cleanly."
-  ],
   "tasks": [
     {
       "id": "T0",
-      "title": "Orientation",
-      "goal": "get your bearings before anything is asked of you.",
-      "instructions": "Open the example called score. Set the left pane to the unoptimised state and the right pane to the state after the first pass, mem2reg. Then:\n\n- Scroll both panes.\n- Switch the right pane from the IR view to the control-flow graph and back.\n- Click on a line in the IR and see what happens in the other pane.\n\nThere is nothing to submit. Move on when the layout makes sense to you.",
       "fields": [],
       "setup": {
         "example": "score",
@@ -1028,13 +1053,13 @@
           "ordinal": 1,
           "view": "ir"
         }
-      }
+      },
+      "title": "Orientation",
+      "goal": "get your bearings before anything is asked of you.",
+      "instructions": "Open score. Set the left pane to the unoptimised state and the right pane to the state after the first pass, mem2reg, with IR in both panes.\n\n- Scroll both panes.\n- Select the return statement in the C source and notice what is highlighted in the panes.\n- Select an IR instruction, switch the right pane to the control-flow graph, and select a block. Notice that a block can contain several instructions. Switch back to IR.\n- Hover over, or keyboard-focus, an IR keyword to read its explanation.\n- Find the area that describes the selected correspondence and any detected optimisation.\n\nThere is nothing to submit. Move on when the layout makes sense to you."
     },
     {
       "id": "T1",
-      "title": "What changed?",
-      "goal": "work out what the optimiser did to a program overall, before worrying about how it did it.",
-      "instructions": "Staying with score, set the left pane to the unoptimised state and the right pane to the final state at the end of the pass chain. Both panes on the IR view.",
       "fields": [
         "T1a",
         "T1b"
@@ -1049,13 +1074,13 @@
           "ordinal": 12,
           "view": "ir"
         }
-      }
+      },
+      "title": "What changed?",
+      "goal": "work out what the optimiser did to a program overall, before worrying about how it did it.",
+      "instructions": "Open score. Set the left pane to the unoptimised state and the right pane to state 12, final_cleanup, the end of the teaching chain. Use IR in both panes. The next state, -O3, was compiled separately. You may use the source and explanations to investigate the differences."
     },
     {
       "id": "T2",
-      "title": "Which pass did it?",
-      "goal": "trace a specific change back to the pass responsible for it.",
-      "instructions": "The score program contains this line:\n\nint wasted = scale * scale - scale * scale;\n\n\nWhatever scale is, that value is always zero, and by the end of the pass chain the computation is gone entirely.\n\nStep through the states from the beginning and find the point where it disappears.",
       "fields": [
         "T2a",
         "T2b",
@@ -1071,13 +1096,13 @@
           "ordinal": 0,
           "view": "ir"
         }
-      }
+      },
+      "title": "Which pass did it?",
+      "goal": "trace a specific change back to the pass responsible for it.",
+      "instructions": "Open score and begin with the unoptimised state in both panes, using IR. The program contains this line:\n\nint wasted = scale * scale - scale * scale;\n\nThis expression subtracts the same product from itself. Find the first recorded pass after which the arithmetic for wasted is absent. Compare the states immediately before and after that step. You may start from the C line and use the tool’s explanations."
     },
     {
       "id": "T3",
-      "title": "Following a line into the graph",
-      "goal": "move between the two representations of the same program.",
-      "instructions": "Open binary_search. Put the IR view in the left pane and the control-flow graph in the right pane, both showing the state after simplifycfg (the third pass).\n\nFind the comparison that decides whether the loop keeps running — the lo < hi test — and select it in the IR.",
       "fields": [
         "T3a",
         "T3b",
@@ -1093,13 +1118,13 @@
           "ordinal": 3,
           "view": "cfg"
         }
-      }
+      },
+      "title": "Following source into the graph",
+      "goal": "locate a C condition in IR and interpret its control-flow graph block.",
+      "instructions": "Open binary_search and set both panes to state 3, simplifycfg, with IR on the left and the control-flow graph on the right. Select the C line containing lo < hi. Use the highlighted IR to locate and select the comparison, then inspect its block in the graph."
     },
     {
       "id": "T4",
-      "title": "A change in the shape of the program",
-      "goal": "notice a structural change, not just a textual one.",
-      "instructions": "Still on binary_search, put the control-flow graph in both panes. Set the left pane to the state after loop-simplify / lcssa and the right pane to the state after loop-rotate.",
       "fields": [
         "T4a",
         "T4b",
@@ -1116,13 +1141,13 @@
           "ordinal": 7,
           "view": "cfg"
         }
-      }
+      },
+      "title": "A change in the shape of the program",
+      "goal": "notice a structural change, not just a textual one.",
+      "instructions": "Open binary_search. Use the control-flow graph in both panes. Set the left pane to state 6, loop_canonical (after loop-simplify / lcssa), and the right pane to state 7, loop_rotate (after loop-rotate). You may also inspect the IR."
     },
     {
       "id": "T5",
-      "title": "When the tool is not sure",
-      "goal": "see whether the tool tells you what it does not know.",
-      "instructions": "Open quick_sort — the largest of the three examples, with two functions and a recursive call. Compare any two states that are not next to each other in the sequence, for example the unoptimised state against the state after indvars.\n\nLook for a place where the tool indicates that it cannot link something across the two states with certainty, or that a correspondence is only partial.",
       "fields": [
         "T5a",
         "T5b",
@@ -1130,27 +1155,37 @@
       ],
       "setup": {
         "example": "quick_sort",
+        "function": "partition",
         "left": {
-          "ordinal": 0,
+          "ordinal": 8,
           "view": "ir"
         },
         "right": {
           "ordinal": 9,
           "view": "ir"
         }
-      }
+      },
+      "title": "What does this correspondence tell you?",
+      "goal": "interpret a recorded correspondence and the confidence attached to it.",
+      "instructions": "Open quick_sort. Use IR in both panes, with state 8, licm, on the left and state 9, indvars, on the right. Then choose the partition function.\n\nFind the C line if (a[j] <= pivot). Select it, then select the highlighted getelementptr instruction for a[j] in the right pane. Inspect its linked instructions and the tool’s description. What does the tool say happened, and how certain is that correspondence?\n\nUse the confidence wording for the recorded link when answering. The optimisation explanation may have its own qualification."
     },
     {
       "id": "T6",
-      "title": "Open exploration",
-      "goal": "use the tool for whatever you actually find interesting.",
-      "instructions": "Five minutes, any example, any pair of states, any view. Nothing is being checked.",
       "fields": [
         "T6a",
         "T6b",
         "T6c"
       ],
-      "setup": {}
+      "setup": {},
+      "title": "Open exploration",
+      "goal": "use the tool for whatever you actually find interesting.",
+      "instructions": "Spend about five minutes investigating a question of your own. Choose any example, function, pair of states, and views. Continue whenever you are ready; there is no time limit."
     }
+  ],
+  "taskIntroduction": [
+    "You will be working with three small C programs that are already loaded into the tool. You do not need to write any code, and you do not need to compile anything yourself — that has been done for you.",
+    "Each program has fourteen recorded states: an unoptimised baseline, twelve successive states produced by running the teaching passes on the preceding output, and a separately compiled -O3 state for comparison.",
+    "There is a short orientation followed by six tasks. Each task starts with an empty workspace: choose the example and set the states and views described in its instructions. You may use the C source, highlighting, explanations, and word help throughout. You can leave answers blank, skip a task, or choose “I could not work this out”. These are useful outcomes; the tool is being evaluated.",
+    "Continuing locks this task’s answers. Task time is recorded after a usable comparison is ready; initial reading and setup are excluded. There is no time limit."
   ]
 }

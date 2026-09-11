@@ -3,7 +3,7 @@ window.StudySubmit = (() => {
   const KEY = 'irexplorer.study.submission.e6';
   function envelope(draft) {
     return { submissionId: crypto.randomUUID(), ...Object.fromEntries(['participantCode', 'studyVersion', 'contentVersion', 'instrumentVersion', 'consent', 'pre', 'post'].map(k => [k, structuredClone(draft[k])])),
-      tasks: Object.entries(draft.tasks).map(([id, t]) => ({ id, status: t.status, durationMs: Math.round(t.durationMs), interrupted: t.interrupted, answers: structuredClone(t.answers) })) };
+      tasks: Object.entries(draft.tasks).map(([id, t]) => ({ id, status: t.status, setupReached: t.started, durationMs: Math.round(t.durationMs), interrupted: t.interrupted, answers: structuredClone(t.answers) })) };
   }
   function controller(getStorage = () => sessionStorage, send = (...args) => fetch(...args)) {
     let state = null, busy = false, issue = '', recoveryBlocked = false;

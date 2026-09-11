@@ -59,7 +59,7 @@ async function task(id) {
   const setup = {
     T0: ['score', '0', '1', 'ir', 'ir'], T1: ['score', '0', '12', 'ir', 'ir'],
     T2: ['score', '0', '0', 'ir', 'ir'], T3: ['binary_search', '3', '3', 'ir', 'cfg'],
-    T4: ['binary_search', '6', '7', 'cfg', 'cfg'], T5: ['quick_sort', '0', '9', 'ir', 'ir'],
+    T4: ['binary_search', '6', '7', 'cfg', 'cfg'], T5: ['quick_sort', '8', '9', 'ir', 'ir'],
     T6: ['score', '0', '1', 'ir', 'ir'],
   }[id];
   await select('#example-select', setup[0]);
@@ -67,6 +67,7 @@ async function task(id) {
   await check(`${id} requires explicit states and views`, `['left', 'right'].every(side => document.querySelector('#' + side + '-state').value === '' && document.querySelector('#' + side + '-view').value === '')`);
   for (const [selector, selected] of [['#left-state', setup[1]], ['#right-state', setup[2]], ['#left-view', setup[3]], ['#right-view', setup[4]]]) await select(selector, selected);
   await until(`document.querySelector('#survey-form')?.dataset.stage === '${id}' && !document.querySelector('.task-inputs').disabled`);
+  if (id === 'T5') await select('#function-select', 'partition');
   await check(`${id} keeps task goal focused`, `location.hash === '#/study/tasks/${id}' && document.activeElement.id === 'route-heading'`);
 }
 
@@ -197,6 +198,12 @@ try {
   await click('[data-action="pause-task"]');
   await click('#survey-form button[type="submit"]');
   for (const id of ['T1', 'T2', 'T3', 'T4', 'T5', 'T6']) {
+    if (id === 'T1' || id === 'T2') {
+      await until(`document.querySelector('#survey-form')?.dataset.stage === '${id}'`);
+      await check(`${id} permits an outcome before setup`, `!document.querySelector('[data-action="skip-task"]').disabled && document.querySelector('.task-complete').disabled && !window.StudyWorkspace.ready`);
+      await click(id === 'T1' ? '[data-action="skip-task"]' : '[data-action="unable-task"]');
+      continue;
+    }
     await task(id);
     if (id === 'T4') await snap('task-cfg.png');
     await click('[data-action="skip-task"]');

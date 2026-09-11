@@ -61,8 +61,8 @@ window.StudyDraft = (() => {
           !['started', 'paused', 'interrupted'].every(k => typeof t[k] === 'boolean') ||
           !Number.isFinite(t.durationMs) || t.durationMs < 0 || t.durationMs > Number.MAX_SAFE_INTEGER ||
           (pending && (t.started || t.status !== 'pending')) ||
-          (!t.started && (t.durationMs !== 0 || t.paused || t.interrupted || t.status !== 'pending')) ||
-          (t.started && !d.p13Locked) || (t.status !== 'pending' && t.paused) ||
+          (!t.started && (t.durationMs !== 0 || t.paused || t.interrupted || t.status === 'completed')) ||
+          ((t.started || t.status !== 'pending') && !d.p13Locked) || (t.status !== 'pending' && t.paused) ||
           Object.keys(validate(content, task.id, t.answers, false, true)).length ||
           Object.keys(t.answers).join() !== fieldsFor(content, task.id).map(f => f.id).join() ||
           (!t.started && Object.values(t.answers).some(a => a.status !== 'unanswered'))) throw new Error('Invalid task progress or responses.');

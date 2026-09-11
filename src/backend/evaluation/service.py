@@ -83,10 +83,14 @@ def validate(payload):
     ts = payload['tasks']
     require(isinstance(ts, list) and len(ts) == 7)
     for i, t in enumerate(ts):
-        require(isinstance(t, dict) and set(t) == {'id', 'status', 'durationMs', 'interrupted', 'answers'})
+        require(isinstance(t, dict) and set(t) == {'id', 'status', 'setupReached', 'durationMs', 'interrupted', 'answers'})
         require(t['id'] == f'T{i}' and t['status'] in (['completed'] if i == 0 else ['completed', 'skipped', 'could_not_work_out']))
         require(type(t['durationMs']) is int and 0 <= t['durationMs'] <= 86400000 and type(t['interrupted']) is bool)
         answers(t['id'], t['answers'])
+        require(type(t['setupReached']) is bool)
+        if not t['setupReached']:
+            require(t['status'] in ('skipped', 'could_not_work_out') and t['durationMs'] == 0 and not t['interrupted'])
+            require(all(a['status'] == 'unanswered' for a in t['answers'].values()))
     # Multi-choice order has no research meaning; preserve raw codes as a set.
     result = json.loads(canonical(payload))
     for group in [result['pre'], result['post'], *[t['answers'] for t in result['tasks']]]:
@@ -132,7 +136,7 @@ class StudyService:
         receipt = {k: payload[k] for k in ('submissionId', 'participantCode', 'studyVersion')}
         receipt['receiptId'] = str(uuid.uuid4())
         checksum = next(line.split('=', 1)[1] for line in (ROOT / 'docs/curated-artefacts.sha256').read_text().splitlines() if line.startswith('sha256='))
-        release = {'schemaVersion': 1, 'canonicalVersion': 1, 'mode': self.config.mode,
+        release = {'schemaVersion': 2, 'canonicalVersion': 1, 'mode': self.config.mode,
                    'appRevision': self.config.app_revision, 'artefactSha256': checksum}
         db = None
         try:

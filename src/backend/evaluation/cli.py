@@ -66,17 +66,19 @@ def export(source, directory):
     write('responses.json', records)
     content = participant_content()
     write('codebook.json', {
-        'schemaVersion': 1, 'fields': content['fields'], 'scales': content['scales'],
+        'schemaVersion': 2, 'fields': content['fields'], 'scales': content['scales'],
         'versions': {k: content[k] for k in ('studyVersion', 'instrumentVersion', 'contentVersion')},
         'csv': 'Long format; value is the raw numeric code, JSON array, or text. Empty value with status is missing, never zero. Formula-like strings have a leading apostrophe; JSON preserves original text.',
-        'durationMs': 'Rounded once to nearest integer millisecond at submission; 0–86400000. Active visible reading, exploration, and answering; excludes hidden tabs, explicit pause, and reload downtime. Not pure comprehension time. T1c is T1 durationMs.',
+        'durationMs': 'Rounded once to nearest integer millisecond at submission; 0–86400000. Active visible reading, exploration, and answering after a usable comparison is ready; excludes initial reading/setup, hidden tabs, explicit pause, and reload downtime. Neither total task nor pure comprehension time. T1c is T1 durationMs.',
+        'setupReached': 'Whether a usable comparison was reached at least once. Does not verify the instructed configuration. False means skipped/unable before setup, zero duration and unanswered fields. Missing in legacy records means unknown, not false.',
+        'definitionScope': 'Fields/scales describe only the versions named here. Separate records by instrumentVersion. Consult the matching historical instrument for older versions; never apply current definitions to legacy answers.',
         'interrupted': 'Coarse pause/hide/route/recovery flag, not an event log. Abrupt termination may lose time since the last successful one-second checkpoint.',
         'taskStatus': ['completed', 'skipped', 'could_not_work_out'],
         'answerStatus': ['answered', 'unanswered', 'could_not_work_out', 'not_applicable'],
-        'analysis': 'Raw ratings unchanged. In a separate analysis transformation use 6-value for answered Q3, Q8, Q10 only. Pair P13/Q14 by participantCode; count unanswered and not_applicable separately. Skipped/inability tasks retain partial responses. No automatic correctness coding. Incomplete/abandoned sessions are excluded.',
-        'coding': 'Keep researcher coding in a separate file joined on participantCode and item/task ID. Resolve P3 completed/current, overlapping strata, and missing-data rules before analysis.',
+        'analysis': 'Raw values unchanged. For v0.2 reverse-score answered Q3 only as 6-value; Q8 is multiple choice and Q10 is positive. Historical v0.1 reverse-scored Q3/Q8/Q10. Pair P13/Q14 qualitatively by participantCode; count unanswered, not_applicable, skip and inability separately. No automatic correctness coding. Incomplete/abandoned sessions are excluded.',
+        'coding': 'Keep researcher coding in a separate file joined on participantCode and item/task ID. P3 measures completed/current course exposure together. Use non-exclusive non-expert/compiler-exposed/out-of-audience flags; report overlap and unknown where missing data do not establish a flag.',
     })
-    columns = ['participantCode', 'submissionId', 'receiptId', 'studyVersion', 'contentVersion', 'instrumentVersion', 'consentVersion', 'schemaVersion', 'canonicalVersion', 'mode', 'appRevision', 'artefactSha256', 'stage', 'itemId', 'status', 'value', 'durationMs', 'interrupted']
+    columns = ['participantCode', 'submissionId', 'receiptId', 'studyVersion', 'contentVersion', 'instrumentVersion', 'consentVersion', 'schemaVersion', 'canonicalVersion', 'mode', 'appRevision', 'artefactSha256', 'stage', 'itemId', 'status', 'value', 'durationMs', 'interrupted', 'setupReached']
     path = directory / 'responses.csv'
     with open(path, 'x', encoding='utf-8', newline='') as f:
         os.chmod(path, 0o600)
@@ -95,7 +97,7 @@ def export(source, directory):
                 for key, answer in p[stage].items():
                     row(stage=stage, itemId=key, **answer)
             for t in p['tasks']:
-                row(stage=t['id'], itemId=t['id'], status=t['status'], durationMs=t['durationMs'], interrupted=t['interrupted'])
+                row(stage=t['id'], itemId=t['id'], status=t['status'], durationMs=t['durationMs'], interrupted=t['interrupted'], setupReached=t.get('setupReached'))
                 for key, answer in t['answers'].items():
                     row(stage=t['id'], itemId=key, **answer)
     return len(records)

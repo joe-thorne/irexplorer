@@ -27,14 +27,13 @@
       <nav class="task-jumps" aria-label="Task sections"><a href="#task-instructions">Instructions</a><a href="#workspace-shell">Go to workspace</a><a href="#task-responses">Go to responses</a></nav>
       <details id="task-instructions" class="task-details"${matchMedia('(max-width: 1100px)').matches ? '' : ' open'}><summary>Setup and instructions</summary>
       ${id === 'T0' ? content.taskIntroduction.map(p => `<p>${esc(p)}</p>`).join('') : ''}<p class="task-prose">${esc(task.instructions)}</p>
-      ${id === 'T1' ? '<p>End of teaching chain: ordinal 12, final_cleanup. Separately compiled -O3 is the next state.</p>' : ''}
       ${Object.keys(task.setup).length ? '<p>Choose the source and set both states and views yourself using the workspace controls.</p>' : '<p>Choose any example, states, function, and views. Five minutes is guidance; continue whenever you are ready.</p>'}</details>
       <p id="task-timing" class="form-note" role="status"></p>${!locked ? button('pause-task', record.paused ? 'Resume task' : 'Pause task') : ''}
       <details class="task-details task-responses"${matchMedia('(max-width: 1100px)').matches ? '' : ' open'}><summary id="task-responses">${locked ? 'Saved responses (read-only)' : 'Responses and continue'}</summary>
       <a href="#route-heading">Back to goal</a><p>${locked ? `Recorded outcome: ${esc(outcomeLabel(record.status))}. Responses are locked.` : 'You may leave fields unanswered. Choosing inability or skipping is a valid outcome. Continuing locks this task’s responses.'}</p>
       <form id="survey-form" data-stage="${id}" novalidate><p id="form-errors" role="alert" tabindex="-1"></p><fieldset class="task-inputs"${locked ? ' disabled' : ''}>
       ${task.fields.map(fid => fieldHtml(content.fields.find(f => f.id === fid), id)).join('')}
-      ${!locked ? `<div class="screen-actions"><button type="submit" class="primary">${id === 'T0' ? 'Finish orientation and start T1' : id === 'T6' ? 'Continue to post-survey' : 'Save and continue'}</button>${id !== 'T0' ? button('unable-task', 'I could not work this out — continue') + button('skip-task', 'Skip task') : ''}</div>` : ''}</fieldset></form></details>
+      </fieldset>${!locked ? `<div class="screen-actions"><button type="submit" class="primary task-complete">${id === 'T0' ? 'Finish orientation and start T1' : id === 'T6' ? 'Continue to post-survey' : 'Save and continue'}</button>${id !== 'T0' ? button('unable-task', 'I could not work this out — continue') + button('skip-task', 'Skip task') : ''}</div>` : ''}</form></details>
       <nav class="task-history" aria-label="Task progress">${content.tasks.map(t => draft.tasks[t.id].status !== 'pending' ? `<a href="#/study/tasks/${t.id}">${t.id} saved</a>` : t.id === D.currentTask(draft) ? `<a href="#${taskRoute()}">${t.id} current</a>` : `<span>${t.id}</span>`).join(' ')}</nav>
       ${locked ? `<a href="#${D.tasksComplete(draft) ? '/study/post' : taskRoute()}">Return to current stage</a>` : ''}`;
   }
@@ -42,11 +41,14 @@
     if (!activeTask || !draft) return;
     const t = draft.tasks[activeTask], status = screen.querySelector('#task-timing');
     if (!status) return;
-    status.textContent = t.status !== 'pending' ? `Saved active duration: ${(t.durationMs / 1000).toFixed(1)} seconds${t.interrupted ? ' · interrupted' : ''}.` : !setupReady ? 'Choose a source and both states and views to begin. Timing starts when the comparison is ready.' : t.paused ? 'Paused. Resume when ready; paused time is excluded.' : 'Timing active · hidden tabs and pauses excluded · no time limit.';
+    status.textContent = t.status !== 'pending' ? `Saved post-setup active duration: ${(t.durationMs / 1000).toFixed(1)} seconds${!t.started ? ' · comparison setup not reached' : ''}${t.interrupted ? ' · interrupted' : ''}.` : !setupReady ? `Choose a source and both states and views to begin. Initial reading and setup are not timed.${activeTask === 'T0' ? '' : ' You may skip or choose inability before setup.'}` : t.paused ? 'Paused. Resume when ready; paused time is excluded.' : 'Post-setup timing active · hidden tabs and pauses excluded · no time limit.';
     const pause = screen.querySelector('[data-action="pause-task"]');
     if (pause) { pause.textContent = t.paused ? 'Resume task' : 'Pause task'; pause.disabled = !t.started || !setupReady; }
     const inputs = screen.querySelector('.task-inputs');
     if (inputs) inputs.disabled = t.status !== 'pending' || !setupReady || t.paused;
+    const complete = screen.querySelector('.task-complete');
+    if (complete) complete.disabled = t.status !== 'pending' || !setupReady || t.paused;
+    for (const action of screen.querySelectorAll('[data-action="skip-task"], [data-action="unable-task"]')) action.disabled = t.status !== 'pending' || t.paused;
   }
   function startClock() {
     if (!activeTask || !draft || !setupReady) return;
@@ -67,14 +69,15 @@
   function finishTask(id, status) {
     if (!id || !draft || !available()) return;
     const t = draft.tasks[id];
-    if (t.status !== 'pending' || !setupReady || !t.started || t.paused || (id === 'T0' && status !== 'completed')) return;
+    if (t.status !== 'pending' || t.paused || (id === 'T0' && status !== 'completed') ||
+        (status === 'completed' && (!setupReady || !t.started))) return;
     errors = D.validate(content, id, t.answers, true);
     if (Object.keys(errors).length) { showErrors(); screen.querySelector('[aria-invalid="true"]')?.focus(); return; }
     clock?.stop(); t.status = status; t.paused = false; save();
     if (available()) go(D.tasksComplete(draft) ? '/study/post' : taskRoute()); else updateTaskStatus();
   }
   function taskReview() {
-    return `<details class="response-review"><summary>Task outcomes and active durations</summary><ul>${content.tasks.map(task => { const t = draft.tasks[task.id]; return `<li><a href="#/study/tasks/${task.id}">${task.id}: ${esc(outcomeLabel(t.status))}</a> · ${(t.durationMs / 1000).toFixed(1)} seconds${t.interrupted ? ' · interrupted' : ''}</li>`; }).join('')}</ul><p>Durations include visible reading, exploration, and answering. They exclude hidden tabs, explicit pauses, and refresh downtime; they are not pure comprehension times.</p></details>`;
+    return `<details class="response-review"><summary>Task outcomes and active durations</summary><ul>${content.tasks.map(task => { const t = draft.tasks[task.id]; return `<li><a href="#/study/tasks/${task.id}">${task.id}: ${esc(outcomeLabel(t.status))}</a> · ${(t.durationMs / 1000).toFixed(1)} seconds${!t.started ? ' · comparison setup not reached' : ''}${t.interrupted ? ' · interrupted' : ''}</li>`; }).join('')}</ul><p>Durations include visible reading, exploration, and answering after a usable comparison is ready. They exclude initial reading/setup, hidden tabs, explicit pauses, and refresh downtime; they are not total task or pure comprehension times.</p></details>`;
   }
   document.addEventListener('workspace-ready', () => {
     if (activeTask && window.StudyWorkspace.ready) { setupReady = true; startClock(); }
@@ -235,7 +238,7 @@
       const response = await fetch('/api/study/content', { cache: 'no-store' });
       if (!response.ok) throw new Error('Content unavailable');
       content = await response.json();
-      if (!['local', 'preview', 'pilot', 'live'].includes(content.mode) || content.contentVersion !== 'e5-preview-1') throw new Error('Unsupported content');
+      if (!['local', 'preview', 'pilot', 'live'].includes(content.mode) || content.contentVersion !== 'v0.2-preview-1') throw new Error('Unsupported content');
       store = D.storage(content); submission.read(); draft = store.read();
       if (submission.state?.kind === 'receipt' && submission.cleanup(() => store.discard())) draft = null;
       if (draft) { const t = draft.tasks[D.currentTask(draft)]; if (t.started && t.status === 'pending') { t.interrupted = true; store.save(draft); } }

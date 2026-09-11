@@ -24,7 +24,7 @@ def synthetic():
     p.update(submissionId=str(uuid.uuid4()), participantCode=str(uuid.uuid4()),
              consent={'version': c['contentVersion'], 'acknowledgements': {f['id']: True for f in c['fields'] if f['id'].startswith('C')}},
              pre=answers('P'), post=answers('Q'),
-             tasks=[{'id': f'T{i}', 'status': 'completed', 'durationMs': 1234, 'interrupted': False, 'answers': answers(f'T{i}')} for i in range(7)])
+             tasks=[{'id': f'T{i}', 'status': 'completed', 'setupReached': True, 'durationMs': 1234, 'interrupted': False, 'answers': answers(f'T{i}')} for i in range(7)])
     p['pre']['P1'] = {'status': 'answered', 'value': 5}
     return p
 
@@ -134,6 +134,67 @@ class SubmissionTests(unittest.TestCase):
         db=open_db(restored)
         self.assertEqual(db.execute('SELECT COUNT(*) FROM responses').fetchone()[0],2);db.close()
         with self.assertRaises(FileExistsError): backup(copy,restored)
+
+    def test_pre_setup_outcomes_validate_and_export_without_invented_time(self):
+        for task, status in zip(self.payload['tasks'][1:3], ['skipped', 'could_not_work_out']):
+            task.update(setupReached=False, status=status, durationMs=0)
+        self.payload['post']['Q8'] = {'status': 'answered', 'value': [3, 1]}
+        self.payload['tasks'][4]['answers']['T4c'] = {'status': 'answered', 'value': 3}
+        self.payload['tasks'][5]['answers']['T5a'] = {'status': 'answered', 'value': 'Two inputs merge into one result.'}
+        self.assertEqual(self.post().status_code, 201)
+        destination = Path(self.tmp.name) / 'early-export'
+        export(self.config.path, destination)
+        book = json.loads((destination / 'codebook.json').read_text())
+        self.assertEqual(book['versions']['instrumentVersion'], 'v0.2')
+        self.assertIn('Q3 only', book['analysis'])
+        with open(destination / 'responses.csv', newline='') as handle:
+            rows = list(csv.DictReader(handle))
+        early = next(r for r in rows if r['itemId'] == 'T1')
+        self.assertEqual((early['setupReached'], early['durationMs'], early['status']), ('False', '0', 'skipped'))
+        self.assertEqual(next(r for r in rows if r['itemId'] == 'Q8')['value'], '[1,3]')
+
+    def test_impossible_pre_setup_records_and_old_versions_are_rejected(self):
+        for mutate in [
+            lambda p: p['tasks'][0].update(setupReached=False),
+            lambda p: p['tasks'][1].update(setupReached=False, status='skipped'),
+            lambda p: p['tasks'][1].update(setupReached='false'),
+            lambda p: p['tasks'][1].pop('setupReached'),
+            lambda p: p.update(instrumentVersion='v0.1'),
+        ]:
+            payload = deepcopy(self.payload)
+            mutate(payload)
+            with self.assertRaises(StudyError):
+                self.service.submit(payload)
+
+        for invalid in ['answer', 'interruption']:
+            payload = deepcopy(self.payload)
+            payload['tasks'][1].update(setupReached=False, status='skipped', durationMs=0)
+            if invalid == 'answer':
+                payload['tasks'][1]['answers']['T1a'] = {'status': 'answered', 'value': 'No workspace yet'}
+            else:
+                payload['tasks'][1]['interrupted'] = True
+            with self.assertRaises(StudyError):
+                self.service.submit(payload)
+
+    def test_legacy_export_keeps_absent_setup_unknown(self):
+        self.service.submit(self.payload)
+        # Model an already-stored v0.1 JSON record; the current submission API rejects it.
+        legacy = deepcopy(self.payload)
+        legacy.update(instrumentVersion='v0.1', contentVersion='e5-preview-1', studyVersion='e5-synthetic-1')
+        for task in legacy['tasks']:
+            task.pop('setupReached')
+        db = sqlite3.connect(self.config.path)
+        try:
+            with db:
+                db.execute('UPDATE responses SET payload=?', (json.dumps(legacy),))
+        finally:
+            db.close()
+        destination = Path(self.tmp.name) / 'legacy-export'
+        export(self.config.path, destination)
+        with open(destination / 'responses.csv', newline='') as handle:
+            rows = list(csv.DictReader(handle))
+        self.assertEqual(next(r for r in rows if r['itemId'] == 'T1')['setupReached'], '')
+        self.assertTrue(all(r['instrumentVersion'] == 'v0.1' for r in rows))
 
     def test_disabled_modes_and_private_http_boundary(self):
         for mode in ('pilot','live'):
