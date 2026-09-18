@@ -12,12 +12,11 @@ Run `.venv/bin/python -m src.backend.api.server` from the repository root and op
 - `GET /api/examples/{exampleId}/states/{ordinal}/ir`
 - `GET /api/examples/{exampleId}/states/{ordinal}/cfg?functionId=...`
 - `GET /api/examples/{exampleId}/states/{ordinal}/source-mappings?functionId=...`
-- `GET /api/examples/{exampleId}/states/{ordinal}/counterparts?nodeId=...&toOrdinal=...`
 - `GET /api/examples/{exampleId}/summary?fromOrdinal=...&toOrdinal=...`
 
 Unknown examples and model nodes return `404`; invalid query combinations return `422`. Missing or corrupt model data produces a sanitised `503`.
 
-Source bytes are checked against recorded compiler metadata. Source locations are distinct from cross-state correspondence confidence. Summaries cover the whole example and order their evidence by timeline, independent of pane order or selected function. Wider comparisons compose adjacent overlays transiently; the separately compiled optimisation anchor retains its own provenance.
+Source bytes are checked against recorded compiler metadata. Source locations are distinct from cross-state correspondence confidence. Summaries cover the whole example and order their evidence by timeline, independent of pane order or selected function; the browser resolves selection counterparts from `summary.links`. Wider comparisons compose adjacent overlays transiently; the separately compiled optimisation anchor retains its own provenance.
 
 ## Application and study
 

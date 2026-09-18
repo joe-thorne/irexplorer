@@ -43,7 +43,6 @@ Routes change from a stateful session plus unscoped queries to:
 - `GET /api/examples`;
 - `GET /api/examples/{exampleId}/states`;
 - `GET /api/examples/{exampleId}/states/{ordinal}/ir`;
-- `GET /api/examples/{exampleId}/states/{ordinal}/cfg?functionId=...`; and
-- `GET /api/examples/{exampleId}/states/{ordinal}/counterparts?nodeId=...`.
+- `GET /api/examples/{exampleId}/states/{ordinal}/cfg?functionId=...`.
 
 User-supplied source compilation is not supported by the runtime. Adding it would require a separately designed isolated worker and resource limits.

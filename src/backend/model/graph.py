@@ -344,7 +344,8 @@ def _validate_blocks(
         if node.kind == "BasicBlock"
     }
 
-    for function_id, block_ids in _blocks_by_function(function_by_block).items():
+    for function_id in set(function_by_block.values()):
+        block_ids = children_by_id.get(function_id, ())
         if not block_ids:
             raise ModelValidationError(f"function has no basic blocks: {function_id}")
         entry_id = block_ids[0]
@@ -381,10 +382,3 @@ def _validate_blocks(
                     f"phi incoming blocks disagree with CFG in {block_id}: "
                     f"{sorted(incoming)} != {sorted(pred_labels)}"
                 )
-
-
-def _blocks_by_function(function_by_block: Mapping[str, str]) -> dict[str, list[str]]:
-    blocks: dict[str, list[str]] = {}
-    for block_id, function_id in function_by_block.items():
-        blocks.setdefault(function_id, []).append(block_id)
-    return blocks

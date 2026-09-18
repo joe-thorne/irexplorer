@@ -18,7 +18,6 @@ from src.backend.evaluation.router import router as study_router
 from src.backend.release import metadata
 from src.backend.api.schemas import (
     CfgResponse,
-    CounterpartsResponse,
     ErrorDetail,
     ErrorResponse,
     ExamplesResponse,
@@ -35,8 +34,6 @@ FRONTEND_ROOT = Path(__file__).resolve().parents[2] / "frontend"
 ExampleId = Annotated[str, ApiPath(min_length=1)]
 Ordinal = Annotated[int, ApiPath(ge=0)]
 FunctionId = Annotated[str, Query(alias="functionId", min_length=1)]
-NodeId = Annotated[str, Query(alias="nodeId", min_length=1)]
-TargetOrdinal = Annotated[int | None, Query(alias="toOrdinal", ge=0)]
 logger = logging.getLogger(__name__)
 
 
@@ -157,18 +154,6 @@ def create_app(
         function_id: FunctionId,
     ) -> dict[str, object]:
         return query_service.cfg(example_id, ordinal, function_id)
-
-    @app.get(
-        "/api/examples/{example_id}/states/{ordinal}/counterparts",
-        response_model=CounterpartsResponse,
-    )
-    def counterparts(
-        example_id: ExampleId,
-        ordinal: Ordinal,
-        node_id: NodeId,
-        to_ordinal: TargetOrdinal = None,
-    ) -> dict[str, object]:
-        return query_service.counterparts(example_id, ordinal, node_id, to_ordinal)
 
     app.include_router(study_router(StudyService(study_config or Config.environment())))
 

@@ -97,16 +97,6 @@ class CfgResponse(ApiModel):
     edges: list[CfgEdgeResponse]
 
 
-class CounterpartsResponse(ApiModel):
-    ordinal: int
-    nodeId: str
-    counterpartOrdinal: int
-    relation: str
-    confidence: str
-    evidence: str | None
-    counterparts: list[NodeResponse]
-
-
 class SourceResponse(ApiModel):
     exampleId: str
     file: str

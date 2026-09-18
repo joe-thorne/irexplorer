@@ -11,6 +11,8 @@ from src.backend.api import (
     QueryService,
     create_app,
 )
+from src.backend.ingest import load_curated_timeline
+from src.backend.model import deserialise_timeline, serialise_timeline
 
 
 class QueryServiceTests(unittest.TestCase):
@@ -142,12 +144,6 @@ class FastApiTests(unittest.TestCase):
         self.assertEqual(cfg.status_code, 200)
         self.assertEqual(len(cfg.json()["blocks"]), 4)
 
-        mapping = self.client.get(
-            "/api/examples/score/states/2/counterparts?nodeId=fn0%2Fbb0&toOrdinal=3"
-        )
-        self.assertEqual(mapping.status_code, 200)
-        self.assertEqual(mapping.json()["counterpartOrdinal"], 3)
-
     def test_app_assets_bypass_legacy_cache_on_normal_and_conditional_reload(self):
         for path in ("/", "/index.html", "/app.js", "/app.js?v=e7-walkthrough-1",
                      "/vendor/dagre-1.1.5.min.js", "/source.js", "/comparison.js", "/study.js", "/study-draft.js", "/task-clock.js", "/style.css"):
@@ -171,6 +167,7 @@ class FastApiTests(unittest.TestCase):
             "/api/source?ordinal=0",
             "/api/summary?fromOrdinal=0&toOrdinal=1",
             "/api/focus",
+            "/api/examples/score/states/2/counterparts?nodeId=fn0%2Fbb0&toOrdinal=3",
         ):
             with self.subTest(retired_route=retired_route):
                 response = self.client.get(retired_route)
@@ -191,33 +188,22 @@ class FastApiTests(unittest.TestCase):
         self.assertEqual(invalid_ordinal.status_code, 422)
         self.assertEqual(invalid_ordinal.json()["error"]["code"], "invalid_request")
 
-        invalid_target = self.client.get(
-            "/api/examples/score/states/0/counterparts?nodeId=fn0%2Fbb0&toOrdinal=0"
-        )
-        self.assertEqual(invalid_target.status_code, 422)
-        self.assertEqual(invalid_target.json()["error"]["code"], "invalid_query")
-
         missing_function = self.client.get(
             "/api/examples/score/states/0/cfg?functionId=missing"
         )
         self.assertEqual(missing_function.status_code, 404)
         self.assertEqual(missing_function.json()["error"]["code"], "not_found")
 
-        missing_node = self.client.get(
-            "/api/examples/score/states/0/counterparts?nodeId=missing&toOrdinal=1"
-        )
-        self.assertEqual(missing_node.status_code, 404)
-        self.assertEqual(missing_node.json()["error"]["code"], "not_found")
-
-    def test_prebaked_data_failure_is_logged_and_sanitised(self) -> None:
+    def test_missing_model_format_version_is_logged_and_sanitised(self) -> None:
         service = QueryService(preload=False)
         client = TestClient(create_app(service))
         self.addCleanup(client.close)
-        internal_detail = "/private/model/timeline.json contains invalid data"
+        invalid_record = serialise_timeline(load_curated_timeline("score"))
+        del invalid_record["formatVersion"]
 
         with patch(
             "src.backend.api.query.load_prebaked_curated_timeline",
-            side_effect=ValueError(internal_detail),
+            side_effect=lambda _example_id: deserialise_timeline(invalid_record),
         ):
             with self.assertLogs("src.backend.api.app", level="ERROR") as logs:
                 response = client.get("/api/examples/score/states")
@@ -228,8 +214,8 @@ class FastApiTests(unittest.TestCase):
             response.json()["error"]["message"],
             "Pre-baked model data is temporarily unavailable.",
         )
-        self.assertNotIn(internal_detail, response.text)
-        self.assertIn(internal_detail, "\n".join(logs.output))
+        self.assertNotIn("formatVersion", response.text)
+        self.assertIn("formatVersion", "\n".join(logs.output))
 
     def test_openapi_separates_study_write_from_read_only_queries(self) -> None:
         schema = self.client.get("/openapi.json")
@@ -248,7 +234,6 @@ class FastApiTests(unittest.TestCase):
                 "/api/examples/{example_id}/states/{ordinal}/source-mappings",
                 "/api/examples/{example_id}/states/{ordinal}/ir",
                 "/api/examples/{example_id}/states/{ordinal}/cfg",
-                "/api/examples/{example_id}/states/{ordinal}/counterparts",
             },
         )
         self.assertEqual(self.client.get("/docs").status_code, 200)

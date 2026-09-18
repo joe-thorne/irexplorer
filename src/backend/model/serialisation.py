@@ -59,8 +59,8 @@ def serialise_state_graph(graph: StateGraph) -> dict[str, Any]:
 def deserialise_state_graph(record: Mapping[str, Any]) -> StateGraph:
     """Load and validate one state record, rebuilding its derived indices."""
 
-    _require_format_version(record)
     try:
+        _require_format_version(record)
         graph = StateGraph(
             ordinal=_require_int(record, "ordinal"),
             state_id=_require_str(record, "stateId"),
@@ -113,8 +113,8 @@ def serialise_timeline(timeline: OptimisationTimeline) -> dict[str, Any]:
 def deserialise_timeline(record: Mapping[str, Any]) -> OptimisationTimeline:
     """Load and validate a timeline, rebuilding indices for every state."""
 
-    _require_format_version(record)
     try:
+        _require_format_version(record)
         timeline = OptimisationTimeline(
             example_id=_require_str(record, "exampleId"),
             config_id=_require_str(record, "configId"),
@@ -159,8 +159,8 @@ def deserialise_correspondence(
 ) -> Correspondence:
     """Load a correspondence only when its concrete endpoint states are known."""
 
-    _require_format_version(record)
     try:
+        _require_format_version(record)
         correspondence = Correspondence(
             from_ordinal=_require_int(record, "fromOrdinal"),
             to_ordinal=_require_int(record, "toOrdinal"),

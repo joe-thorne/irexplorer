@@ -120,6 +120,34 @@ class OptimisationTimelineTests(unittest.TestCase):
 
         self.assertIn("recompiled step requires", str(context.exception))
 
+    def test_missing_format_version_is_a_controlled_model_failure(self) -> None:
+        record = serialise_timeline(load_curated_timeline("score"))
+        del record["formatVersion"]
+
+        with self.assertRaises(ModelValidationError) as context:
+            deserialise_timeline(record)
+
+        self.assertIn("formatVersion", str(context.exception))
+
+    def test_entry_block_follows_contains_order_not_node_order(self) -> None:
+        state = load_curated_timeline("score").state(0)
+        block_ids = set(state.contains_children["fn0"])
+        reordered = replace(
+            state,
+            nodes=tuple(
+                node
+                for node in state.nodes
+                if node.stable_id not in block_ids
+            )
+            + tuple(
+                node
+                for node in reversed(state.nodes)
+                if node.stable_id in block_ids
+            ),
+        )
+
+        reordered.validate()
+
 
 if __name__ == "__main__":
     unittest.main()
