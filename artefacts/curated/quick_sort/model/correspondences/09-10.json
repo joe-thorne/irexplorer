@@ -77,17 +77,6 @@
       "confidence": "exact",
       "evidence": "unique basic-block label and CFG role",
       "fromNodeIds": [
-        "fn1/bb4"
-      ],
-      "relation": "same",
-      "toNodeIds": [
-        "fn1/bb4"
-      ]
-    },
-    {
-      "confidence": "exact",
-      "evidence": "unique basic-block label and CFG role",
-      "fromNodeIds": [
         "fn1/bb3"
       ],
       "relation": "same",
@@ -126,6 +115,17 @@
       "relation": "same",
       "toNodeIds": [
         "fn0/bb1"
+      ]
+    },
+    {
+      "confidence": "approximate",
+      "evidence": "unique basic-block label after CFG change",
+      "fromNodeIds": [
+        "fn1/bb4"
+      ],
+      "relation": "changed",
+      "toNodeIds": [
+        "fn1/bb4"
       ]
     },
     {
@@ -407,39 +407,6 @@
       "confidence": "exact",
       "evidence": "unique structural, source, and value-flow signature",
       "fromNodeIds": [
-        "fn1/bb4/i1"
-      ],
-      "relation": "same",
-      "toNodeIds": [
-        "fn1/bb4/i1"
-      ]
-    },
-    {
-      "confidence": "exact",
-      "evidence": "unique structural, source, and value-flow signature",
-      "fromNodeIds": [
-        "fn1/bb4/i3"
-      ],
-      "relation": "same",
-      "toNodeIds": [
-        "fn1/bb4/i3"
-      ]
-    },
-    {
-      "confidence": "exact",
-      "evidence": "unique structural, source, and value-flow signature",
-      "fromNodeIds": [
-        "fn1/bb4/i0"
-      ],
-      "relation": "same",
-      "toNodeIds": [
-        "fn1/bb4/i0"
-      ]
-    },
-    {
-      "confidence": "exact",
-      "evidence": "unique structural, source, and value-flow signature",
-      "fromNodeIds": [
         "fn1/bb3/i0"
       ],
       "relation": "same",
@@ -610,6 +577,39 @@
       "relation": "same",
       "toNodeIds": [
         "fn0/bb1/i4"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique structural, source, and value-flow signature",
+      "fromNodeIds": [
+        "fn1/bb4/i1"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn1/bb4/i1"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique structural, source, and value-flow signature",
+      "fromNodeIds": [
+        "fn1/bb4/i3"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn1/bb4/i3"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique structural, source, and value-flow signature",
+      "fromNodeIds": [
+        "fn1/bb4/i0"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn1/bb4/i0"
       ]
     },
     {

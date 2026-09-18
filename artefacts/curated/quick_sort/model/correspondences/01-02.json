@@ -44,17 +44,6 @@
       "confidence": "exact",
       "evidence": "unique basic-block label and CFG role",
       "fromNodeIds": [
-        "fn1/bb2"
-      ],
-      "relation": "same",
-      "toNodeIds": [
-        "fn1/bb2"
-      ]
-    },
-    {
-      "confidence": "exact",
-      "evidence": "unique basic-block label and CFG role",
-      "fromNodeIds": [
         "fn1/bb1"
       ],
       "relation": "same",
@@ -140,6 +129,17 @@
       ]
     },
     {
+      "confidence": "approximate",
+      "evidence": "unique basic-block label after CFG change",
+      "fromNodeIds": [
+        "fn1/bb2"
+      ],
+      "relation": "changed",
+      "toNodeIds": [
+        "fn1/bb2"
+      ]
+    },
+    {
       "confidence": "exact",
       "evidence": "unique structural, source, and value-flow signature",
       "fromNodeIds": [
@@ -181,50 +181,6 @@
       "relation": "same",
       "toNodeIds": [
         "fn1/bb0/i0"
-      ]
-    },
-    {
-      "confidence": "exact",
-      "evidence": "unique structural, source, and value-flow signature",
-      "fromNodeIds": [
-        "fn1/bb2/i4"
-      ],
-      "relation": "same",
-      "toNodeIds": [
-        "fn1/bb2/i4"
-      ]
-    },
-    {
-      "confidence": "exact",
-      "evidence": "unique structural, source, and value-flow signature",
-      "fromNodeIds": [
-        "fn1/bb2/i1"
-      ],
-      "relation": "same",
-      "toNodeIds": [
-        "fn1/bb2/i1"
-      ]
-    },
-    {
-      "confidence": "exact",
-      "evidence": "unique structural, source, and value-flow signature",
-      "fromNodeIds": [
-        "fn1/bb2/i2"
-      ],
-      "relation": "same",
-      "toNodeIds": [
-        "fn1/bb2/i2"
-      ]
-    },
-    {
-      "confidence": "exact",
-      "evidence": "unique structural, source, and value-flow signature",
-      "fromNodeIds": [
-        "fn1/bb2/i0"
-      ],
-      "relation": "same",
-      "toNodeIds": [
-        "fn1/bb2/i0"
       ]
     },
     {
@@ -632,6 +588,50 @@
       "relation": "same",
       "toNodeIds": [
         "fn0/bb1/i4"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique structural, source, and value-flow signature",
+      "fromNodeIds": [
+        "fn1/bb2/i4"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn1/bb2/i4"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique structural, source, and value-flow signature",
+      "fromNodeIds": [
+        "fn1/bb2/i1"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn1/bb2/i1"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique structural, source, and value-flow signature",
+      "fromNodeIds": [
+        "fn1/bb2/i2"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn1/bb2/i2"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique structural, source, and value-flow signature",
+      "fromNodeIds": [
+        "fn1/bb2/i0"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn1/bb2/i0"
       ]
     },
     {

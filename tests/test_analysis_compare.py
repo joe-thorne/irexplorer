@@ -188,6 +188,32 @@ class EndpointComparisonTests(unittest.TestCase):
         self.assertEqual(remark_item.remark_indices, tuple(range(len(timeline.steps[3].remarks))))
         self.assertIn("compiler remarks were captured for this step", remark_item.text)
 
+    def test_cfg_summary_reports_relabelled_branch_edges(self) -> None:
+        timeline = load_curated_timeline("quick_sort", resolution="full")
+        result = compare_timeline_step(timeline, 1)
+        summary_text = " ".join(item.text for item in result.summary.items)
+
+        self.assertNotIn("CFG unchanged", summary_text)
+        self.assertIn(
+            "CFG edges changed: relabelled for.body → if.then [true → false], "
+            "for.body → if.end [false → true].",
+            summary_text,
+        )
+        changed_block = next(
+            link
+            for link in result.correspondence.links
+            if link.from_node_ids == ("fn1/bb2",)
+        )
+        self.assertEqual((changed_block.relation, changed_block.confidence), ("changed", "approximate"))
+
+    def test_cfg_summary_reports_named_added_and_removed_edges(self) -> None:
+        timeline = load_curated_timeline("binary_search", resolution="full")
+        result = compare_timeline_step(timeline, 6)
+        summary_text = " ".join(item.text for item in result.summary.items)
+
+        self.assertIn("CFG edges changed: removed entry → while.cond [unconditional]", summary_text)
+        self.assertIn("added entry → while.body.lr.ph [true]", summary_text)
+
     def test_composed_view_coarsens_relation_and_degrades_confidence(self) -> None:
         timeline = load_curated_timeline("binary_search", resolution="full")
         correspondences = tuple(

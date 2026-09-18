@@ -61,6 +61,17 @@ class SummaryQueriesTests(unittest.TestCase):
         self.assertNotIn('this pass', ' '.join(i['text'] for i in composed['items']))
         self.assertEqual(self.service.summary('quick_sort', 0, 9)['scope'], 'whole example')
 
+    def test_baked_cfg_summary_names_relabelled_branch_edges(self):
+        response = self.service.summary('quick_sort', 1, 2)
+        cfg_item = next(item for item in response['items'] if item['text'].startswith('CFG'))
+
+        self.assertEqual(
+            cfg_item['text'],
+            'CFG edges changed: relabelled for.body → if.then [true → false], '
+            'for.body → if.end [false → true].',
+        )
+        self.assertTrue(cfg_item['linkIndices'])
+
     def test_http_schema_errors_and_no_mutation(self):
         with TestClient(create_app(self.service)) as client:
             for example in curated.list_examples():
