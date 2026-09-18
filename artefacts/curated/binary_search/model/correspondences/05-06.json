@@ -167,7 +167,7 @@
       "fromNodeIds": [
         "fn0/bb4/i0"
       ],
-      "relation": "same",
+      "relation": "changed",
       "toNodeIds": [
         "fn0/bb4/i0"
       ]
@@ -178,7 +178,7 @@
       "fromNodeIds": [
         "fn0/bb6/i0"
       ],
-      "relation": "same",
+      "relation": "changed",
       "toNodeIds": [
         "fn0/bb6/i0"
       ]
@@ -313,6 +313,17 @@
       "relation": "same",
       "toNodeIds": [
         "fn0/bb1/i2"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique structural, source, and value-flow signature",
+      "fromNodeIds": [
+        "fn0/bb1/i0"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn0/bb1/i0"
       ]
     },
     {
@@ -343,7 +354,7 @@
       "fromNodeIds": [
         "fn0/bb3/i0"
       ],
-      "relation": "same",
+      "relation": "changed",
       "toNodeIds": [
         "fn0/bb3/i1"
       ]
@@ -354,7 +365,7 @@
       "fromNodeIds": [
         "fn0/bb2/i8"
       ],
-      "relation": "moved",
+      "relation": "same",
       "toNodeIds": [
         "fn0/bb2/i8"
       ]
@@ -365,20 +376,9 @@
       "fromNodeIds": [
         "fn0/bb2/i9"
       ],
-      "relation": "moved",
+      "relation": "same",
       "toNodeIds": [
         "fn0/bb2/i9"
-      ]
-    },
-    {
-      "confidence": "approximate",
-      "evidence": "unique opcode and layout position in matched basic block",
-      "fromNodeIds": [
-        "fn0/bb1/i0"
-      ],
-      "relation": "moved",
-      "toNodeIds": [
-        "fn0/bb1/i0"
       ]
     },
     {

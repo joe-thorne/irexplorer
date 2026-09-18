@@ -8,6 +8,7 @@ from src.backend.analysis import (
     load_prebaked_curated_correspondence,
     load_prebaked_curated_correspondences,
 )
+from src.backend.analysis.compare import _instruction_relation
 from src.backend.ingest import load_curated_timeline, load_prebaked_curated_timeline
 from src.backend.model import (
     Correspondence,
@@ -69,6 +70,41 @@ class EndpointComparisonTests(unittest.TestCase):
                 and link.confidence == "approximate"
                 for link in instcombine.links
             )
+        )
+
+    def test_instruction_relation_describes_paired_text_not_fallback_tier(self) -> None:
+        """Fallback evidence must not make unchanged IR look renamed or moved."""
+        score = load_curated_timeline("score", resolution="full")
+        mem2reg = compare_timeline_step(score, 0).correspondence
+        unchanged_link = next(
+            link
+            for link in mem2reg.links
+            if link.from_node_ids == ("fn0/bb0/i18",)
+        )
+        self.assertEqual((unchanged_link.relation, unchanged_link.confidence), ("same", "exact"))
+
+        rewritten_link = next(
+            link
+            for link in mem2reg.links
+            if link.from_node_ids == ("fn0/bb0/i21",)
+        )
+        self.assertEqual((rewritten_link.relation, rewritten_link.confidence), ("changed", "approximate"))
+
+        quick_sort = load_curated_timeline("quick_sort", resolution="full")
+        indvars = compare_timeline_step(quick_sort, 8).correspondence
+        phi_link = next(
+            link
+            for link in indvars.links
+            if link.from_node_ids == ("fn1/bb2/i0",)
+        )
+        self.assertEqual((phi_link.relation, phi_link.confidence), ("changed", "approximate"))
+
+        self.assertEqual(
+            _instruction_relation(
+                Node("before", "Instruction", "", {"text": "%old = add i32 %left, %right"}),
+                Node("after", "Instruction", "", {"text": "%new = add i32 %left, %right"}),
+            ),
+            "renamed",
         )
 
     def test_unresolved_candidates_are_explicit_none_links(self) -> None:

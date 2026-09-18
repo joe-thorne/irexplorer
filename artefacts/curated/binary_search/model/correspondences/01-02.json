@@ -352,6 +352,17 @@
       "confidence": "exact",
       "evidence": "unique structural, source, and value-flow signature",
       "fromNodeIds": [
+        "fn0/bb2/i0"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn0/bb2/i0"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique structural, source, and value-flow signature",
+      "fromNodeIds": [
         "fn0/bb1/i3"
       ],
       "relation": "same",
@@ -420,20 +431,9 @@
       "fromNodeIds": [
         "fn0/bb2/i2"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn0/bb2/i2"
-      ]
-    },
-    {
-      "confidence": "approximate",
-      "evidence": "unique debug source location and opcode",
-      "fromNodeIds": [
-        "fn0/bb2/i0"
-      ],
-      "relation": "renamed",
-      "toNodeIds": [
-        "fn0/bb2/i0"
       ]
     },
     {
@@ -453,7 +453,7 @@
       "fromNodeIds": [
         "fn0/bb5/i0"
       ],
-      "relation": "moved",
+      "relation": "same",
       "toNodeIds": [
         "fn0/bb5/i0"
       ]
@@ -464,7 +464,7 @@
       "fromNodeIds": [
         "fn0/bb5/i1"
       ],
-      "relation": "moved",
+      "relation": "same",
       "toNodeIds": [
         "fn0/bb5/i1"
       ]

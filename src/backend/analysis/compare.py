@@ -710,11 +710,20 @@ def _match_unique_in_context(
     for match_key in sorted(grouped_from.keys() & grouped_to.keys(), key=str):
         from_node = grouped_from[match_key]
         to_node = grouped_to[match_key]
+        observed_relation = relation
+        # Evidence tier says how confidently a candidate pair was identified;
+        # it does not describe what happened to the instruction.  In
+        # particular, source- and layout-based fallbacks often pair bytewise
+        # unchanged instructions.  Derive their relation from the paired
+        # records instead of exposing the fallback's old ``renamed`` or
+        # ``moved`` label as a claim about the IR.
+        if kind == "Instruction" and relation in {"same", "renamed", "moved"}:
+            observed_relation = _instruction_relation(from_node, to_node)
         links.append(
             Link(
                 from_node_ids=(from_node.stable_id,),
                 to_node_ids=(to_node.stable_id,),
-                relation=relation,  # type: ignore[arg-type]
+                relation=observed_relation,  # type: ignore[arg-type]
                 confidence=confidence,  # type: ignore[arg-type]
                 evidence=evidence,
             )
@@ -1286,18 +1295,11 @@ def _instruction_exact_signature(state: StateGraph, node: Node) -> tuple[object,
             for edge in state.value_flow_predecessors.get(node.stable_id, ())
         )
     )
-    successors = tuple(
-        sorted(
-            str(state.by_id[edge.to_id].attributes.get("opcode"))
-            for edge in state.value_flow_successors.get(node.stable_id, ())
-        )
-    )
     return (
         node.attributes.get("opcode"),
         node.attributes.get("source"),
         _normalised_instruction_text(node),
         predecessors,
-        successors,
     )
 
 
@@ -1306,6 +1308,31 @@ def _normalised_instruction_text(node: Node) -> str:
     text = _DEBUG_REF_RE.sub("", text)
     text = re.sub(r"^%[-A-Za-z0-9_.$]+\s*=\s*", "", text)
     return _VALUE_NAME_RE.sub("%value", " ".join(text.split()))
+
+
+def _instruction_relation(from_node: Node, to_node: Node) -> str:
+    """Describe an instruction pair independently of the evidence used to find it."""
+
+    from_text = _display_instruction_text(from_node)
+    to_text = _display_instruction_text(to_node)
+    if from_text == to_text:
+        return "same"
+    if _instruction_without_result_name(from_text) == _instruction_without_result_name(to_text):
+        return "renamed"
+    return "changed"
+
+
+def _display_instruction_text(node: Node) -> str:
+    """Return recorded instruction text with non-semantic debug metadata removed."""
+
+    text = _DEBUG_REF_RE.sub("", str(node.attributes.get("text", "")))
+    return " ".join(text.split())
+
+
+def _instruction_without_result_name(text: str) -> str:
+    """Remove only an SSA result definition, retaining all operation operands."""
+
+    return re.sub(r"^%[-A-Za-z0-9_.$]+\s*=\s*", "", text)
 
 
 def _source_opcode_key(node: Node) -> tuple[object, object] | None:

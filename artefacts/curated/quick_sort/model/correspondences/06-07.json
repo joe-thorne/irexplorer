@@ -123,7 +123,7 @@
       "fromNodeIds": [
         "fn1/bb3/i0"
       ],
-      "relation": "same",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb3/i0"
       ]
@@ -297,6 +297,17 @@
       "confidence": "exact",
       "evidence": "unique structural, source, and value-flow signature",
       "fromNodeIds": [
+        "fn1/bb0/i3"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn1/bb0/i3"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique structural, source, and value-flow signature",
+      "fromNodeIds": [
         "fn1/bb0/i1"
       ],
       "relation": "same",
@@ -376,7 +387,7 @@
       "fromNodeIds": [
         "fn1/bb2/i0"
       ],
-      "relation": "same",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb2/i2"
       ]
@@ -481,25 +492,25 @@
       ]
     },
     {
-      "confidence": "approximate",
-      "evidence": "unique debug source location and opcode",
+      "confidence": "exact",
+      "evidence": "unique structural, source, and value-flow signature",
       "fromNodeIds": [
-        "fn1/bb0/i3"
+        "fn1/bb4/i1"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
-        "fn1/bb0/i3"
+        "fn1/bb4/i1"
       ]
     },
     {
-      "confidence": "approximate",
-      "evidence": "unique debug source location and opcode",
+      "confidence": "exact",
+      "evidence": "unique structural, source, and value-flow signature",
       "fromNodeIds": [
-        "fn1/bb4/i1"
+        "fn1/bb4/i0"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
-        "fn1/bb4/i1"
+        "fn1/bb4/i0"
       ]
     },
     {
@@ -508,20 +519,9 @@
       "fromNodeIds": [
         "fn1/bb5/i0"
       ],
-      "relation": "moved",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb6/i0"
-      ]
-    },
-    {
-      "confidence": "approximate",
-      "evidence": "unique opcode and layout position in matched basic block",
-      "fromNodeIds": [
-        "fn1/bb4/i0"
-      ],
-      "relation": "moved",
-      "toNodeIds": [
-        "fn1/bb4/i0"
       ]
     },
     {

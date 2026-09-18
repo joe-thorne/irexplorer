@@ -365,7 +365,7 @@
       "fromNodeIds": [
         "fn0/bb2/i8"
       ],
-      "relation": "moved",
+      "relation": "same",
       "toNodeIds": [
         "fn0/bb2/i8"
       ]
@@ -376,7 +376,7 @@
       "fromNodeIds": [
         "fn0/bb2/i9"
       ],
-      "relation": "moved",
+      "relation": "same",
       "toNodeIds": [
         "fn0/bb2/i9"
       ]

@@ -154,6 +154,17 @@
       "confidence": "exact",
       "evidence": "unique structural, source, and value-flow signature",
       "fromNodeIds": [
+        "fn1/bb0/i1"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn1/bb0/i1"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique structural, source, and value-flow signature",
+      "fromNodeIds": [
         "fn1/bb0/i2"
       ],
       "relation": "same",
@@ -187,11 +198,33 @@
       "confidence": "exact",
       "evidence": "unique structural, source, and value-flow signature",
       "fromNodeIds": [
+        "fn1/bb2/i1"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn1/bb2/i1"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique structural, source, and value-flow signature",
+      "fromNodeIds": [
         "fn1/bb2/i3"
       ],
       "relation": "same",
       "toNodeIds": [
         "fn1/bb2/i3"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique structural, source, and value-flow signature",
+      "fromNodeIds": [
+        "fn1/bb2/i2"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn1/bb2/i2"
       ]
     },
     {
@@ -225,6 +258,28 @@
       "relation": "same",
       "toNodeIds": [
         "fn1/bb1/i2"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique structural, source, and value-flow signature",
+      "fromNodeIds": [
+        "fn1/bb1/i0"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn1/bb1/i0"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique structural, source, and value-flow signature",
+      "fromNodeIds": [
+        "fn1/bb1/i1"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn1/bb1/i1"
       ]
     },
     {
@@ -244,7 +299,7 @@
       "fromNodeIds": [
         "fn1/bb5/i1"
       ],
-      "relation": "same",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb5/i1"
       ]
@@ -253,9 +308,20 @@
       "confidence": "exact",
       "evidence": "unique structural, source, and value-flow signature",
       "fromNodeIds": [
+        "fn1/bb5/i2"
+      ],
+      "relation": "changed",
+      "toNodeIds": [
+        "fn1/bb5/i2"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique structural, source, and value-flow signature",
+      "fromNodeIds": [
         "fn1/bb5/i3"
       ],
-      "relation": "same",
+      "relation": "renamed",
       "toNodeIds": [
         "fn1/bb5/i3"
       ]
@@ -266,7 +332,7 @@
       "fromNodeIds": [
         "fn1/bb5/i6"
       ],
-      "relation": "same",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb5/i4"
       ]
@@ -288,7 +354,7 @@
       "fromNodeIds": [
         "fn1/bb5/i0"
       ],
-      "relation": "same",
+      "relation": "renamed",
       "toNodeIds": [
         "fn1/bb5/i0"
       ]
@@ -299,7 +365,7 @@
       "fromNodeIds": [
         "fn1/bb5/i10"
       ],
-      "relation": "same",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb5/i5"
       ]
@@ -310,7 +376,7 @@
       "fromNodeIds": [
         "fn1/bb5/i13"
       ],
-      "relation": "same",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb5/i6"
       ]
@@ -341,11 +407,33 @@
       "confidence": "exact",
       "evidence": "unique structural, source, and value-flow signature",
       "fromNodeIds": [
+        "fn1/bb3/i0"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn1/bb3/i0"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique structural, source, and value-flow signature",
+      "fromNodeIds": [
         "fn1/bb3/i13"
       ],
       "relation": "same",
       "toNodeIds": [
         "fn1/bb3/i6"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique structural, source, and value-flow signature",
+      "fromNodeIds": [
+        "fn1/bb3/i2"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn1/bb3/i2"
       ]
     },
     {
@@ -376,7 +464,7 @@
       "fromNodeIds": [
         "fn1/bb3/i9"
       ],
-      "relation": "same",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb3/i4"
       ]
@@ -387,7 +475,7 @@
       "fromNodeIds": [
         "fn1/bb3/i12"
       ],
-      "relation": "same",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb3/i5"
       ]
@@ -495,99 +583,11 @@
       "confidence": "approximate",
       "evidence": "unique debug source location and opcode",
       "fromNodeIds": [
-        "fn1/bb3/i2"
-      ],
-      "relation": "renamed",
-      "toNodeIds": [
-        "fn1/bb3/i2"
-      ]
-    },
-    {
-      "confidence": "approximate",
-      "evidence": "unique debug source location and opcode",
-      "fromNodeIds": [
-        "fn1/bb5/i2"
-      ],
-      "relation": "renamed",
-      "toNodeIds": [
-        "fn1/bb5/i2"
-      ]
-    },
-    {
-      "confidence": "approximate",
-      "evidence": "unique debug source location and opcode",
-      "fromNodeIds": [
-        "fn1/bb0/i1"
-      ],
-      "relation": "renamed",
-      "toNodeIds": [
-        "fn1/bb0/i1"
-      ]
-    },
-    {
-      "confidence": "approximate",
-      "evidence": "unique debug source location and opcode",
-      "fromNodeIds": [
-        "fn1/bb1/i1"
-      ],
-      "relation": "renamed",
-      "toNodeIds": [
-        "fn1/bb1/i1"
-      ]
-    },
-    {
-      "confidence": "approximate",
-      "evidence": "unique debug source location and opcode",
-      "fromNodeIds": [
         "fn1/bb4/i2"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb4/i2"
-      ]
-    },
-    {
-      "confidence": "approximate",
-      "evidence": "unique debug source location and opcode",
-      "fromNodeIds": [
-        "fn1/bb2/i1"
-      ],
-      "relation": "renamed",
-      "toNodeIds": [
-        "fn1/bb2/i1"
-      ]
-    },
-    {
-      "confidence": "approximate",
-      "evidence": "unique debug source location and opcode",
-      "fromNodeIds": [
-        "fn1/bb2/i2"
-      ],
-      "relation": "renamed",
-      "toNodeIds": [
-        "fn1/bb2/i2"
-      ]
-    },
-    {
-      "confidence": "approximate",
-      "evidence": "unique debug source location and opcode",
-      "fromNodeIds": [
-        "fn1/bb3/i0"
-      ],
-      "relation": "renamed",
-      "toNodeIds": [
-        "fn1/bb3/i0"
-      ]
-    },
-    {
-      "confidence": "approximate",
-      "evidence": "unique opcode and layout position in matched basic block",
-      "fromNodeIds": [
-        "fn1/bb1/i0"
-      ],
-      "relation": "moved",
-      "toNodeIds": [
-        "fn1/bb1/i0"
       ]
     },
     {

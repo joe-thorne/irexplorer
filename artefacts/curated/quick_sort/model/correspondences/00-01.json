@@ -154,6 +154,17 @@
       "confidence": "exact",
       "evidence": "unique structural, source, and value-flow signature",
       "fromNodeIds": [
+        "fn1/bb0/i15"
+      ],
+      "relation": "renamed",
+      "toNodeIds": [
+        "fn1/bb0/i2"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique structural, source, and value-flow signature",
+      "fromNodeIds": [
         "fn1/bb2/i7"
       ],
       "relation": "same",
@@ -167,7 +178,7 @@
       "fromNodeIds": [
         "fn1/bb2/i6"
       ],
-      "relation": "same",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb2/i3"
       ]
@@ -178,7 +189,7 @@
       "fromNodeIds": [
         "fn1/bb2/i4"
       ],
-      "relation": "same",
+      "relation": "renamed",
       "toNodeIds": [
         "fn1/bb2/i2"
       ]
@@ -200,7 +211,7 @@
       "fromNodeIds": [
         "fn1/bb6/i5"
       ],
-      "relation": "same",
+      "relation": "renamed",
       "toNodeIds": [
         "fn1/bb6/i3"
       ]
@@ -211,7 +222,7 @@
       "fromNodeIds": [
         "fn1/bb6/i11"
       ],
-      "relation": "same",
+      "relation": "renamed",
       "toNodeIds": [
         "fn1/bb6/i6"
       ]
@@ -255,7 +266,7 @@
       "fromNodeIds": [
         "fn1/bb6/i17"
       ],
-      "relation": "same",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb6/i10"
       ]
@@ -266,7 +277,7 @@
       "fromNodeIds": [
         "fn1/bb6/i23"
       ],
-      "relation": "same",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb6/i13"
       ]
@@ -299,7 +310,7 @@
       "fromNodeIds": [
         "fn1/bb3/i7"
       ],
-      "relation": "same",
+      "relation": "renamed",
       "toNodeIds": [
         "fn1/bb3/i3"
       ]
@@ -310,7 +321,7 @@
       "fromNodeIds": [
         "fn1/bb3/i13"
       ],
-      "relation": "same",
+      "relation": "renamed",
       "toNodeIds": [
         "fn1/bb3/i6"
       ]
@@ -321,7 +332,7 @@
       "fromNodeIds": [
         "fn1/bb3/i18"
       ],
-      "relation": "same",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb3/i9"
       ]
@@ -332,7 +343,7 @@
       "fromNodeIds": [
         "fn1/bb3/i24"
       ],
-      "relation": "same",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb3/i12"
       ]
@@ -376,7 +387,7 @@
       "fromNodeIds": [
         "fn1/bb3/i6"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb3/i2"
       ]
@@ -387,7 +398,7 @@
       "fromNodeIds": [
         "fn1/bb3/i5"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb3/i1"
       ]
@@ -398,7 +409,7 @@
       "fromNodeIds": [
         "fn1/bb3/i17"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb3/i8"
       ]
@@ -409,7 +420,7 @@
       "fromNodeIds": [
         "fn1/bb3/i16"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb3/i7"
       ]
@@ -420,7 +431,7 @@
       "fromNodeIds": [
         "fn1/bb3/i12"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb3/i5"
       ]
@@ -431,7 +442,7 @@
       "fromNodeIds": [
         "fn1/bb3/i11"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb3/i4"
       ]
@@ -442,7 +453,7 @@
       "fromNodeIds": [
         "fn1/bb3/i23"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb3/i11"
       ]
@@ -453,7 +464,7 @@
       "fromNodeIds": [
         "fn1/bb3/i22"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb3/i10"
       ]
@@ -464,7 +475,7 @@
       "fromNodeIds": [
         "fn1/bb6/i4"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb6/i2"
       ]
@@ -475,7 +486,7 @@
       "fromNodeIds": [
         "fn1/bb6/i2"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb6/i0"
       ]
@@ -486,7 +497,7 @@
       "fromNodeIds": [
         "fn1/bb6/i10"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb6/i5"
       ]
@@ -497,7 +508,7 @@
       "fromNodeIds": [
         "fn1/bb6/i9"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb6/i4"
       ]
@@ -508,7 +519,7 @@
       "fromNodeIds": [
         "fn1/bb6/i16"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb6/i9"
       ]
@@ -519,7 +530,7 @@
       "fromNodeIds": [
         "fn1/bb6/i14"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb6/i7"
       ]
@@ -530,7 +541,7 @@
       "fromNodeIds": [
         "fn1/bb6/i22"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb6/i12"
       ]
@@ -541,7 +552,7 @@
       "fromNodeIds": [
         "fn1/bb6/i21"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb6/i11"
       ]
@@ -552,7 +563,7 @@
       "fromNodeIds": [
         "fn1/bb6/i25"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb6/i14"
       ]
@@ -563,7 +574,7 @@
       "fromNodeIds": [
         "fn1/bb0/i14"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb0/i1"
       ]
@@ -574,7 +585,7 @@
       "fromNodeIds": [
         "fn1/bb0/i13"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb0/i0"
       ]
@@ -585,7 +596,7 @@
       "fromNodeIds": [
         "fn1/bb0/i18"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb0/i3"
       ]
@@ -596,7 +607,7 @@
       "fromNodeIds": [
         "fn1/bb1/i2"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb1/i2"
       ]
@@ -607,7 +618,7 @@
       "fromNodeIds": [
         "fn1/bb5/i1"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb5/i0"
       ]
@@ -618,7 +629,7 @@
       "fromNodeIds": [
         "fn1/bb5/i3"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb5/i1"
       ]
@@ -629,7 +640,7 @@
       "fromNodeIds": [
         "fn1/bb2/i3"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb2/i1"
       ]
@@ -640,7 +651,7 @@
       "fromNodeIds": [
         "fn1/bb2/i2"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb2/i0"
       ]
@@ -651,7 +662,7 @@
       "fromNodeIds": [
         "fn1/bb3/i1"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb3/i0"
       ]
@@ -662,7 +673,7 @@
       "fromNodeIds": [
         "fn0/bb0/i9"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn0/bb0/i0"
       ]
@@ -673,7 +684,7 @@
       "fromNodeIds": [
         "fn0/bb1/i3"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn0/bb1/i0"
       ]
@@ -684,7 +695,7 @@
       "fromNodeIds": [
         "fn0/bb1/i8"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn0/bb1/i1"
       ]
@@ -695,7 +706,7 @@
       "fromNodeIds": [
         "fn0/bb1/i9"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn0/bb1/i2"
       ]
@@ -706,7 +717,7 @@
       "fromNodeIds": [
         "fn0/bb1/i12"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn0/bb1/i3"
       ]
@@ -717,7 +728,7 @@
       "fromNodeIds": [
         "fn0/bb1/i14"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn0/bb1/i4"
       ]
@@ -993,8 +1004,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb0/i11"
       ],
@@ -1002,19 +1013,10 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb0/i12"
-      ],
-      "relation": "removed",
-      "toNodeIds": []
-    },
-    {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
-      "fromNodeIds": [
-        "fn1/bb0/i15"
       ],
       "relation": "removed",
       "toNodeIds": []
@@ -1029,8 +1031,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb0/i17"
       ],
@@ -1047,8 +1049,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb0/i20"
       ],
@@ -1065,8 +1067,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb1/i0"
       ],
@@ -1074,8 +1076,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb1/i1"
       ],
@@ -1083,8 +1085,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb2/i0"
       ],
@@ -1092,8 +1094,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb2/i1"
       ],
@@ -1101,8 +1103,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb2/i5"
       ],
@@ -1110,8 +1112,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb3/i0"
       ],
@@ -1128,8 +1130,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb3/i3"
       ],
@@ -1137,8 +1139,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb3/i4"
       ],
@@ -1155,8 +1157,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb3/i9"
       ],
@@ -1164,8 +1166,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb3/i10"
       ],
@@ -1173,8 +1175,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb3/i14"
       ],
@@ -1182,8 +1184,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb3/i15"
       ],
@@ -1191,8 +1193,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb3/i19"
       ],
@@ -1200,8 +1202,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb3/i20"
       ],
@@ -1209,8 +1211,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb3/i21"
       ],
@@ -1218,8 +1220,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb5/i0"
       ],
@@ -1236,8 +1238,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb6/i0"
       ],
@@ -1245,8 +1247,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb6/i1"
       ],
@@ -1263,8 +1265,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb6/i7"
       ],
@@ -1272,8 +1274,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb6/i8"
       ],
@@ -1281,8 +1283,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb6/i12"
       ],
@@ -1290,8 +1292,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb6/i13"
       ],
@@ -1299,8 +1301,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb6/i18"
       ],
@@ -1308,8 +1310,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb6/i19"
       ],
@@ -1317,8 +1319,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb6/i20"
       ],
@@ -1326,22 +1328,13 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb6/i24"
       ],
       "relation": "removed",
       "toNodeIds": []
-    },
-    {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
-      "fromNodeIds": [],
-      "relation": "added",
-      "toNodeIds": [
-        "fn1/bb0/i2"
-      ]
     },
     {
       "confidence": "exact",

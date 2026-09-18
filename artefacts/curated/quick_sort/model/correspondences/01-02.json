@@ -255,7 +255,7 @@
       "fromNodeIds": [
         "fn1/bb6/i3"
       ],
-      "relation": "same",
+      "relation": "renamed",
       "toNodeIds": [
         "fn1/bb6/i3"
       ]
@@ -266,7 +266,7 @@
       "fromNodeIds": [
         "fn1/bb6/i6"
       ],
-      "relation": "same",
+      "relation": "renamed",
       "toNodeIds": [
         "fn1/bb6/i6"
       ]
@@ -310,7 +310,7 @@
       "fromNodeIds": [
         "fn1/bb6/i10"
       ],
-      "relation": "same",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb6/i10"
       ]
@@ -321,7 +321,7 @@
       "fromNodeIds": [
         "fn1/bb6/i13"
       ],
-      "relation": "same",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb6/i13"
       ]
@@ -577,6 +577,17 @@
       "relation": "same",
       "toNodeIds": [
         "fn0/bb1/i5"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique structural, source, and value-flow signature",
+      "fromNodeIds": [
+        "fn0/bb1/i0"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn0/bb1/i0"
       ]
     },
     {
@@ -596,7 +607,7 @@
       "fromNodeIds": [
         "fn1/bb2/i4"
       ],
-      "relation": "same",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb2/i4"
       ]
@@ -640,7 +651,7 @@
       "fromNodeIds": [
         "fn1/bb6/i1"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb6/i0"
       ]
@@ -651,7 +662,7 @@
       "fromNodeIds": [
         "fn1/bb6/i8"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb6/i7"
       ]
@@ -662,7 +673,7 @@
       "fromNodeIds": [
         "fn1/bb2/i3"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb2/i3"
       ]
@@ -682,20 +693,9 @@
       "confidence": "approximate",
       "evidence": "unique debug source location and opcode",
       "fromNodeIds": [
-        "fn0/bb1/i0"
-      ],
-      "relation": "renamed",
-      "toNodeIds": [
-        "fn0/bb1/i0"
-      ]
-    },
-    {
-      "confidence": "approximate",
-      "evidence": "unique debug source location and opcode",
-      "fromNodeIds": [
         "fn0/bb1/i2"
       ],
-      "relation": "renamed",
+      "relation": "same",
       "toNodeIds": [
         "fn0/bb1/i2"
       ]
@@ -717,7 +717,7 @@
       "fromNodeIds": [
         "fn1/bb1/i0"
       ],
-      "relation": "moved",
+      "relation": "same",
       "toNodeIds": [
         "fn1/bb1/i0"
       ]
@@ -728,7 +728,7 @@
       "fromNodeIds": [
         "fn1/bb6/i2"
       ],
-      "relation": "moved",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb6/i2"
       ]
@@ -739,7 +739,7 @@
       "fromNodeIds": [
         "fn1/bb6/i9"
       ],
-      "relation": "moved",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb6/i9"
       ]

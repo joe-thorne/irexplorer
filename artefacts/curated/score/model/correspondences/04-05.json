@@ -53,36 +53,36 @@
       ]
     },
     {
+      "confidence": "exact",
+      "evidence": "unique structural, source, and value-flow signature",
+      "fromNodeIds": [
+        "fn0/bb0/i2"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn0/bb0/i2"
+      ]
+    },
+    {
+      "confidence": "exact",
+      "evidence": "unique structural, source, and value-flow signature",
+      "fromNodeIds": [
+        "fn0/bb0/i0"
+      ],
+      "relation": "same",
+      "toNodeIds": [
+        "fn0/bb0/i0"
+      ]
+    },
+    {
       "confidence": "approximate",
       "evidence": "unique debug source location and opcode",
       "fromNodeIds": [
         "fn0/bb0/i5"
       ],
-      "relation": "renamed",
+      "relation": "same",
       "toNodeIds": [
         "fn0/bb0/i4"
-      ]
-    },
-    {
-      "confidence": "approximate",
-      "evidence": "unique debug source location and opcode",
-      "fromNodeIds": [
-        "fn0/bb0/i0"
-      ],
-      "relation": "renamed",
-      "toNodeIds": [
-        "fn0/bb0/i0"
-      ]
-    },
-    {
-      "confidence": "approximate",
-      "evidence": "unique debug source location and opcode",
-      "fromNodeIds": [
-        "fn0/bb0/i2"
-      ],
-      "relation": "renamed",
-      "toNodeIds": [
-        "fn0/bb0/i2"
       ]
     }
   ],

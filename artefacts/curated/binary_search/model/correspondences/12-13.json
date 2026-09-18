@@ -79,7 +79,7 @@
       "fromNodeIds": [
         "fn0/bb2/i1"
       ],
-      "relation": "renamed",
+      "relation": "same",
       "toNodeIds": [
         "fn0/bb2/i1"
       ]
@@ -90,7 +90,7 @@
       "fromNodeIds": [
         "fn0/bb3/i1"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn0/bb3/i1"
       ]
@@ -101,7 +101,7 @@
       "fromNodeIds": [
         "fn0/bb3/i2"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn0/bb3/i2"
       ]
@@ -112,7 +112,7 @@
       "fromNodeIds": [
         "fn0/bb3/i3"
       ],
-      "relation": "renamed",
+      "relation": "same",
       "toNodeIds": [
         "fn0/bb3/i3"
       ]
@@ -123,7 +123,7 @@
       "fromNodeIds": [
         "fn0/bb4/i0"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn0/bb4/i0"
       ]
@@ -134,7 +134,7 @@
       "fromNodeIds": [
         "fn0/bb5/i1"
       ],
-      "relation": "renamed",
+      "relation": "same",
       "toNodeIds": [
         "fn0/bb5/i1"
       ]
@@ -145,7 +145,7 @@
       "fromNodeIds": [
         "fn0/bb1/i4"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn0/bb1/i4"
       ]
@@ -156,7 +156,7 @@
       "fromNodeIds": [
         "fn0/bb1/i2"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn0/bb1/i2"
       ]
@@ -178,7 +178,7 @@
       "fromNodeIds": [
         "fn0/bb1/i6"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn0/bb1/i6"
       ]
@@ -189,7 +189,7 @@
       "fromNodeIds": [
         "fn0/bb1/i7"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn0/bb1/i7"
       ]
@@ -200,7 +200,7 @@
       "fromNodeIds": [
         "fn0/bb1/i9"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn0/bb1/i9"
       ]
@@ -211,7 +211,7 @@
       "fromNodeIds": [
         "fn0/bb1/i8"
       ],
-      "relation": "renamed",
+      "relation": "same",
       "toNodeIds": [
         "fn0/bb1/i8"
       ]

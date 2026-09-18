@@ -35,7 +35,7 @@
       "fromNodeIds": [
         "fn0/bb0/i4"
       ],
-      "relation": "renamed",
+      "relation": "same",
       "toNodeIds": [
         "fn0/bb0/i4"
       ]
@@ -46,7 +46,7 @@
       "fromNodeIds": [
         "fn0/bb0/i0"
       ],
-      "relation": "renamed",
+      "relation": "same",
       "toNodeIds": [
         "fn0/bb0/i0"
       ]
@@ -57,7 +57,7 @@
       "fromNodeIds": [
         "fn0/bb0/i1"
       ],
-      "relation": "renamed",
+      "relation": "same",
       "toNodeIds": [
         "fn0/bb0/i1"
       ]
@@ -68,7 +68,7 @@
       "fromNodeIds": [
         "fn0/bb0/i2"
       ],
-      "relation": "renamed",
+      "relation": "same",
       "toNodeIds": [
         "fn0/bb0/i2"
       ]

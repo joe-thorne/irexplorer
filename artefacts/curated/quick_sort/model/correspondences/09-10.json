@@ -244,7 +244,7 @@
       "fromNodeIds": [
         "fn1/bb2/i1"
       ],
-      "relation": "same",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb2/i1"
       ]
@@ -354,7 +354,7 @@
       "fromNodeIds": [
         "fn1/bb6/i0"
       ],
-      "relation": "same",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb5/i0"
       ]
@@ -596,7 +596,7 @@
       "fromNodeIds": [
         "fn1/bb4/i3"
       ],
-      "relation": "same",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb4/i3"
       ]
@@ -618,7 +618,7 @@
       "fromNodeIds": [
         "fn1/bb4/i2"
       ],
-      "relation": "renamed",
+      "relation": "changed",
       "toNodeIds": [
         "fn1/bb4/i2"
       ]
