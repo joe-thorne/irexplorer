@@ -121,6 +121,21 @@ class EndpointComparisonTests(unittest.TestCase):
             all("inspected" in (link.evidence or "") for link in unresolved)
         )
 
+    def test_operand_aware_plausibility_reduces_curated_none_links(self) -> None:
+        expected_none_counts = {
+            ("binary_search", 6): 13,
+            ("quick_sort", 6): 10,
+            ("binary_search", 12): 24,
+            ("quick_sort", 12): 37,
+        }
+        for (example, ordinal), expected in expected_none_counts.items():
+            with self.subTest(example=example, ordinal=ordinal):
+                timeline = load_curated_timeline(example, resolution="full")
+                correspondence = compare_timeline_step(timeline, ordinal).correspondence
+                self.assertEqual(
+                    sum(link.confidence == "none" for link in correspondence.links), expected
+                )
+
     def test_score_anchor_comparison_is_coverage_complete_and_honest(self) -> None:
         timeline = load_curated_timeline("score", resolution="full")
         result = compare_timeline_step(timeline, len(timeline.steps) - 1)

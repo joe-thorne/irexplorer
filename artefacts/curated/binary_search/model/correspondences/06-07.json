@@ -294,8 +294,8 @@
       ]
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn0/bb0/i0"
       ],
@@ -366,8 +366,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn0/bb2/i10"
       ],
@@ -375,8 +375,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -384,8 +384,8 @@
       ]
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -456,8 +456,8 @@
       ]
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -474,8 +474,8 @@
       ]
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [

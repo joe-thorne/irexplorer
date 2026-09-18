@@ -525,8 +525,8 @@
       ]
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb0/i4"
       ],
@@ -579,8 +579,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no target node shares the structural matcher signature",
       "fromNodeIds": [
         "fn1/bb4/i2"
       ],
@@ -597,8 +597,8 @@
       ]
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -651,8 +651,8 @@
       ]
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
@@ -669,8 +669,8 @@
       ]
     },
     {
-      "confidence": "none",
-      "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
+      "confidence": "exact",
+      "evidence": "no source node shares the structural matcher signature",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [

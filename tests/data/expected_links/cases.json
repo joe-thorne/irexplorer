@@ -760,7 +760,7 @@
         "removed entry \u2192 while.cond [unconditional]",
         "added entry \u2192 while.body.lr.ph [true]",
         "while.body \u2192 while.body [true]",
-        "19 nodes could not be classified"
+        "13 nodes could not be classified"
       ],
       "cfgBefore": [
         [
@@ -892,7 +892,7 @@
         "1 instruction was linked as renamed correspondences with approximate correspondence evidence.",
         "removed land.lhs.true \u2192 return [true]",
         "added land.lhs.true \u2192 cleanup [true]",
-        "26 nodes could not be classified"
+        "24 nodes could not be classified"
       ],
       "cfgBefore": [
         [

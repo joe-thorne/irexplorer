@@ -16,6 +16,8 @@ from src.backend.model.timeline import OptimisationTimeline, PassStep
 COMPARABLE_KINDS = ("Function", "BasicBlock", "Instruction")
 _VALUE_NAME_RE = re.compile(r"%[-A-Za-z0-9_.$]+")
 _DEBUG_REF_RE = re.compile(r",?\s*!dbg\s*!\d+")
+_BLOCK_REFERENCE_RE = re.compile(r"label\s+%([-A-Za-z0-9_.$]+)")
+_POINTER_REFERENCE_RE = re.compile(r"\bptr\s+(%[-A-Za-z0-9_.$]+)")
 
 
 @dataclass(frozen=True)
@@ -1070,11 +1072,77 @@ def _has_plausible_target(
             continue
         if expected_function is not None and _function_for_node(candidate_state, candidate) != expected_function:
             continue
-        if node.kind == "Instruction" and candidate.attributes.get("opcode") == node.attributes.get("opcode"):
+        if (
+            node.kind == "Instruction"
+            and candidate.attributes.get("opcode") == node.attributes.get("opcode")
+            and _instruction_operand_shape_is_compatible(
+                node, candidate, state, candidate_state, expected_function
+            )
+        ):
             return True
         if node.kind == "BasicBlock" and _block_shape(candidate_state, candidate) == _block_shape(state, node):
             return True
     return False
+
+
+def _instruction_operand_shape_is_compatible(
+    node: Node,
+    candidate: Node,
+    state: StateGraph,
+    candidate_state: StateGraph,
+    expected_function: str | None,
+) -> bool:
+    """Reject same-opcode candidates whose referenced structure disappeared."""
+
+    if len(node.attributes.get("operands", ())) != len(candidate.attributes.get("operands", ())):
+        return False
+    if node.attributes.get("opcode") not in {"phi", "load", "store", "br"}:
+        return True
+    return _referenced_structure_has_counterparts(node, state, candidate_state, expected_function)
+
+
+def _referenced_structure_has_counterparts(
+    node: Node,
+    state: StateGraph,
+    candidate_state: StateGraph,
+    expected_function: str | None,
+) -> bool:
+    """Check block labels and locally-defined pointers used by an instruction."""
+
+    function_id = _function_for_node(state, node)
+    candidate_function = expected_function or function_id
+    candidate_blocks = {
+        item.display_name
+        for item in candidate_state.nodes
+        if item.kind == "BasicBlock" and _function_for_node(candidate_state, item) == candidate_function
+    }
+    text = str(node.attributes.get("text", ""))
+    block_labels = set(node.attributes.get("incomingBlocks", ()))
+    block_labels.update(_BLOCK_REFERENCE_RE.findall(text))
+    if not block_labels.issubset(candidate_blocks):
+        return False
+
+    definitions = {
+        item.attributes.get("result"): item
+        for item in state.nodes
+        if item.kind == "Instruction" and _function_for_node(state, item) == function_id
+    }
+    candidate_definition_opcodes = {
+        item.attributes.get("opcode")
+        for item in candidate_state.nodes
+        if item.kind == "Instruction"
+        and _function_for_node(candidate_state, item) == candidate_function
+        and item.attributes.get("result")
+    }
+    pointer_definitions = [
+        definitions[value]
+        for value in _POINTER_REFERENCE_RE.findall(text)
+        if value in definitions
+    ]
+    return all(
+        definition.attributes.get("opcode") in candidate_definition_opcodes
+        for definition in pointer_definitions
+    )
 
 
 def _function_for_node(state: StateGraph, node: Node) -> str:
