@@ -72,6 +72,36 @@ class SummaryQueriesTests(unittest.TestCase):
         )
         self.assertTrue(cfg_item['linkIndices'])
 
+    def test_composed_summary_covers_changed_and_approximate_endpoint_changes(self):
+        """I4: composed summaries must account for every non-exact endpoint change."""
+        response = self.service.summary('score', 0, 12)
+        loaded = self.service._example('score')
+        comparison = self.service._comparison(loaded, 0, 12)
+        covered_indices = {
+            index for item in response['items'] for index in item['linkIndices']
+        }
+        relevant_indices = {
+            index
+            for index, link in enumerate(comparison.links)
+            if self._link_kind_at_comparison_endpoint(loaded, link, 0, 12) == 'Instruction'
+            and (
+                link.relation == 'changed'
+                or (link.relation in {'added', 'removed'} and link.confidence == 'approximate')
+            )
+        }
+
+        self.assertTrue(relevant_indices)
+        self.assertTrue(relevant_indices.issubset(covered_indices))
+        summary_text = ' '.join(item['text'] for item in response['items'])
+        self.assertIn('instructions changed with approximate correspondence evidence.', summary_text)
+        self.assertIn('instructions removed with approximate correspondence evidence.', summary_text)
+
+    @staticmethod
+    def _link_kind_at_comparison_endpoint(loaded, link, from_ordinal, to_ordinal):
+        node_id = (link.from_node_ids or link.to_node_ids)[0]
+        state = loaded.timeline.state(from_ordinal if link.from_node_ids else to_ordinal)
+        return state.by_id[node_id].kind
+
     def test_http_schema_errors_and_no_mutation(self):
         with TestClient(create_app(self.service)) as client:
             for example in curated.list_examples():

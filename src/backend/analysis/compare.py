@@ -1402,17 +1402,24 @@ def summarise_correspondence(
     else:
         for relation, verb in (("removed", "removed"), ("added", "added")):
             for kind in ("BasicBlock", "Instruction"):
-                indices = _link_indices(
-                    correspondence,
-                    from_state,
-                    to_state,
-                    relation=relation,
-                    kind=kind,
-                    confidence="exact",
-                )
-                if indices:
-                    noun = _plural(_kind_label(kind), len(indices))
-                    items.append(SummaryItem(f"{len(indices)} {noun} {verb}.", indices))
+                for confidence in ("exact", "approximate"):
+                    indices = _link_indices(
+                        correspondence,
+                        from_state,
+                        to_state,
+                        relation=relation,
+                        kind=kind,
+                        confidence=confidence,
+                    )
+                    if indices:
+                        noun = _plural(_kind_label(kind), len(indices))
+                        items.append(
+                            SummaryItem(
+                                f"{len(indices)} {noun} {verb}"
+                                f"{_confidence_phrase(correspondence, indices)}.",
+                                indices,
+                            )
+                        )
 
         for relation, label in (
             ("promoted", "promotions"),
@@ -1448,6 +1455,22 @@ def summarise_correspondence(
                     f"{len(indices)} instruction groups {relation}: "
                     f"{before_count} → {after_count} instructions"
                     f"{_confidence_phrase(correspondence, indices)}.", indices))
+
+        changed_instructions = _link_indices(
+            correspondence,
+            from_state,
+            to_state,
+            relation="changed",
+            kind="Instruction",
+        )
+        if changed_instructions:
+            items.append(
+                SummaryItem(
+                    f"{len(changed_instructions)} {_plural('instruction', len(changed_instructions))} "
+                    f"changed{_confidence_phrase(correspondence, changed_instructions)}.",
+                    changed_instructions,
+                )
+            )
 
         changed_blocks = _link_indices(
             correspondence,
