@@ -7466,6 +7466,13 @@
           "toId": "fn1/bb1/i1"
         },
         {
+          "fromId": "fn1/bb1/i1",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/quick_sort.c:7:0"
+        },
+        {
           "fromId": "fn1/bb1",
           "label": null,
           "order": 2,
@@ -9173,7 +9180,12 @@
               "items": []
             },
             "result": "%j.0",
-            "source": null,
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 0,
+              "file": "/workspace/examples/curated/quick_sort.c",
+              "line": 7
+            },
             "successors": {
               "__irexplorer_type__": "tuple",
               "items": []
@@ -11073,6 +11085,13 @@
           "toId": "fn1/bb1/i1"
         },
         {
+          "fromId": "fn1/bb1/i1",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/quick_sort.c:7:0"
+        },
+        {
           "fromId": "fn1/bb1",
           "label": null,
           "order": 2,
@@ -12780,7 +12799,12 @@
               "items": []
             },
             "result": "%j.0",
-            "source": null,
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 0,
+              "file": "/workspace/examples/curated/quick_sort.c",
+              "line": 7
+            },
             "successors": {
               "__irexplorer_type__": "tuple",
               "items": []
@@ -14680,6 +14704,13 @@
           "toId": "fn1/bb1/i1"
         },
         {
+          "fromId": "fn1/bb1/i1",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/quick_sort.c:7:0"
+        },
+        {
           "fromId": "fn1/bb1",
           "label": null,
           "order": 2,
@@ -16359,7 +16390,12 @@
               "items": []
             },
             "result": "%j.0",
-            "source": null,
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 0,
+              "file": "/workspace/examples/curated/quick_sort.c",
+              "line": 7
+            },
             "successors": {
               "__irexplorer_type__": "tuple",
               "items": []
@@ -18207,6 +18243,13 @@
           "toId": "fn1/bb1/i1"
         },
         {
+          "fromId": "fn1/bb1/i1",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/quick_sort.c:7:0"
+        },
+        {
           "fromId": "fn1/bb1",
           "label": null,
           "order": 2,
@@ -19606,7 +19649,12 @@
               "items": []
             },
             "result": "%j.0",
-            "source": null,
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 0,
+              "file": "/workspace/examples/curated/quick_sort.c",
+              "line": 7
+            },
             "successors": {
               "__irexplorer_type__": "tuple",
               "items": []
@@ -21008,6 +21056,13 @@
           "toId": "fn1/bb1/i1"
         },
         {
+          "fromId": "fn1/bb1/i1",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/quick_sort.c:7:0"
+        },
+        {
           "fromId": "fn1/bb1",
           "label": null,
           "order": 2,
@@ -22407,7 +22462,12 @@
               "items": []
             },
             "result": "%j.0",
-            "source": null,
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 0,
+              "file": "/workspace/examples/curated/quick_sort.c",
+              "line": 7
+            },
             "successors": {
               "__irexplorer_type__": "tuple",
               "items": []
@@ -23743,6 +23803,13 @@
           "order": 1,
           "relation": "contains",
           "toId": "fn1/bb1/i1"
+        },
+        {
+          "fromId": "fn1/bb1/i1",
+          "label": "debugLoc",
+          "order": null,
+          "relation": "sourceMap",
+          "toId": "source:/workspace/examples/curated/quick_sort.c:7:0"
         },
         {
           "fromId": "fn1/bb1",
@@ -25158,7 +25225,12 @@
               "items": []
             },
             "result": "%j.0",
-            "source": null,
+            "source": {
+              "__irexplorer_type__": "SourceLocation",
+              "column": 0,
+              "file": "/workspace/examples/curated/quick_sort.c",
+              "line": 7
+            },
             "successors": {
               "__irexplorer_type__": "tuple",
               "items": []

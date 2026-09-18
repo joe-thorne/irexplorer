@@ -1,6 +1,7 @@
 import unittest
 
 from src.backend.ingest import IngestError, parse_ir_state
+from src.backend.model import SourceLocation
 from src.backend.toolchain import curated
 
 
@@ -53,6 +54,34 @@ class LlvmIrIngestionTests(unittest.TestCase):
                         state_id=state.state_id,
                     )
                     graph.validate()
+
+    def test_debug_location_without_column_defaults_to_zero_and_maps_source(self) -> None:
+        graph = parse_ir_state(
+            curated.read_ir("quick_sort", "mem2reg"),
+            ordinal=1,
+            state_id="mem2reg",
+        )
+        instruction = next(
+            node
+            for node in graph.nodes
+            if node.kind == "Instruction"
+            and node.attributes["text"].startswith("%j.0 = phi i32")
+        )
+
+        self.assertEqual(
+            instruction.attributes["source"],
+            SourceLocation(
+                file="/workspace/examples/curated/quick_sort.c",
+                line=7,
+                column=0,
+            ),
+        )
+        self.assertTrue(
+            any(
+                edge.from_id == instruction.stable_id and edge.relation == "sourceMap"
+                for edge in graph.edges
+            )
+        )
 
     def test_optimisation_record_remarks_attach_by_debug_location(self) -> None:
         graph = parse_ir_state(

@@ -25,7 +25,9 @@ _DATALAYOUT_RE = re.compile(r'^target datalayout = "(.+)"$')
 _DEFINE_RE = re.compile(r"^define\b.*@(?P<name>[-A-Za-z0-9_.$]+)\((?P<args>.*)\).*\{\s*$")
 _BLOCK_RE = re.compile(r"^(?P<label>[-A-Za-z0-9_.$]+):(?:\s*;.*)?$")
 _DBG_REF_RE = re.compile(r"!dbg !(\d+)")
-_DILOC_RE = re.compile(r"^!(?P<id>\d+) = .*DILocation\(line: (?P<line>\d+), column: (?P<column>\d+),")
+_DILOC_RE = re.compile(
+    r"^!(?P<id>\d+) = .*DILocation\(line: (?P<line>\d+)(?:, column: (?P<column>\d+))?,"
+)
 _VALUE_RE = re.compile(r"%[-A-Za-z0-9_.$]+")
 _LABEL_REF_RE = re.compile(r"label\s+%([-A-Za-z0-9_.$]+)")
 _PHI_INCOMING_RE = re.compile(r"\[[^\]]+,\s*%([-A-Za-z0-9_.$]+)\s*\]")
@@ -275,10 +277,16 @@ def _parse_debug_locations(lines: list[str], source_filename: str) -> dict[str, 
         match = _DILOC_RE.match(line)
         if not match:
             continue
+        source_line = int(match.group("line"))
+        # LLVM uses line zero for locations that do not refer to a source line.
+        # Keep those instructions unmapped rather than exposing a non-selectable
+        # source location to the browser.
+        if source_line == 0:
+            continue
         locations[match.group("id")] = SourceLocation(
             file=source_filename,
-            line=int(match.group("line")),
-            column=int(match.group("column")),
+            line=source_line,
+            column=int(match.group("column") or 0),
         )
     return locations
 

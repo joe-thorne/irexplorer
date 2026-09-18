@@ -528,6 +528,17 @@
       "confidence": "approximate",
       "evidence": "unique debug source location and opcode",
       "fromNodeIds": [
+        "fn1/bb1/i1"
+      ],
+      "relation": "renamed",
+      "toNodeIds": [
+        "fn1/bb1/i1"
+      ]
+    },
+    {
+      "confidence": "approximate",
+      "evidence": "unique debug source location and opcode",
+      "fromNodeIds": [
         "fn1/bb4/i2"
       ],
       "relation": "renamed",
@@ -577,17 +588,6 @@
       "relation": "moved",
       "toNodeIds": [
         "fn1/bb1/i0"
-      ]
-    },
-    {
-      "confidence": "approximate",
-      "evidence": "unique opcode and layout position in matched basic block",
-      "fromNodeIds": [
-        "fn1/bb1/i1"
-      ],
-      "relation": "moved",
-      "toNodeIds": [
-        "fn1/bb1/i1"
       ]
     },
     {

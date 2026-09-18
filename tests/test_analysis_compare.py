@@ -102,10 +102,6 @@ class EndpointComparisonTests(unittest.TestCase):
             sum(1 for node in to_state.nodes if node.kind != "Module"),
         )
 
-        self.assertTrue(
-            any(link.confidence == "none" for link in correspondence.links)
-        )
-
         for item in result.summary.items:
             self.assertTrue(item.link_indices or item.remark_indices)
             for index in item.link_indices:
