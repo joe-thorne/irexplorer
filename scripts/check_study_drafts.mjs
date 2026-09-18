@@ -78,7 +78,7 @@ check('Task inability and not-applicable preserve null independently from numeri
   for (const [stage, id, status] of [['T2','T2a','could_not_work_out'], ['T3','T3a','could_not_work_out'], ['T4','T4a','could_not_work_out'], ['T5','T5a','could_not_work_out']]) {
     assert.equal(Object.keys(D.validate(content, stage, {[id]: {status, value:null}})).length, 0);
   }
-  assert.equal(Object.keys(D.validate(content, 'T2', {T2a: answered(11)})).join(), 'T2a');
+  assert.equal(Object.keys(D.validate(content, 'T2', {T2a: answered(12)})).join(), 'T2a');
   assert.equal(Object.keys(D.validate(content, 'T5', {T5a: {status:'not_applicable',value:null}})).join(), 'T5a');
 });
 check('Skipped/inability tasks retain partial responses and optional missing confidence', () => {
@@ -117,7 +117,8 @@ check('Pre-setup skip and inability survive recovery without fabricated answers 
     const bad=JSON.parse(JSON.stringify(d));change(bad);assert.throws(()=>D.decode(JSON.stringify(bad),content));
   }
 });
-check('v0.2 representation selections and old draft identities stay distinct', () => {
+check('v0.3 representation selections and old draft identities stay distinct', () => {
+  assert.equal(D.KEY, 'irexplorer.study.v0.3');
   assert.equal(Object.keys(D.validate(content,'post',{Q8:answered([1,2,3])})).length,0);
   for (const value of [1,[1,4]]) assert.equal(Object.keys(D.validate(content,'post',{Q8:answered(value)})).join(),'Q8');
   const d=D.create(content,consent);d.instrumentVersion='v0.1';assert.throws(()=>D.decode(JSON.stringify(d),content));

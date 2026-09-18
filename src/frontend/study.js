@@ -238,7 +238,7 @@
       const response = await fetch('/api/study/content', { cache: 'no-store' });
       if (!response.ok) throw new Error('Content unavailable');
       content = await response.json();
-      if (!['local', 'preview', 'pilot', 'live'].includes(content.mode) || content.contentVersion !== 'v0.2-preview-1') throw new Error('Unsupported content');
+      if (!['local', 'preview', 'pilot', 'live'].includes(content.mode) || content.contentVersion !== 'v0.3-preview-1') throw new Error('Unsupported content');
       store = D.storage(content); submission.read(); draft = store.read();
       if (submission.state?.kind === 'receipt' && submission.cleanup(() => store.discard())) draft = null;
       if (draft) { const t = draft.tasks[D.currentTask(draft)]; if (t.started && t.status === 'pending') { t.interrupted = true; store.save(draft); } }

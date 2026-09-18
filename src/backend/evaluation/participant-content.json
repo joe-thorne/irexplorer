@@ -1,7 +1,7 @@
 {
-  "instrumentVersion": "v0.2",
-  "contentVersion": "v0.2-preview-1",
-  "studyVersion": "v0.2-synthetic-1",
+  "instrumentVersion": "v0.3",
+  "contentVersion": "v0.3-preview-1",
+  "studyVersion": "v0.3-synthetic-1",
   "mode": "preview",
   "submissionEnabled": false,
   "scales": {
@@ -748,39 +748,43 @@
         },
         {
           "value": 4,
-          "label": "gvn"
+          "label": "cleanup (instcombine, simplifycfg)"
         },
         {
           "value": 5,
-          "label": "loop-simplify / lcssa"
+          "label": "gvn"
         },
         {
           "value": 6,
-          "label": "loop-rotate"
+          "label": "loop-simplify / lcssa"
         },
         {
           "value": 7,
-          "label": "licm"
+          "label": "loop-rotate"
         },
         {
           "value": 8,
-          "label": "indvars"
+          "label": "licm"
         },
         {
           "value": 9,
-          "label": "loop-vectorize"
+          "label": "indvars"
         },
         {
           "value": 10,
-          "label": "It was already gone in the unoptimised version"
+          "label": "loop-vectorize"
         },
         {
           "value": 11,
+          "label": "It was already gone in the unoptimised version"
+        },
+        {
+          "value": 12,
           "label": "I could not work this out"
         }
       ],
       "optionStatuses": {
-        "11": "could_not_work_out"
+        "12": "could_not_work_out"
       },
       "prompt": "After which recorded pass is the arithmetic for wasted first absent?"
     },

@@ -145,7 +145,7 @@ class SubmissionTests(unittest.TestCase):
         destination = Path(self.tmp.name) / 'early-export'
         export(self.config.path, destination)
         book = json.loads((destination / 'codebook.json').read_text())
-        self.assertEqual(book['versions']['instrumentVersion'], 'v0.2')
+        self.assertEqual(book['versions']['instrumentVersion'], 'v0.3')
         self.assertIn('Q3 only', book['analysis'])
         with open(destination / 'responses.csv', newline='') as handle:
             rows = list(csv.DictReader(handle))

@@ -118,11 +118,14 @@ class EvaluationContentTests(unittest.TestCase):
 
     def test_task_partial_answers_inability_and_not_applicable(self):
         a = lambda value: {'status': 'answered', 'value': value}
+        t2a = next(field for field in participant_content()['fields'] if field['id'] == 'T2a')
+        self.assertEqual(t2a['options'][3], {'value': 4, 'label': 'cleanup (instcombine, simplifycfg)'})
+        self.assertEqual(validate_answers('T2', {'T2a': a(4)}), {})
         for stage in [f'T{i}' for i in range(7)]:
             self.assertEqual(validate_answers(stage, {}, complete=True), {})
         for task, field, status in [('T2', 'T2a', 'could_not_work_out'), ('T3', 'T3a', 'could_not_work_out'), ('T4', 'T4a', 'could_not_work_out'), ('T5', 'T5a', 'could_not_work_out')]:
             self.assertEqual(validate_answers(task, {field: {'status': status, 'value': None}}), {})
-        for task, field, answer in [('T2', 'T2a', a(11)), ('T2', 'T2a', {'status': 'not_applicable', 'value': None}), ('T4', 'T4d', a(True)), ('T5', 'T5a', a(4)), ('T6', 'T6a', {'status': 'could_not_work_out', 'value': None})]:
+        for task, field, answer in [('T2', 'T2a', a(12)), ('T2', 'T2a', {'status': 'not_applicable', 'value': None}), ('T4', 'T4d', a(True)), ('T5', 'T5a', a(4)), ('T6', 'T6a', {'status': 'could_not_work_out', 'value': None})]:
             self.assertIn(field, validate_answers(task, {field: answer}))
         self.assertIn('T1a', validate_answers('T0', {'T1a': a('No orientation answers')}))
         self.assertIn('T5confidence', validate_answers('T5', {'T5confidence': a(5)}))
