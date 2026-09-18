@@ -1498,11 +1498,7 @@ def summarise_correspondence(
             )
             if edge_difference_item is not None:
                 items.append(edge_difference_item)
-            elif all(
-                correspondence.links[index].relation == "same"
-                and correspondence.links[index].confidence == "exact"
-                for index in basic_block_indices
-            ):
+            else:
                 items.append(
                     SummaryItem(
                         "CFG unchanged across the recorded basic-block correspondences.",

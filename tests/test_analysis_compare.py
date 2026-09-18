@@ -160,6 +160,10 @@ class EndpointComparisonTests(unittest.TestCase):
         self.assertTrue(
             all("conservative anchor" in (link.evidence or "") for link in conservative_matches)
         )
+        self.assertIn(
+            "CFG unchanged across the recorded basic-block correspondences.",
+            {item.text for item in result.summary.items},
+        )
 
     def test_endpoint_correspondences_validate_for_all_curated_examples(self) -> None:
         for example in ("score", "binary_search", "quick_sort"):
