@@ -1,0 +1,48 @@
+from_id	to_id	relation	confidence	from_text	to_text	from_source	to_source	rationale
+fn0	fn0	same	exact	score	score			Unique retained function name; attributes may differ on recompilation.
+fn0/bb0	fn0/bb0	same	exact	entry	entry			Retained block label and labelled successor targets, entry role, predecessor count, and terminator.
+fn0/bb1	fn0/bb1	same	exact	if.then	if.then			Retained block label and labelled successor targets, entry role, predecessor count, and terminator.
+fn0/bb2	fn0/bb2	same	exact	if.end	if.end			Retained block label and labelled successor targets, entry role, predecessor count, and terminator.
+fn0/bb3	fn0/bb3	same	exact	return	return			Retained block label and labelled successor targets, entry role, predecessor count, and terminator.
+fn0/bb0/i10	fn0/bb0/i0	changed	approximate	%mul = mul nsw i32 %0, 32	%mul = mul nsw i32 %scale, 32	score.c:2:26	score.c:2:26	Operands change after SSA promotion; retained unique source/opcode supports approximate identity and changed relation.
+fn0/bb0/i14	fn0/bb0/i1	changed	approximate	%mul1 = mul nsw i32 %1, %2	%mul1 = mul nsw i32 %scale, %scale	score.c:3:26	score.c:3:26	Operands change after SSA promotion; retained unique source/opcode supports approximate identity and changed relation.
+fn0/bb0/i17	fn0/bb0/i2	changed	approximate	%mul2 = mul nsw i32 %3, %4	%mul2 = mul nsw i32 %scale, %scale	score.c:3:42	score.c:3:42	Operands change after SSA promotion; retained unique source/opcode supports approximate identity and changed relation.
+fn0/bb0/i18	fn0/bb0/i3	same	exact	%sub = sub nsw i32 %mul1, %mul2	%sub = sub nsw i32 %mul1, %mul2	score.c:3:34	score.c:3:34	Identical IR apart from !dbg; retained block and matching recorded source field, normalised text, and predecessor opcodes support exact identity.
+fn0/bb0/i21	fn0/bb0/i4	changed	approximate	%sub3 = sub nsw i32 %5, 128	%sub3 = sub nsw i32 %x, 128	score.c:4:22	score.c:4:22	Operands change after SSA promotion; retained unique source/opcode supports approximate identity and changed relation.
+fn0/bb0/i25	fn0/bb0/i5	changed	approximate	%mul4 = mul nsw i32 %6, %7	%mul4 = mul nsw i32 %sub3, %scale	score.c:5:29	score.c:5:29	Operands change after SSA promotion; retained unique source/opcode supports approximate identity and changed relation.
+fn0/bb0/i29	fn0/bb0/i6	changed	approximate	%cmp = icmp sgt i32 %8, %9	%cmp = icmp sgt i32 %mul4, %mul	score.c:7:18	score.c:7:18	Operands change after SSA promotion; retained unique source/opcode supports approximate identity and changed relation.
+fn0/bb0/i30	fn0/bb0/i7	same	exact	br i1 %cmp, label %if.then, label %if.end	br i1 %cmp, label %if.then, label %if.end	score.c:7:18	score.c:7:18	Identical IR apart from !dbg; retained block and matching recorded source field, normalised text, and predecessor opcodes support exact identity.
+fn0/bb1/i2	fn0/bb1/i0	same	exact	br label %return	br label %return	score.c:8:9	score.c:8:9	Identical IR apart from !dbg; retained block and matching recorded source field, normalised text, and predecessor opcodes support exact identity.
+fn0/bb2/i2	fn0/bb2/i0	changed	approximate	%add = add nsw i32 %11, %12	%add = add nsw i32 %mul4, %sub	score.c:10:21	score.c:10:21	Operands change after SSA promotion; retained unique source/opcode supports approximate identity and changed relation.
+fn0/bb2/i4	fn0/bb2/i1	same	exact	br label %return	br label %return	score.c:10:5	score.c:10:5	Identical IR apart from !dbg; retained block and matching recorded source field, normalised text, and predecessor opcodes support exact identity.
+fn0/bb3/i1	fn0/bb3/i1	changed	approximate	ret i32 %13	ret i32 %retval.0	score.c:11:1	score.c:11:1	Operands change after SSA promotion; retained unique source/opcode supports approximate identity and changed relation.
+fn0/bb0/i0		removed	exact	%retval = alloca i32, align 4				Stack alloca/load/store disappears during SSA promotion; no unmatched target instruction with this opcode.
+fn0/bb0/i1		removed	exact	%x.addr = alloca i32, align 4				Stack alloca/load/store disappears during SSA promotion; no unmatched target instruction with this opcode.
+fn0/bb0/i2		removed	exact	%scale.addr = alloca i32, align 4				Stack alloca/load/store disappears during SSA promotion; no unmatched target instruction with this opcode.
+fn0/bb0/i3		removed	exact	%limit = alloca i32, align 4				Stack alloca/load/store disappears during SSA promotion; no unmatched target instruction with this opcode.
+fn0/bb0/i4		removed	exact	%wasted = alloca i32, align 4				Stack alloca/load/store disappears during SSA promotion; no unmatched target instruction with this opcode.
+fn0/bb0/i5		removed	exact	%adjusted = alloca i32, align 4				Stack alloca/load/store disappears during SSA promotion; no unmatched target instruction with this opcode.
+fn0/bb0/i6		removed	exact	%weighted = alloca i32, align 4				Stack alloca/load/store disappears during SSA promotion; no unmatched target instruction with this opcode.
+fn0/bb0/i7		removed	exact	store i32 %x, ptr %x.addr, align 4				Stack alloca/load/store disappears during SSA promotion; no unmatched target instruction with this opcode.
+fn0/bb0/i8		removed	exact	store i32 %scale, ptr %scale.addr, align 4				Stack alloca/load/store disappears during SSA promotion; no unmatched target instruction with this opcode.
+fn0/bb0/i9		removed	exact	%0 = load i32, ptr %scale.addr, align 4		score.c:2:20		Stack alloca/load/store disappears during SSA promotion; no unmatched target instruction with this opcode.
+fn0/bb0/i11		removed	exact	store i32 %mul, ptr %limit, align 4		score.c:2:9		Stack alloca/load/store disappears during SSA promotion; no unmatched target instruction with this opcode.
+fn0/bb0/i12		removed	exact	%1 = load i32, ptr %scale.addr, align 4		score.c:3:20		Stack alloca/load/store disappears during SSA promotion; no unmatched target instruction with this opcode.
+fn0/bb0/i13		removed	exact	%2 = load i32, ptr %scale.addr, align 4		score.c:3:28		Stack alloca/load/store disappears during SSA promotion; no unmatched target instruction with this opcode.
+fn0/bb0/i15		removed	exact	%3 = load i32, ptr %scale.addr, align 4		score.c:3:36		Stack alloca/load/store disappears during SSA promotion; no unmatched target instruction with this opcode.
+fn0/bb0/i16		removed	exact	%4 = load i32, ptr %scale.addr, align 4		score.c:3:44		Stack alloca/load/store disappears during SSA promotion; no unmatched target instruction with this opcode.
+fn0/bb0/i19		removed	exact	store i32 %sub, ptr %wasted, align 4		score.c:3:9		Stack alloca/load/store disappears during SSA promotion; no unmatched target instruction with this opcode.
+fn0/bb0/i20		removed	exact	%5 = load i32, ptr %x.addr, align 4		score.c:4:20		Stack alloca/load/store disappears during SSA promotion; no unmatched target instruction with this opcode.
+fn0/bb0/i22		removed	exact	store i32 %sub3, ptr %adjusted, align 4		score.c:4:9		Stack alloca/load/store disappears during SSA promotion; no unmatched target instruction with this opcode.
+fn0/bb0/i23		removed	exact	%6 = load i32, ptr %adjusted, align 4		score.c:5:20		Stack alloca/load/store disappears during SSA promotion; no unmatched target instruction with this opcode.
+fn0/bb0/i24		removed	exact	%7 = load i32, ptr %scale.addr, align 4		score.c:5:31		Stack alloca/load/store disappears during SSA promotion; no unmatched target instruction with this opcode.
+fn0/bb0/i26		removed	exact	store i32 %mul4, ptr %weighted, align 4		score.c:5:9		Stack alloca/load/store disappears during SSA promotion; no unmatched target instruction with this opcode.
+fn0/bb0/i27		removed	exact	%8 = load i32, ptr %weighted, align 4		score.c:7:9		Stack alloca/load/store disappears during SSA promotion; no unmatched target instruction with this opcode.
+fn0/bb0/i28		removed	exact	%9 = load i32, ptr %limit, align 4		score.c:7:20		Stack alloca/load/store disappears during SSA promotion; no unmatched target instruction with this opcode.
+fn0/bb1/i0		removed	exact	%10 = load i32, ptr %limit, align 4		score.c:8:16		Stack alloca/load/store disappears during SSA promotion; no unmatched target instruction with this opcode.
+fn0/bb1/i1		removed	exact	store i32 %10, ptr %retval, align 4		score.c:8:9		Stack alloca/load/store disappears during SSA promotion; no unmatched target instruction with this opcode.
+fn0/bb2/i0		removed	exact	%11 = load i32, ptr %weighted, align 4		score.c:10:12		Stack alloca/load/store disappears during SSA promotion; no unmatched target instruction with this opcode.
+fn0/bb2/i1		removed	exact	%12 = load i32, ptr %wasted, align 4		score.c:10:23		Stack alloca/load/store disappears during SSA promotion; no unmatched target instruction with this opcode.
+fn0/bb2/i3		removed	exact	store i32 %add, ptr %retval, align 4		score.c:10:5		Stack alloca/load/store disappears during SSA promotion; no unmatched target instruction with this opcode.
+fn0/bb3/i0		removed	exact	%13 = load i32, ptr %retval, align 4		score.c:11:1		Stack alloca/load/store disappears during SSA promotion; no unmatched target instruction with this opcode.
+	fn0/bb3/i0	added	exact		%retval.0 = phi i32 [ %mul, %if.then ], [ %add, %if.end ]			New SSA phi has no accepted predecessor instruction; no unmatched source phi.

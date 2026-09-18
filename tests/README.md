@@ -19,6 +19,14 @@ docker run --rm --read-only --tmpfs /tmp --network none irexplorer-test
 
 The suite covers compiler fixtures and invariants, ingestion, correspondence, source and summary queries, API boundaries, study validation, transactional submission retries, export, and backup/restore. Compiler generation tests inspect the generation contract without regenerating the shipped fixtures.
 
+[Artefact-reviewed expected-link tables](data/expected_links/README.md) additionally
+check ten complete `score`/`binary_search` comparisons across mem2reg,
+instcombine, simplifycfg, loop-rotate, and the recompiled anchor. Their 353
+explicit links, IR/source fields, labelled CFG edges, and summary expectations
+are asserted against fresh analysis and served overlays. This is AI-assisted
+manual artefact evidence; independent human sign-off and fresh Docker
+regeneration are separate verification steps.
+
 ## Study state
 
 With Node 22 or later, these standalone checks require no server or browser and write no evidence files:

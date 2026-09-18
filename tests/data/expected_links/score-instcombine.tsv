@@ -1,0 +1,19 @@
+from_id	to_id	relation	confidence	from_text	to_text	from_source	to_source	rationale
+fn0	fn0	same	exact	score	score			Unique retained function name; attributes may differ on recompilation.
+fn0/bb0	fn0/bb0	same	exact	entry	entry			Retained block label and labelled successor targets, entry role, predecessor count, and terminator.
+fn0/bb1	fn0/bb1	same	exact	if.then	if.then			Retained block label and labelled successor targets, entry role, predecessor count, and terminator.
+fn0/bb2	fn0/bb2	same	exact	if.end	if.end			Retained block label and labelled successor targets, entry role, predecessor count, and terminator.
+fn0/bb3	fn0/bb3	same	exact	return	return			Retained block label and labelled successor targets, entry role, predecessor count, and terminator.
+fn0/bb0/i0	fn0/bb0/i0	simplifiedInto	approximate	%mul = mul nsw i32 %scale, 32	%mul = shl nsw i32 %scale, 5	score.c:2:26	score.c:2:26	Opcode rewrite at a unique source location; approximate structural simplification, not a semantic-equivalence proof.
+fn0/bb0/i4	fn0/bb0/i1	simplifiedInto	approximate	%sub3 = sub nsw i32 %x, 128	%sub3 = add nsw i32 %x, -128	score.c:4:22	score.c:4:22	Opcode rewrite at a unique source location; approximate structural simplification, not a semantic-equivalence proof.
+fn0/bb0/i5	fn0/bb0/i2	same	approximate	%mul4 = mul nsw i32 %sub3, %scale	%mul4 = mul nsw i32 %sub3, %scale	score.c:5:29	score.c:5:29	Identical text with altered incoming value-flow signature; unique source/opcode gives approximate identity.
+fn0/bb0/i6	fn0/bb0/i3	same	approximate	%cmp = icmp sgt i32 %mul4, %mul	%cmp = icmp sgt i32 %mul4, %mul	score.c:7:18	score.c:7:18	Identical text with altered incoming value-flow signature; unique source/opcode gives approximate identity.
+fn0/bb0/i7	fn0/bb0/i4	same	exact	br i1 %cmp, label %if.then, label %if.end	br i1 %cmp, label %if.then, label %if.end	score.c:7:18	score.c:7:18	Identical IR apart from !dbg; retained block and matching recorded source field, normalised text, and predecessor opcodes support exact identity.
+fn0/bb1/i0	fn0/bb1/i0	same	exact	br label %return	br label %return	score.c:8:9	score.c:8:9	Identical IR apart from !dbg; retained block and matching recorded source field, normalised text, and predecessor opcodes support exact identity.
+fn0/bb2/i1	fn0/bb2/i0	same	exact	br label %return	br label %return	score.c:10:5	score.c:10:5	Identical IR apart from !dbg; retained block and matching recorded source field, normalised text, and predecessor opcodes support exact identity.
+fn0/bb3/i0	fn0/bb3/i0	changed	approximate	%retval.0 = phi i32 [ %mul, %if.then ], [ %add, %if.end ]	%retval.0 = phi i32 [ %mul, %if.then ], [ %mul4, %if.end ]			Phi replaces %add with %mul4 after the zero-valued wasted expression disappears; line-zero debug metadata provides no source location, so opcode/position evidence is approximate.
+fn0/bb3/i1	fn0/bb3/i1	same	exact	ret i32 %retval.0	ret i32 %retval.0	score.c:11:1	score.c:11:1	Identical IR apart from !dbg; retained block and matching recorded source field, normalised text, and predecessor opcodes support exact identity.
+fn0/bb0/i1		removed	exact	%mul1 = mul nsw i32 %scale, %scale		score.c:3:26		Redundant arithmetic disappears; the target has no unmatched candidate with this opcode.
+fn0/bb0/i2		removed	exact	%mul2 = mul nsw i32 %scale, %scale		score.c:3:42		Redundant arithmetic disappears; the target has no unmatched candidate with this opcode.
+fn0/bb0/i3		removed	exact	%sub = sub nsw i32 %mul1, %mul2		score.c:3:34		Redundant arithmetic disappears; the target has no unmatched candidate with this opcode.
+fn0/bb2/i0		removed	exact	%add = add nsw i32 %mul4, %sub		score.c:10:21		Redundant arithmetic disappears; the target has no unmatched candidate with this opcode.

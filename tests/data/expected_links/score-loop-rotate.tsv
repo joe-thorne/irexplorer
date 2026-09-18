@@ -1,0 +1,8 @@
+from_id	to_id	relation	confidence	from_text	to_text	from_source	to_source	rationale
+fn0	fn0	same	exact	score	score			Unique retained function name; attributes may differ on recompilation.
+fn0/bb0	fn0/bb0	same	exact	entry	entry			Retained block label and labelled successor targets, entry role, predecessor count, and terminator.
+fn0/bb0/i0	fn0/bb0/i0	same	exact	%mul = shl nsw i32 %scale, 5	%mul = shl nsw i32 %scale, 5	score.c:2:26	score.c:2:26	Identical IR apart from !dbg; retained block and matching recorded source field, normalised text, and predecessor opcodes support exact identity.
+fn0/bb0/i1	fn0/bb0/i1	same	exact	%sub3 = add nsw i32 %x, -128	%sub3 = add nsw i32 %x, -128	score.c:4:22	score.c:4:22	Identical IR apart from !dbg; retained block and matching recorded source field, normalised text, and predecessor opcodes support exact identity.
+fn0/bb0/i2	fn0/bb0/i2	same	exact	%mul4 = mul nsw i32 %sub3, %scale	%mul4 = mul nsw i32 %sub3, %scale	score.c:5:29	score.c:5:29	Identical IR apart from !dbg; retained block and matching recorded source field, normalised text, and predecessor opcodes support exact identity.
+fn0/bb0/i3	fn0/bb0/i3	same	exact	%mul.mul4 = call i32 @llvm.smin.i32(i32 %mul4, i32 %mul)	%mul.mul4 = call i32 @llvm.smin.i32(i32 %mul4, i32 %mul)			Identical IR apart from !dbg; retained block and matching recorded source field, normalised text, and predecessor opcodes support exact identity.
+fn0/bb0/i4	fn0/bb0/i4	same	exact	ret i32 %mul.mul4	ret i32 %mul.mul4	score.c:11:1	score.c:11:1	Identical IR apart from !dbg; retained block and matching recorded source field, normalised text, and predecessor opcodes support exact identity.

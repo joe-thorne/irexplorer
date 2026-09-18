@@ -1,0 +1,994 @@
+{
+  "formatVersion": 1,
+  "cases": [
+    {
+      "example": "score",
+      "fromOrdinal": 0,
+      "toOrdinal": 1,
+      "stepType": "mem2reg",
+      "stepKind": "derived",
+      "table": "score-mem2reg.tsv",
+      "artefacts": [
+        {
+          "stateId": "O0",
+          "path": "artefacts/curated/score/score_O0.ll",
+          "sha256": "b0a056698dd455700f5a4b2ddf3f67d934fb14b864e2c8f1b53d6297d561d0b7"
+        },
+        {
+          "stateId": "mem2reg",
+          "path": "artefacts/curated/score/score_01_mem2reg.ll",
+          "sha256": "46046120d206f97e77a510eb7527c975f3c7aae157707aa29d4b777ca99dba69"
+        }
+      ],
+      "story": "Seven allocas and their stack loads/stores disappear; arithmetic uses SSA inputs and return gains a phi. %sub itself is unchanged, while its inputs are rewritten. The four-block CFG is retained.",
+      "summaryContains": [
+        "29 instructions removed.",
+        "1 instruction added.",
+        "8 instructions changed with approximate correspondence evidence.",
+        "CFG unchanged"
+      ],
+      "cfgBefore": [
+        [
+          "entry",
+          "if.then",
+          "true"
+        ],
+        [
+          "entry",
+          "if.end",
+          "false"
+        ],
+        [
+          "if.then",
+          "return",
+          "unconditional"
+        ],
+        [
+          "if.end",
+          "return",
+          "unconditional"
+        ]
+      ],
+      "cfgAfter": [
+        [
+          "entry",
+          "if.then",
+          "true"
+        ],
+        [
+          "entry",
+          "if.end",
+          "false"
+        ],
+        [
+          "if.then",
+          "return",
+          "unconditional"
+        ],
+        [
+          "if.end",
+          "return",
+          "unconditional"
+        ]
+      ]
+    },
+    {
+      "example": "score",
+      "fromOrdinal": 1,
+      "toOrdinal": 2,
+      "stepType": "instcombine",
+      "stepKind": "derived",
+      "table": "score-instcombine.tsv",
+      "artefacts": [
+        {
+          "stateId": "mem2reg",
+          "path": "artefacts/curated/score/score_01_mem2reg.ll",
+          "sha256": "46046120d206f97e77a510eb7527c975f3c7aae157707aa29d4b777ca99dba69"
+        },
+        {
+          "stateId": "instcombine",
+          "path": "artefacts/curated/score/score_02_instcombine.ll",
+          "sha256": "610bc1e723d91a156f280931a47db368b620c4fbcf2fa5cd4bd66f0c33543a07"
+        }
+      ],
+      "story": "The limit multiply becomes a shift and subtraction of 128 becomes addition of -128. Two identical square products, their difference, and the now-redundant final add disappear. The return phi uses %mul4 directly. CFG edges are retained.",
+      "summaryContains": [
+        "4 instructions removed.",
+        "2 instructions were linked as simplifications with approximate correspondence evidence.",
+        "CFG unchanged"
+      ],
+      "cfgBefore": [
+        [
+          "entry",
+          "if.then",
+          "true"
+        ],
+        [
+          "entry",
+          "if.end",
+          "false"
+        ],
+        [
+          "if.then",
+          "return",
+          "unconditional"
+        ],
+        [
+          "if.end",
+          "return",
+          "unconditional"
+        ]
+      ],
+      "cfgAfter": [
+        [
+          "entry",
+          "if.then",
+          "true"
+        ],
+        [
+          "entry",
+          "if.end",
+          "false"
+        ],
+        [
+          "if.then",
+          "return",
+          "unconditional"
+        ],
+        [
+          "if.end",
+          "return",
+          "unconditional"
+        ]
+      ]
+    },
+    {
+      "example": "score",
+      "fromOrdinal": 2,
+      "toOrdinal": 3,
+      "stepType": "simplifycfg",
+      "stepKind": "derived",
+      "table": "score-simplifycfg.tsv",
+      "artefacts": [
+        {
+          "stateId": "instcombine",
+          "path": "artefacts/curated/score/score_02_instcombine.ll",
+          "sha256": "610bc1e723d91a156f280931a47db368b620c4fbcf2fa5cd4bd66f0c33543a07"
+        },
+        {
+          "stateId": "simplifycfg",
+          "path": "artefacts/curated/score/score_03_simplifycfg.ll",
+          "sha256": "f5c692f3cde3bd9257b3ab8ed2e2f50ff8606b57547f7d28c78d8b1db8727144"
+        }
+      ],
+      "story": "The diamond and return block collapse into entry; a select and direct return replace branching and the return phi. The four recorded CFG edges disappear.",
+      "summaryContains": [
+        "3 basic blocks removed.",
+        "1 instruction added.",
+        "removed entry \u2192 if.then [true]",
+        "if.end \u2192 return [unconditional]"
+      ],
+      "cfgBefore": [
+        [
+          "entry",
+          "if.then",
+          "true"
+        ],
+        [
+          "entry",
+          "if.end",
+          "false"
+        ],
+        [
+          "if.then",
+          "return",
+          "unconditional"
+        ],
+        [
+          "if.end",
+          "return",
+          "unconditional"
+        ]
+      ],
+      "cfgAfter": []
+    },
+    {
+      "example": "score",
+      "fromOrdinal": 6,
+      "toOrdinal": 7,
+      "stepType": "loop-rotate",
+      "stepKind": "derived",
+      "table": "score-loop-rotate.tsv",
+      "artefacts": [
+        {
+          "stateId": "loop_canonical",
+          "path": "artefacts/curated/score/score_06_loop_canonical.ll",
+          "sha256": "2fec4d8de259bf461ea3d3e902ad8b63e27f714e7b8fe8f6728f6b63e1de712d"
+        },
+        {
+          "stateId": "loop_rotate",
+          "path": "artefacts/curated/score/score_07_loop_rotate.ll",
+          "sha256": "7896d2085681f9d2daef4c17d6d48e768300aa58794147f207872163634fea8a"
+        }
+      ],
+      "story": "There is no loop to rotate. All seven comparable nodes (function, entry, and five instructions) are retained exactly; this is a recorded no-op, not a missing pass state.",
+      "summaryContains": [
+        "this pass is retained as a no-op."
+      ],
+      "cfgBefore": [],
+      "cfgAfter": []
+    },
+    {
+      "example": "score",
+      "fromOrdinal": 12,
+      "toOrdinal": 13,
+      "stepType": "anchor",
+      "stepKind": "recompiled",
+      "table": "score-anchor.tsv",
+      "artefacts": [
+        {
+          "stateId": "final_cleanup",
+          "path": "artefacts/curated/score/score_12_final_cleanup.ll",
+          "sha256": "8e5957304f610a40974757a784076ea68703ff032ad4979cacc4139a5b80fa09"
+        },
+        {
+          "stateId": "O3",
+          "path": "artefacts/curated/score/score_O3.ll",
+          "sha256": "8aaf4bb38e4e27e73652a2c19827dbb12d3f36b78975c66b3f68252f48a5edf7"
+        }
+      ],
+      "story": "The independently compiled -O3 anchor retains the arithmetic and return; the smin call gains tail. Both calls have DILocation line zero, which records no source line and therefore supplies no source-backed anchor key. Two one-sided none links explicitly withhold identity, despite apparent textual similarity.",
+      "summaryContains": [
+        "CFG unchanged",
+        "2 nodes could not be classified"
+      ],
+      "cfgBefore": [],
+      "cfgAfter": []
+    },
+    {
+      "example": "binary_search",
+      "fromOrdinal": 0,
+      "toOrdinal": 1,
+      "stepType": "mem2reg",
+      "stepKind": "derived",
+      "table": "binary_search-mem2reg.tsv",
+      "artefacts": [
+        {
+          "stateId": "O0",
+          "path": "artefacts/curated/binary_search/binary_search_O0.ll",
+          "sha256": "97953e2614ae8681413ea46e0380ebd96f236e15e352a281dbffa758971453e0"
+        },
+        {
+          "stateId": "mem2reg",
+          "path": "artefacts/curated/binary_search/binary_search_01_mem2reg.ll",
+          "sha256": "c6f94e9bd5a99508a87567f2bc1603bb0e06c7eaefe31c12a1dc5e0361f1c897"
+        }
+      ],
+      "story": "Seven allocas and all stack traffic disappear; actual array loads survive with renamed results. Five SSA phis appear, but the hi phi receives a source-only approximate link from the initial hi store, so only four phis are reported as additions. All eleven block labels and CFG edges are retained. The store-to-phi label is a structural heuristic, not a compiler-proven rewrite.",
+      "summaryContains": [
+        "34 instructions removed.",
+        "4 instructions added.",
+        "2 instructions were linked as renamed correspondences.",
+        "CFG unchanged"
+      ],
+      "cfgBefore": [
+        [
+          "entry",
+          "while.cond",
+          "unconditional"
+        ],
+        [
+          "while.cond",
+          "while.body",
+          "true"
+        ],
+        [
+          "while.cond",
+          "while.end",
+          "false"
+        ],
+        [
+          "while.body",
+          "if.then",
+          "true"
+        ],
+        [
+          "while.body",
+          "if.else",
+          "false"
+        ],
+        [
+          "if.then",
+          "if.end",
+          "unconditional"
+        ],
+        [
+          "if.else",
+          "if.end",
+          "unconditional"
+        ],
+        [
+          "if.end",
+          "while.cond",
+          "unconditional"
+        ],
+        [
+          "while.end",
+          "land.lhs.true",
+          "true"
+        ],
+        [
+          "while.end",
+          "if.end8",
+          "false"
+        ],
+        [
+          "land.lhs.true",
+          "if.then7",
+          "true"
+        ],
+        [
+          "land.lhs.true",
+          "if.end8",
+          "false"
+        ],
+        [
+          "if.then7",
+          "return",
+          "unconditional"
+        ],
+        [
+          "if.end8",
+          "return",
+          "unconditional"
+        ]
+      ],
+      "cfgAfter": [
+        [
+          "entry",
+          "while.cond",
+          "unconditional"
+        ],
+        [
+          "while.cond",
+          "while.body",
+          "true"
+        ],
+        [
+          "while.cond",
+          "while.end",
+          "false"
+        ],
+        [
+          "while.body",
+          "if.then",
+          "true"
+        ],
+        [
+          "while.body",
+          "if.else",
+          "false"
+        ],
+        [
+          "if.then",
+          "if.end",
+          "unconditional"
+        ],
+        [
+          "if.else",
+          "if.end",
+          "unconditional"
+        ],
+        [
+          "if.end",
+          "while.cond",
+          "unconditional"
+        ],
+        [
+          "while.end",
+          "land.lhs.true",
+          "true"
+        ],
+        [
+          "while.end",
+          "if.end8",
+          "false"
+        ],
+        [
+          "land.lhs.true",
+          "if.then7",
+          "true"
+        ],
+        [
+          "land.lhs.true",
+          "if.end8",
+          "false"
+        ],
+        [
+          "if.then7",
+          "return",
+          "unconditional"
+        ],
+        [
+          "if.end8",
+          "return",
+          "unconditional"
+        ]
+      ]
+    },
+    {
+      "example": "binary_search",
+      "fromOrdinal": 1,
+      "toOrdinal": 2,
+      "stepType": "instcombine",
+      "stepKind": "derived",
+      "table": "binary_search-instcombine.tsv",
+      "artefacts": [
+        {
+          "stateId": "mem2reg",
+          "path": "artefacts/curated/binary_search/binary_search_01_mem2reg.ll",
+          "sha256": "c6f94e9bd5a99508a87567f2bc1603bb0e06c7eaefe31c12a1dc5e0361f1c897"
+        },
+        {
+          "stateId": "instcombine",
+          "path": "artefacts/curated/binary_search/binary_search_02_instcombine.ll",
+          "sha256": "06b982672c8a264daa39b059ba1a1d3bc828446d94083f0290cfe76ec24c1a3c"
+        }
+      ],
+      "story": "Midpoint division changes from sdiv by two to lshr by one, and the add uses the renamed division result. CFG edges and the other arithmetic remain. The two unchanged, source-less merge phis share a normalised-text/predecessor-opcode signature, so their positional counterparts have approximate confidence.",
+      "summaryContains": [
+        "1 instruction was linked as simplifications with approximate correspondence evidence.",
+        "1 instruction changed with approximate correspondence evidence.",
+        "CFG unchanged"
+      ],
+      "cfgBefore": [
+        [
+          "entry",
+          "while.cond",
+          "unconditional"
+        ],
+        [
+          "while.cond",
+          "while.body",
+          "true"
+        ],
+        [
+          "while.cond",
+          "while.end",
+          "false"
+        ],
+        [
+          "while.body",
+          "if.then",
+          "true"
+        ],
+        [
+          "while.body",
+          "if.else",
+          "false"
+        ],
+        [
+          "if.then",
+          "if.end",
+          "unconditional"
+        ],
+        [
+          "if.else",
+          "if.end",
+          "unconditional"
+        ],
+        [
+          "if.end",
+          "while.cond",
+          "unconditional"
+        ],
+        [
+          "while.end",
+          "land.lhs.true",
+          "true"
+        ],
+        [
+          "while.end",
+          "if.end8",
+          "false"
+        ],
+        [
+          "land.lhs.true",
+          "if.then7",
+          "true"
+        ],
+        [
+          "land.lhs.true",
+          "if.end8",
+          "false"
+        ],
+        [
+          "if.then7",
+          "return",
+          "unconditional"
+        ],
+        [
+          "if.end8",
+          "return",
+          "unconditional"
+        ]
+      ],
+      "cfgAfter": [
+        [
+          "entry",
+          "while.cond",
+          "unconditional"
+        ],
+        [
+          "while.cond",
+          "while.body",
+          "true"
+        ],
+        [
+          "while.cond",
+          "while.end",
+          "false"
+        ],
+        [
+          "while.body",
+          "if.then",
+          "true"
+        ],
+        [
+          "while.body",
+          "if.else",
+          "false"
+        ],
+        [
+          "if.then",
+          "if.end",
+          "unconditional"
+        ],
+        [
+          "if.else",
+          "if.end",
+          "unconditional"
+        ],
+        [
+          "if.end",
+          "while.cond",
+          "unconditional"
+        ],
+        [
+          "while.end",
+          "land.lhs.true",
+          "true"
+        ],
+        [
+          "while.end",
+          "if.end8",
+          "false"
+        ],
+        [
+          "land.lhs.true",
+          "if.then7",
+          "true"
+        ],
+        [
+          "land.lhs.true",
+          "if.end8",
+          "false"
+        ],
+        [
+          "if.then7",
+          "return",
+          "unconditional"
+        ],
+        [
+          "if.end8",
+          "return",
+          "unconditional"
+        ]
+      ]
+    },
+    {
+      "example": "binary_search",
+      "fromOrdinal": 2,
+      "toOrdinal": 3,
+      "stepType": "simplifycfg",
+      "stepKind": "derived",
+      "table": "binary_search-simplifycfg.tsv",
+      "artefacts": [
+        {
+          "stateId": "instcombine",
+          "path": "artefacts/curated/binary_search/binary_search_02_instcombine.ll",
+          "sha256": "06b982672c8a264daa39b059ba1a1d3bc828446d94083f0290cfe76ec24c1a3c"
+        },
+        {
+          "stateId": "simplifycfg",
+          "path": "artefacts/curated/binary_search/binary_search_03_simplifycfg.ll",
+          "sha256": "a1362975ac30c917a383e2d41fd6eeeee55a645e0b0b3a0222adda30209a40c4"
+        }
+      ],
+      "story": "The loop diamond collapses: if.then, if.else, and if.end disappear, and two selects update bounds in while.body. The success block if.then7 also disappears. %add2 survives semantically but changes source location, so the matcher leaves its old/new instructions unresolved instead of inventing a moved link.",
+      "summaryContains": [
+        "4 basic blocks removed.",
+        "2 instructions added.",
+        "removed while.body \u2192 if.then [true]",
+        "added while.body \u2192 while.cond [unconditional]",
+        "land.lhs.true \u2192 return [true]",
+        "2 nodes could not be classified"
+      ],
+      "cfgBefore": [
+        [
+          "entry",
+          "while.cond",
+          "unconditional"
+        ],
+        [
+          "while.cond",
+          "while.body",
+          "true"
+        ],
+        [
+          "while.cond",
+          "while.end",
+          "false"
+        ],
+        [
+          "while.body",
+          "if.then",
+          "true"
+        ],
+        [
+          "while.body",
+          "if.else",
+          "false"
+        ],
+        [
+          "if.then",
+          "if.end",
+          "unconditional"
+        ],
+        [
+          "if.else",
+          "if.end",
+          "unconditional"
+        ],
+        [
+          "if.end",
+          "while.cond",
+          "unconditional"
+        ],
+        [
+          "while.end",
+          "land.lhs.true",
+          "true"
+        ],
+        [
+          "while.end",
+          "if.end8",
+          "false"
+        ],
+        [
+          "land.lhs.true",
+          "if.then7",
+          "true"
+        ],
+        [
+          "land.lhs.true",
+          "if.end8",
+          "false"
+        ],
+        [
+          "if.then7",
+          "return",
+          "unconditional"
+        ],
+        [
+          "if.end8",
+          "return",
+          "unconditional"
+        ]
+      ],
+      "cfgAfter": [
+        [
+          "entry",
+          "while.cond",
+          "unconditional"
+        ],
+        [
+          "while.cond",
+          "while.body",
+          "true"
+        ],
+        [
+          "while.cond",
+          "while.end",
+          "false"
+        ],
+        [
+          "while.body",
+          "while.cond",
+          "unconditional"
+        ],
+        [
+          "while.end",
+          "land.lhs.true",
+          "true"
+        ],
+        [
+          "while.end",
+          "if.end8",
+          "false"
+        ],
+        [
+          "land.lhs.true",
+          "return",
+          "true"
+        ],
+        [
+          "land.lhs.true",
+          "if.end8",
+          "false"
+        ],
+        [
+          "if.end8",
+          "return",
+          "unconditional"
+        ]
+      ]
+    },
+    {
+      "example": "binary_search",
+      "fromOrdinal": 6,
+      "toOrdinal": 7,
+      "stepType": "loop-rotate",
+      "stepKind": "derived",
+      "table": "binary_search-loop-rotate.tsv",
+      "artefacts": [
+        {
+          "stateId": "loop_canonical",
+          "path": "artefacts/curated/binary_search/binary_search_06_loop_canonical.ll",
+          "sha256": "29d7a217f85a80453bc67e77db33b7eb0cf2619809be625bfaa5c99f272af976"
+        },
+        {
+          "stateId": "loop_rotate",
+          "path": "artefacts/curated/binary_search/binary_search_07_loop_rotate.ll",
+          "sha256": "ff340881273145f54780ab1b2e49ed8d3a4592d6826fb25d7662ed8229590973"
+        }
+      ],
+      "story": "The header while.cond disappears. Entry gains a guard, while.body.lr.ph and a critical-edge block appear, and while.body gains a true self back edge. The original header phis are replaced by source-less rotated phis; bounds selects and loop test remain unresolved. Retained midpoint expressions are identified separately from those uncertain links.",
+      "summaryContains": [
+        "1 basic block removed.",
+        "2 basic blocks added.",
+        "removed entry \u2192 while.cond [unconditional]",
+        "added entry \u2192 while.body.lr.ph [true]",
+        "while.body \u2192 while.body [true]",
+        "19 nodes could not be classified"
+      ],
+      "cfgBefore": [
+        [
+          "entry",
+          "while.cond",
+          "unconditional"
+        ],
+        [
+          "while.cond",
+          "while.body",
+          "true"
+        ],
+        [
+          "while.cond",
+          "while.end",
+          "false"
+        ],
+        [
+          "while.body",
+          "while.cond",
+          "unconditional"
+        ],
+        [
+          "while.end",
+          "land.lhs.true",
+          "true"
+        ],
+        [
+          "while.end",
+          "if.end8",
+          "false"
+        ],
+        [
+          "land.lhs.true",
+          "return",
+          "true"
+        ],
+        [
+          "land.lhs.true",
+          "if.end8",
+          "false"
+        ],
+        [
+          "if.end8",
+          "return",
+          "unconditional"
+        ]
+      ],
+      "cfgAfter": [
+        [
+          "entry",
+          "while.body.lr.ph",
+          "true"
+        ],
+        [
+          "entry",
+          "while.end",
+          "false"
+        ],
+        [
+          "while.body.lr.ph",
+          "while.body",
+          "unconditional"
+        ],
+        [
+          "while.body",
+          "while.body",
+          "true"
+        ],
+        [
+          "while.body",
+          "while.cond.while.end_crit_edge",
+          "false"
+        ],
+        [
+          "while.cond.while.end_crit_edge",
+          "while.end",
+          "unconditional"
+        ],
+        [
+          "while.end",
+          "land.lhs.true",
+          "true"
+        ],
+        [
+          "while.end",
+          "if.end8",
+          "false"
+        ],
+        [
+          "land.lhs.true",
+          "return",
+          "true"
+        ],
+        [
+          "land.lhs.true",
+          "if.end8",
+          "false"
+        ],
+        [
+          "if.end8",
+          "return",
+          "unconditional"
+        ]
+      ]
+    },
+    {
+      "example": "binary_search",
+      "fromOrdinal": 12,
+      "toOrdinal": 13,
+      "stepType": "anchor",
+      "stepKind": "recompiled",
+      "table": "binary_search-anchor.tsv",
+      "artefacts": [
+        {
+          "stateId": "final_cleanup",
+          "path": "artefacts/curated/binary_search/binary_search_12_final_cleanup.ll",
+          "sha256": "aff074ffdd2ce32e58676a44233a8a4b116007c61f4c0f257e62b823dad18bbc"
+        },
+        {
+          "stateId": "O3",
+          "path": "artefacts/curated/binary_search/binary_search_O3.ll",
+          "sha256": "da9d1fd913e6bd329a0ed4edba65dcd58b60165b26e3b18d60ad8360395cba3f"
+        }
+      ],
+      "story": "The independent -O3 compile renames return to cleanup, adds nuw/TBAA information, changes sext to zext nneg, and renames the division result. Source-less loop phis and several changed/shared-source controls have none links. Identical bound-update logic is not promoted to exact anchor identity; no single-pass attribution is allowed.",
+      "summaryContains": [
+        "2 instructions were linked as simplifications with approximate correspondence evidence.",
+        "1 instruction was linked as renamed correspondences with approximate correspondence evidence.",
+        "removed land.lhs.true \u2192 return [true]",
+        "added land.lhs.true \u2192 cleanup [true]",
+        "26 nodes could not be classified"
+      ],
+      "cfgBefore": [
+        [
+          "entry",
+          "while.body",
+          "true"
+        ],
+        [
+          "entry",
+          "while.end",
+          "false"
+        ],
+        [
+          "while.body",
+          "while.body",
+          "true"
+        ],
+        [
+          "while.body",
+          "while.end",
+          "false"
+        ],
+        [
+          "while.end",
+          "land.lhs.true",
+          "true"
+        ],
+        [
+          "while.end",
+          "if.end8",
+          "false"
+        ],
+        [
+          "land.lhs.true",
+          "return",
+          "true"
+        ],
+        [
+          "land.lhs.true",
+          "if.end8",
+          "false"
+        ],
+        [
+          "if.end8",
+          "return",
+          "unconditional"
+        ]
+      ],
+      "cfgAfter": [
+        [
+          "entry",
+          "while.body",
+          "true"
+        ],
+        [
+          "entry",
+          "while.end",
+          "false"
+        ],
+        [
+          "while.body",
+          "while.body",
+          "true"
+        ],
+        [
+          "while.body",
+          "while.end",
+          "false"
+        ],
+        [
+          "while.end",
+          "land.lhs.true",
+          "true"
+        ],
+        [
+          "while.end",
+          "if.end8",
+          "false"
+        ],
+        [
+          "land.lhs.true",
+          "cleanup",
+          "true"
+        ],
+        [
+          "land.lhs.true",
+          "if.end8",
+          "false"
+        ],
+        [
+          "if.end8",
+          "cleanup",
+          "unconditional"
+        ]
+      ]
+    }
+  ],
+  "reviewMethod": "AI-assisted manual IR and evidence-policy review by Codex; independent human sign-off is pending. Endpoints and classifications were transcribed explicitly; text, source fields, and artefact hashes were attached mechanically without serialising matcher output."
+}
