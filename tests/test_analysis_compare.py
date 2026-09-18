@@ -22,6 +22,7 @@ from src.backend.model import (
     serialise_correspondence,
     serialise_json,
 )
+from src.backend.toolchain import curated
 
 
 class EndpointComparisonTests(unittest.TestCase):
@@ -197,6 +198,22 @@ class EndpointComparisonTests(unittest.TestCase):
                 self.assertGreater(
                     len(load_prebaked_curated_correspondence(example).links), 0
                 )
+
+    def test_prebaked_overlays_match_the_current_adjacent_matcher(self) -> None:
+        """Require an intentional re-bake whenever matcher behaviour changes."""
+        for example in ("score", "binary_search", "quick_sort"):
+            timeline = load_prebaked_curated_timeline(example)
+            for ordinal in range(len(timeline.steps)):
+                with self.subTest(example=example, ordinal=ordinal):
+                    baked = deserialise_json(
+                        curated.model_correspondence_path(example, ordinal).read_text(
+                            encoding="utf-8"
+                        )
+                    )
+                    fresh = serialise_correspondence(
+                        compare_timeline_step(timeline, ordinal).correspondence
+                    )
+                    self.assertEqual(fresh, baked)
 
     def test_noop_steps_are_identity_correspondences(self) -> None:
         timeline = load_prebaked_curated_timeline("score")
