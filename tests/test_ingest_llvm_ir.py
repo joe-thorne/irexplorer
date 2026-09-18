@@ -132,6 +132,73 @@ entry:
             str(context.exception),
         )
 
+    def test_multiline_switch_ingests_cases_and_phi_agreement(self) -> None:
+        graph = parse_ir_state(
+            """source_filename = "switch.c"
+target triple = "x86_64-unknown-linux-gnu"
+
+define i32 @choose(i32 %value) {
+entry:
+  switch i32 %value, label %default [
+    i32 1, label %one
+    i32 2, label %two
+    i32 3, label %three
+  ]
+default:
+  br label %join
+one:
+  br label %join
+two:
+  br label %join
+three:
+  br label %join
+join:
+  %result = phi i32 [ 0, %default ], [ 1, %one ], [ 2, %two ], [ 3, %three ]
+  ret i32 %result
+}
+""",
+            ordinal=0,
+            state_id="switch",
+        )
+
+        entry = next(
+            node
+            for node in graph.nodes
+            if node.kind == "BasicBlock" and node.attributes["label"] == "entry"
+        )
+        terminator = graph.by_id[graph.contains_children[entry.stable_id][-1]]
+        self.assertEqual(terminator.attributes["opcode"], "switch")
+        self.assertTrue(terminator.attributes["is_terminator"])
+        self.assertEqual(
+            tuple(
+                (graph.by_id[edge.to_id].attributes["label"], edge.label)
+                for edge in graph.cfg_successors[entry.stable_id]
+            ),
+            (
+                ("default", "default"),
+                ("one", "switch-case(0)"),
+                ("two", "switch-case(1)"),
+                ("three", "switch-case(2)"),
+            ),
+        )
+        graph.validate()
+
+    def test_unterminated_multiline_switch_is_controlled_failure(self) -> None:
+        malformed = """source_filename = "bad.c"
+target triple = "x86_64-unknown-linux-gnu"
+
+define i32 @bad(i32 %value) {
+entry:
+  switch i32 %value, label %default [
+    i32 1, label %one
+}
+"""
+
+        with self.assertRaises(IngestError) as context:
+            parse_ir_state(malformed, ordinal=0, state_id="bad")
+
+        self.assertIn("unterminated switch instruction", str(context.exception))
+
 
 def _kind_counts(graph) -> dict[str, int]:
     counts: dict[str, int] = {}

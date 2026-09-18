@@ -98,7 +98,7 @@ def _parse_ir_state(
     remarks_text: str | None,
     opt_yaml_text: str | None,
 ) -> StateGraph:
-    lines = ir_text.splitlines()
+    lines = _join_switch_continuations(ir_text.splitlines())
     source_filename = _parse_single(lines, _SOURCE_RE)
     debug_locations = _parse_debug_locations(lines, source_filename or "")
     target_triple = _parse_single(lines, _TRIPLE_RE)
@@ -361,6 +361,42 @@ def _parse_functions(
     return functions
 
 
+def _join_switch_continuations(lines: list[str]) -> list[str]:
+    """Join LLVM's bracketed multi-line ``switch`` instructions.
+
+    LLVM prints the default target on the instruction line and each case on a
+    following line.  The parser otherwise operates on one complete instruction
+    per line, so preserve that contract by forming one logical line here.
+    """
+
+    joined: list[str] = []
+    line_index = 0
+    while line_index < len(lines):
+        line = lines[line_index]
+        stripped = line.strip()
+        if not (stripped.startswith("switch ") and stripped.endswith("[")):
+            joined.append(line)
+            line_index += 1
+            continue
+
+        start_line = line_index + 1
+        parts = [stripped]
+        bracket_depth = stripped.count("[") - stripped.count("]")
+        line_index += 1
+        while bracket_depth > 0:
+            if line_index == len(lines) or lines[line_index].strip() == "}":
+                raise IngestError(
+                    f"unterminated switch instruction starting at line {start_line}"
+                )
+            continuation = lines[line_index].strip()
+            parts.append(continuation)
+            bracket_depth += continuation.count("[") - continuation.count("]")
+            line_index += 1
+        joined.append(" ".join(parts))
+
+    return joined
+
+
 def _require_terminated(function: _FunctionBuild, block: _BlockBuild) -> None:
     if not block.instructions:
         raise IngestError(f"empty basic block: {function.name}.{block.label}")
@@ -394,7 +430,8 @@ def _parse_instruction(
     debug_ref = _debug_ref(text)
     source = debug_locations.get(debug_ref) if debug_ref else None
     successors = _successors(body)
-    # Terminators recognised for the curated C set. Other LLVM terminators
+    # Supported terminators are br, ret, switch (including LLVM's multi-line
+    # bracketed form), unreachable and resume. Other LLVM terminators
     # (invoke, callbr, indirectbr, catchswitch, catchret, cleanupret) do not
     # appear in these examples; if one ever ends a block it is left unrecognised
     # and ingestion fails in a controlled way via _require_terminated (FR15/NFR8),

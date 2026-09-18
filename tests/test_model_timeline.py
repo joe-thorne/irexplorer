@@ -89,6 +89,15 @@ class OptimisationTimelineTests(unittest.TestCase):
                     ],
                 )
 
+    def test_fresh_ingestion_matches_all_prebaked_curated_states(self) -> None:
+        """Guard the 42 shipped state records against ingestion drift."""
+
+        for example in ("score", "binary_search", "quick_sort"):
+            with self.subTest(example=example):
+                fresh = load_curated_timeline(example, resolution="full")
+                baked = load_prebaked_curated_timeline(example)
+                self.assertEqual(serialise_timeline(fresh), serialise_timeline(baked))
+
     def test_invalid_step_provenance_is_rejected_at_load_boundary(self) -> None:
         timeline = load_curated_timeline("score")
         invalid_step = replace(
