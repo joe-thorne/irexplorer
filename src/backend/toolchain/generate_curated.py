@@ -7,6 +7,7 @@ import shutil
 import subprocess
 import tempfile
 
+from src.backend.bake import bake_curated_snapshot
 from src.backend.toolchain import curated as curated_paths
 from src.backend.toolchain.curated import (
     ARTEFACTS_ROOT,
@@ -48,14 +49,7 @@ def _generate_snapshot(staging_root: Path) -> None:
         print(f"Generating {example}")
         _generate_example(example, artefacts_root=staging_root)
 
-    # The compiler artefacts, model snapshots, and comparison overlays share
-    # this one offline path: runtime consumes serialised records, never raw IR.
-    from src.backend.ingest.curated import bake_curated_model_records
-    from src.backend.analysis.curated import bake_curated_comparison_records
-
-    with curated_paths.using_artefacts_root(staging_root):
-        bake_curated_model_records()
-        bake_curated_comparison_records()
+    bake_curated_snapshot(staging_root)
 
 
 def _generate_example(example: str, *, artefacts_root: Path) -> None:

@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
@@ -8,6 +9,20 @@ from src.backend.toolchain.curated import ToolchainError
 
 
 class CuratedGenerationTests(unittest.TestCase):
+    def test_toolchain_does_not_import_ingestion_or_analysis_layers(self) -> None:
+        toolchain_root = generate_curated.REPO_ROOT / "src/backend/toolchain"
+        forbidden_import = re.compile(
+            r"^\s*(?:from|import)\s+src\.backend\.(?:ingest|analysis)(?:\.|\s|$)",
+            re.MULTILINE,
+        )
+        violations = [
+            path.relative_to(toolchain_root).as_posix()
+            for path in toolchain_root.rglob("*.py")
+            if forbidden_import.search(path.read_text(encoding="utf-8"))
+        ]
+
+        self.assertEqual(violations, [])
+
     def test_toolchain_downloads_are_digest_and_checksum_pinned(self) -> None:
         dockerfile = (generate_curated.REPO_ROOT / "Dockerfile.toolchain").read_text(
             encoding="utf-8"

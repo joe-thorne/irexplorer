@@ -57,3 +57,28 @@ Only Submit responses sends answers. Before it, Stop/discard removes local draft
 An acknowledged receipt replaces the frozen payload, then the original answer draft is removed. Failure in either cleanup step stays visible and offers retry; success is not falsely described as local erasure. An explicitly selected memory-only session can submit but cannot promise refresh recovery, and unavailable storage can require cleanup retry. Keep the tab and receipt code. Corrupt/unreadable submission recovery blocks normal progression and offers recovery retry or explicitly acknowledged memory-only continuation; a previous server record may exist.
 
 The included flow supports local evaluation. Pilot and live collection remain disabled.
+
+## Release step: enabling live collection
+
+This is a future, human-approved release step; it does not enable collection in the shipped application. Keep `pilot` disabled. The deliberate code change, made only in the frozen live-release branch after the checks below, is in `src/backend/evaluation/service.py`:
+
+```python
+@property
+def enabled(self):
+    # Local assessment and legacy preview stores stay separate from research data.
+    return self.mode in ('local', 'preview', 'live')
+```
+
+Do not apply that change to a development checkout or to a service with an HTTP, missing, or non-canonical origin. The live systemd environment must set `IREXPLORER_STUDY_MODE=live`, `IREXPLORER_STUDY_ORIGIN=https://<canonical-host>` and `IREXPLORER_STUDY_DIR=/var/lib/irexplorer`; deploy a non-development, immutable release whose `/api/release` fingerprint is recorded. The exact deployment and host checks are in [Prepare for live evaluation](../../deploy/uq-webproject/LIVE-EVALUATION.md), not in this local-collection guide.
+
+Before changing `Config.enabled`, record D3 (withdrawal process and participant code), D4 (private storage, access, backups, retention and deletion), and D5 (all participant-facing, ethics and infrastructure-disclosure confirmations) in the thesis instruments. Verify nginx, systemd journal and upstream UQ logging against the participant disclosure as required by `LIVE-EVALUATION.md`; application request logging alone is not that verification. Joe is the release approver, after Joel has confirmed the D3–D5 participant/ethics commitments.
+
+Use this checklist for the cutover:
+
+- [ ] Freeze and rebuild the participant content and truthful study/content/instrument identities; run backend, draft/submission and browser checks with synthetic data, including retry, export and restore.
+- [ ] Verify the canonical HTTPS origin, the immutable release fingerprint and the artefact checksum locally and through the public origin.
+- [ ] Confirm `/var/lib/irexplorer/live/` is a new, empty store; never rename or reuse the preview database.
+- [ ] Run the documented health, release and study-content checks, and verify `mode: live` and `submissionEnabled: true` before opening collection.
+- [ ] Record Joe's approval, the release fingerprint, checksum, versions, canonical URL, opening time and data location; retain the verified off-zone backup procedure.
+
+Until every item is complete, leave the current `Config.enabled` implementation unchanged. Its dedicated regression test asserts that the shipped `live` configuration rejects a submission with `503 collection_disabled` without creating a database.

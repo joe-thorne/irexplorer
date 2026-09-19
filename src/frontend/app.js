@@ -108,10 +108,9 @@ async function loadExamples() {
   }
 }
 
-async function loadExample(setup = null) {
+async function loadExample() {
   const exampleId = elements.exampleSelect.value;
   if (!exampleId) return;
-  const retainedFunction = setup?.example && appState.exampleId === exampleId ? appState.functionName : null;
   const loadId = ++appState.loadId;
   ++appState.refreshId;
   appState.ready = false;
@@ -132,17 +131,11 @@ async function loadExample(setup = null) {
     sourceState.data = source;
     renderSource();
     appState.exampleId = exampleId;
-    appState.functionName = retainedFunction;
+    appState.functionName = null;
     appState.panels.left.ordinal = 0;
     appState.panels.left.viewType = "ir";
     appState.panels.right.ordinal = Math.min(1, appState.states.length - 1);
     appState.panels.right.viewType = "ir";
-    for (const side of ["left", "right"]) {
-      if (setup?.[side]) {
-        appState.panels[side].ordinal = setup[side].ordinal;
-        appState.panels[side].viewType = setup[side].view;
-      }
-    }
     renderStateOptions();
     elements.left.view.value = appState.panels.left.viewType;
     elements.right.view.value = appState.panels.right.viewType;
@@ -681,6 +674,9 @@ const examplesReady = loadExamples();
 // persistence, compiler parsing, or task-specific matching belongs in the workspace.
 window.StudyWorkspace = {
   get ready() { return appState.ready && !elements.workspace.hidden; },
+  clearManualSetup() {
+    appState.manualSetup = false;
+  },
   reset() {
     ++appState.loadId;
     ++appState.refreshId;

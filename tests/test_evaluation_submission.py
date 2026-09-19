@@ -196,8 +196,8 @@ class SubmissionTests(unittest.TestCase):
         self.assertEqual(next(r for r in rows if r['itemId'] == 'T1')['setupReached'], '')
         self.assertTrue(all(r['instrumentVersion'] == 'v0.1' for r in rows))
 
-    def test_disabled_modes_and_private_http_boundary(self):
-        for mode in ('pilot','live'):
+    def test_pilot_mode_and_private_http_boundary(self):
+        for mode in ('pilot',):
             service=StudyService(Config(Path(self.tmp.name),mode=mode))
             self.assertFalse(service.content()['submissionEnabled'])
             with self.assertRaises(StudyError) as caught: service.submit(self.payload)
@@ -209,6 +209,18 @@ class SubmissionTests(unittest.TestCase):
         for path, methods in schema['paths'].items():
             self.assertEqual(set(methods), {'post'} if path=='/api/study/submissions' else {'get'})
         self.assertEqual(self.client.post('/api/examples',json=self.payload).status_code,405)
+
+    def test_shipped_live_configuration_rejects_submissions(self):
+        live = StudyService(Config(
+            Path(self.tmp.name), mode='live', origin='https://study.example.test',
+            app_revision='0.1.1-webproject.1',
+        ))
+
+        self.assertFalse(live.content()['submissionEnabled'])
+        with self.assertRaises(StudyError) as caught:
+            live.submit(self.payload)
+        self.assertEqual((caught.exception.status, caught.exception.code), (503, 'collection_disabled'))
+        self.assertFalse(live.config.path.exists())
 
     def test_schema_fail_closed(self):
         self.service.submit(self.payload)
