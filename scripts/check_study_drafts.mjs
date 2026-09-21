@@ -117,8 +117,8 @@ check('Pre-setup skip and inability survive recovery without fabricated answers 
     const bad=JSON.parse(JSON.stringify(d));change(bad);assert.throws(()=>D.decode(JSON.stringify(bad),content));
   }
 });
-check('v0.3 representation selections and old draft identities stay distinct', () => {
-  assert.equal(D.KEY, 'irexplorer.study.v0.3');
+check('v0.4 representation selections and old draft identities stay distinct', () => {
+  assert.equal(D.KEY, 'irexplorer.study.v0.4');
   assert.equal(Object.keys(D.validate(content,'post',{Q8:answered([1,2,3])})).length,0);
   for (const value of [1,[1,4]]) assert.equal(Object.keys(D.validate(content,'post',{Q8:answered(value)})).join(),'Q8');
   const d=D.create(content,consent);d.instrumentVersion='v0.1';assert.throws(()=>D.decode(JSON.stringify(d),content));

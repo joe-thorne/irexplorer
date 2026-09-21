@@ -75,7 +75,7 @@ def export(source, directory):
         'interrupted': 'Coarse pause/hide/route/recovery flag, not an event log. Abrupt termination may lose time since the last successful one-second checkpoint.',
         'taskStatus': ['completed', 'skipped', 'could_not_work_out'],
         'answerStatus': ['answered', 'unanswered', 'could_not_work_out', 'not_applicable'],
-        'analysis': 'Raw values unchanged. For v0.3 reverse-score answered Q3 only as 6-value; Q8 is multiple choice and Q10 is positive. Historical v0.1 reverse-scored Q3/Q8/Q10. Pair P13/Q14 qualitatively by participantCode; count unanswered, not_applicable, skip and inability separately. No automatic correctness coding. Incomplete/abandoned sessions are excluded.',
+        'analysis': 'Raw values unchanged. For v0.4 reverse-score answered Q3 only as 6-value; Q8 is multiple choice and Q10 is positive. Historical v0.1 reverse-scored Q3/Q8/Q10. Pair P13/Q14 qualitatively by participantCode; count unanswered, not_applicable, skip and inability separately. No automatic correctness coding. Incomplete/abandoned sessions are excluded.',
         'coding': 'Keep researcher coding in a separate file joined on participantCode and item/task ID. P3 measures completed/current course exposure together. Use non-exclusive non-expert/compiler-exposed/out-of-audience flags; report overlap and unknown where missing data do not establish a flag.',
     })
     columns = ['participantCode', 'submissionId', 'receiptId', 'studyVersion', 'contentVersion', 'instrumentVersion', 'consentVersion', 'schemaVersion', 'canonicalVersion', 'mode', 'appRevision', 'artefactSha256', 'stage', 'itemId', 'status', 'value', 'durationMs', 'interrupted', 'setupReached']

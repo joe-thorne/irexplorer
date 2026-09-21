@@ -1,7 +1,7 @@
 {
-  "instrumentVersion": "v0.3",
-  "contentVersion": "v0.3-preview-1",
-  "studyVersion": "v0.3-synthetic-1",
+  "instrumentVersion": "v0.4",
+  "contentVersion": "v0.4-preview-1",
+  "studyVersion": "v0.4-synthetic-1",
   "mode": "preview",
   "submissionEnabled": false,
   "scales": {
@@ -94,133 +94,6 @@
       }
     ]
   },
-  "information": [
-    {
-      "title": "About this study",
-      "blocks": [
-        {
-          "kind": "paragraph",
-          "text": "Understanding what compilers do to your code"
-        },
-        {
-          "kind": "paragraph",
-          "text": "Thanks for taking a look. This is a research study for an undergraduate thesis at the University of Queensland."
-        },
-        {
-          "kind": "paragraph",
-          "text": "When you compile a C program, the compiler does not just translate it — it rewrites it. It deletes work it can prove is pointless, moves calculations out of loops, merges and splits branches, and reshapes the control flow, all before a single instruction of machine code is produced. Most of that happens where nobody can see it. You write the source, you get a binary, and the interesting part in between is invisible."
-        },
-        {
-          "kind": "paragraph",
-          "text": "irexplorer is a web tool that makes that middle part visible. It takes a small C program, compiles it with LLVM one optimisation pass at a time, and lets you look at the program's intermediate representation — the internal form the compiler actually works on — at each step along the way. You can put any two of those steps side by side, read the textual form and the control-flow graph together, and see what a given pass changed."
-        },
-        {
-          "kind": "paragraph",
-          "text": "I am trying to find out whether that actually helps. Specifically: can someone who is not a compiler expert use it to work out what changed, and work out which pass was responsible?"
-        },
-        {
-          "kind": "paragraph",
-          "text": "You do not need to know anything about compilers to take part. Being able to read basic C is enough. If you have never seen LLVM intermediate representation before, you are exactly the person this study needs."
-        }
-      ]
-    },
-    {
-      "title": "What taking part involves",
-      "blocks": [
-        {
-          "kind": "paragraph",
-          "text": "About 35 minutes, done in your own time, in a browser."
-        },
-        {
-          "kind": "ordered",
-          "items": [
-            "A few questions about your background (about 4 minutes) — what you have studied and how familiar you are with the topics involved. This is so I can describe who took part; there are no right answers.",
-            "Six short tasks using the tool (about 20 minutes) — each one gives you a goal, such as working out what changed between two versions of a program. Some have a correct answer and some are open-ended. You are welcome to say you could not work something out; that is a useful result and it is the tool being tested, not you.",
-            "A closing survey (about 8 minutes) — rating statements about the tool and writing whatever you want to say about it in your own words."
-          ]
-        },
-        {
-          "kind": "paragraph",
-          "text": "You can stop at any point, close the tab, and nothing further happens."
-        }
-      ]
-    },
-    {
-      "title": "What is recorded",
-      "blocks": [
-        {
-          "kind": "paragraph",
-          "text": "Your answers to the surveys and the tasks, and how long each task took."
-        },
-        {
-          "kind": "paragraph",
-          "text": "Not recorded: your name, your student number, your email address, your IP address, or anything else that identifies you. When you start, you are given a random participant code, and that code is the only thing your responses are attached to. I have no way to connect a set of responses back to a person, which also means that once you submit, I cannot pull your responses back out."
-        },
-        {
-          "kind": "paragraph",
-          "text": "The only background details collected are your degree programme, year of study, which relevant courses you have completed, and your own rating of how familiar you are with a handful of topics. Those are needed because the study's whole claim depends on showing that participants were not already compiler experts."
-        },
-        {
-          "kind": "paragraph",
-          "text": "Free-text answers are read through for anything accidentally identifying before any of it is quoted."
-        }
-      ]
-    },
-    {
-      "title": "What happens to it",
-      "blocks": [
-        {
-          "kind": "paragraph",
-          "text": "The results go into my thesis, and into a poster and demonstration for the course. Short quotes from free-text answers may appear, without attribution. Data is kept in de-identified form until the thesis is marked. It is not published anywhere else and it is not shared outside the project."
-        },
-        {
-          "kind": "paragraph",
-          "text": "Nothing you do here reaches any course, any teaching staff, or any mark. This is not an assessment of you, and no individual result is reported."
-        }
-      ]
-    },
-    {
-      "title": "Voluntary participation",
-      "blocks": [
-        {
-          "kind": "paragraph",
-          "text": "Taking part is entirely voluntary and unpaid. You can decline, or stop partway through, without giving a reason and without any consequence."
-        }
-      ]
-    },
-    {
-      "title": "Questions",
-      "blocks": [
-        {
-          "kind": "paragraph",
-          "text": "Researcher: Joe Thorne, BE (Hons) Software, School of Electrical Engineering and Computer Science — s4784727@student.uq.edu.au\nSupervisor: Dr Joel Mackenzie, School of Electrical Engineering and Computer Science"
-        }
-      ]
-    },
-    {
-      "title": "A note on the terms used",
-      "blocks": [
-        {
-          "kind": "paragraph",
-          "text": "Three phrases come up repeatedly in the tasks."
-        },
-        {
-          "kind": "list",
-          "items": [
-            "Intermediate representation (IR) — the internal form of your program that the compiler works on, sitting between the C source and the machine code. It looks a bit like a stripped-down assembly language, but it is still target-independent. LLVM's version is what you will be reading.",
-            "Pass — one self-contained transformation the compiler applies to the IR. A real compiler runs dozens of these in sequence. This tool uses a fixed chain of twelve chosen for teaching, so the sequence is short enough to step through.",
-            "Optimisation state — the program as it stands after a particular pass has run. The tool holds one state per step, so you can pick any two and compare them."
-          ]
-        },
-        {
-          "kind": "list",
-          "items": [
-            "Control-flow graph (CFG) — the shape of the program drawn as boxes and arrows: each box is a straight run of instructions, each arrow a jump the program can take."
-          ]
-        }
-      ]
-    }
-  ],
   "fields": [
     {
       "id": "C1",
@@ -230,25 +103,25 @@
     },
     {
       "id": "C2",
-      "prompt": "I understand that participation is voluntary and that I can stop at any time without giving a reason.",
+      "prompt": "I understand that participation is voluntary and that I can stop before submitting without giving a reason.",
       "type": "boolean",
       "required": true
     },
     {
       "id": "C3",
-      "prompt": "I understand that my responses are recorded without my name or any other identifying detail, and that once submitted they cannot be withdrawn because they cannot be traced back to me.",
+      "prompt": "I understand that answers are sent only when I select Submit responses, and that I can request removal with my participant code before the stated withdrawal cutoff. [Joe/Joel to confirm: withdrawal cutoff and removal scope.]",
       "type": "boolean",
       "required": true
     },
     {
       "id": "C4",
-      "prompt": "I understand that de-identified results, including short quotes from anything I write, may appear in a thesis, poster, and demonstration.",
+      "prompt": "I understand how the confirmed storage, retention, and use arrangements apply to de-identified results and screened short quotes from anything I write. [Joe/Joel to confirm: final arrangements and wording.]",
       "type": "boolean",
       "required": true
     },
     {
       "id": "C5",
-      "prompt": "I am 18 years of age or older.",
+      "prompt": "I am 18 years of age or older. [Joe/Joel to confirm: whether this needs to be asked.]",
       "type": "boolean",
       "required": true
     },
@@ -1184,6 +1057,118 @@
       "title": "Open exploration",
       "goal": "use the tool for whatever you actually find interesting.",
       "instructions": "Spend about five minutes investigating a question of your own. Choose any example, function, pair of states, and views. Continue whenever you are ready; there is no time limit."
+    }
+  ],
+  "information": [
+    {
+      "title": "About this study",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "Understanding what compilers do to your code"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Thanks for taking a look. This is a research study for an undergraduate thesis at the University of Queensland."
+        },
+        {
+          "kind": "paragraph",
+          "text": "When you compile a C program, the compiler does not just translate it — it rewrites it. It deletes work it can prove is pointless, moves calculations out of loops, merges and splits branches, and reshapes the control flow, all before a single instruction of machine code is produced. Most of that happens where nobody can see it. You write the source, you get a binary, and the interesting part in between is invisible."
+        },
+        {
+          "kind": "paragraph",
+          "text": "irexplorer is a web tool that makes that middle part visible. It takes a small C program, compiles it with LLVM one optimisation pass at a time, and lets you look at the program's intermediate representation — the internal form the compiler actually works on — at each step along the way. You can put any two of those steps side by side, read the textual form and the control-flow graph together, and see what a given pass changed."
+        },
+        {
+          "kind": "paragraph",
+          "text": "I am trying to find out whether that actually helps. Specifically: can someone who is not a compiler expert use it to work out what changed, and work out which pass was responsible?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You do not need to know anything about compilers to take part. Being able to read basic C is enough. If you have never seen LLVM intermediate representation before, you are exactly the person this study needs."
+        }
+      ]
+    },
+    {
+      "title": "What taking part involves",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "About 35 minutes, done in your own time, in a browser."
+        },
+        {
+          "kind": "ordered",
+          "items": [
+            "A few questions about your background (about 4 minutes) — what you have studied and how familiar you are with the topics involved. This is so I can describe who took part; there are no right answers.",
+            "Six short tasks using the tool (about 20 minutes) — each one gives you a goal, such as working out what changed between two versions of a program. Some have a correct answer and some are open-ended. You are welcome to say you could not work something out; that is a useful result and it is the tool being tested, not you.",
+            "A closing survey (about 8 minutes) — rating statements about the tool and writing whatever you want to say about it in your own words."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "You can stop at any point without giving a reason. Before you submit, Stop and discard removes the draft in this tab and sends no answers. Closing a tab is not a supported way to save or erase a draft. [Joe/Joel to confirm: final wording after the browser recovery flow and ethics advice are approved.]"
+        }
+      ]
+    },
+    {
+      "title": "What is recorded",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "Your answers to the surveys and the tasks, and how long each task took."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The response form does not ask for your name, student number, or email address. Your answers are linked by a random participant code. Please keep that code: before the stated withdrawal cutoff, you can quote it to ask the researcher to remove your response. Without the code, the researcher may be unable to find it. [Joe/Joel to confirm: withdrawal cutoff, contact route, removal scope, and the wording for records already used in results.]"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The study application is designed not to store IP addresses, answer text in logs, or participant codes in its study logs. The hosting, proxy, and upstream logging arrangements must be checked before this page can say what they record. [Joe/Joel to confirm: the final hosted infrastructure-log disclosure; do not publish an unqualified no-IP-address promise before that check.]"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The only background details collected are your degree programme, year of study, which relevant courses you have completed, and your own rating of how familiar you are with a handful of topics. Those are needed because the study's whole claim depends on showing that participants were not already compiler experts."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Free-text answers are read through for anything accidentally identifying before any of it is quoted."
+        }
+      ]
+    },
+    {
+      "title": "What happens to it",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "Your final answers are sent only when you choose Submit responses. The response database, any exports, and backups are kept as private research data outside the source-code repositories. Short quotes from free-text answers may appear without attribution only after they are screened for identifying details. [Joe/Joel to confirm: storage location, access, backup handling, retention and deletion date, permitted sharing, and the final wording for thesis, poster, and demonstration use.]"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nothing you do here reaches any course, any teaching staff, or any mark. This is not an assessment of you, and no individual result is reported."
+        }
+      ]
+    },
+    {
+      "title": "Voluntary participation",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "Taking part is entirely voluntary. You can decline, or stop partway through, without giving a reason and without any consequence. [Joe/Joel to confirm: whether participation remains unpaid and, if not, the incentive and contact-data arrangement.]"
+        }
+      ]
+    },
+    {
+      "title": "Questions",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "Researcher: Joe Thorne, BE (Hons) Software, School of Electrical Engineering and Computer Science — s4784727@student.uq.edu.au\nSupervisor: Dr Joel Mackenzie, School of Electrical Engineering and Computer Science"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[Joe/Joel to confirm: whether an ethics contact point must be listed here, and its approved details.]"
+        }
+      ]
     }
   ],
   "taskIntroduction": [
