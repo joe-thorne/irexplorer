@@ -56,6 +56,24 @@ class EvaluationContentTests(unittest.TestCase):
         self.assertEqual((links[0]['relation'], links[0]['confidence']), ('merged', 'approximate'))
         self.assertEqual((len(links[0]['fromNodeIds']), len(links[0]['toNodeIds'])), (2, 1))
 
+    def test_t2a_options_follow_the_shipped_score_timeline(self):
+        from src.backend.api import QueryService
+        states = QueryService().list_states('score')['states']
+        derived = [
+            {
+                'value': 100 + state['ordinal'],
+                'label': f"{state['ordinal']} · {state['transition']['passName']} · {state['stateId']}",
+            }
+            for state in states
+            if state['transition'] and state['transition']['kind'] == 'derived'
+        ]
+        t2a = next(field for field in participant_content()['fields'] if field['id'] == 'T2a')
+        self.assertEqual(t2a['options'], derived + [
+            {'value': 198, 'label': 'It was already gone in the unoptimised version'},
+            {'value': 199, 'label': 'I could not work this out'},
+        ])
+        self.assertEqual(t2a['optionStatuses'], {'199': 'could_not_work_out'})
+
     def test_public_content_is_preview_only_and_participant_only(self):
         with tempfile.TemporaryDirectory() as directory, TestClient(create_app(
             study_config=Config(Path(directory), mode='preview')
@@ -140,8 +158,8 @@ class EvaluationContentTests(unittest.TestCase):
     def test_task_partial_answers_inability_and_not_applicable(self):
         a = lambda value: {'status': 'answered', 'value': value}
         t2a = next(field for field in participant_content()['fields'] if field['id'] == 'T2a')
-        self.assertEqual(t2a['options'][3], {'value': 4, 'label': 'cleanup (instcombine, simplifycfg)'})
-        self.assertEqual(validate_answers('T2', {'T2a': a(4)}), {})
+        self.assertEqual(t2a['options'][4], {'value': 105, 'label': '5 · instcombine,simplifycfg · cleanup'})
+        self.assertEqual(validate_answers('T2', {'T2a': a(102)}), {})
         for stage in [f'T{i}' for i in range(7)]:
             self.assertEqual(validate_answers(stage, {}, complete=True), {})
         for task, field, status in [('T2', 'T2a', 'could_not_work_out'), ('T3', 'T3a', 'could_not_work_out'), ('T4', 'T4a', 'could_not_work_out'), ('T5', 'T5a', 'could_not_work_out')]:
