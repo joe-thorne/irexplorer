@@ -1,6 +1,6 @@
 // Local study state only. No network or workspace dependencies.
 window.StudyDraft = (() => {
-  const KEY = 'irexplorer.study.v0.4'; // New key prevents an older instrument draft from being restored.
+  const KEY = 'irexplorer.study.v0.5'; // New key prevents an older instrument draft from being restored.
   const blank = () => ({ status: 'unanswered', value: null });
   const fieldsFor = (content, stage) => content.fields.filter(f => f.id.startsWith(stage === 'pre' ? 'P' : stage === 'post' ? 'Q' : stage));
   function visible(field, answers) {

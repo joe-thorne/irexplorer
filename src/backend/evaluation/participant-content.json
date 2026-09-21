@@ -1,7 +1,7 @@
 {
-  "instrumentVersion": "v0.4",
-  "contentVersion": "v0.4-preview-1",
-  "studyVersion": "v0.4-synthetic-1",
+  "instrumentVersion": "v0.5",
+  "contentVersion": "v0.5-preview-1",
+  "studyVersion": "v0.5-synthetic-1",
   "mode": "preview",
   "submissionEnabled": false,
   "scales": {
@@ -608,56 +608,64 @@
       "required": false,
       "options": [
         {
-          "value": 1,
-          "label": "mem2reg"
+          "value": 101,
+          "label": "1 · mem2reg · mem2reg"
         },
         {
-          "value": 2,
-          "label": "instcombine"
+          "value": 102,
+          "label": "2 · instcombine · instcombine"
         },
         {
-          "value": 3,
-          "label": "simplifycfg"
+          "value": 103,
+          "label": "3 · simplifycfg · simplifycfg"
         },
         {
-          "value": 4,
-          "label": "cleanup (instcombine, simplifycfg)"
+          "value": 104,
+          "label": "4 · gvn · gvn"
         },
         {
-          "value": 5,
-          "label": "gvn"
+          "value": 105,
+          "label": "5 · instcombine,simplifycfg · cleanup"
         },
         {
-          "value": 6,
-          "label": "loop-simplify / lcssa"
+          "value": 106,
+          "label": "6 · loop-simplify,lcssa · loop_canonical"
         },
         {
-          "value": 7,
-          "label": "loop-rotate"
+          "value": 107,
+          "label": "7 · loop-rotate · loop_rotate"
         },
         {
-          "value": 8,
-          "label": "licm"
+          "value": 108,
+          "label": "8 · licm · licm"
         },
         {
-          "value": 9,
-          "label": "indvars"
+          "value": 109,
+          "label": "9 · indvars · indvars"
         },
         {
-          "value": 10,
-          "label": "loop-vectorize"
+          "value": 110,
+          "label": "10 · instcombine,simplifycfg · loop_cleanup"
         },
         {
-          "value": 11,
+          "value": 111,
+          "label": "11 · loop-vectorize · vectorize"
+        },
+        {
+          "value": 112,
+          "label": "12 · instcombine,simplifycfg · final_cleanup"
+        },
+        {
+          "value": 198,
           "label": "It was already gone in the unoptimised version"
         },
         {
-          "value": 12,
+          "value": 199,
           "label": "I could not work this out"
         }
       ],
       "optionStatuses": {
-        "12": "could_not_work_out"
+        "199": "could_not_work_out"
       },
       "prompt": "After which recorded pass is the arithmetic for wasted first absent?"
     },
