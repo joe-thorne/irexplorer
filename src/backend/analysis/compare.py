@@ -389,6 +389,7 @@ def compare_states(
         from_state,
         to_state,
         function_pairs,
+        step,
     )
 
     correspondence = Correspondence(
@@ -1003,6 +1004,7 @@ def _append_unmatched_links(
     from_state: StateGraph,
     to_state: StateGraph,
     function_pairs: dict[str, str],
+    step: PassStep | None,
 ) -> None:
     """Account for every unresolved node without inventing a counterpart."""
 
@@ -1019,9 +1021,17 @@ def _append_unmatched_links(
         confidence = "none" if _has_plausible_target(
             node, to_candidates, from_state, to_state, function_pairs
         ) else "exact"
+        if confidence == "exact" and step is not None and step.kind == "recompiled" and (
+            _has_renamed_block_anchor_reference(
+                node, to_candidates, from_state, to_state, function_pairs
+            )
+        ):
+            confidence = "plausible"
         evidence = (
             "candidate counterparts were inspected but no unique hybrid match exists"
             if confidence == "none"
+            else "a paired function has an unmatched block whose renamed label is the only failed structural reference"
+            if confidence == "plausible"
             else "no target node shares the structural matcher signature"
         )
         links.append(
@@ -1041,9 +1051,17 @@ def _append_unmatched_links(
             from_state,
             inverse_function_pairs,
         ) else "exact"
+        if confidence == "exact" and step is not None and step.kind == "recompiled" and (
+            _has_renamed_block_anchor_reference(
+                node, from_candidates, to_state, from_state, inverse_function_pairs
+            )
+        ):
+            confidence = "plausible"
         evidence = (
             "candidate counterparts were inspected but no unique hybrid match exists"
             if confidence == "none"
+            else "a paired function has an unmatched block whose renamed label is the only failed structural reference"
+            if confidence == "plausible"
             else "no source node shares the structural matcher signature"
         )
         links.append(
@@ -1087,6 +1105,58 @@ def _has_plausible_target(
     return False
 
 
+def _has_renamed_block_anchor_reference(
+    node: Node,
+    candidates: Iterable[Node],
+    state: StateGraph,
+    candidate_state: StateGraph,
+    function_pairs: dict[str, str],
+) -> bool:
+    """Identify the qualified renamed-block case at a recompiled anchor."""
+
+    if node.kind != "Instruction":
+        return False
+    expected_function = function_pairs.get(_function_for_node(state, node))
+    if expected_function is None:
+        return False
+    candidates = tuple(candidates)
+    candidate_blocks = {
+        item.display_name
+        for item in candidate_state.nodes
+        if item.kind == "BasicBlock"
+        and _function_for_node(candidate_state, item) == expected_function
+    }
+    block_labels = set(node.attributes.get("incomingBlocks", ()))
+    block_labels.update(_BLOCK_REFERENCE_RE.findall(str(node.attributes.get("text", ""))))
+    if not block_labels - candidate_blocks:
+        return False
+    # At an anchor, a missing block label is plausible only when the paired
+    # function retains an otherwise-unmapped block and every other checked
+    # structural reference still has a counterpart. A vanished function stays none.
+    if not any(
+        candidate.kind == "BasicBlock"
+        and _function_for_node(candidate_state, candidate) == expected_function
+        for candidate in candidates
+    ):
+        return False
+    if not any(
+        candidate.kind == "Instruction"
+        and _function_for_node(candidate_state, candidate) == expected_function
+        and candidate.attributes.get("opcode") == node.attributes.get("opcode")
+        and len(candidate.attributes.get("operands", ()))
+        == len(node.attributes.get("operands", ()))
+        for candidate in candidates
+    ):
+        return False
+    return _referenced_structure_has_counterparts(
+        node,
+        state,
+        candidate_state,
+        expected_function,
+        allow_missing_block_labels=True,
+    )
+
+
 def _instruction_operand_shape_is_compatible(
     node: Node,
     candidate: Node,
@@ -1108,6 +1178,8 @@ def _referenced_structure_has_counterparts(
     state: StateGraph,
     candidate_state: StateGraph,
     expected_function: str | None,
+    *,
+    allow_missing_block_labels: bool = False,
 ) -> bool:
     """Check block labels and locally-defined pointers used by an instruction."""
 
@@ -1123,7 +1195,7 @@ def _referenced_structure_has_counterparts(
     text = str(node.attributes.get("text", ""))
     block_labels = set(node.attributes.get("incomingBlocks", ()))
     block_labels.update(_BLOCK_REFERENCE_RE.findall(text))
-    if not block_labels.issubset(candidate_blocks):
+    if not allow_missing_block_labels and not block_labels.issubset(candidate_blocks):
         return False
 
     definitions = {
