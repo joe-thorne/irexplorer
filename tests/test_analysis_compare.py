@@ -8,7 +8,7 @@ from src.backend.analysis import (
     load_prebaked_curated_correspondence,
     load_prebaked_curated_correspondences,
 )
-from src.backend.analysis.compare import _instruction_relation
+from src.backend.analysis.compare import _function_for_node, _instruction_relation
 from src.backend.ingest import load_curated_timeline, load_prebaked_curated_timeline
 from src.backend.model import (
     Correspondence,
@@ -121,12 +121,72 @@ class EndpointComparisonTests(unittest.TestCase):
             all("inspected" in (link.evidence or "") for link in unresolved)
         )
 
+    def test_exact_instruction_and_block_additions_and_removals_have_paired_functions(self) -> None:
+        """Exact local-node claims require their containing function in both states."""
+        violations = []
+        for example in ("score", "binary_search", "quick_sort"):
+            timeline = load_curated_timeline(example, resolution="full")
+            for ordinal in range(len(timeline.steps)):
+                from_state = timeline.state(ordinal)
+                to_state = timeline.state(ordinal + 1)
+                from_function_names = {
+                    node.display_name for node in from_state.nodes if node.kind == "Function"
+                }
+                to_function_names = {
+                    node.display_name for node in to_state.nodes if node.kind == "Function"
+                }
+                for link in compare_timeline_step(timeline, ordinal).correspondence.links:
+                    if link.confidence != "exact" or link.relation not in {"removed", "added"}:
+                        continue
+                    state, paired_function_names, node_ids = (
+                        (from_state, to_function_names, link.from_node_ids)
+                        if link.relation == "removed"
+                        else (to_state, from_function_names, link.to_node_ids)
+                    )
+                    for node_id in node_ids:
+                        node = state.by_id[node_id]
+                        if node.kind not in {"Instruction", "BasicBlock"}:
+                            continue
+                        function = state.by_id[_function_for_node(state, node)]
+                        if function.display_name not in paired_function_names:
+                            violations.append(
+                                f"{example} {ordinal}-{ordinal + 1}: {link.relation} "
+                                f"{node.kind} {node_id} in vanished function {function.display_name}"
+                            )
+        self.assertFalse(violations, "\n".join(violations))
+
+    def test_quick_sort_vanished_partition_nodes_are_unresolved(self) -> None:
+        timeline = load_curated_timeline("quick_sort", resolution="full")
+        from_state = timeline.state(12)
+        correspondence = compare_timeline_step(timeline, 12).correspondence
+        partition = next(
+            node for node in from_state.nodes if node.kind == "Function" and node.display_name == "partition"
+        )
+        partition_removed_links = [
+            link
+            for link in correspondence.links
+            if link.relation == "removed"
+            and link.from_node_ids
+            and from_state.by_id[link.from_node_ids[0]].kind in {"Instruction", "BasicBlock"}
+            and _function_for_node(from_state, from_state.by_id[link.from_node_ids[0]])
+            == partition.stable_id
+        ]
+
+        self.assertTrue(partition_removed_links)
+        self.assertTrue(all(link.confidence == "none" for link in partition_removed_links))
+        function_link = next(
+            link for link in correspondence.links if link.from_node_ids == (partition.stable_id,)
+        )
+        self.assertEqual(
+            (function_link.relation, function_link.confidence), ("removed", "exact")
+        )
+
     def test_operand_aware_plausibility_reduces_curated_none_links(self) -> None:
         expected_none_counts = {
             ("binary_search", 6): 13,
             ("quick_sort", 6): 10,
             ("binary_search", 12): 24,
-            ("quick_sort", 12): 37,
+            ("quick_sort", 12): 58,
         }
         for (example, ordinal), expected in expected_none_counts.items():
             with self.subTest(example=example, ordinal=ordinal):
