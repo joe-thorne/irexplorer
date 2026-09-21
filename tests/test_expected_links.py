@@ -143,7 +143,12 @@ class ArtefactExpectedLinkTests(unittest.TestCase):
                             correspondence, before, after, step=timeline.steps[case['fromOrdinal']]
                         )
                     text = ' '.join(item.text for item in summary.items)
-                    for claim in case['summaryContains']:
+                    claims = (
+                        case.get('freshSummaryContains', case['summaryContains'])
+                        if dataset is self.fresh
+                        else case['summaryContains']
+                    )
+                    for claim in claims:
                         self.assertIn(claim, text)
                     if case['stepKind'] == 'recompiled':
                         self.assertIn('not the effect of one optimisation pass', summary.context)

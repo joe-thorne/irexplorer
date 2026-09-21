@@ -762,6 +762,14 @@
         "while.body \u2192 while.body [true]",
         "13 nodes could not be classified"
       ],
+      "freshSummaryContains": [
+        "1 basic block removed.",
+        "2 basic blocks added.",
+        "removed entry \u2192 while.cond [unconditional]",
+        "added entry \u2192 while.body.lr.ph [true]",
+        "while.body \u2192 while.body [true]",
+        "11 nodes could not be classified"
+      ],
       "cfgBefore": [
         [
           "entry",

@@ -10,10 +10,15 @@ from src.backend.analysis import (
 )
 from src.backend.analysis.compare import (
     _function_for_node,
+    _instruction_operand_shape_is_compatible,
     _instruction_relation,
     summarise_correspondence,
 )
-from src.backend.ingest import load_curated_timeline, load_prebaked_curated_timeline
+from src.backend.ingest import (
+    load_curated_timeline,
+    load_prebaked_curated_timeline,
+    parse_ir_state,
+)
 from src.backend.model import (
     Correspondence,
     Edge,
@@ -216,8 +221,8 @@ class EndpointComparisonTests(unittest.TestCase):
 
     def test_operand_aware_plausibility_reduces_curated_none_links(self) -> None:
         expected_none_counts = {
-            ("binary_search", 6): 13,
-            ("quick_sort", 6): 10,
+            ("binary_search", 6): 11,
+            ("quick_sort", 6): 8,
             ("binary_search", 12): 24,
             ("quick_sort", 12): 58,
         }
@@ -228,6 +233,47 @@ class EndpointComparisonTests(unittest.TestCase):
                 self.assertEqual(
                     sum(link.confidence == "none" for link in correspondence.links), expected
                 )
+
+    def test_phi_with_vanished_incoming_block_is_not_a_plausible_target(self) -> None:
+        """Phi incoming blocks must exist in the paired function."""
+        source = parse_ir_state(
+            """define i32 @f(i1 %condition, i32 %value) {
+entry:
+  br i1 %condition, label %incoming, label %join
+incoming:
+  br label %join
+join:
+  %result = phi i32 [ %value, %incoming ], [ 0, %entry ]
+  ret i32 %result
+}
+""",
+            ordinal=0,
+            state_id="source",
+        )
+        candidate = parse_ir_state(
+            """define i32 @f(i1 %condition, i32 %value) {
+entry:
+  br i1 %condition, label %replacement, label %join
+replacement:
+  br label %join
+join:
+  %result = phi i32 [ %value, %replacement ], [ 0, %entry ]
+  ret i32 %result
+}
+""",
+            ordinal=1,
+            state_id="candidate",
+        )
+        phi = next(node for node in source.nodes if node.attributes.get("opcode") == "phi")
+        candidate_phi = next(
+            node for node in candidate.nodes if node.attributes.get("opcode") == "phi"
+        )
+
+        self.assertFalse(
+            _instruction_operand_shape_is_compatible(
+                phi, candidate_phi, source, candidate, "fn0"
+            )
+        )
 
     def test_score_anchor_comparison_is_coverage_complete_and_honest(self) -> None:
         timeline = load_curated_timeline("score", resolution="full")
