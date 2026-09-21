@@ -1,4 +1,7 @@
 """E4 participant boundary and survey contract; no collection API."""
+import json
+import importlib.util
+import re
 import unittest
 from pathlib import Path
 import tempfile
@@ -9,6 +12,24 @@ from src.backend.evaluation.service import Config
 
 
 class EvaluationContentTests(unittest.TestCase):
+    def test_public_content_projects_reviewed_information_and_consent(self):
+        reviewed = (Path(__file__).resolve().parents[2] / 'Docs/evaluation/instruments/00-participant-information.md').read_text()
+        information, consent = reviewed.split('## Consent\n', 1)
+        expected_titles = re.findall(r'^## (.+)$', information, re.MULTILINE)
+        expected_consent = [re.sub(r'\*\*(.*?)\*\*', r'\1', item) for item in re.findall(r'^- \[ \] (.+)$', consent, re.MULTILINE)]
+        builder_path = Path(__file__).resolve().parents[2] / 'scripts/irexplorer-research/build_content.py'
+        spec = importlib.util.spec_from_file_location('build_content', builder_path)
+        builder = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(builder)
+        expected_information, expected_fields = builder.information_and_consent()
+        content = participant_content()
+
+        self.assertEqual([section['title'] for section in content['information']], expected_titles)
+        self.assertEqual([field['prompt'] for field in content['fields'] if field['id'].startswith('C')], expected_consent)
+        self.assertEqual(content['information'], expected_information)
+        self.assertEqual([field for field in content['fields'] if field['id'].startswith('C')], expected_fields)
+        self.assertIn('[Joe/Joel to confirm:', json.dumps(content))
+
     def test_revised_response_types_reject_old_codes(self):
         a = lambda value: {'status': 'answered', 'value': value}
         for stage, field, value in [('post', 'Q8', [1, 2, 3]), ('T4', 'T4c', 5), ('T5', 'T5a', 'Two instructions merge into one'), ('T5', 'T5c', 5), ('post', 'Q20', 5)]:
@@ -50,7 +71,7 @@ class EvaluationContentTests(unittest.TestCase):
             allowed = {'id', 'prompt', 'type', 'required', 'options', 'scale', 'notApplicableLabel', 'maxLength', 'exclusiveValue', 'optionStatuses', 'condition', 'inabilityLabel'}
             for field in content['fields']:
                 self.assertLessEqual(set(field), allowed)
-            for forbidden in ['(R)', '[confirm', 'stratification', 'reverse-scored', 'marking key', 'expected answer']:
+            for forbidden in ['(R)', 'stratification', 'reverse-scored', 'marking key', 'expected answer']:
                 self.assertNotIn(forbidden, response.text)
             for path in ['/participant-content.json', '/src/backend/evaluation/participant-content.json', '/tests/private-fixture.json']:
                 self.assertEqual(client.get(path).status_code, 404)
