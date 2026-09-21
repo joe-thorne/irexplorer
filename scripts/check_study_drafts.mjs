@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 import { webcrypto } from 'node:crypto';
 const content = JSON.parse(await readFile(new URL('../src/backend/evaluation/participant-content.json', import.meta.url)));
+const study = await readFile(new URL('../src/frontend/study.js', import.meta.url), 'utf8');
 const context = { window: {}, crypto: webcrypto };
 vm.createContext(context);
 vm.runInContext(await readFile(new URL('../src/frontend/study-draft.js', import.meta.url), 'utf8'), context);
@@ -139,5 +140,10 @@ check('Hide/pause and refresh downtime excluded; recovered accumulation counted 
 check('Completion freezes time and cannot acquire an interruption on read-only navigation', () => {
   let now=0;const r={durationMs:0,status:'pending',started:true,paused:false,interrupted:false};const c=context.window.TaskClock(r,()=>now);
   c.resume();now=20;c.stop();r.status='completed';c.stop(true);c.resume();now=50;c.checkpoint();assert.equal(r.durationMs,20);assert.equal(r.interrupted,false);
+});
+check('Stop and discard requires a separate destructive confirmation', () => {
+  assert.match(study, /data-action="confirm-stop"/);
+  assert.match(study, /action === 'stop'\) \{ stopConfirming = true; render\(\); return; \}/);
+  assert.match(study, /action === 'confirm-stop'.*?discard\('/s);
 });
 console.log(`${checks.length} draft/validation/timing checks passed.`);
