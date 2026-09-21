@@ -1067,6 +1067,8 @@ def _has_plausible_target(
     if node.kind == "Function":
         return any(candidate.display_name == node.display_name for candidate in candidates)
     expected_function = function_pairs.get(_function_for_node(state, node))
+    if expected_function is None:
+        return True
     for candidate in candidates:
         if candidate.kind != node.kind:
             continue
@@ -1110,7 +1112,9 @@ def _referenced_structure_has_counterparts(
     """Check block labels and locally-defined pointers used by an instruction."""
 
     function_id = _function_for_node(state, node)
-    candidate_function = expected_function or function_id
+    if expected_function is None:
+        return True
+    candidate_function = expected_function
     candidate_blocks = {
         item.display_name
         for item in candidate_state.nodes
