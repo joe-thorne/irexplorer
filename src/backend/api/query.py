@@ -30,13 +30,6 @@ class QueryError(ValueError):
     code = "not_found"
 
 
-class InvalidQueryError(QueryError):
-    """Raised when otherwise valid query fields form an invalid request."""
-
-    status_code = 422
-    code = "invalid_query"
-
-
 class DataUnavailableError(RuntimeError):
     """Raised when pre-baked model data cannot be loaded or composed safely."""
 
@@ -168,48 +161,6 @@ class QueryService:
             ],
         }
 
-    def counterparts(
-        self,
-        example_id: str,
-        ordinal: int,
-        node_id: str,
-        to_ordinal: int | None = None,
-    ) -> dict[str, Any]:
-        loaded = self._example(example_id)
-        state = self._state(example_id, ordinal)
-        self._node(state, node_id)
-        counterpart_ordinal = self._default_counterpart_ordinal(
-            loaded,
-            ordinal,
-            to_ordinal,
-        )
-        lower_ordinal, higher_ordinal = sorted((ordinal, counterpart_ordinal))
-        correspondence = self._comparison(loaded, lower_ordinal, higher_ordinal)
-        if ordinal == correspondence.from_ordinal:
-            link = correspondence.links_from.get(node_id)
-        else:
-            link = correspondence.links_to.get(node_id)
-        if link is None:
-            raise QueryError(f"node is outside the correspondence coverage: {node_id}")
-        counterpart_state = self._state(example_id, counterpart_ordinal)
-        counterpart_ids = (
-            link.to_node_ids
-            if ordinal == correspondence.from_ordinal
-            else link.from_node_ids
-        )
-        return {
-            "ordinal": ordinal,
-            "nodeId": node_id,
-            "counterpartOrdinal": counterpart_ordinal,
-            "relation": link.relation,
-            "confidence": link.confidence,
-            "evidence": link.evidence,
-            "counterparts": [
-                _node_view(counterpart_state.by_id[counterpart_id])
-                for counterpart_id in counterpart_ids
-            ],
-        }
-
     def summary(self, example_id: str, from_ordinal: int, to_ordinal: int) -> dict[str, Any]:
         """Whole-example outcomes in timeline order, with resolvable evidence indices."""
         loaded = self._example(example_id)
@@ -278,23 +229,6 @@ class QueryService:
             "noOp": is_identity_correspondence(loaded.correspondences[ordinal - 1]),
             "remarkCount": len(step.remarks),
         }
-
-    @staticmethod
-    def _default_counterpart_ordinal(
-        loaded: LoadedExample,
-        ordinal: int,
-        to_ordinal: int | None,
-    ) -> int:
-        state_count = len(loaded.timeline.states)
-        if to_ordinal is not None:
-            if to_ordinal < 0 or to_ordinal >= state_count or to_ordinal == ordinal:
-                raise InvalidQueryError(
-                    "counterpart target ordinal must be another timeline state"
-                )
-            return to_ordinal
-        if ordinal < state_count - 1:
-            return ordinal + 1
-        return ordinal - 1
 
     @staticmethod
     def _comparison(

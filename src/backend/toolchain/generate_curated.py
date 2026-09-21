@@ -5,9 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 import shutil
 import subprocess
-import tempfile
 
-from src.backend.bake import bake_curated_snapshot
 from src.backend.toolchain import curated as curated_paths
 from src.backend.toolchain.curated import (
     ARTEFACTS_ROOT,
@@ -23,33 +21,25 @@ WORKSPACE_ROOT = Path("/workspace")
 
 
 def generate_all(*, artefacts_root: Path = ARTEFACTS_ROOT) -> None:
-    """Stage and transactionally replace the complete curated snapshot."""
+    """Generate a curated snapshot through the offline bake coordinator."""
 
-    artefacts_root.parent.mkdir(parents=True, exist_ok=True)
-    _recover_interrupted_replacement(artefacts_root)
-    staging_root = Path(
-        tempfile.mkdtemp(
-            prefix=f".{artefacts_root.name}.staging-",
-            dir=artefacts_root.parent,
-        )
-    )
-    try:
-        _generate_snapshot(staging_root)
-        _replace_snapshot(staging_root, artefacts_root)
-    except BaseException:
-        if staging_root.exists():
-            shutil.rmtree(staging_root)
-        raise
+    from src.backend.bake import generate_all as bake_all
+
+    bake_all(artefacts_root=artefacts_root)
+
+
+def generate_snapshot(staging_root: Path) -> None:
+    """Generate the raw curated artefacts in an already staged tree."""
+
+    _generate_snapshot(staging_root)
 
 
 def _generate_snapshot(staging_root: Path) -> None:
-    """Generate raw artefacts and derived model records in one staged tree."""
+    """Generate raw artefacts for each curated example."""
 
     for example in list_examples():
         print(f"Generating {example}")
         _generate_example(example, artefacts_root=staging_root)
-
-    bake_curated_snapshot(staging_root)
 
 
 def _generate_example(example: str, *, artefacts_root: Path) -> None:

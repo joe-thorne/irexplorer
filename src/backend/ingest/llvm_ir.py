@@ -30,6 +30,7 @@ _DILOC_RE = re.compile(
 )
 _VALUE_RE = re.compile(r"%[-A-Za-z0-9_.$]+")
 _LABEL_REF_RE = re.compile(r"label\s+%([-A-Za-z0-9_.$]+)")
+_SWITCH_CASE_RE = re.compile(r"\bi\d+\s+([^,]+),\s*label\s+%([-A-Za-z0-9_.$]+)")
 _PHI_INCOMING_RE = re.compile(r"\[[^\]]+,\s*%([-A-Za-z0-9_.$]+)\s*\]")
 
 
@@ -381,7 +382,7 @@ def _join_switch_continuations(lines: list[str]) -> list[str]:
 
         start_line = line_index + 1
         parts = [stripped]
-        bracket_depth = stripped.count("[") - stripped.count("]")
+        bracket_depth = _without_comment(stripped).count("[") - _without_comment(stripped).count("]")
         line_index += 1
         while bracket_depth > 0:
             if line_index == len(lines) or lines[line_index].strip() == "}":
@@ -390,11 +391,16 @@ def _join_switch_continuations(lines: list[str]) -> list[str]:
                 )
             continuation = lines[line_index].strip()
             parts.append(continuation)
-            bracket_depth += continuation.count("[") - continuation.count("]")
+            uncommented = _without_comment(continuation)
+            bracket_depth += uncommented.count("[") - uncommented.count("]")
             line_index += 1
         joined.append(" ".join(parts))
 
     return joined
+
+
+def _without_comment(text: str) -> str:
+    return text.split(";", 1)[0]
 
 
 def _require_terminated(function: _FunctionBuild, block: _BlockBuild) -> None:
@@ -481,7 +487,11 @@ def _successors(body: str) -> tuple[tuple[str, str], ...]:
         if not labels:
             raise IngestError(f"switch has no labels: {body}")
         edges = [(labels[0], "default")]
-        edges.extend((label, f"switch-case({index})") for index, label in enumerate(labels[1:]))
+        case_text = body[body.find("[") + 1 : body.rfind("]")]
+        edges.extend(
+            (label, f"switch-case({value.strip()})")
+            for value, label in _SWITCH_CASE_RE.findall(case_text)
+        )
         return tuple(edges)
     return ()
 
