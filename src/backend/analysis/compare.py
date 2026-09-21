@@ -1550,7 +1550,7 @@ def summarise_correspondence(
         )
     else:
         for relation, verb in (("removed", "removed"), ("added", "added")):
-            for kind in ("BasicBlock", "Instruction"):
+            for kind in ("Function", "BasicBlock", "Instruction"):
                 for confidence in ("exact", "approximate", "plausible"):
                     indices = _link_indices(
                         correspondence,
@@ -1570,40 +1570,45 @@ def summarise_correspondence(
                             )
                         )
 
-        for relation, label in (
-            ("promoted", "promotions"),
-            ("simplifiedInto", "simplifications"),
-            ("renamed", "renamed correspondences"),
-            ("moved", "moved correspondences"),
-        ):
-            indices = _link_indices(
-                correspondence,
-                from_state,
-                to_state,
-                relation=relation,
-                kind="Instruction",
-            )
-            if indices:
-                confidence = _confidence_phrase(correspondence, indices)
-                verb = "was" if len(indices) == 1 else "were"
-                items.append(
-                    SummaryItem(
-                        f"{len(indices)} {_plural('instruction', len(indices))} "
-                        f"{verb} linked as {label}{confidence}.",
-                        indices,
-                    )
+        for kind in ("BasicBlock", "Instruction"):
+            for relation, label in (
+                ("promoted", "promotions"),
+                ("simplifiedInto", "simplifications"),
+                ("renamed", "renamed correspondences"),
+                ("moved", "moved correspondences"),
+            ):
+                indices = _link_indices(
+                    correspondence,
+                    from_state,
+                    to_state,
+                    relation=relation,
+                    kind=kind,
                 )
+                if indices:
+                    confidence = _confidence_phrase(correspondence, indices)
+                    verb = "was" if len(indices) == 1 else "were"
+                    noun = _plural(_kind_label(kind), len(indices))
+                    items.append(
+                        SummaryItem(
+                            f"{len(indices)} {noun} {verb} linked as {label}{confidence}.",
+                            indices,
+                        )
+                    )
 
-        for relation in ("split", "merged"):
-            indices = _link_indices(correspondence, from_state, to_state,
-                                    relation=relation, kind="Instruction")
-            if indices:
-                before_count = sum(len(correspondence.links[i].from_node_ids) for i in indices)
-                after_count = sum(len(correspondence.links[i].to_node_ids) for i in indices)
-                items.append(SummaryItem(
-                    f"{len(indices)} instruction groups {relation}: "
-                    f"{before_count} → {after_count} instructions"
-                    f"{_confidence_phrase(correspondence, indices)}.", indices))
+        for kind in ("BasicBlock", "Instruction"):
+            for relation in ("split", "merged"):
+                indices = _link_indices(
+                    correspondence, from_state, to_state, relation=relation, kind=kind
+                )
+                if indices:
+                    before_count = sum(len(correspondence.links[i].from_node_ids) for i in indices)
+                    after_count = sum(len(correspondence.links[i].to_node_ids) for i in indices)
+                    label = _kind_label(kind)
+                    endpoint_label = "instructions" if kind == "Instruction" else _plural(label, after_count)
+                    items.append(SummaryItem(
+                        f"{len(indices)} {label} groups {relation}: "
+                        f"{before_count} → {after_count} {endpoint_label}"
+                        f"{_confidence_phrase(correspondence, indices)}.", indices))
 
         changed_instructions = _link_indices(
             correspondence,
