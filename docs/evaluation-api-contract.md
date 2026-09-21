@@ -12,9 +12,9 @@ The browser freezes the envelope before sending and retries that same envelope a
 
 See [study operations](evaluation-operations.md) for modes, data paths, and private researcher commands, and the runtime `/docs` endpoint for HTTP schemas.
 
-## Instrument v0.2
+## Instrument v0.5
 
-The current preview uses instrument `v0.2`, content `v0.2-preview-1`, and study `v0.2-synthetic-1`. Old drafts are incompatible and require explicit discard/restart. Historical stored responses are not rewritten.
+The current preview uses instrument `v0.5`, content `v0.5-preview-1`, and study `v0.5-synthetic-1`. Old drafts are incompatible and require explicit discard/restart. Historical stored responses are not rewritten.
 
 Each submitted task includes `setupReached` (boolean) in addition to `id`, `status`, `durationMs`, `interrupted`, and `answers`. A completed task requires true. False is permitted for skipped/unable T1–T6 only, with zero duration, no interruption, and all answers unanswered. It means no usable comparison was reached, not that the task's requested configuration was checked. Release metadata uses response schema version 2; the SQLite storage schema remains 1 because payloads are stored as JSON.
 
