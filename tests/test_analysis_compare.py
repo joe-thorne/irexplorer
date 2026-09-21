@@ -8,7 +8,11 @@ from src.backend.analysis import (
     load_prebaked_curated_correspondence,
     load_prebaked_curated_correspondences,
 )
-from src.backend.analysis.compare import _function_for_node, _instruction_relation
+from src.backend.analysis.compare import (
+    _function_for_node,
+    _instruction_relation,
+    summarise_correspondence,
+)
 from src.backend.ingest import load_curated_timeline, load_prebaked_curated_timeline
 from src.backend.model import (
     Correspondence,
@@ -365,6 +369,52 @@ class EndpointComparisonTests(unittest.TestCase):
 
 
 class CorrespondenceCompositionTests(unittest.TestCase):
+    def test_plausible_confidence_validates_round_trips_composes_and_summarises(self) -> None:
+        from_state = _function_state(0, "source")
+        intermediate_state = _function_state(1, "middle")
+        to_state = _function_state(2, "target")
+        earlier = _correspondence(
+            0,
+            1,
+            Link(("source",), ("middle",), "same", "plausible", "qualified match"),
+        )
+        later = _correspondence(
+            1,
+            2,
+            Link(("middle",), ("target",), "same", "approximate", "source-backed match"),
+        )
+
+        earlier.validate(from_state, intermediate_state)
+        record = serialise_correspondence(earlier)
+        self.assertEqual(record["links"][0]["confidence"], "plausible")
+        self.assertEqual(
+            deserialise_correspondence(record, from_state, intermediate_state), earlier
+        )
+        composed = compose_correspondences(
+            earlier, later, from_state, intermediate_state, to_state
+        )
+        self.assertEqual(composed.links[0].confidence, "plausible")
+
+        summary_from = _function_state(0, "removed")
+        summary_to = _function_state(1, "added")
+        summary_correspondence = Correspondence(
+            from_ordinal=0,
+            to_ordinal=1,
+            covered_kinds=("BasicBlock",),
+            links=(
+                Link(("removed/entry",), (), "removed", "plausible", "qualified removal"),
+                Link((), ("added/entry",), "added", "exact", "definite addition"),
+            ),
+        )
+        summary_correspondence.validate(summary_from, summary_to)
+        summary = summarise_correspondence(
+            summary_correspondence, summary_from, summary_to, None
+        )
+        self.assertIn(
+            "1 basic block removed with plausible but unconfirmed correspondence evidence.",
+            {item.text for item in summary.items},
+        )
+
     def test_composition_preserves_a_split_across_the_intermediate_state(self) -> None:
         from_state = _function_state(0, "source")
         intermediate_state = _function_state(1, "left", "right")

@@ -54,6 +54,14 @@ check('Unresolved records do not manufacture counterparts', () => {
   assert.deepEqual(ids(result.members.right), []);
   assert.match(context.traceDescription(result), /unresolved/);
 });
+check('Plausible records retain qualified counterparts', () => {
+  const result = context.buildSelectionTrace({ left, right }, { links: [
+    { fromNodeIds: ['a'], toNodeIds: ['x'], relation: 'same', confidence: 'plausible' },
+  ] }, node('left', 'a'));
+  assert.deepEqual(ids(result.members.right), ['x']);
+  assert.equal(result.unresolved, false);
+  assert.match(context.traceDescription(result), /same \(plausible confidence\)/);
+});
 check('Missing source locations do not prevent an IR trace', () => {
   const result = context.buildSelectionTrace(
     { left: panel(0, ['a']), right }, summary, node('left', 'a'));
