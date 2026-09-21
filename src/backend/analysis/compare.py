@@ -275,7 +275,7 @@ def _unique_node_ids(node_ids: Iterable[str]) -> tuple[str, ...]:
 
 
 def _minimum_confidence(links: Iterable[Link]) -> str:
-    confidence_rank = {"none": 0, "approximate": 1, "exact": 2}
+    confidence_rank = {"none": 0, "plausible": 1, "approximate": 2, "exact": 3}
     return min(links, key=lambda link: confidence_rank[link.confidence]).confidence
 
 
@@ -1474,7 +1474,7 @@ def summarise_correspondence(
     else:
         for relation, verb in (("removed", "removed"), ("added", "added")):
             for kind in ("BasicBlock", "Instruction"):
-                for confidence in ("exact", "approximate"):
+                for confidence in ("exact", "approximate", "plausible"):
                     indices = _link_indices(
                         correspondence,
                         from_state,
@@ -1666,6 +1666,8 @@ def _confidence_phrase(
         return ""
     if confidences == {"approximate"}:
         return " with approximate correspondence evidence"
+    if confidences == {"plausible"}:
+        return " with plausible but unconfirmed correspondence evidence"
     return " with mixed-confidence correspondence evidence"
 
 

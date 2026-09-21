@@ -312,7 +312,9 @@ function renderComparison() {
   elements.selectionStatus.className = "selection-status" + (trace.unresolved ? " is-unresolved" : "");
   const relations = new Map();
   for (const link of trace.links) {
-    const label = link.confidence === "none" ? "unresolved" : link.relation + " · " + link.confidence + " confidence";
+    const label = link.confidence === "none" ? "unresolved"
+      : link.confidence === "plausible" ? link.relation + " · plausible but unconfirmed confidence"
+        : link.relation + " · " + link.confidence + " confidence";
     relations.set(label, (relations.get(label) || 0) + 1);
   }
   elements.selectionStatus.textContent = trace.sameState ? "The same instructions are highlighted in both views."

@@ -21,7 +21,7 @@ Relation = Literal[
     "removed",
     "changed",
 ]
-Confidence = Literal["exact", "approximate", "none"]
+Confidence = Literal["exact", "approximate", "plausible", "none"]
 
 
 @dataclass(frozen=True)
@@ -162,7 +162,7 @@ def _validate_link(link: Link) -> None:
         "changed",
     }:
         raise ModelValidationError(f"unknown link relation: {link.relation}")
-    if link.confidence not in {"exact", "approximate", "none"}:
+    if link.confidence not in {"exact", "approximate", "plausible", "none"}:
         raise ModelValidationError(f"unknown link confidence: {link.confidence}")
     if link.relation == "added" and link.from_node_ids:
         raise ModelValidationError("added link must have an empty source side")
