@@ -1,9 +1,11 @@
 // Deployment boundary check. Node 22+; no dependencies or writes.
-// Usage: node scripts/check_deployment.mjs https://canonical-host.example
+// Usage: node scripts/check_deployment.mjs https://canonical-host.example preview
 
-const [originArgument, ...extra] = process.argv.slice(2);
-if (!originArgument || extra.length) {
-  throw Error('Usage: node scripts/check_deployment.mjs <https://origin>');
+const [originArgument, expectedMode, ...extra] = process.argv.slice(2);
+const enabledModes = new Set(['local', 'preview']);
+const supportedModes = new Set([...enabledModes, 'pilot', 'live']);
+if (!originArgument || !supportedModes.has(expectedMode) || extra.length) {
+  throw Error('Usage: node scripts/check_deployment.mjs <https://origin> <local|preview|pilot|live>');
 }
 
 const origin = new URL(originArgument);
@@ -64,15 +66,18 @@ checks.push('/app.js Cache-Control: no-store');
 const contentResponse = await request('/api/study/content');
 require(contentResponse.status === 200, `/api/study/content: expected 200, got ${contentResponse.status}`);
 const content = await json(contentResponse, '/api/study/content');
+require(content?.mode === expectedMode,
+        `/api/study/content: expected mode ${expectedMode}, got ${content?.mode}`);
 for (const field of ['studyVersion', 'contentVersion', 'instrumentVersion']) {
   require(typeof content?.[field] === 'string' && content[field].length > 0,
           `/api/study/content: expected a non-empty ${field}`);
   require(content[field] === release[field],
           `/api/study/content: ${field} does not match /api/release`);
 }
-require(content.submissionEnabled === false,
-        '/api/study/content: expected submissionEnabled: false while collection is disabled');
-checks.push(`/api/study/content (${content.studyVersion}, ${content.contentVersion}, ${content.instrumentVersion})`);
+const expectedSubmissionEnabled = enabledModes.has(expectedMode);
+require(content.submissionEnabled === expectedSubmissionEnabled,
+        `/api/study/content: expected submissionEnabled: ${expectedSubmissionEnabled} in ${expectedMode} mode`);
+checks.push(`/api/study/content (${expectedMode}, ${content.studyVersion}, ${content.contentVersion}, ${content.instrumentVersion})`);
 
 const submissionResponse = await request('/api/study/submissions', {
   method: 'POST',
@@ -83,12 +88,14 @@ const submissionResponse = await request('/api/study/submissions', {
   },
   body: '{}',
 });
-require(submissionResponse.status === 503,
-        `/api/study/submissions: expected 503 while collection is disabled, got ${submissionResponse.status}`);
 const submission = await json(submissionResponse, '/api/study/submissions');
-require(submission?.error?.code === 'collection_disabled',
-        '/api/study/submissions: expected collection_disabled');
-checks.push('/api/study/submissions rejects collection while disabled');
+const expectedSubmissionStatus = expectedSubmissionEnabled ? 422 : 503;
+const expectedSubmissionCode = expectedSubmissionEnabled ? 'invalid_submission' : 'collection_disabled';
+require(submissionResponse.status === expectedSubmissionStatus,
+        `/api/study/submissions: expected ${expectedSubmissionStatus} in ${expectedMode} mode, got ${submissionResponse.status}`);
+require(submission?.error?.code === expectedSubmissionCode,
+        `/api/study/submissions: expected ${expectedSubmissionCode}`);
+checks.push(`/api/study/submissions rejects the non-writing probe with ${expectedSubmissionStatus} ${expectedSubmissionCode}`);
 
 console.log(`Deployment checks passed for ${base}`);
 for (const check of checks) console.log(`- ${check}`);
