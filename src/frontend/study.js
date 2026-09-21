@@ -14,7 +14,7 @@
   const button = (action, text, primary = false) => `<button type="button" data-action="${action}"${primary ? ' class="primary"' : ''}>${text}</button>`;
   const heading = text => `<h2 id="route-heading" tabindex="-1">${text}</h2>`;
   let content, store, draft = null, editingPre = false, errors = {}, loaded = false, loadError = false;
-  let activeTask = null, clock = null, setupReady = false;
+  let activeTask = null, clock = null, setupReady = false, stopConfirming = false, returnFocusToStop = false;
   const answersFor = stage => stage.startsWith('T') ? draft.tasks[stage].answers : draft[stage];
   const outcomeLabel = status => ({ completed: 'Completed', skipped: 'Skipped', could_not_work_out: 'Could not work this out', pending: 'In progress' })[status];
   const taskRoute = () => '/study/tasks/' + D.currentTask(draft);
@@ -80,6 +80,10 @@
   }
   function taskReview() {
     return `<details class="response-review"><summary>Task outcomes and active durations</summary><ul>${content.tasks.map(task => { const t = draft.tasks[task.id]; return `<li><a href="#/study/tasks/${task.id}">${task.id}: ${esc(outcomeLabel(t.status))}</a> · ${(t.durationMs / 1000).toFixed(1)} seconds${!t.started ? ' · comparison setup not reached' : ''}${t.interrupted ? ' · interrupted' : ''}</li>`; }).join('')}</ul><p>Durations include visible reading, exploration, and answering after a usable comparison is ready. They exclude initial reading/setup, hidden tabs, explicit pauses, and refresh downtime; they are not total task or pure comprehension times.</p></details>`;
+  }
+  function stopControls() {
+    if (!stopConfirming) return button('stop', 'Stop and discard answers');
+    return `<div class="stop-confirmation" role="alert"><p><strong>Discard all local answers?</strong> This cannot be undone.</p><div class="screen-actions">${button('cancel-stop', 'Keep answers')}<button type="button" class="destructive" data-action="confirm-stop">Discard all answers</button></div></div>`;
   }
   document.addEventListener('workspace-ready', () => {
     if (activeTask && window.StudyWorkspace.ready) { setupReady = true; startClock(); }
@@ -173,12 +177,14 @@
       else if (index === 2) html = taskHtml(requestedTask);
       else if (index === 3) html = heading('Post-survey') + `<p>Approximately 8 minutes. All items may be left unanswered. Answers stay local until you select Submit responses.</p>` + survey('post');
       else html = review();
-      screen.innerHTML = (!exited ? html.replace('</h2>', '</h2><div id="draft-status" class="draft-status" tabindex="-1"></div>') : html) + (draft && !exited && !submission.state ? `<p class="participant-code">Participant code: ${esc(draft.participantCode)}</p><div class="study-utilities"><a href="#/study">Information</a>${button('stop', 'Stop and discard answers')}</div>` : '');
+      screen.innerHTML = (!exited ? html.replace('</h2>', '</h2><div id="draft-status" class="draft-status" tabindex="-1"></div>') : html) + (draft && !exited && !submission.state ? `<p class="participant-code">Participant code: ${esc(draft.participantCode)}</p><div class="study-utilities"><a href="#/study">Information</a>${stopControls()}</div>` : '');
       updateStorage(); showErrors();
       if (index === 2) enterTask(requestedTask);
     }
     document.title = `${screen.querySelector('h2').textContent} · irexplorer`;
     screen.querySelector('h2').focus({ preventScroll: true });
+    if (stopConfirming) screen.querySelector('[data-action="confirm-stop"]')?.focus();
+    else if (returnFocusToStop) { screen.querySelector('[data-action="stop"]')?.focus(); returnFocusToStop = false; }
     // The desktop task sidebar scrolls independently of the page. Reset both
     // explicitly rather than relying on a browser's focus-scroll behaviour.
     screen.scrollTop = 0;
@@ -309,7 +315,10 @@
       save(); updateTaskStatus();
     } else if (action === 'skip-task' || action === 'unable-task') finishTask(activeTask, action === 'skip-task' ? 'skipped' : 'could_not_work_out');
     else if (action === 'edit-pre' && draft) { editingPre = true; errors = {}; go('/study/pre'); }
-    else if (action === 'stop' || action === 'decline' || action === 'restart') discard(action === 'restart' ? '/study' : `/study/${action === 'decline' ? 'declined' : 'stopped'}`);
+    else if (action === 'stop') { stopConfirming = true; render(); return; }
+    else if (action === 'cancel-stop') { stopConfirming = false; returnFocusToStop = true; render(); return; }
+    else if (action === 'confirm-stop') { stopConfirming = false; discard('/study/stopped'); }
+    else if (action === 'decline' || action === 'restart') discard(action === 'restart' ? '/study' : '/study/declined');
     else if (action === 'memory' && store.memory()) { updateStorage(); }
     else if (action === 'retry-storage' && draft) { store.retry(draft); render(); }
   });
@@ -318,6 +327,10 @@
     if (!target || target.startsWith('#/')) return;
     const element = document.getElementById(target.slice(1)); if (!element) return;
     event.preventDefault(); const disclosure = element.closest('details'); if (disclosure) disclosure.open = true; element.tabIndex = -1; element.focus(); element.scrollIntoView({ block: 'start' });
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || !stopConfirming) return;
+    stopConfirming = false; returnFocusToStop = true; render();
   });
   window.addEventListener('hashchange', () => { errors = {}; render(); });
   fetch('/api/release', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(release => {

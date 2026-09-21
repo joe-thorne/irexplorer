@@ -105,7 +105,11 @@ a:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visi
 .acknowledgement input { width: 1.2rem; height: 1.2rem; flex-shrink: 0; }
 .screen-actions, .study-utilities { align-items: center; display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1.2rem; }
 .study-utilities { border-top: 1px solid var(--line); padding-top: 1rem; font-size: .85rem; }
+.stop-confirmation { border-left: 4px solid #9b1c1c; padding-left: 1rem; }
+.stop-confirmation p { margin: 0; }
 button.primary { background: var(--accent); color: white; border-color: var(--accent); font-weight: 700; }
+button.destructive { background: #9b1c1c; border-color: #9b1c1c; color: #fff; font-weight: 700; }
+button.destructive:hover { background: #7f1d1d; }
 button:disabled { cursor: default; opacity: .5; }
 .sample-answer { display: grid; gap: .5rem; font-weight: 700; }
 textarea { background: var(--paper); border: 1px solid #9fb3c8; border-radius: .35rem; color: var(--muted); font: inherit; padding: .7rem; resize: vertical; width: 100%; }
