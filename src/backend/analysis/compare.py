@@ -17,6 +17,7 @@ COMPARABLE_KINDS = ("Function", "BasicBlock", "Instruction")
 _VALUE_NAME_RE = re.compile(r"%[-A-Za-z0-9_.$]+")
 _DEBUG_REF_RE = re.compile(r",?\s*!dbg\s*!\d+")
 _BLOCK_REFERENCE_RE = re.compile(r"label\s+%([-A-Za-z0-9_.$]+)")
+_PHI_INCOMING_BLOCK_RE = re.compile(r"\[[^\]]+,\s*%([-A-Za-z0-9_.$]+)\s*\]")
 _POINTER_REFERENCE_RE = re.compile(r"\bptr\s+(%[-A-Za-z0-9_.$]+)")
 
 
@@ -1193,8 +1194,12 @@ def _referenced_structure_has_counterparts(
         if item.kind == "BasicBlock" and _function_for_node(candidate_state, item) == candidate_function
     }
     text = str(node.attributes.get("text", ""))
-    block_labels = set(node.attributes.get("incomingBlocks", ()))
-    block_labels.update(_BLOCK_REFERENCE_RE.findall(text))
+    block_labels = set(node.attributes.get("incoming_blocks", ()))
+    block_labels.update(
+        _PHI_INCOMING_BLOCK_RE.findall(text)
+        if node.attributes.get("opcode") == "phi"
+        else _BLOCK_REFERENCE_RE.findall(text)
+    )
     if not allow_missing_block_labels and not block_labels.issubset(candidate_blocks):
         return False
 
