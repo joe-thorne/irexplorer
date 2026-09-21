@@ -185,6 +185,35 @@ class EndpointComparisonTests(unittest.TestCase):
             (function_link.relation, function_link.confidence), ("removed", "exact")
         )
 
+    def test_recompiled_renamed_block_branch_links_are_plausible(self) -> None:
+        """A renamed paired block is qualified evidence, not a definite deletion."""
+        timeline = load_curated_timeline("binary_search", resolution="full")
+        from_state = timeline.state(12)
+        to_state = timeline.state(13)
+        result = compare_timeline_step(timeline, 12)
+
+        self.assertEqual(timeline.steps[12].kind, "recompiled")
+        branch_links = {
+            link.relation: link
+            for link in result.correspondence.links
+            if (
+                link.from_node_ids
+                and str(from_state.by_id[link.from_node_ids[0]].attributes.get("text", "")).startswith(
+                    "br i1 %cmp6, label %return, label %if.end8"
+                )
+            )
+            or (
+                link.to_node_ids
+                and str(to_state.by_id[link.to_node_ids[0]].attributes.get("text", "")).startswith(
+                    "br i1 %cmp6, label %cleanup, label %if.end8"
+                )
+            )
+        }
+
+        self.assertEqual(set(branch_links), {"removed", "added"})
+        self.assertTrue(all(link.confidence != "exact" for link in branch_links.values()))
+        self.assertTrue(all(link.confidence == "plausible" for link in branch_links.values()))
+
     def test_operand_aware_plausibility_reduces_curated_none_links(self) -> None:
         expected_none_counts = {
             ("binary_search", 6): 13,
