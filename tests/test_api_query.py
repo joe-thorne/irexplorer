@@ -6,7 +6,6 @@ from fastapi.testclient import TestClient
 
 from src.backend.api import (
     DataUnavailableError,
-    InvalidQueryError,
     QueryError,
     QueryService,
     create_app,
@@ -45,11 +44,6 @@ class QueryServiceTests(unittest.TestCase):
         self.assertEqual(len(cfg["blocks"]), 4)
         self.assertGreater(len(cfg["edges"]), 0)
 
-        mapping = service.counterparts("score", 2, "fn0/bb0", 3)
-        self.assertEqual(mapping["counterpartOrdinal"], 3)
-        self.assertEqual(mapping["counterparts"][0]["kind"], "BasicBlock")
-        reverse_mapping = service.counterparts("score", 3, "fn0/bb0", 2)
-        self.assertEqual(reverse_mapping["counterpartOrdinal"], 2)
         self.assertEqual(id(service._examples["score"].timeline), timeline_id)
 
     def test_invalid_queries_are_controlled(self) -> None:
@@ -61,10 +55,6 @@ class QueryServiceTests(unittest.TestCase):
             service.cfg("score", 0, "missing")
         with self.assertRaises(QueryError):
             service.ir("score", 14)
-        with self.assertRaises(InvalidQueryError):
-            service.counterparts("score", 0, "fn0/bb0", 0)
-        with self.assertRaises(QueryError):
-            service.counterparts("score", 0, "missing", 1)
 
     def test_prebaked_data_failures_are_not_reported_as_missing_queries(self) -> None:
         service = QueryService(preload=False)

@@ -141,7 +141,7 @@ define i32 @choose(i32 %value) {
 entry:
   switch i32 %value, label %default [
     i32 1, label %one
-    i32 2, label %two
+    i32 2, label %two ; ] in a comment must not end the switch
     i32 3, label %three
   ]
 default:
@@ -176,9 +176,9 @@ join:
             ),
             (
                 ("default", "default"),
-                ("one", "switch-case(0)"),
-                ("two", "switch-case(1)"),
-                ("three", "switch-case(2)"),
+                ("one", "switch-case(1)"),
+                ("two", "switch-case(2)"),
+                ("three", "switch-case(3)"),
             ),
         )
         graph.validate()

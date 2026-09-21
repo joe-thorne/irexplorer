@@ -1,27 +1,34 @@
 from pathlib import Path
-import re
+import subprocess
+import sys
 from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
 from src.backend.toolchain import generate_curated
 from src.backend.toolchain.curated import ToolchainError
+from src.backend import bake
 
 
 class CuratedGenerationTests(unittest.TestCase):
-    def test_toolchain_does_not_import_ingestion_or_analysis_layers(self) -> None:
-        toolchain_root = generate_curated.REPO_ROOT / "src/backend/toolchain"
-        forbidden_import = re.compile(
-            r"^\s*(?:from|import)\s+src\.backend\.(?:ingest|analysis)(?:\.|\s|$)",
-            re.MULTILINE,
+    def test_importing_generator_does_not_load_ingestion_or_analysis_layers(self) -> None:
+        probe = (
+            "import sys\n"
+            "import src.backend.toolchain.generate_curated\n"
+            "forbidden = sorted(name for name in sys.modules "
+            "if name.startswith(('src.backend.ingest', 'src.backend.analysis')))\n"
+            "print('\\n'.join(forbidden), file=sys.stderr)\n"
+            "raise SystemExit(bool(forbidden))\n"
         )
-        violations = [
-            path.relative_to(toolchain_root).as_posix()
-            for path in toolchain_root.rglob("*.py")
-            if forbidden_import.search(path.read_text(encoding="utf-8"))
-        ]
+        completed = subprocess.run(
+            [sys.executable, "-c", probe],
+            cwd=generate_curated.REPO_ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
 
-        self.assertEqual(violations, [])
+        self.assertEqual(completed.returncode, 0, completed.stderr)
 
     def test_toolchain_downloads_are_digest_and_checksum_pinned(self) -> None:
         dockerfile = (generate_curated.REPO_ROOT / "Dockerfile.toolchain").read_text(
@@ -77,7 +84,7 @@ class CuratedGenerationTests(unittest.TestCase):
                 generate_curated,
                 "_generate_snapshot",
                 side_effect=complete_snapshot,
-            ):
+            ), patch.object(bake, "bake_curated_snapshot"):
                 generate_curated.generate_all(artefacts_root=live_root)
 
             self.assertFalse((live_root / "old.txt").exists())

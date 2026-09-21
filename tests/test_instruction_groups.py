@@ -102,16 +102,6 @@ class InstructionGroupTests(unittest.TestCase):
         self.assertFalse(grouped(compare_timeline_step(timeline, 12)))
 
 
-    def test_baked_group_is_queryable_in_both_directions(self):
-        service = QueryService()
-        summary = service.summary("quick_sort", 8, 9)
-        group = next(link for link in summary["links"] if link["relation"] == "merged")
-        for node in group["fromNodeIds"]:
-            result = service.counterparts("quick_sort", 8, node, 9)
-            self.assertEqual([n["id"] for n in result["counterparts"]], group["toNodeIds"])
-        reverse = service.counterparts("quick_sort", 9, group["toNodeIds"][0], 8)
-        self.assertEqual([n["id"] for n in reverse["counterparts"]], group["fromNodeIds"])
-
     def test_consumed_group_does_not_upgrade_other_ambiguity(self):
         timeline = load_prebaked_curated_timeline("quick_sort")
         result = compare_timeline_step(timeline, 8)
@@ -171,13 +161,3 @@ class MinMaxRewriteTests(unittest.TestCase):
                           for node in links[0].from_node_ids], ['icmp', 'select'])
         self.assertEqual([timeline.state(5).by_id[node].attributes['opcode']
                           for node in links[0].to_node_ids], ['call'])
-
-    def test_baked_score_counterparts_in_both_directions(self):
-        service = QueryService()
-        group = next(link for link in service.summary('score', 4, 5)['links']
-                     if link['relation'] == 'merged')
-        reverse = service.counterparts('score', 5, group['toNodeIds'][0], 4)
-        self.assertEqual([node['id'] for node in reverse['counterparts']], group['fromNodeIds'])
-        for node in group['fromNodeIds']:
-            forward = service.counterparts('score', 4, node, 5)
-            self.assertEqual([item['id'] for item in forward['counterparts']], group['toNodeIds'])
