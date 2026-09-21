@@ -1,10 +1,13 @@
+import hashlib
 import unittest
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
 from src.backend.api import QueryService, create_app
-from src.backend.analysis.compare import summarise_correspondence
+from src.backend.analysis.compare import ComposedCorrespondence, summarise_correspondence
+from src.backend.model import Correspondence, Link, StateGraph
+from src.backend.model.graph import Edge, Node
 from src.backend.toolchain import curated
 
 
@@ -96,6 +99,123 @@ class SummaryQueriesTests(unittest.TestCase):
         self.assertIn('instructions changed with approximate correspondence evidence.', summary_text)
         self.assertIn('instructions removed with approximate correspondence evidence.', summary_text)
 
+    def test_summary_covers_every_non_same_link_in_task_comparisons(self):
+        """N9: summaries must expose every recorded structural change."""
+        pairs = [(ordinal, ordinal + 1) for ordinal in range(13)] + [(0, 9), (0, 13), (4, 6)]
+        uncovered = []
+        for example in self.service.list_examples()['examples']:
+            for lower, higher in pairs:
+                with self.subTest(example=example, span=(lower, higher)):
+                    response = self.service.summary(example, lower, higher)
+                    covered = {
+                        index
+                        for item in response['items']
+                        for index in item['linkIndices']
+                    }
+                    uncovered.extend(
+                        (example, lower, higher, index, link)
+                        for index, link in enumerate(response['links'])
+                        if link['relation'] != 'same' and index not in covered
+                    )
+        self.assertEqual(uncovered, [])
+
+    def test_function_summary_item_is_added_without_rewording_adjacent_items(self):
+        """N9: the new function item must not disturb the 39 existing item lists."""
+        expected_digests = {
+            'binary_search:0-1': '0f29f9eb77d4ef47bdf6bb2e8fc5cbb4ecb87d28f4c3ed0a8eaf861732bd7bc6',
+            'binary_search:1-2': 'cae048b9dcd76afd6aaf35eaeffdb83e1f86592f232ad5a77a20bdf2e6d7a2fe',
+            'binary_search:2-3': '1adff203156999df4271318f36765100fcfe672d5047667c2d7d23f7a9882e0f',
+            'binary_search:3-4': '93b9572519282275b5b3f8f29079a4a723a738e481f9a554c702709cf79d3452',
+            'binary_search:4-5': '93b9572519282275b5b3f8f29079a4a723a738e481f9a554c702709cf79d3452',
+            'binary_search:5-6': '34ad1b4a64e2094512656dbd1a1e872089882365b89c36de3c0a67257cc664bf',
+            'binary_search:6-7': '454fc196cc492671a44d525372d1283a7b795a7acf10cb568045cbe9c55b8ecc',
+            'binary_search:7-8': '93b9572519282275b5b3f8f29079a4a723a738e481f9a554c702709cf79d3452',
+            'binary_search:8-9': '93b9572519282275b5b3f8f29079a4a723a738e481f9a554c702709cf79d3452',
+            'binary_search:9-10': '7e67616c896642e2dbdbb6ce2ab7f1ad15a3b1f7e7be411eac3c4dce7ed09788',
+            'binary_search:10-11': '17318a9ca30895af81ffc06ae128183ade68886732f099ad2b035d8f4a19a937',
+            'binary_search:11-12': 'fd34857fd308269eb465e00fdeb8d418b17693fd4b2b6ed07565712d079fd1d8',
+            'binary_search:12-13': '8bd9af3b10e3e88d434eb69a4669b984d0e683179b5fa0daaf7155f4bb929533',
+            'quick_sort:0-1': 'c58bf0ee00615e3800f726a2c4b9c48bda6a94df0008792f974cf9e96efbb09d',
+            'quick_sort:1-2': '9519af0de2b6b5be654c996ee5cf6dd1819eb0aad5ce29f3749d7d8c9c9a683a',
+            'quick_sort:2-3': '7d1ffa6b0eac431dc1822ac1b18d4c61f22b7454ec395df1b5ff857db1f5e5ef',
+            'quick_sort:3-4': 'df6e4dafdfadf8e859749abc720a11761bd5517d190e7af9c1cc1f919cf3b6bd',
+            'quick_sort:4-5': 'dc551e2ba1ab0e2283b8d5425216f13011da20e66b0d3668215fe9264ea08bc8',
+            'quick_sort:5-6': '11574c0b44b6b7d3e826b1223910f6bc262be0e2cd18c6837b9501ad60b6727a',
+            'quick_sort:6-7': 'b4f8a272c353d9e3e44147efc81d49269cc3efcf3e4a0b18e4bd2f42256e36dc',
+            'quick_sort:7-8': 'dc551e2ba1ab0e2283b8d5425216f13011da20e66b0d3668215fe9264ea08bc8',
+            'quick_sort:8-9': 'd6ab697e0a2d43a268ec105e7a149b36067153c6053689e3d295fe679b16537c',
+            'quick_sort:9-10': '856fe2b77f2e37f41450eab1e337c0274d4a4ab8bf77db72fc6aa8176ea6519a',
+            'quick_sort:10-11': '77b73a9f98ff89aa2b6c89c66502926cb9f7d6493c30cb086c4ad5a2764b34d4',
+            'quick_sort:11-12': '828e2c9e4847cb14bbcdd26c684983ee9db098cb7fdf22885ec002a88ed8249b',
+            'quick_sort:12-13': '2ad158bc6da990804968f3092711bbc89c8f1b042f209750e3796206ff3e1262',
+            'score:0-1': 'a36a3e37c891cba1fc9629e03d8cec0e9aa39eec2d53bfe15d5c19ee7a4bff42',
+            'score:1-2': 'd612aa5f7251562023cf05219b6951d42085c964fd0502da4439c755b3e2122c',
+            'score:2-3': 'e7e0c8201467912bb5a33452386431d705f6690d3ae58bd0ac0fba989b4396d1',
+            'score:3-4': 'dc551e2ba1ab0e2283b8d5425216f13011da20e66b0d3668215fe9264ea08bc8',
+            'score:4-5': '1cd82089c800d0c027a6a6440c875cac26a5661af59f245c9238758f3128a1af',
+            'score:5-6': 'dc551e2ba1ab0e2283b8d5425216f13011da20e66b0d3668215fe9264ea08bc8',
+            'score:6-7': 'dc551e2ba1ab0e2283b8d5425216f13011da20e66b0d3668215fe9264ea08bc8',
+            'score:7-8': 'dc551e2ba1ab0e2283b8d5425216f13011da20e66b0d3668215fe9264ea08bc8',
+            'score:8-9': 'dc551e2ba1ab0e2283b8d5425216f13011da20e66b0d3668215fe9264ea08bc8',
+            'score:9-10': 'dc551e2ba1ab0e2283b8d5425216f13011da20e66b0d3668215fe9264ea08bc8',
+            'score:10-11': 'dc551e2ba1ab0e2283b8d5425216f13011da20e66b0d3668215fe9264ea08bc8',
+            'score:11-12': 'dc551e2ba1ab0e2283b8d5425216f13011da20e66b0d3668215fe9264ea08bc8',
+            'score:12-13': '1491933ad921a9faed51ca20a4301e85af4ccebd8912e4fcde80cf5b1722baaa',
+        }
+        additions = {'quick_sort:12-13': '1 function removed.'}
+
+        self.assertEqual(len(expected_digests), 39)
+        for key, expected_digest in expected_digests.items():
+            example, span = key.split(':')
+            lower, higher = map(int, span.split('-'))
+            texts = [item['text'] for item in self.service.summary(example, lower, higher)['items']]
+            if key in additions:
+                self.assertIn(additions[key], texts)
+                texts.remove(additions[key])
+            digest = hashlib.sha256('\n'.join(texts).encode()).hexdigest()
+            self.assertEqual(digest, expected_digest, key)
+
+    def test_block_movement_and_composed_group_summaries_are_covered(self):
+        from_state = _block_state(0, 'source')
+        moved_state = _block_state(1, 'target')
+        moved = Correspondence(
+            from_ordinal=0,
+            to_ordinal=1,
+            covered_kinds=('BasicBlock',),
+            links=(Link(('source/entry',), ('target/entry',), 'moved', 'exact', 'moved'),),
+        )
+        moved.validate(from_state, moved_state)
+        self.assertIn(
+            '1 basic block was linked as moved correspondences.',
+            {item.text for item in summarise_correspondence(moved, from_state, moved_state, None).items},
+        )
+
+        split_state = _block_state(2, 'left', 'right')
+        split = ComposedCorrespondence(
+            from_ordinal=0,
+            to_ordinal=2,
+            covered_kinds=('BasicBlock',),
+            links=(Link(('source/entry',), ('left/entry', 'right/entry'), 'split', 'approximate', 'split'),),
+        )
+        split.validate(from_state, split_state)
+        self.assertIn(
+            '1 basic block groups split: 1 → 2 basic blocks with approximate correspondence evidence.',
+            {item.text for item in summarise_correspondence(split, from_state, split_state, None).items},
+        )
+
+        merged_state = _block_state(4, 'merged')
+        merged = ComposedCorrespondence(
+            from_ordinal=2,
+            to_ordinal=4,
+            covered_kinds=('BasicBlock',),
+            links=(Link(('left/entry', 'right/entry'), ('merged/entry',), 'merged', 'approximate', 'merged'),),
+        )
+        merged.validate(split_state, merged_state)
+        self.assertIn(
+            '1 basic block groups merged: 2 → 1 basic block with approximate correspondence evidence.',
+            {item.text for item in summarise_correspondence(merged, split_state, merged_state, None).items},
+        )
+
     @staticmethod
     def _link_kind_at_comparison_endpoint(loaded, link, from_ordinal, to_ordinal):
         node_id = (link.from_node_ids or link.to_node_ids)[0]
@@ -119,3 +239,24 @@ class SummaryQueriesTests(unittest.TestCase):
                 self.assertEqual(response.status_code, 503)
                 self.assertNotIn('private path', response.text)
             self.assertIn(client.post('/api/examples/score/summary').status_code, (404, 405))
+
+
+def _block_state(ordinal, *function_ids):
+    nodes = [Node('module', 'Module', 'module')]
+    edges = []
+    for order, function_id in enumerate(function_ids):
+        block_id = f'{function_id}/entry'
+        instruction_id = f'{block_id}/ret'
+        nodes.extend((
+            Node(function_id, 'Function', function_id),
+            Node(block_id, 'BasicBlock', 'entry', {'label': 'entry'}),
+            Node(instruction_id, 'Instruction', 'ret void', {'opcode': 'ret', 'is_terminator': True, 'successors': ()}),
+        ))
+        edges.extend((
+            Edge('module', function_id, 'contains', order=order),
+            Edge(function_id, block_id, 'contains', order=0),
+            Edge(block_id, instruction_id, 'contains', order=0),
+        ))
+    state = StateGraph(ordinal=ordinal, state_id=f'state-{ordinal}', nodes=tuple(nodes), edges=tuple(edges))
+    state.validate()
+    return state
