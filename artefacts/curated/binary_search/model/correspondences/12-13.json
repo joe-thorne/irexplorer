@@ -329,8 +329,8 @@
       "toNodeIds": []
     },
     {
-      "confidence": "exact",
-      "evidence": "no target node shares the structural matcher signature",
+      "confidence": "plausible",
+      "evidence": "a paired function has an unmatched block whose renamed label is the only failed structural reference",
       "fromNodeIds": [
         "fn0/bb3/i4"
       ],
@@ -446,8 +446,8 @@
       ]
     },
     {
-      "confidence": "exact",
-      "evidence": "no source node shares the structural matcher signature",
+      "confidence": "plausible",
+      "evidence": "a paired function has an unmatched block whose renamed label is the only failed structural reference",
       "fromNodeIds": [],
       "relation": "added",
       "toNodeIds": [
