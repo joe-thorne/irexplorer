@@ -4,6 +4,10 @@ Explore how LLVM optimisation passes transform C programs through coordinated so
 
 Choose a curated program, select two optimisation states, and follow corresponding instructions or blocks between them. The application ships with verified compiler outputs; running it does not require LLVM or compile user-supplied code.
 
+## Project status
+
+The curated application, local study flow, submission/retry service, and researcher export tools are implemented. Local and preview modes support synthetic testing; pilot and live collection are deliberately disabled until an authorised research release. This standalone repository keeps only current technical documentation—completed thesis audits, phase plans, and research worklists belong outside the application repository.
+
 ## Run locally
 
 Clone this repository and start Docker with Compose support:

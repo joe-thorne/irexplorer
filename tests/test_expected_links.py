@@ -103,8 +103,8 @@ class ArtefactExpectedLinkTests(unittest.TestCase):
                 baked = load_prebaked_curated_correspondence(
                     case['example'], case['fromOrdinal']
                 )
-                # S2--S6 deliberately leave changed fresh overlays unbaked; the
-                # served-overlay test retains the reviewed fixture assertion until S7a.
+                # Compare reviewed rows here only when fresh and stored overlays
+                # agree; the served-overlay test below always checks the fixture.
                 if self.actual_links(result.correspondence) != self.actual_links(baked):
                     continue
                 self.assertEqual(self.actual_links(result.correspondence), self.expected_links(self.rows(case)))

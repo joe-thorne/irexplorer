@@ -100,7 +100,7 @@ class SummaryQueriesTests(unittest.TestCase):
         self.assertIn('instructions removed with approximate correspondence evidence.', summary_text)
 
     def test_summary_covers_every_non_same_link_in_task_comparisons(self):
-        """N9: summaries must expose every recorded structural change."""
+        """Summaries must expose every recorded structural change."""
         pairs = [(ordinal, ordinal + 1) for ordinal in range(13)] + [(0, 9), (0, 13), (4, 6)]
         uncovered = []
         for example in self.service.list_examples()['examples']:
@@ -120,7 +120,7 @@ class SummaryQueriesTests(unittest.TestCase):
         self.assertEqual(uncovered, [])
 
     def test_function_summary_item_is_added_without_rewording_adjacent_items(self):
-        """N9: the new function item must not disturb the 39 existing item lists."""
+        """The new function item must not disturb the 39 existing item lists."""
         expected_digests = {
             'binary_search:0-1': '0f29f9eb77d4ef47bdf6bb2e8fc5cbb4ecb87d28f4c3ed0a8eaf861732bd7bc6',
             'binary_search:1-2': 'cae048b9dcd76afd6aaf35eaeffdb83e1f86592f232ad5a77a20bdf2e6d7a2fe',

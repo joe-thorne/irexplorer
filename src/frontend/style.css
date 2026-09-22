@@ -88,7 +88,7 @@ select { background: #fff; border: 1px solid #9fb3c8; border-radius: .35rem; col
 @media (max-width: 900px) { .panel-grid { grid-template-columns: 1fr; } }
 @media (max-width: 700px) { .site-header, .viewer-heading { align-items: stretch; flex-direction: column; } .header-note { text-align: left; } .viewer-controls { justify-content: start; } .viewer-controls label, .viewer-controls select { max-width: none; width: 100%; } .viewer-content { min-height: 18rem; } }
 
-/* E1 route shell. Code panes retain their independent state and scrolling. */
+/* Route shell. Code panes retain their independent state and scrolling. */
 [hidden] { display: none !important; }
 a { color: var(--accent); }
 a:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visible,
@@ -151,7 +151,7 @@ details p { margin: .8rem 0 0; }
   .cfg-node.is-source:not(.is-selected):not(.is-linked) rect { stroke: Highlight; }
 }
 
-/* E3: readable state labels, evidence on demand, and directed CFG lanes. */
+/* Readable state labels, evidence on demand, and directed CFG lanes. */
 .viewer-heading { align-items: stretch; flex-direction: column; gap: .65rem; }
 .viewer-controls { display: grid; grid-template-columns: minmax(0, 1fr) auto; justify-content: stretch; width: 100%; }
 .viewer-controls .state-control { grid-column: 1 / -1; min-width: 0; }
@@ -176,7 +176,7 @@ details p { margin: .8rem 0 0; }
   .cfg-node text { fill: CanvasText; }
 }
 
-/* E4 forms: native groups/labels, visible errors, separate non-scale choices. */
+/* Forms: native groups/labels, visible errors, separate non-scale choices. */
 .survey-section { margin-top: 2rem; }
 .survey-section h3 { border-bottom: 1px solid var(--line); padding-bottom: .6rem; }
 .survey-section h4 { margin: 1.8rem 0 .6rem; }

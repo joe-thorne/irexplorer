@@ -201,8 +201,8 @@ def origin_command(example: str, state_id: str) -> str:
 
     Provenance is read back from the generated manifest by matching the
     command whose ``-o`` target is the state's ``.ll`` file, so the model can
-    carry ``origin.command`` per state (R8, NFR3/NFR4). Persisting this into the
-    serialised StateGraph is an S1.4 task.
+    carry ``origin.command`` per state (R8, NFR3/NFR4). This value is persisted
+    in the serialised StateGraph.
     """
 
     state = _require_state(state_id)

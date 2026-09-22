@@ -1,4 +1,4 @@
-"""E4 participant boundary and survey contract; no collection API."""
+"""Participant boundary and survey contract; no collection API."""
 import json
 import importlib.util
 import re
