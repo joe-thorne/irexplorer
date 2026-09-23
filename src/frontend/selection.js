@@ -74,6 +74,31 @@ function buildSelectionTrace(panels, summary, selection) {
   return { seeds, members, anchors, links, sameState, missing, unresolved };
 }
 
+function relationWording(link) {
+  if (link.confidence === 'none') return 'unresolved';
+  if (link.confidence === 'plausible') return `${link.relation} · plausible but unconfirmed confidence`;
+  return `${link.relation} · ${link.confidence} confidence`;
+}
+
+// The participant-facing comparison consumes this model without reinterpreting
+// the immutable summary record or the trace it produced.
+function buildComparisonEvidence(summary, trace) {
+  const groups = new Map();
+  for (const link of trace.links) {
+    const wording = relationWording(link);
+    groups.set(wording, (groups.get(wording) || 0) + 1);
+  }
+  const relationGroups = [...groups].map(([wording, count]) => ({ wording, count }));
+  const linkIndices = new Set(trace.links.map(link => summary.links.indexOf(link)).filter(index => index >= 0));
+  const optimisations = (summary.optimisations || []).filter(event =>
+    event.linkIndices.some(index => linkIndices.has(index)));
+  const statusText = trace.sameState ? 'The same instructions are highlighted in both views.'
+    : relationGroups.map(({ wording, count }) => count + ' recorded ' + (count === 1 ? 'link' : 'links')
+      + ': ' + wording + '.').join(' ')
+      + (trace.unresolved ? ' Some instructions cannot be traced with the available evidence.' : '');
+  return { trace, links: trace.links, relationGroups, optimisations, statusText };
+}
+
 function traceDescription(trace) {
   const counts = `Left: ${trace.members.left.size} instructions; right: ${trace.members.right.size} instructions.`;
   if (!trace.seeds.left.size && !trace.seeds.right.size)
@@ -114,10 +139,12 @@ function selectWorkspace(input, { scroll = true } = {}) {
   sourceState.rangeStart = rangeStart;
   appState.selectionInput = input;
   const trace = buildSelectionTrace(appState.panels, appState.summary, input);
+  const evidence = buildComparisonEvidence(appState.summary, trace);
   sourceState.anchors = trace.anchors;
   appState.selection = {
     originSide: input.kind === 'node' ? input.side : 'source',
     trace,
+    evidence,
     unresolved: trace.unresolved,
     text: (input.kind === 'node'
       ? formatNode(nodeContext(appState.panels[input.side].ir, input.nodeId))

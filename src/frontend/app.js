@@ -295,7 +295,8 @@ function renderComparison() {
   elements.comparisonAction.textContent = comparisonAction(leftState, rightState);
   const input = appState.selectionInput;
   const context = document.querySelector("#selection-context");
-  const trace = appState.selection?.trace;
+  const evidence = appState.selection?.evidence;
+  const trace = evidence?.trace;
   document.querySelector("#trace-counts").hidden = !trace;
   if (!trace) {
     context.textContent = "Select a C line, IR instruction, or CFG block to trace it.";
@@ -310,16 +311,7 @@ function renderComparison() {
   for (const side of ["left", "right"])
     document.querySelector("#" + side + "-trace-count").textContent = trace.members[side].size;
   elements.selectionStatus.className = "selection-status" + (trace.unresolved ? " is-unresolved" : "");
-  const relations = new Map();
-  for (const link of trace.links) {
-    const label = link.confidence === "none" ? "unresolved"
-      : link.confidence === "plausible" ? link.relation + " · plausible but unconfirmed confidence"
-        : link.relation + " · " + link.confidence + " confidence";
-    relations.set(label, (relations.get(label) || 0) + 1);
-  }
-  elements.selectionStatus.textContent = trace.sameState ? "The same instructions are highlighted in both views."
-    : [...relations].map(([label, count]) => count + " recorded " + (count === 1 ? "link" : "links") + ": " + label + ".").join(" ")
-      + (trace.unresolved ? " Some instructions cannot be traced with the available evidence." : "");
+  elements.selectionStatus.textContent = evidence.statusText;
 }
 
 function comparisonAction(leftState, rightState) {

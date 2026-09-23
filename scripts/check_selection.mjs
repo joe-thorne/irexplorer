@@ -38,6 +38,47 @@ check('Existing grouped links retain every member', () => {
   assert.deepEqual(ids(result.members.right), ['y', 'z']);
   assert.equal(result.links.length, 1);
 });
+check('Selection evidence is render-ready across every confidence wording', () => {
+  const currentTrace = {
+    ...trace(source(1, 2)),
+    links: [
+      ...summary.links.slice(0, 2),
+      { fromNodeIds: ['a'], toNodeIds: ['x'], relation: 'changed', confidence: 'plausible' },
+      summary.links[2],
+    ],
+  };
+  const evidence = context.buildComparisonEvidence(summary, currentTrace);
+  assert.equal(evidence.trace, currentTrace);
+  assert.deepEqual(evidence.links, currentTrace.links);
+  assert.equal(JSON.stringify(evidence.relationGroups), JSON.stringify([
+    { wording: 'same · exact confidence', count: 1 },
+    { wording: 'merged · approximate confidence', count: 1 },
+    { wording: 'changed · plausible but unconfirmed confidence', count: 1 },
+    { wording: 'unresolved', count: 1 },
+  ]));
+});
+check('Equivalent C, IR, and CFG selections use the same evidence interface', () => {
+  const singleLeft = panel(0, ['a'], [['a', 1]]);
+  const singleRight = panel(1, ['x'], [['x', 1]]);
+  const selections = [source(1), node('left', 'a'), node('left', 'block0')];
+  const evidence = selections.map(selection => {
+    const currentTrace = context.buildSelectionTrace({ left: singleLeft, right: singleRight }, summary, selection);
+    const result = context.buildComparisonEvidence(summary, currentTrace);
+    assert.equal(result.trace, currentTrace);
+    return result;
+  });
+  const summaries = evidence.map(result => ({
+    links: result.links,
+    members: { left: ids(result.trace.members.left), right: ids(result.trace.members.right) },
+  }));
+  assert.equal(JSON.stringify(summaries), JSON.stringify([{
+    links: [summary.links[0]], members: { left: ['a'], right: ['x'] },
+  }, {
+    links: [summary.links[0]], members: { left: ['a'], right: ['x'] },
+  }, {
+    links: [summary.links[0]], members: { left: ['a'], right: ['x'] },
+  }]));
+});
 check('CFG selection preserves all instructions including ones without C mappings', () => {
   const result = trace(node('left', 'block0'));
   assert.deepEqual(ids(result.seeds.left), ['a', 'b', 'c', 'unknown']);

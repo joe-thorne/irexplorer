@@ -153,7 +153,7 @@ try {
   await select('#left-state', '0'); await select('#right-state', '2'); await until('window.StudyWorkspace.ready');
   await value(`document.querySelector('#left-viewer .ir-line').focus()`); await key('Enter', 'Enter', 13);
   await until(`Boolean(appState.selection?.trace)`);
-  await check('Keyboard Enter follows an IR correspondence', `Boolean(appState.selection?.trace)`);
+  await check('Keyboard Enter exposes the recorded selected-link evidence', `Boolean(appState.selection?.trace) && document.querySelector('#selection-status').textContent.includes('recorded link')`);
   await select('#left-view', 'cfg'); await select('#right-view', 'cfg'); await until('window.StudyWorkspace.ready');
   await value(`document.querySelector('#left-viewer .cfg-edge').focus()`); await check('Keyboard-focusable CFG route is visibly isolated', `document.querySelector('#left-viewer svg').classList.contains('is-tracing')`);
   await value('document.activeElement.blur()');

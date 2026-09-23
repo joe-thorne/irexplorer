@@ -30,11 +30,9 @@ function renderSummary() {
 function renderOptimisations() {
   const container = document.querySelector('#optimisation-explanations');
   container.replaceChildren();
-  const trace = appState.selection?.trace;
-  if (!trace) return;
-  const indices = new Set(trace.links.map(link => appState.summary.links.indexOf(link)));
-  const events = (appState.summary.optimisations || []).filter(event =>
-    event.linkIndices.some(index => indices.has(index)));
+  const evidence = appState.selection?.evidence;
+  if (!evidence) return;
+  const { trace, optimisations: events } = evidence;
   if (!events.length) {
     const note = document.createElement('p');
     note.className = 'optimisation-note';
