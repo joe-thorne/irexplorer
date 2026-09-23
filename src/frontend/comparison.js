@@ -17,6 +17,7 @@ function renderSummary() {
     document.querySelector("#" + side + "-purpose").textContent = state ? statePurpose(state) : "";
   }
   if (!appState.summary) {
+    document.querySelector("#structural-claims").replaceChildren();
     document.querySelector("#optimisation-explanations").replaceChildren();
     elements.comparisonAction.textContent = "";
     document.querySelector("#source-status").textContent = "Choose both states and views to see the source mapping.";
@@ -32,8 +33,8 @@ function renderOptimisations() {
   container.replaceChildren();
   const evidence = appState.selection?.evidence;
   if (!evidence) return;
-  const { trace, optimisations: events } = evidence;
-  if (!events.length) {
+  const { trace, optimisationGroups: groups } = evidence;
+  if (!groups.length) {
     const note = document.createElement('p');
     note.className = 'optimisation-note';
     note.textContent = trace.sameState ? 'Same state: no optimisation change to explain.'
@@ -43,13 +44,7 @@ function renderOptimisations() {
     container.append(note);
     return;
   }
-  const groups = new Map();
-  for (const event of events) {
-    const key = JSON.stringify([event.name, event.purpose, event.fromOrdinal, event.toOrdinal, event.certainty]);
-    if (!groups.has(key)) groups.set(key, { ...event, changes: new Set() });
-    groups.get(key).changes.add(event.change);
-  }
-  for (const event of groups.values()) {
+  for (const event of groups) {
     const card = document.createElement('section');
     card.className = 'optimisation-explanation';
     const name = document.createElement('strong');
@@ -57,10 +52,27 @@ function renderOptimisations() {
     const purpose = document.createElement('p');
     purpose.textContent = 'Purpose: ' + event.purpose;
     const change = document.createElement('p');
-    change.textContent = 'What changed: ' + [...event.changes].join(' ');
+    change.textContent = 'What changed: ' + event.changes.join(' ');
     const state = document.createElement('small');
     state.textContent = event.fromStateId + ' → ' + event.toStateId;
     card.append(name, purpose, change, state);
     container.append(card);
   }
+}
+
+// Structural claims remain tied to the selected correspondence records.
+function renderStructuralClaims() {
+  const container = document.querySelector('#structural-claims');
+  container.replaceChildren();
+  const claims = appState.selection?.evidence?.structuralClaims || [];
+  if (!claims.length) return;
+  const heading = document.createElement('h4');
+  heading.textContent = 'Recorded structural claims';
+  const list = document.createElement('ul');
+  for (const claim of claims) {
+    const item = document.createElement('li');
+    item.textContent = claim.text;
+    list.append(item);
+  }
+  container.append(heading, list);
 }

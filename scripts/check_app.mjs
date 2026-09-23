@@ -131,6 +131,7 @@ try {
 
   await check('Cancellation explanation labels the interpretation as likely', `document.querySelector('#optimisation-explanations').textContent.includes('Algebraic simplification · likely')`);
   await click('.source-line[data-line="2"]');
+  await check('Selection presents only its recorded structural claims', `(() => { const text = document.querySelector('#structural-claims').textContent; return text.includes('Recorded structural claims') && text.includes('instructions changed') && !text.includes('CFG unchanged'); })()`);
   await check('Selection shows optimisation name, purpose and concrete change', `(() => { const text = document.querySelector('#optimisation-explanations').textContent; return text.includes('Strength reduction') && text.includes('Purpose:') && text.includes('What changed: Multiplication by 32 becomes a left shift by 5.'); })()`);
   await check('Multiple intermediate transformations can explain one source selection', `document.querySelector('#optimisation-explanations').textContent.includes('Local-variable promotion')`);
   await value(`window.explanationText = document.querySelector('#optimisation-explanations').textContent`);

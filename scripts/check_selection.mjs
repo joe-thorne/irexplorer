@@ -14,6 +14,14 @@ const summary = { links: [
   { fromNodeIds: ['a'], toNodeIds: ['x'], relation: 'same', confidence: 'exact' },
   { fromNodeIds: ['b', 'c'], toNodeIds: ['y', 'z'], relation: 'merged', confidence: 'approximate' },
   { fromNodeIds: ['unknown'], toNodeIds: ['other'], relation: 'changed', confidence: 'none' },
+], items: [
+  { text: 'The selected instruction remains.', linkIndices: [0], remarkIndices: [] },
+  { text: 'A recorded compiler remark for the selected instruction.', linkIndices: [], remarkIndices: [0] },
+  { text: 'The selected pair is merged.', linkIndices: [1], remarkIndices: [2] },
+  { text: 'An unrelated structural change.', linkIndices: [2], remarkIndices: [] },
+], steps: [{ remarks: [{ location: { file: 'test.c', line: 1 } }] }], optimisations: [
+  { name: 'One optimisation', purpose: 'Test grouping.', change: 'First change.', certainty: 'detected', fromOrdinal: 0, toOrdinal: 1, fromStateId: 'before', toStateId: 'after', linkIndices: [0] },
+  { name: 'One optimisation', purpose: 'Test grouping.', change: 'Second change.', certainty: 'detected', fromOrdinal: 0, toOrdinal: 1, fromStateId: 'before', toStateId: 'after', linkIndices: [0] },
 ]};
 const trace = selection => context.buildSelectionTrace({ left, right }, summary, selection);
 const ids = set => [...set].sort();
@@ -56,6 +64,20 @@ check('Selection evidence is render-ready across every confidence wording', () =
     { wording: 'changed · plausible but unconfirmed confidence', count: 1 },
     { wording: 'unresolved', count: 1 },
   ]));
+});
+check('Selection evidence retains only structural claims recorded for its links', () => {
+  const evidence = context.buildComparisonEvidence(summary, trace(source(1)));
+  assert.equal(JSON.stringify(evidence.structuralClaims), JSON.stringify([
+    { text: 'The selected instruction remains.', linkIndices: [0], remarkIndices: [] },
+    { text: 'A recorded compiler remark for the selected instruction.', linkIndices: [], remarkIndices: [0] },
+  ]));
+});
+check('Equivalent optimisation records group without dropping concrete changes', () => {
+  const evidence = context.buildComparisonEvidence(summary, trace(source(1)));
+  assert.equal(JSON.stringify(evidence.optimisationGroups), JSON.stringify([{
+    name: 'One optimisation', purpose: 'Test grouping.', certainty: 'detected', fromOrdinal: 0,
+    toOrdinal: 1, fromStateId: 'before', toStateId: 'after', changes: ['First change.', 'Second change.'],
+  }]));
 });
 check('Equivalent C, IR, and CFG selections use the same evidence interface', () => {
   const singleLeft = panel(0, ['a'], [['a', 1]]);

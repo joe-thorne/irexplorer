@@ -80,6 +80,21 @@ function relationWording(link) {
   return `${link.relation} · ${link.confidence} confidence`;
 }
 
+function groupOptimisations(events) {
+  const groups = new Map();
+  for (const event of events) {
+    const key = JSON.stringify([event.name, event.purpose, event.fromOrdinal, event.toOrdinal, event.certainty]);
+    if (!groups.has(key)) groups.set(key, {
+      name: event.name, purpose: event.purpose, certainty: event.certainty,
+      fromOrdinal: event.fromOrdinal, toOrdinal: event.toOrdinal,
+      fromStateId: event.fromStateId, toStateId: event.toStateId, changes: [],
+    });
+    const group = groups.get(key);
+    if (!group.changes.includes(event.change)) group.changes.push(event.change);
+  }
+  return [...groups.values()];
+}
+
 // The participant-facing comparison consumes this model without reinterpreting
 // the immutable summary record or the trace it produced.
 function buildComparisonEvidence(summary, trace) {
@@ -90,13 +105,20 @@ function buildComparisonEvidence(summary, trace) {
   }
   const relationGroups = [...groups].map(([wording, count]) => ({ wording, count }));
   const linkIndices = new Set(trace.links.map(link => summary.links.indexOf(link)).filter(index => index >= 0));
+  const finalRemarks = (summary.steps || []).at(-1)?.remarks || [];
+  const remarkIndices = new Set(finalRemarks.map((remark, index) =>
+    remark.location && sourceMatches(remark.location, trace.anchors) ? index : null).filter(index => index !== null));
+  const structuralClaims = (summary.items || []).filter(item =>
+    item.linkIndices.some(index => linkIndices.has(index))
+      || item.remarkIndices.some(index => remarkIndices.has(index)));
   const optimisations = (summary.optimisations || []).filter(event =>
     event.linkIndices.some(index => linkIndices.has(index)));
+  const optimisationGroups = groupOptimisations(optimisations);
   const statusText = trace.sameState ? 'The same instructions are highlighted in both views.'
     : relationGroups.map(({ wording, count }) => count + ' recorded ' + (count === 1 ? 'link' : 'links')
       + ': ' + wording + '.').join(' ')
       + (trace.unresolved ? ' Some instructions cannot be traced with the available evidence.' : '');
-  return { trace, links: trace.links, relationGroups, optimisations, statusText };
+  return { trace, links: trace.links, relationGroups, structuralClaims, optimisations, optimisationGroups, statusText };
 }
 
 function traceDescription(trace) {

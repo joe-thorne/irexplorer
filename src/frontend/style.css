@@ -269,6 +269,8 @@ details p { margin: .8rem 0 0; }
 }
 .optimisation-explanation p { margin: .25rem 0; }
 .optimisation-explanation small, .optimisation-note { color: var(--muted); }
+#structural-claims h4 { margin: .85rem 0 .25rem; }
+#structural-claims ul { margin: 0; padding-left: 1.25rem; }
 
 /* Comparison hierarchy: states, current selection, then two distinct transitions. */
 .comparison-status { display: block; padding: 1rem; }
