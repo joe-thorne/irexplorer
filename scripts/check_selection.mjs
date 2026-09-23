@@ -19,7 +19,10 @@ const summary = { links: [
   { text: 'A recorded compiler remark for the selected instruction.', linkIndices: [], remarkIndices: [0] },
   { text: 'The selected pair is merged.', linkIndices: [1], remarkIndices: [2] },
   { text: 'An unrelated structural change.', linkIndices: [2], remarkIndices: [] },
-], steps: [{ remarks: [{ location: { file: 'test.c', line: 1 } }] }], optimisations: [
+], steps: [{ fromOrdinal: 0, toOrdinal: 1, remarks: [
+  { pass_name: 'instcombine', name: 'Simplified', raw: 'selected remark', location: { file: 'examples/curated/test.c', line: 1 } },
+  { pass_name: 'instcombine', name: 'Unrelated', raw: 'unrecorded remark', location: { file: 'examples/curated/test.c', line: 1 } },
+] }], optimisations: [
   { name: 'One optimisation', purpose: 'Test grouping.', change: 'First change.', certainty: 'detected', fromOrdinal: 0, toOrdinal: 1, fromStateId: 'before', toStateId: 'after', linkIndices: [0] },
   { name: 'One optimisation', purpose: 'Test grouping.', change: 'Second change.', certainty: 'detected', fromOrdinal: 0, toOrdinal: 1, fromStateId: 'before', toStateId: 'after', linkIndices: [0] },
 ]};
@@ -71,6 +74,13 @@ check('Selection evidence retains only structural claims recorded for its links'
     { text: 'The selected instruction remains.', linkIndices: [0], remarkIndices: [] },
     { text: 'A recorded compiler remark for the selected instruction.', linkIndices: [], remarkIndices: [0] },
   ]));
+});
+check('Selection evidence retains only recorded relevant compiler remarks with their transition', () => {
+  const evidence = context.buildComparisonEvidence(summary, trace(source(1)));
+  assert.equal(JSON.stringify(evidence.remarks), JSON.stringify([{
+    pass_name: 'instcombine', name: 'Simplified', raw: 'selected remark',
+    location: { file: 'examples/curated/test.c', line: 1 }, fromOrdinal: 0, toOrdinal: 1,
+  }]));
 });
 check('Equivalent optimisation records group without dropping concrete changes', () => {
   const evidence = context.buildComparisonEvidence(summary, trace(source(1)));

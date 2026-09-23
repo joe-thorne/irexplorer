@@ -1,7 +1,8 @@
 // One instruction-level trace for C ranges, IR instructions, and whole CFG blocks.
 // Source-location context and recorded cross-state links remain distinct evidence.
 function sourceMatches(location, anchors) {
-  return anchors.some(anchor => anchor.file === location.file && anchor.line === location.line
+  const filename = path => path.split('/').at(-1);
+  return anchors.some(anchor => filename(anchor.file) === filename(location.file) && anchor.line === location.line
     && (anchor.column === undefined || anchor.column === location.column));
 }
 
@@ -105,9 +106,15 @@ function buildComparisonEvidence(summary, trace) {
   }
   const relationGroups = [...groups].map(([wording, count]) => ({ wording, count }));
   const linkIndices = new Set(trace.links.map(link => summary.links.indexOf(link)).filter(index => index >= 0));
-  const finalRemarks = (summary.steps || []).at(-1)?.remarks || [];
-  const remarkIndices = new Set(finalRemarks.map((remark, index) =>
-    remark.location && sourceMatches(remark.location, trace.anchors) ? index : null).filter(index => index !== null));
+  const finalStep = (summary.steps || []).at(-1);
+  const finalRemarks = finalStep?.remarks || [];
+  const remarkIndices = new Set((summary.items || []).flatMap(item => item.remarkIndices || []).filter(index => {
+    const remark = finalRemarks[index];
+    return remark?.location && sourceMatches(remark.location, trace.anchors);
+  }));
+  const remarks = [...remarkIndices].map(index => ({
+    ...finalRemarks[index], fromOrdinal: finalStep.fromOrdinal, toOrdinal: finalStep.toOrdinal,
+  }));
   const structuralClaims = (summary.items || []).filter(item =>
     item.linkIndices.some(index => linkIndices.has(index))
       || item.remarkIndices.some(index => remarkIndices.has(index)));
@@ -118,7 +125,7 @@ function buildComparisonEvidence(summary, trace) {
     : relationGroups.map(({ wording, count }) => count + ' recorded ' + (count === 1 ? 'link' : 'links')
       + ': ' + wording + '.').join(' ')
       + (trace.unresolved ? ' Some instructions cannot be traced with the available evidence.' : '');
-  return { trace, links: trace.links, relationGroups, structuralClaims, optimisations, optimisationGroups, statusText };
+  return { trace, links: trace.links, relationGroups, remarks, structuralClaims, optimisations, optimisationGroups, statusText };
 }
 
 function traceDescription(trace) {

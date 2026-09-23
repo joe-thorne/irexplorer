@@ -290,6 +290,7 @@ function clearSelection() {
 
 function renderComparison() {
   renderStructuralClaims();
+  renderRemarks();
   renderOptimisations();
   const leftState = stateFor("left");
   const rightState = stateFor("right");

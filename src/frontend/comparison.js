@@ -18,6 +18,7 @@ function renderSummary() {
   }
   if (!appState.summary) {
     document.querySelector("#structural-claims").replaceChildren();
+    document.querySelector("#compiler-remarks").replaceChildren();
     document.querySelector("#optimisation-explanations").replaceChildren();
     elements.comparisonAction.textContent = "";
     document.querySelector("#source-status").textContent = "Choose both states and views to see the source mapping.";
@@ -56,6 +57,31 @@ function renderOptimisations() {
     const state = document.createElement('small');
     state.textContent = event.fromStateId + ' → ' + event.toStateId;
     card.append(name, purpose, change, state);
+    container.append(card);
+  }
+}
+
+function renderRemarks() {
+  const container = document.querySelector('#compiler-remarks');
+  container.replaceChildren();
+  const remarks = appState.selection?.evidence?.remarks || [];
+  if (!appState.selection?.evidence) return;
+  const heading = document.createElement('h4');
+  heading.textContent = 'Captured compiler remarks';
+  const qualification = document.createElement('p');
+  qualification.className = 'compiler-remark-qualification';
+  qualification.textContent = 'These recorded remarks are evidence for this selection, not a complete explanation of compiler intent. Their absence does not establish that no optimisation occurred.';
+  container.append(heading, qualification);
+  for (const remark of remarks) {
+    const card = document.createElement('details');
+    card.className = 'compiler-remark';
+    const summary = document.createElement('summary');
+    summary.textContent = [remark.passName || remark.pass_name, remark.name].filter(Boolean).join(' · ') || 'Captured compiler remark';
+    const transition = document.createElement('small');
+    transition.textContent = `Recorded transition: step ${remark.fromOrdinal} → step ${remark.toOrdinal}`;
+    const raw = document.createElement('pre');
+    raw.textContent = remark.raw;
+    card.append(summary, transition, raw);
     container.append(card);
   }
 }

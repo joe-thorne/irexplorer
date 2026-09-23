@@ -170,6 +170,11 @@ try {
 
 
   await select('#example-select', 'quick_sort'); await until('window.StudyWorkspace.ready');
+  await select('#left-state', '3'); await select('#right-state', '4'); await select('#left-view', 'ir'); await select('#right-view', 'ir'); await until('appState.summary?.fromOrdinal === 3 && appState.summary?.toOrdinal === 4');
+  await select('#function-select', 'partition'); await until(`appState.functionName === 'partition' && window.StudyWorkspace.ready`); await click('.source-line[data-line="12"]'); await until('Boolean(appState.selection?.evidence)');
+  await check('Selection presents relevant captured compiler remarks with their recorded transition', `(() => { const text = document.querySelector('#compiler-remarks').textContent; const remarks = appState.selection?.evidence?.remarks || []; return remarks.length > 0 && remarks.every(remark => remark.location && sourceMatches(remark.location, appState.selection.trace.anchors)) && text.includes('Captured compiler remarks') && text.includes('recorded remarks are evidence') && text.includes('not a complete explanation of compiler intent') && text.includes('absence does not establish that no optimisation occurred') && text.includes('Recorded transition: step 3 → step 4'); })()`);
+
+  await select('#example-select', 'quick_sort'); await until('window.StudyWorkspace.ready');
   await select('#left-state', '8'); await select('#right-state', '9'); await until('window.StudyWorkspace.ready');
   await value(`window.mergeGroup = appState.summary.links.find(link => link.relation === 'merged');`);
   await check('Curated comparison includes a two-to-one group', `mergeGroup.fromNodeIds.length === 2 && mergeGroup.toNodeIds.length === 1`);
