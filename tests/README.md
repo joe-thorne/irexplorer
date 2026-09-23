@@ -50,6 +50,24 @@ Use your platform's Chrome executable if named differently. In another terminal:
 node scripts/check_app.mjs
 ```
 
+On macOS, run the application bundle executable directly in a terminal that
+remains open. The quoted command preserves the temporary profile path, so an
+ordinary Chrome window is neither reused nor stopped by a profile lock:
+
+```sh
+task_profile="$(mktemp -d /private/tmp/irexplorer-devtools.XXXXXX)"
+exec "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+  --headless=new --no-first-run --no-default-browser-check \
+  --disable-background-networking --user-data-dir="$task_profile" \
+  --remote-debugging-address=127.0.0.1 --remote-debugging-port=9239 about:blank
+```
+
+Before running the regression, confirm that the isolated browser is available:
+
+```sh
+curl -fsS http://127.0.0.1:9239/json/version
+```
+
 The script requires Node 22 or later. It checks default Explore navigation, coordinated views, study navigation, retry/receipt behaviour, and independent browser tabs. It submits synthetic data, so use a disposable local instance and study volume. `IREXPLORER_ORIGIN` overrides the default `http://localhost:8000`. Results go to stdout; optionally set `IREXPLORER_CHECK_OUTPUT` to a directory outside the repository for JSON and screenshots. Close the temporary Chrome process after testing.
 
 Automated checks do not establish complete accessibility conformance or replace physical keyboard and spoken screen-reader testing.
