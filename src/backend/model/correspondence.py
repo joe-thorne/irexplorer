@@ -77,10 +77,17 @@ class Correspondence:
 class CorrespondenceView(Protocol):
     """The common read-only shape shared by stored and composed overlays."""
 
-    from_ordinal: int
-    to_ordinal: int
-    covered_kinds: tuple[str, ...]
-    links: tuple[Link, ...]
+    @property
+    def from_ordinal(self) -> int: ...
+
+    @property
+    def to_ordinal(self) -> int: ...
+
+    @property
+    def covered_kinds(self) -> tuple[str, ...]: ...
+
+    @property
+    def links(self) -> tuple[Link, ...]: ...
 
 
 def validate_correspondence(

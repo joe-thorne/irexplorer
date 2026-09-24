@@ -89,8 +89,8 @@ def detect_optimisations(before: StateGraph, after: StateGraph,
                 try:
                     constant, shift = int(a[3]), int(b[3])
                 except ValueError:
-                    constant = shift = None
-                if (constant is not None and shift is not None and 0 <= shift < int(a[1])
+                    continue
+                if (0 <= shift < int(a[1])
                         and constant == 1 << shift
                         and ((a[0] == "mul" and b[0] == "shl")
                              or (a[0] in {"sdiv", "udiv"} and b[0] in {"lshr", "ashr"}))):
@@ -174,8 +174,8 @@ def detect_optimisations(before: StateGraph, after: StateGraph,
         for node in before.nodes:
             if node.kind != "Instruction" or before.by_id[_function(before, node)].display_name != function_name:
                 continue
-            link = correspondence.links_from.get(node.stable_id)
-            if not link or link.to_node_ids:
+            removal = correspondence.links_from.get(node.stable_id)
+            if not removal or removal.to_node_ids:
                 continue
             if node.attributes.get("opcode") == "phi":
                 choices = re.findall(r"\[\s*([^,]+),\s*%[-\w.$]+\s*\]", node.attributes.get("text", ""))
@@ -221,7 +221,7 @@ def explain_comparison(timeline: OptimisationTimeline, correspondences, comparis
     lower, higher = comparison.from_ordinal, comparison.to_ordinal
     if lower == higher:
         return []
-    labels = {ordinal: {} for ordinal in range(lower, higher + 1)}
+    labels: dict[int, dict[str, set[int]]] = {ordinal: {} for ordinal in range(lower, higher + 1)}
     for index, link in enumerate(comparison.links):
         for ordinal, ids in ((lower, link.from_node_ids), (higher, link.to_node_ids)):
             for node in ids:
@@ -249,7 +249,7 @@ def explain_comparison(timeline: OptimisationTimeline, correspondences, comparis
     for ordinal in range(lower, higher):
         for event in detect_optimisations(timeline.state(ordinal), timeline.state(ordinal + 1),
                                           correspondences[ordinal], timeline.steps[ordinal]):
-            indices = set()
+            indices: set[int] = set()
             for state, ids in ((ordinal, event["fromNodeIds"]), (ordinal + 1, event["toNodeIds"])):
                 for node in ids:
                     indices.update(labels[state].get(node, ()))

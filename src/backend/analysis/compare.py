@@ -8,7 +8,13 @@ from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from types import MappingProxyType
 
-from src.backend.model.correspondence import Correspondence, Link, validate_correspondence
+from src.backend.model.correspondence import (
+    Confidence,
+    Correspondence,
+    Link,
+    Relation,
+    validate_correspondence,
+)
 from src.backend.model.graph import Edge, Node, StateGraph
 from src.backend.model.timeline import OptimisationTimeline, PassStep
 
@@ -230,7 +236,7 @@ def _composition_components(
     """Return bipartite link components joined through intermediate nodes."""
 
     earlier_count = len(earlier.links)
-    adjacency = [set() for _ in range(earlier_count + len(later.links))]
+    adjacency: list[set[int]] = [set() for _ in range(earlier_count + len(later.links))]
     later_index_by_node = {
         node_id: index
         for index, link in enumerate(later.links)
@@ -274,7 +280,7 @@ def _unique_node_ids(node_ids: Iterable[str]) -> tuple[str, ...]:
     return tuple(dict.fromkeys(node_ids))
 
 
-def _minimum_confidence(links: Iterable[Link]) -> str:
+def _minimum_confidence(links: Iterable[Link]) -> Confidence:
     confidence_rank = {"none": 0, "plausible": 1, "approximate": 2, "exact": 3}
     return min(links, key=lambda link: confidence_rank[link.confidence]).confidence
 
@@ -283,7 +289,7 @@ def _composition_relation(
     source_ids: tuple[str, ...],
     target_ids: tuple[str, ...],
     links: tuple[Link, ...],
-) -> str:
+) -> Relation:
     if not source_ids:
         return "added"
     if not target_ids:
@@ -297,7 +303,7 @@ def _composition_relation(
     return _coarsened_relation(links)
 
 
-def _coarsened_relation(links: Iterable[Link]) -> str:
+def _coarsened_relation(links: Iterable[Link]) -> Relation:
     relations = tuple(link.relation for link in links)
     return relations[0] if len(set(relations)) == 1 else "changed"
 
@@ -419,8 +425,8 @@ def _match_unique(
     kind: str,
     key: Callable[[Node], object],
     evidence: str,
-    relation: str = "same",
-    confidence: str = "exact",
+    relation: Relation = "same",
+    confidence: Confidence = "exact",
 ) -> dict[str, str]:
     grouped_from = _group_unique(
         (node for node in unmatched_from.values() if node.kind == kind), key
@@ -436,8 +442,8 @@ def _match_unique(
             Link(
                 from_node_ids=(from_node.stable_id,),
                 to_node_ids=(to_node.stable_id,),
-                relation=relation,  # type: ignore[arg-type]
-                confidence=confidence,  # type: ignore[arg-type]
+                relation=relation,
+                confidence=confidence,
                 evidence=evidence,
             )
         )
@@ -673,8 +679,8 @@ def _match_unique_in_context(
     to_state: StateGraph,
     key: Callable[[StateGraph, Node], object],
     evidence: str,
-    relation: str = "same",
-    confidence: str = "exact",
+    relation: Relation = "same",
+    confidence: Confidence = "exact",
     ignore_none: bool = False,
     parent_kind: str = "BasicBlock",
 ) -> dict[str, str]:
@@ -726,8 +732,8 @@ def _match_unique_in_context(
             Link(
                 from_node_ids=(from_node.stable_id,),
                 to_node_ids=(to_node.stable_id,),
-                relation=observed_relation,  # type: ignore[arg-type]
-                confidence=confidence,  # type: ignore[arg-type]
+                relation=observed_relation,
+                confidence=confidence,
                 evidence=evidence,
             )
         )
@@ -846,7 +852,7 @@ def _expression_boundary(
 ) -> tuple | None:
     """Corroborate a connected expression with its inputs and result users."""
     ids = {node.stable_id for node in nodes}
-    neighbours = {node_id: set() for node_id in ids}
+    neighbours: dict[str, set[str]] = {node_id: set() for node_id in ids}
     inputs: set[tuple] = set()
     outputs: set[tuple] = set()
     function = _function_for_node(state, nodes[0])
@@ -978,7 +984,7 @@ def _match_source_rewrites_in_context(
     for match_key in sorted(grouped_from.keys() & grouped_to.keys(), key=str):
         from_node = grouped_from[match_key]
         to_node = grouped_to[match_key]
-        relation = (
+        relation: Relation = (
             "promoted"
             if from_node.attributes.get("opcode") == "load"
             and to_node.attributes.get("opcode") != "load"
@@ -1018,7 +1024,7 @@ def _append_unmatched_links(
             from_candidates.extend(from_state.by_id[node_id] for node_id in link.from_node_ids)
             to_candidates.extend(to_state.by_id[node_id] for node_id in link.to_node_ids)
     for node in tuple(unmatched_from.values()):
-        confidence = "none" if _has_plausible_target(
+        confidence: Confidence = "none" if _has_plausible_target(
             node, to_candidates, from_state, to_state, function_pairs
         ) else "exact"
         if confidence == "exact" and step is not None and step.kind == "recompiled" and (
@@ -1317,7 +1323,8 @@ def _cfg_edge_differences(
         for edge in to_state.edges
         if edge.relation == "controlFlow"
     ]
-    after_counts = Counter(key for key, _ in after_edges)
+    # Edges whose endpoints have no block counterpart map to None and never match.
+    after_counts: Counter[tuple[str | None, str | None, str]] = Counter(key for key, _ in after_edges)
     removed: list[tuple[tuple[str | None, str | None, str], Edge]] = []
     for key, edge in before_edges:
         if after_counts[key]:
@@ -1458,7 +1465,7 @@ def _normalised_instruction_text(node: Node) -> str:
     return _VALUE_NAME_RE.sub("%value", " ".join(text.split()))
 
 
-def _instruction_relation(from_node: Node, to_node: Node) -> str:
+def _instruction_relation(from_node: Node, to_node: Node) -> Relation:
     """Describe an instruction pair independently of the evidence used to find it."""
 
     from_text = _display_instruction_text(from_node)
