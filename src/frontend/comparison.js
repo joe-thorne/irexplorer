@@ -34,14 +34,11 @@ function renderOptimisations() {
   container.replaceChildren();
   const evidence = appState.selection?.evidence;
   if (!evidence) return;
-  const { trace, optimisationGroups: groups } = evidence;
+  const { optimisationGroups: groups } = evidence;
   if (!groups.length) {
     const note = document.createElement('p');
     note.className = 'optimisation-note';
-    note.textContent = trace.sameState ? 'Same state: no optimisation change to explain.'
-      : trace.links.length && trace.links.every(link => link.relation === 'same' && link.confidence === 'exact')
-        ? 'No instruction change recorded for this selection between these states.'
-        : 'No specific optimisation identified for this selection from the recorded evidence.';
+    note.textContent = evidence.optimisationNote;
     container.append(note);
     return;
   }

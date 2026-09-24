@@ -159,6 +159,40 @@ check('Known removal and missing coverage remain distinct', () => {
   assert.match(context.traceDescription(result), /removed/);
   assert.equal(context.buildSelectionTrace({ left, right }, { links: [] }, node('left', 'a')).missing, 1);
 });
+check('Comparison evidence qualifies special states without inventing an optimisation', () => {
+  const sameState = context.buildComparisonEvidence({ links: [], items: [], optimisations: [] }, {
+    ...trace(node('left', 'a')), links: [], sameState: true, unresolved: false,
+  });
+  assert.equal(sameState.optimisationNote, 'Same state: no cross-state optimisation change is being compared.');
+
+  const unchanged = context.buildComparisonEvidence({ links: [], items: [], optimisations: [] }, {
+    ...trace(node('left', 'a')),
+    links: [{ fromNodeIds: ['a'], toNodeIds: ['x'], relation: 'same', confidence: 'exact' }],
+    sameState: false, unresolved: false,
+  });
+  assert.equal(unchanged.optimisationNote, 'No instruction change recorded for this selection between these states.');
+
+  const recognisedChange = context.buildComparisonEvidence({ links: [], items: [], optimisations: [] }, {
+    ...trace(node('left', 'a')),
+    links: [
+      { fromNodeIds: ['a'], toNodeIds: [], relation: 'removed', confidence: 'exact' },
+      { fromNodeIds: [], toNodeIds: ['x'], relation: 'added', confidence: 'exact' },
+    ],
+    sameState: false, unresolved: false,
+  });
+  assert.match(recognisedChange.statusText, /removed · exact confidence/);
+  assert.match(recognisedChange.statusText, /added · exact confidence/);
+  assert.doesNotMatch(recognisedChange.statusText, /cannot be traced/);
+  assert.equal(recognisedChange.optimisationNote, 'No specific optimisation identified for this selection from the recorded evidence.');
+
+  const unresolved = context.buildComparisonEvidence({ links: [], items: [], optimisations: [] }, {
+    ...trace(node('left', 'a')),
+    links: [{ fromNodeIds: ['a'], toNodeIds: [], relation: 'removed', confidence: 'none' }],
+    sameState: false, unresolved: true,
+  });
+  assert.match(unresolved.statusText, /unresolved/);
+  assert.match(unresolved.statusText, /cannot be traced with the available evidence/);
+});
 check('Source records and links cannot leak into a different function', () => {
   const result = context.buildSelectionTrace({ left: panel(0, ['a'], [['not-in-function', 3]]), right }, summary, source(3));
   assert.deepEqual(ids(result.members.left), []);

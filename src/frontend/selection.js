@@ -96,6 +96,14 @@ function groupOptimisations(events) {
   return [...groups.values()];
 }
 
+function optimisationNote(trace, optimisationGroups) {
+  if (optimisationGroups.length) return '';
+  if (trace.sameState) return 'Same state: no cross-state optimisation change is being compared.';
+  if (trace.links.length && trace.links.every(link => link.relation === 'same' && link.confidence === 'exact'))
+    return 'No instruction change recorded for this selection between these states.';
+  return 'No specific optimisation identified for this selection from the recorded evidence.';
+}
+
 // The participant-facing comparison consumes this model without reinterpreting
 // the immutable summary record or the trace it produced.
 function buildComparisonEvidence(summary, trace) {
@@ -121,11 +129,12 @@ function buildComparisonEvidence(summary, trace) {
   const optimisations = (summary.optimisations || []).filter(event =>
     event.linkIndices.some(index => linkIndices.has(index)));
   const optimisationGroups = groupOptimisations(optimisations);
+  const note = optimisationNote(trace, optimisationGroups);
   const statusText = trace.sameState ? 'The same instructions are highlighted in both views.'
     : relationGroups.map(({ wording, count }) => count + ' recorded ' + (count === 1 ? 'link' : 'links')
       + ': ' + wording + '.').join(' ')
       + (trace.unresolved ? ' Some instructions cannot be traced with the available evidence.' : '');
-  return { trace, links: trace.links, relationGroups, remarks, structuralClaims, optimisations, optimisationGroups, statusText };
+  return { trace, links: trace.links, relationGroups, remarks, structuralClaims, optimisations, optimisationGroups, optimisationNote: note, statusText };
 }
 
 function traceDescription(trace) {
