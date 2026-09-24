@@ -22,8 +22,8 @@ def bake_curated_comparison_records() -> None:
     for example in curated.list_examples():
         timeline = load_prebaked_curated_timeline(example)
         for ordinal in range(len(timeline.steps)):
-            result = compare_timeline_step(timeline, ordinal)
-            if not isinstance(result.correspondence, Correspondence):
+            correspondence = compare_timeline_step(timeline, ordinal)
+            if not isinstance(correspondence, Correspondence):
                 # I12: only adjacent overlays are persisted, never composed views.
                 raise ModelValidationError("an adjacent step must yield a stored correspondence")
             path = (
@@ -34,7 +34,7 @@ def bake_curated_comparison_records() -> None:
             )
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(
-                serialise_json(serialise_correspondence(result.correspondence)),
+                serialise_json(serialise_correspondence(correspondence)),
                 encoding="utf-8",
             )
 

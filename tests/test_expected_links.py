@@ -98,15 +98,15 @@ class ArtefactExpectedLinkTests(unittest.TestCase):
     def test_fresh_analysis_matches_reviewed_links(self) -> None:
         for case in self.cases:
             with self.subTest(table=case['table']):
-                result = compare_timeline_step(self.fresh[case['example']], case['fromOrdinal'])
+                fresh = compare_timeline_step(self.fresh[case['example']], case['fromOrdinal'])
                 baked = load_prebaked_curated_correspondence(
                     case['example'], case['fromOrdinal']
                 )
                 # Compare reviewed rows here only when fresh and stored overlays
                 # agree; the served-overlay test below always checks the fixture.
-                if self.actual_links(result.correspondence) != self.actual_links(baked):
+                if self.actual_links(fresh) != self.actual_links(baked):
                     continue
-                self.assertEqual(self.actual_links(result.correspondence), self.expected_links(self.rows(case)))
+                self.assertEqual(self.actual_links(fresh), self.expected_links(self.rows(case)))
 
     def test_served_overlays_match_reviewed_links(self) -> None:
         for case in self.cases:
@@ -132,15 +132,14 @@ class ArtefactExpectedLinkTests(unittest.TestCase):
                         }
                         self.assertEqual(actual, {tuple(edge) for edge in expected})
                     if dataset is self.fresh:
-                        result = compare_timeline_step(timeline, case['fromOrdinal'])
-                        correspondence, summary = result.correspondence, result.summary
+                        correspondence = compare_timeline_step(timeline, case['fromOrdinal'])
                     else:
                         correspondence = load_prebaked_curated_correspondence(
                             case['example'], case['fromOrdinal']
                         )
-                        summary = summarise_correspondence(
-                            correspondence, before, after, step=timeline.steps[case['fromOrdinal']]
-                        )
+                    summary = summarise_correspondence(
+                        correspondence, before, after, step=timeline.steps[case['fromOrdinal']]
+                    )
                     text = ' '.join(item.text for item in summary.items)
                     claims = (
                         case.get('freshSummaryContains', case['summaryContains'])

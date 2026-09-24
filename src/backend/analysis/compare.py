@@ -44,14 +44,6 @@ class ComparisonSummary:
 
 
 @dataclass(frozen=True)
-class ComparisonResult:
-    """The correspondence and its derived summary, without state mutation."""
-
-    correspondence: Correspondence | ComposedCorrespondence
-    summary: ComparisonSummary
-
-
-@dataclass(frozen=True)
 class ComposedCorrespondence:
     """A transient non-adjacent view derived from stored adjacent overlays.
 
@@ -103,7 +95,7 @@ class ComposedCorrespondence:
 def compare_timeline_step(
     timeline: OptimisationTimeline,
     from_ordinal: int = 0,
-) -> ComparisonResult:
+) -> Correspondence:
     """Compare one adjacent timeline pair using its honest transition metadata."""
 
     timeline.validate()
@@ -321,7 +313,7 @@ def compare_states(
     to_state: StateGraph,
     *,
     step: PassStep | None = None,
-) -> ComparisonResult:
+) -> Correspondence:
     """Return a deterministic, coverage-complete hybrid overlay.
 
     The matcher combines containment/CFG structure, eager SSA def-use edges,
@@ -405,10 +397,7 @@ def compare_states(
         links=tuple(links),
     )
     correspondence.validate(from_state, to_state)
-    return ComparisonResult(
-        correspondence=correspondence,
-        summary=summarise_correspondence(correspondence, from_state, to_state, step),
-    )
+    return correspondence
 
 
 def _comparable_nodes(state: StateGraph) -> dict[str, Node]:

@@ -1,6 +1,7 @@
 import unittest
 
 from src.backend.analysis import compare_states, compare_timeline_step, compose_correspondences
+from src.backend.analysis.compare import summarise_correspondence
 from src.backend.ingest import load_prebaked_curated_timeline, parse_ir_state
 
 
@@ -23,8 +24,8 @@ CHAIN = """  %shift = shl i32 %x, 1, !dbg !1
   ret i32 %result, !dbg !2"""
 
 
-def grouped(result):
-    return [link for link in result.correspondence.links
+def grouped(correspondence):
+    return [link for link in correspondence.links
             if link.relation in {"split", "merged"}]
 
 
@@ -35,17 +36,18 @@ class InstructionGroupTests(unittest.TestCase):
         ):
             with self.subTest(relation=relation):
                 a, b = state(before, 0), state(after, 1)
-                result = compare_states(a, b)
-                result.correspondence.validate(a, b)
-                links = grouped(result)
+                correspondence = compare_states(a, b)
+                correspondence.validate(a, b)
+                links = grouped(correspondence)
                 self.assertEqual(len(links), 1)
                 link = links[0]
                 self.assertEqual(link.relation, relation)
                 self.assertEqual((len(link.from_node_ids), len(link.to_node_ids)), sizes)
                 self.assertEqual(link.confidence, "approximate")
                 self.assertIn("result-use", link.evidence)
-                self.assertTrue(any(relation in item.text for item in result.summary.items))
-                self.assertEqual(result, compare_states(a, b))
+                summary = summarise_correspondence(correspondence, a, b, None)
+                self.assertTrue(any(relation in item.text for item in summary.items))
+                self.assertEqual(correspondence, compare_states(a, b))
 
     def test_rejects_same_source_without_connected_value_flow(self):
         disconnected = CHAIN.replace("add i32 %shift, %x", "add i32 %x, 2")
@@ -83,7 +85,7 @@ class InstructionGroupTests(unittest.TestCase):
 
     def test_groups_compose_without_claiming_exact_equivalence(self):
         a, b, c = state(SINGLE, 0), state(CHAIN, 1), state(SINGLE, 2)
-        first, second = compare_states(a, b).correspondence, compare_states(b, c).correspondence
+        first, second = compare_states(a, b), compare_states(b, c)
         composed = compose_correspondences(first, second, a, b, c)
         composed.validate(a, c)
         link = next(link for link in composed.links if link.confidence == "approximate")
@@ -103,9 +105,9 @@ class InstructionGroupTests(unittest.TestCase):
 
     def test_consumed_group_does_not_upgrade_other_ambiguity(self):
         timeline = load_prebaked_curated_timeline("quick_sort")
-        result = compare_timeline_step(timeline, 8)
+        correspondence = compare_timeline_step(timeline, 8)
         added_extensions = [
-            link for link in result.correspondence.links
+            link for link in correspondence.links
             if link.relation == "added" and any(
                 timeline.state(9).by_id[node].attributes.get("opcode") == "sext"
                 for node in link.to_node_ids)
@@ -133,9 +135,9 @@ class MinMaxRewriteTests(unittest.TestCase):
                     for before, after, relation in ((pair, call, 'merged'), (call, pair, 'split')):
                         with self.subTest(operation=operation, predicate=predicate, swapped=swapped, relation=relation):
                             a, b = state(before, 0), state(after, 1)
-                            result = compare_states(a, b)
-                            result.correspondence.validate(a, b)
-                            self.assertEqual([link.relation for link in grouped(result)], [relation])
+                            correspondence = compare_states(a, b)
+                            correspondence.validate(a, b)
+                            self.assertEqual([link.relation for link in grouped(correspondence)], [relation])
 
     def test_rejects_near_misses(self):
         for pair, call in (
@@ -153,8 +155,7 @@ class MinMaxRewriteTests(unittest.TestCase):
 
     def test_score_cleanup_links_both_original_instructions(self):
         timeline = load_prebaked_curated_timeline('score')
-        result = compare_timeline_step(timeline, 4)
-        links = grouped(result)
+        links = grouped(compare_timeline_step(timeline, 4))
         self.assertEqual(len(links), 1)
         self.assertEqual([timeline.state(4).by_id[node].attributes['opcode']
                           for node in links[0].from_node_ids], ['icmp', 'select'])

@@ -23,7 +23,7 @@ entry:
 def detect(old, new, kind="derived", pass_name="test"):
     a, b = state(old, 0), state(new, 1)
     step = PassStep(0, 1, kind, StepOrigin("test", pass_name=pass_name))
-    correspondence = compare_states(a, b, step=step).correspondence
+    correspondence = compare_states(a, b, step=step)
     return detect_optimisations(a, b, correspondence, step)
 
 

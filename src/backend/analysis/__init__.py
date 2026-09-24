@@ -1,7 +1,6 @@
 """Layer 4 pure comparison and summary functions."""
 
 from src.backend.analysis.compare import (
-    ComparisonResult,
     ComparisonSummary,
     ComposedCorrespondence,
     SummaryItem,
@@ -18,7 +17,6 @@ from src.backend.analysis.curated import (
 )
 
 __all__ = [
-    "ComparisonResult",
     "ComparisonSummary",
     "ComposedCorrespondence",
     "SummaryItem",

@@ -1,6 +1,7 @@
 import unittest
 
 from src.backend.analysis import (
+    compare_states,
     compare_timeline_step,
     compose_correspondences,
     compose_timeline_correspondences,
@@ -35,13 +36,19 @@ from src.backend.toolchain import curated
 
 
 class EndpointComparisonTests(unittest.TestCase):
+    def test_adjacent_comparison_returns_only_the_stored_correspondence(self) -> None:
+        timeline = load_curated_timeline("score", resolution="full")
+        correspondence = compare_timeline_step(timeline, 0)
+        self.assertIs(type(correspondence), Correspondence)
+        self.assertEqual(correspondence, compare_states(timeline.state(0), timeline.state(1)))
+
     def test_hybrid_matcher_validates_all_curated_pass_pairs(self) -> None:
         for example in ("score", "binary_search", "quick_sort"):
             with self.subTest(example=example):
                 timeline = load_curated_timeline(example, resolution="full")
                 for ordinal in range(len(timeline.steps)):
-                    result = compare_timeline_step(timeline, ordinal)
-                    result.correspondence.validate(
+                    correspondence = compare_timeline_step(timeline, ordinal)
+                    correspondence.validate(
                         timeline.state(ordinal), timeline.state(ordinal + 1)
                     )
 
@@ -49,13 +56,13 @@ class EndpointComparisonTests(unittest.TestCase):
         timeline = load_curated_timeline("score", resolution="full")
         for ordinal in range(3):
             with self.subTest(pass_name=timeline.steps[ordinal].origin.pass_name):
-                result = compare_timeline_step(timeline, ordinal)
-                result.correspondence.validate(
+                correspondence = compare_timeline_step(timeline, ordinal)
+                correspondence.validate(
                     timeline.state(ordinal), timeline.state(ordinal + 1)
                 )
                 matched_instructions = [
                     link
-                    for link in result.correspondence.links
+                    for link in correspondence.links
                     if link.from_node_ids
                     and link.to_node_ids
                     and timeline.state(ordinal).by_id[link.from_node_ids[0]].kind
@@ -63,7 +70,7 @@ class EndpointComparisonTests(unittest.TestCase):
                 ]
                 self.assertTrue(matched_instructions)
 
-        mem2reg = compare_timeline_step(timeline, 0).correspondence
+        mem2reg = compare_timeline_step(timeline, 0)
         exact_blocks = [
             link
             for link in mem2reg.links
@@ -73,7 +80,7 @@ class EndpointComparisonTests(unittest.TestCase):
         ]
         self.assertEqual(len(exact_blocks), 4)
 
-        instcombine = compare_timeline_step(timeline, 1).correspondence
+        instcombine = compare_timeline_step(timeline, 1)
         self.assertTrue(
             any(
                 link.relation == "simplifiedInto"
@@ -85,7 +92,7 @@ class EndpointComparisonTests(unittest.TestCase):
     def test_instruction_relation_describes_paired_text_not_fallback_tier(self) -> None:
         """Fallback evidence must not make unchanged IR look renamed or moved."""
         score = load_curated_timeline("score", resolution="full")
-        mem2reg = compare_timeline_step(score, 0).correspondence
+        mem2reg = compare_timeline_step(score, 0)
         unchanged_link = next(
             link
             for link in mem2reg.links
@@ -101,7 +108,7 @@ class EndpointComparisonTests(unittest.TestCase):
         self.assertEqual((rewritten_link.relation, rewritten_link.confidence), ("changed", "approximate"))
 
         quick_sort = load_curated_timeline("quick_sort", resolution="full")
-        indvars = compare_timeline_step(quick_sort, 8).correspondence
+        indvars = compare_timeline_step(quick_sort, 8)
         phi_link = next(
             link
             for link in indvars.links
@@ -119,7 +126,7 @@ class EndpointComparisonTests(unittest.TestCase):
 
     def test_unresolved_candidates_are_explicit_none_links(self) -> None:
         timeline = load_curated_timeline("binary_search", resolution="full")
-        correspondence = compare_timeline_step(timeline, 2).correspondence
+        correspondence = compare_timeline_step(timeline, 2)
         unresolved = [link for link in correspondence.links if link.confidence == "none"]
 
         self.assertTrue(unresolved)
@@ -144,7 +151,7 @@ class EndpointComparisonTests(unittest.TestCase):
                 to_function_names = {
                     node.display_name for node in to_state.nodes if node.kind == "Function"
                 }
-                for link in compare_timeline_step(timeline, ordinal).correspondence.links:
+                for link in compare_timeline_step(timeline, ordinal).links:
                     if link.confidence != "exact" or link.relation not in {"removed", "added"}:
                         continue
                     state, paired_function_names, node_ids = (
@@ -167,7 +174,7 @@ class EndpointComparisonTests(unittest.TestCase):
     def test_quick_sort_vanished_partition_nodes_are_unresolved(self) -> None:
         timeline = load_curated_timeline("quick_sort", resolution="full")
         from_state = timeline.state(12)
-        correspondence = compare_timeline_step(timeline, 12).correspondence
+        correspondence = compare_timeline_step(timeline, 12)
         partition = next(
             node for node in from_state.nodes if node.kind == "Function" and node.display_name == "partition"
         )
@@ -195,12 +202,12 @@ class EndpointComparisonTests(unittest.TestCase):
         timeline = load_curated_timeline("binary_search", resolution="full")
         from_state = timeline.state(12)
         to_state = timeline.state(13)
-        result = compare_timeline_step(timeline, 12)
+        correspondence = compare_timeline_step(timeline, 12)
 
         self.assertEqual(timeline.steps[12].kind, "recompiled")
         branch_links = {
             link.relation: link
-            for link in result.correspondence.links
+            for link in correspondence.links
             if (
                 link.from_node_ids
                 and str(from_state.by_id[link.from_node_ids[0]].attributes.get("text", "")).startswith(
@@ -229,7 +236,7 @@ class EndpointComparisonTests(unittest.TestCase):
         for (example, ordinal), expected in expected_none_counts.items():
             with self.subTest(example=example, ordinal=ordinal):
                 timeline = load_curated_timeline(example, resolution="full")
-                correspondence = compare_timeline_step(timeline, ordinal).correspondence
+                correspondence = compare_timeline_step(timeline, ordinal)
                 self.assertEqual(
                     sum(link.confidence == "none" for link in correspondence.links), expected
                 )
@@ -277,13 +284,13 @@ join:
 
     def test_score_anchor_comparison_is_coverage_complete_and_honest(self) -> None:
         timeline = load_curated_timeline("score", resolution="full")
-        result = compare_timeline_step(timeline, len(timeline.steps) - 1)
-        correspondence = result.correspondence
+        correspondence = compare_timeline_step(timeline, len(timeline.steps) - 1)
         from_state = timeline.state(12)
         to_state = timeline.state(13)
+        summary = summarise_correspondence(correspondence, from_state, to_state, timeline.steps[-1])
 
         correspondence.validate(from_state, to_state)
-        self.assertIn("not the effect of one optimisation pass", result.summary.context)
+        self.assertIn("not the effect of one optimisation pass", summary.context)
         self.assertEqual(
             len(correspondence.links_from),
             sum(1 for node in from_state.nodes if node.kind != "Module"),
@@ -293,7 +300,7 @@ join:
             sum(1 for node in to_state.nodes if node.kind != "Module"),
         )
 
-        for item in result.summary.items:
+        for item in summary.items:
             self.assertTrue(item.link_indices or item.remark_indices)
             for index in item.link_indices:
                 self.assertLess(index, len(correspondence.links))
@@ -316,19 +323,19 @@ join:
         )
         self.assertIn(
             "CFG unchanged across the recorded basic-block correspondences.",
-            {item.text for item in result.summary.items},
+            {item.text for item in summary.items},
         )
 
     def test_endpoint_correspondences_validate_for_all_curated_examples(self) -> None:
         for example in ("score", "binary_search", "quick_sort"):
             with self.subTest(example=example):
                 timeline = load_curated_timeline(example)
-                correspondence = compare_timeline_step(timeline).correspondence
+                correspondence = compare_timeline_step(timeline)
                 correspondence.validate(timeline.state(0), timeline.state(1))
 
     def test_correspondence_round_trips_and_rejects_invalid_endpoint_ids(self) -> None:
         timeline = load_curated_timeline("score")
-        correspondence = compare_timeline_step(timeline).correspondence
+        correspondence = compare_timeline_step(timeline)
         record = serialise_correspondence(correspondence)
         loaded = deserialise_correspondence(
             deserialise_json(serialise_json(record)), timeline.state(0), timeline.state(1)
@@ -369,7 +376,7 @@ join:
                         )
                     )
                     fresh = serialise_correspondence(
-                        compare_timeline_step(timeline, ordinal).correspondence
+                        compare_timeline_step(timeline, ordinal)
                     )
                     self.assertEqual(fresh, baked)
 
@@ -380,25 +387,25 @@ join:
         self.assertTrue(is_identity_correspondence(correspondences[3]))
         self.assertFalse(is_identity_correspondence(correspondences[0]))
 
-        result = compare_timeline_step(timeline, 3)
-        self.assertIn("retained as a no-op", result.summary.items[0].text)
+        summary = _step_summary(timeline, 3)
+        self.assertIn("retained as a no-op", summary.items[0].text)
         self.assertEqual(
-            result.summary.items[0].link_indices,
-            tuple(range(len(result.correspondence.links))),
+            summary.items[0].link_indices,
+            tuple(range(len(correspondences[3].links))),
         )
 
     def test_pass_summary_cites_its_own_captured_remarks(self) -> None:
         timeline = load_curated_timeline("quick_sort", resolution="full")
-        result = compare_timeline_step(timeline, 3)
+        summary = _step_summary(timeline, 3)
 
-        remark_item = next(item for item in result.summary.items if item.remark_indices)
+        remark_item = next(item for item in summary.items if item.remark_indices)
         self.assertEqual(remark_item.remark_indices, tuple(range(len(timeline.steps[3].remarks))))
         self.assertIn("compiler remarks were captured for this step", remark_item.text)
 
     def test_cfg_summary_reports_relabelled_branch_edges(self) -> None:
         timeline = load_curated_timeline("quick_sort", resolution="full")
-        result = compare_timeline_step(timeline, 1)
-        summary_text = " ".join(item.text for item in result.summary.items)
+        correspondence = compare_timeline_step(timeline, 1)
+        summary_text = " ".join(item.text for item in _step_summary(timeline, 1).items)
 
         self.assertNotIn("CFG unchanged", summary_text)
         self.assertIn(
@@ -408,15 +415,14 @@ join:
         )
         changed_block = next(
             link
-            for link in result.correspondence.links
+            for link in correspondence.links
             if link.from_node_ids == ("fn1/bb2",)
         )
         self.assertEqual((changed_block.relation, changed_block.confidence), ("changed", "approximate"))
 
     def test_cfg_summary_reports_named_added_and_removed_edges(self) -> None:
         timeline = load_curated_timeline("binary_search", resolution="full")
-        result = compare_timeline_step(timeline, 6)
-        summary_text = " ".join(item.text for item in result.summary.items)
+        summary_text = " ".join(item.text for item in _step_summary(timeline, 6).items)
 
         self.assertIn("CFG edges changed: removed entry → while.cond [unconditional]", summary_text)
         self.assertIn("added entry → while.body.lr.ph [true]", summary_text)
@@ -424,7 +430,7 @@ join:
     def test_composed_view_coarsens_relation_and_degrades_confidence(self) -> None:
         timeline = load_curated_timeline("binary_search", resolution="full")
         correspondences = tuple(
-            compare_timeline_step(timeline, ordinal).correspondence
+            compare_timeline_step(timeline, ordinal)
             for ordinal in range(len(timeline.steps))
         )
 
@@ -441,6 +447,16 @@ join:
                 for link in composed.links
             )
         )
+
+
+def _step_summary(timeline, ordinal):
+    """Summarise one freshly compared adjacent step with its own pass metadata."""
+    return summarise_correspondence(
+        compare_timeline_step(timeline, ordinal),
+        timeline.state(ordinal),
+        timeline.state(ordinal + 1),
+        timeline.steps[ordinal],
+    )
 
 
 class CorrespondenceCompositionTests(unittest.TestCase):
