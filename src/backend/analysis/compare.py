@@ -92,8 +92,8 @@ def compare_timeline_step(
     )
 
 
-def is_identity_correspondence(correspondence: Correspondence) -> bool:
-    """Return whether an adjacent pass left every comparable node unchanged."""
+def is_identity_correspondence(correspondence: Correspondence | ComposedCorrespondence) -> bool:
+    """Return whether every comparable node is unchanged between the correspondence's states."""
 
     return bool(correspondence.links) and all(
         link.relation == "same" and link.confidence == "exact"

@@ -181,6 +181,7 @@ def model_source_path(example: str, *, must_exist: bool = True) -> Path:
     The bake passes ``must_exist=False`` to learn where to write the record.
     """
 
+    _require_example(example)
     path = artefact_dir(example) / "model" / "source.json"
     if must_exist and not path.exists():
         raise ToolchainError(

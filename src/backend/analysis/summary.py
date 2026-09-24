@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from src.backend.analysis.cfg_diff import CfgEdgeDifference, cfg_edge_differences
-from src.backend.analysis.compare import ComposedCorrespondence
+from src.backend.analysis.compare import ComposedCorrespondence, is_identity_correspondence
 from src.backend.model.correspondence import Correspondence, Link
 from src.backend.model.graph import StateGraph
 from src.backend.model.timeline import PassStep
@@ -57,7 +57,7 @@ def summarise_correspondence(
 
     items: list[SummaryItem] = []
     all_indices = tuple(range(len(correspondence.links)))
-    if _is_identity_view(correspondence):
+    if is_identity_correspondence(correspondence):
         items.append(
             SummaryItem(
                 ("No structural or value-level changes were detected across these recorded endpoints."
@@ -217,13 +217,6 @@ def summarise_correspondence(
             )
         )
     return ComparisonSummary(context=context, items=tuple(items))
-
-
-def _is_identity_view(correspondence: Correspondence | ComposedCorrespondence) -> bool:
-    return bool(correspondence.links) and all(
-        link.relation == "same" and link.confidence == "exact"
-        for link in correspondence.links
-    )
 
 
 def _link_indices(

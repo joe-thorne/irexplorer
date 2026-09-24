@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass
+from typing import NamedTuple
 
 from src.backend.analysis.compare import ComposedCorrespondence
 from src.backend.model.correspondence import Correspondence
@@ -19,15 +20,19 @@ class CfgEdgeDifference:
     link_indices: tuple[int, ...]
 
 
+class CfgEdgeDifferences(NamedTuple):
+    """Every CFG edge change between two states, by kind of change."""
+
+    removed: tuple[CfgEdgeDifference, ...]
+    added: tuple[CfgEdgeDifference, ...]
+    relabelled: tuple[CfgEdgeDifference, ...]
+
+
 def cfg_edge_differences(
     correspondence: Correspondence | ComposedCorrespondence,
     from_state: StateGraph,
     to_state: StateGraph,
-) -> tuple[
-    tuple[CfgEdgeDifference, ...],
-    tuple[CfgEdgeDifference, ...],
-    tuple[CfgEdgeDifference, ...],
-]:
+) -> CfgEdgeDifferences:
     """Compare CFG edges after translating endpoints through block links.
 
     A correspondence is between nodes, while a CFG claim is about directed,
@@ -37,7 +42,6 @@ def cfg_edge_differences(
     """
 
     from_to: dict[str, tuple[str, int]] = {}
-    to_from: dict[str, tuple[str, int]] = {}
     from_link_indices: dict[str, int] = {}
     to_link_indices: dict[str, int] = {}
     for index, link in enumerate(correspondence.links):
@@ -54,7 +58,6 @@ def cfg_edge_differences(
                 and to_state.by_id[to_id].kind == "BasicBlock"
             ):
                 from_to[from_id] = (to_id, index)
-                to_from[to_id] = (from_id, index)
 
     def from_key(edge_from: str, edge_to: str, label: str) -> tuple[str | None, str | None, str]:
         return (
@@ -141,14 +144,14 @@ def cfg_edge_differences(
             )
         )
 
-    return (
-        tuple(
+    return CfgEdgeDifferences(
+        removed=tuple(
             CfgEdgeDifference(describe_before(before), None, links_for(before, None))
             for _, before in remaining_removed
         ),
-        tuple(
+        added=tuple(
             CfgEdgeDifference(None, describe_after(after), links_for(None, after))
             for _, after in remaining_added
         ),
-        tuple(relabelled),
+        relabelled=tuple(relabelled),
     )
