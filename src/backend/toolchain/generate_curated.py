@@ -20,14 +20,6 @@ from src.backend.toolchain.curated import (
 WORKSPACE_ROOT = Path("/workspace")
 
 
-def generate_all(*, artefacts_root: Path = ARTEFACTS_ROOT) -> None:
-    """Generate a curated snapshot through the offline bake coordinator."""
-
-    from src.backend.bake import generate_all as bake_all
-
-    bake_all(artefacts_root=artefacts_root)
-
-
 def generate_snapshot(staging_root: Path) -> None:
     """Generate the raw curated artefacts in an already staged tree."""
 
@@ -253,44 +245,6 @@ def _docker_command(command: list[str], artefacts_root: Path) -> list[str]:
     ]
 
 
-def _backup_path(artefacts_root: Path) -> Path:
-    return artefacts_root.with_name(f".{artefacts_root.name}.previous")
-
-
-def _recover_interrupted_replacement(artefacts_root: Path) -> None:
-    backup_root = _backup_path(artefacts_root)
-    if not backup_root.exists():
-        return
-    if artefacts_root.exists():
-        raise ToolchainError(
-            f"Previous curated snapshot backup still exists: {backup_root}"
-        )
-    backup_root.replace(artefacts_root)
-
-
-def _replace_snapshot(staging_root: Path, artefacts_root: Path) -> None:
-    """Install a complete staged tree, restoring the previous tree on failure."""
-
-    backup_root = _backup_path(artefacts_root)
-    had_previous = artefacts_root.exists()
-    if had_previous:
-        artefacts_root.replace(backup_root)
-    try:
-        staging_root.replace(artefacts_root)
-    except OSError as exc:
-        if had_previous:
-            try:
-                backup_root.replace(artefacts_root)
-            except OSError as restore_exc:
-                raise ToolchainError(
-                    "Could not install or restore curated snapshot; "
-                    f"backup remains at {backup_root}"
-                ) from restore_exc
-        raise ToolchainError("Could not install staged curated snapshot") from exc
-    if had_previous:
-        shutil.rmtree(backup_root)
-
-
 def _container_path(path: Path) -> str:
     return str(WORKSPACE_ROOT / path.relative_to(REPO_ROOT))
 
@@ -311,7 +265,3 @@ def _quote(arg: str) -> str:
     if all(ch.isalnum() or ch in "/._=-" for ch in arg):
         return arg
     return "'" + arg.replace("'", "'\\''") + "'"
-
-
-if __name__ == "__main__":
-    generate_all()

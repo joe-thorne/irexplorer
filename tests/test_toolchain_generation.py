@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 import subprocess
 import sys
 from tempfile import TemporaryDirectory
@@ -29,6 +30,23 @@ class CuratedGenerationTests(unittest.TestCase):
         )
 
         self.assertEqual(completed.returncode, 0, completed.stderr)
+
+    def test_toolchain_source_never_references_higher_layers(self) -> None:
+        # The import probe above cannot see imports deferred into function bodies.
+        higher_layer = re.compile(
+            r"src\.backend\.(bake|ingest|model|analysis|api|evaluation)\b"
+        )
+        toolchain_root = generate_curated.REPO_ROOT / "src" / "backend" / "toolchain"
+        violations = [
+            f"{path.name}:{number}: {line.strip()}"
+            for path in sorted(toolchain_root.glob("*.py"))
+            for number, line in enumerate(
+                path.read_text(encoding="utf-8").splitlines(), start=1
+            )
+            if higher_layer.search(line)
+        ]
+
+        self.assertEqual(violations, [])
 
     def test_toolchain_downloads_are_digest_and_checksum_pinned(self) -> None:
         dockerfile = (generate_curated.REPO_ROOT / "Dockerfile.toolchain").read_text(
@@ -62,7 +80,7 @@ class CuratedGenerationTests(unittest.TestCase):
                 side_effect=fail_after_partial_output,
             ):
                 with self.assertRaisesRegex(ToolchainError, "simulated"):
-                    generate_curated.generate_all(artefacts_root=live_root)
+                    bake.generate_all(artefacts_root=live_root)
 
             self.assertEqual(
                 (live_root / "last-good.txt").read_text(encoding="utf-8"),
@@ -85,7 +103,7 @@ class CuratedGenerationTests(unittest.TestCase):
                 "_generate_snapshot",
                 side_effect=complete_snapshot,
             ), patch.object(bake, "bake_curated_snapshot"):
-                generate_curated.generate_all(artefacts_root=live_root)
+                bake.generate_all(artefacts_root=live_root)
 
             self.assertFalse((live_root / "old.txt").exists())
             self.assertEqual(
@@ -97,27 +115,34 @@ class CuratedGenerationTests(unittest.TestCase):
     def test_failed_snapshot_install_restores_the_previous_snapshot(self) -> None:
         with TemporaryDirectory() as temporary:
             live_root = Path(temporary) / "curated"
-            staging_root = Path(temporary) / ".curated.staging-test"
             live_root.mkdir()
-            staging_root.mkdir()
             (live_root / "last-good.txt").write_text("last good", encoding="utf-8")
-            (staging_root / "new.txt").write_text("new", encoding="utf-8")
             original_replace = Path.replace
 
+            def complete_snapshot(staging_root: Path) -> None:
+                (staging_root / "new.txt").write_text("new", encoding="utf-8")
+
             def fail_staged_install(path: Path, target: Path) -> Path:
-                if path == staging_root:
+                if path.name.startswith(".curated.staging-"):
                     raise OSError("simulated install failure")
                 return original_replace(path, target)
 
-            with patch.object(Path, "replace", fail_staged_install):
+            with patch.object(
+                generate_curated,
+                "_generate_snapshot",
+                side_effect=complete_snapshot,
+            ), patch.object(bake, "bake_curated_snapshot"), patch.object(
+                Path, "replace", fail_staged_install
+            ):
                 with self.assertRaisesRegex(ToolchainError, "Could not install"):
-                    generate_curated._replace_snapshot(staging_root, live_root)
+                    bake.generate_all(artefacts_root=live_root)
 
             self.assertEqual(
                 (live_root / "last-good.txt").read_text(encoding="utf-8"),
                 "last good",
             )
-            self.assertFalse(generate_curated._backup_path(live_root).exists())
+            self.assertFalse((live_root / "new.txt").exists())
+            self.assertEqual(list(Path(temporary).iterdir()), [live_root])
 
     def test_staging_directory_overlays_the_canonical_container_path(self) -> None:
         staging_root = Path("/tmp/staged-curated")

@@ -216,14 +216,6 @@ def origin_command(example: str, state_id: str) -> str:
     )
 
 
-def generate_curated() -> None:
-    """Regenerate curated artefacts through the pinned Docker toolchain."""
-
-    from src.backend.toolchain.generate_curated import generate_all
-
-    generate_all()
-
-
 def _require_example(example: str) -> None:
     if example not in list_examples():
         available = ", ".join(list_examples()) or "<none>"

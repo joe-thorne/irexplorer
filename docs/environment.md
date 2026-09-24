@@ -67,7 +67,7 @@ The generator records the exact command line with each generated artefact. These
 Run the canonical generator from `irexplorer/` inside the local Python virtual environment:
 
 ```sh
-.venv/bin/python -m src.backend.toolchain.generate_curated
+.venv/bin/python -m src.backend.bake
 ```
 
 Generated artefacts are written to `artefacts/curated/<example>/`. Each example directory contains the `-O0` IR/bitcode, the 12 teaching-pass IR states, the recompiled `clang -O3` anchor, one YAML pass-remark record per `opt` state (including empty records when LLVM emitted none), captured `clang -Rpass` text, the aggregate `.opt.yaml` optimisation record, and a command manifest.
