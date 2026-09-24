@@ -1,0 +1,6 @@
+{
+  "file": "binary_search.c",
+  "formatVersion": 1,
+  "sha256": "bcd2ce5ffa80d05052b986312b0c2395842abd04aa72127d128aced697ddb0de",
+  "text": "int binary_search(const int *a, int n, int key) {\n    int lo = 0;\n    int hi = n;\n\n    while (lo < hi) {\n        int mid = lo + (hi - lo) / 2;\n\n        if (a[mid] < key) {\n            lo = mid + 1;\n        } else {\n            hi = mid;\n        }\n    }\n\n    if (lo < n && a[lo] == key) {\n        return (int)lo;\n    }\n\n    return -1;\n}\n"
+}

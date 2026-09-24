@@ -79,7 +79,7 @@ inside IR and manifests deterministic. Only after every step succeeds does the
 generator swap the staged tree into place; a failed build is deleted without
 touching the last good snapshot, and a failed install restores its backup.
 
-`docs/curated-artefacts.sha256` records a deterministic aggregate SHA-256 over the 135 generated artefacts, including one serialised full timeline and 13 adjacent correspondence overlays per example. The backend test suite verifies it, so an unintended change to any canonical artefact fails locally before it can become a new fixture. After an intentional Docker regeneration, review the changed artefacts and update this checksum deliberately.
+`docs/curated-artefacts.sha256` records a deterministic aggregate SHA-256 over the 138 generated artefacts, including one serialised full timeline, one checksum-verified source record, and 13 adjacent correspondence overlays per example. The backend test suite verifies it, so an unintended change to any canonical artefact fails locally before it can become a new fixture. After an intentional Docker regeneration, review the changed artefacts and update this checksum deliberately.
 
 ```sh
 clang -O0 -g \

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from hashlib import sha256
 import shutil
 
 from src.backend.ingest.llvm_ir import parse_ir_state
@@ -11,9 +12,12 @@ from src.backend.model.serialisation import (
     serialise_json,
     serialise_timeline,
 )
-from src.backend.model.graph import Remark
+from src.backend.model.graph import ModelValidationError, Remark
 from src.backend.model.timeline import OptimisationTimeline, PassStep, StepOrigin
 from src.backend.toolchain import curated
+
+
+SOURCE_RECORD_FORMAT_VERSION = 1
 
 
 def load_curated_timeline(
@@ -77,6 +81,7 @@ def bake_curated_model_records() -> None:
         if model_dir.exists():
             shutil.rmtree(model_dir)
         _write_timeline_record(load_curated_timeline(example, resolution="full"))
+        _write_source_record(example)
 
 
 def load_prebaked_curated_timeline(example: str) -> OptimisationTimeline:
@@ -84,6 +89,38 @@ def load_prebaked_curated_timeline(example: str) -> OptimisationTimeline:
 
     path = curated.model_timeline_path(example)
     return deserialise_timeline(deserialise_json(path.read_text(encoding="utf-8")))
+
+
+def load_prebaked_curated_source(example: str) -> str:
+    """Load the source text that was checked against every pinned compilation at bake time."""
+
+    path = curated.model_source_path(example)
+    record = deserialise_json(path.read_text(encoding="utf-8"))
+    if record.get("formatVersion") != SOURCE_RECORD_FORMAT_VERSION:
+        raise ModelValidationError("unsupported source record formatVersion")
+    if record.get("file") != f"{example}.c":
+        raise ModelValidationError(f"source record does not belong to example '{example}'")
+    text = record.get("text")
+    if not isinstance(text, str) or sha256(text.encode("utf-8")).hexdigest() != record.get("sha256"):
+        raise ModelValidationError(f"source record text failed its checksum for example '{example}'")
+    return text
+
+
+def _write_source_record(example: str) -> None:
+    text = curated.verified_source(example)
+    path = curated.artefact_dir(example) / "model" / "source.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        serialise_json(
+            {
+                "formatVersion": SOURCE_RECORD_FORMAT_VERSION,
+                "file": f"{example}.c",
+                "sha256": sha256(text.encode("utf-8")).hexdigest(),
+                "text": text,
+            }
+        ),
+        encoding="utf-8",
+    )
 
 
 def _write_timeline_record(timeline: OptimisationTimeline) -> None:

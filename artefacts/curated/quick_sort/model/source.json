@@ -1,0 +1,6 @@
+{
+  "file": "quick_sort.c",
+  "formatVersion": 1,
+  "sha256": "05cb23e616efefc4e73ff97d3e0445ac859bf15752c5de34776c77f2d85cb1b8",
+  "text": "#include <stddef.h>\n\nstatic int partition(int *a, int low, int high) {\n    int pivot = a[high];\n    int i = low - 1;\n\n    for (int j = low; j < high; ++j) {\n        if (a[j] <= pivot) {\n            ++i;\n\n            int tmp = a[i];\n            a[i] = a[j];\n            a[j] = tmp;\n        }\n    }\n\n    int tmp = a[i + 1];\n    a[i + 1] = a[high];\n    a[high] = tmp;\n\n    return i + 1;\n}\n\nvoid quick_sort(int *a, int low, int high) {\n    if (low < high) {\n        int p = partition(a, low, high);\n\n        quick_sort(a, low, p - 1);\n        quick_sort(a, p + 1, high);\n    }\n}\n"
+}

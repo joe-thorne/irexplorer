@@ -1,0 +1,6 @@
+{
+  "file": "score.c",
+  "formatVersion": 1,
+  "sha256": "24fdcae286a9ce18f90789fcc0e099cc38b5655751a151525df24c2a651d0563",
+  "text": "int score(int x, int scale) {\n    int limit    = scale * 32;\n    int wasted   = scale * scale - scale * scale;\n    int adjusted = x - 128;\n    int weighted = adjusted * scale;\n\n    if (weighted > limit)\n        return limit;\n\n    return weighted + wasted;\n}\n"
+}

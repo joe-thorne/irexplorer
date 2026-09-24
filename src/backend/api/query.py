@@ -11,7 +11,7 @@ from typing import Any
 from src.backend.analysis.compare import is_identity_correspondence
 from src.backend.analysis.curated import load_prebaked_curated_correspondences
 from src.backend.analysis.report import ComparisonReport, RemarkReference, describe_comparison
-from src.backend.ingest.curated import load_prebaked_curated_timeline
+from src.backend.ingest.curated import load_prebaked_curated_source, load_prebaked_curated_timeline
 from src.backend.model.correspondence import Correspondence
 from src.backend.model.graph import Node, StateGraph
 from src.backend.model.timeline import OptimisationTimeline
@@ -43,6 +43,7 @@ class LoadedExample:
     example_id: str
     timeline: OptimisationTimeline
     correspondences: tuple[Correspondence, ...]
+    source: str
 
 
 class QueryService:
@@ -63,11 +64,7 @@ class QueryService:
         return {"states": [_state_view(loaded, state) for state in loaded.timeline.states]}
 
     def source(self, example_id: str) -> dict[str, Any]:
-        self._example(example_id)
-        try:
-            text = curated.verified_source(example_id)
-        except (OSError, ValueError, RuntimeError) as exc:
-            raise DataUnavailableError(example_id) from exc
+        text = self._example(example_id).source
         return {"exampleId": example_id, "file": f"{example_id}.c", "text": text,
                 "sha256": sha256(text.encode("utf-8")).hexdigest(), "inputVerified": True}
 
@@ -175,9 +172,10 @@ class QueryService:
                     example_id,
                     timeline,
                 )
+                source = load_prebaked_curated_source(example_id)
             except (OSError, ValueError, RuntimeError) as exc:
                 raise DataUnavailableError(example_id) from exc
-            loaded = LoadedExample(example_id, timeline, correspondences)
+            loaded = LoadedExample(example_id, timeline, correspondences, source)
             self._examples[example_id] = loaded
             return loaded
 
