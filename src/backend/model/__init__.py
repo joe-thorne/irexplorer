@@ -1,5 +1,10 @@
 """Layer 3 internal model records."""
 
+from src.backend.model.correspondence import (
+    Correspondence,
+    Link,
+    validate_correspondence,
+)
 from src.backend.model.graph import (
     Edge,
     ModelValidationError,
@@ -8,18 +13,13 @@ from src.backend.model.graph import (
     SourceLocation,
     StateGraph,
 )
-from src.backend.model.correspondence import (
-    Correspondence,
-    Link,
-    validate_correspondence,
-)
 from src.backend.model.serialisation import (
     deserialise_correspondence,
     deserialise_json,
     deserialise_state_graph,
     deserialise_timeline,
-    serialise_json,
     serialise_correspondence,
+    serialise_json,
     serialise_state_graph,
     serialise_timeline,
 )

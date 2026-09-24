@@ -4,8 +4,8 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from src.backend.api import QueryService, create_app
 from src.backend.analysis.compare import ComposedCorrespondence, summarise_correspondence
+from src.backend.api import QueryService, create_app
 from src.backend.ingest import load_prebaked_curated_timeline
 from src.backend.model import Correspondence, Link, StateGraph
 from src.backend.model.graph import Edge, Node
@@ -33,7 +33,7 @@ class SummaryQueriesTests(unittest.TestCase):
                         self.assertTrue(all(0 <= i < len(response['links']) for i in item['linkIndices']))
                         # The browser resolves remark indices against the final step in the span.
                         self.assertTrue(all(0 <= i < len(final_remarks) for i in item['remarkIndices']))
-                    for record, original in zip(response['steps'], timeline.steps[lower:higher]):
+                    for record, original in zip(response['steps'], timeline.steps[lower:higher], strict=True):
                         self.assertEqual(record['command'], original.origin.command)
                         self.assertEqual([r['raw'] for r in record['remarks']], [r.raw for r in original.remarks])
                     if higher == 13:

@@ -6,16 +6,14 @@ import logging
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import FastAPI, Path as ApiPath, Query, Request
+from fastapi import FastAPI, Query, Request
+from fastapi import Path as ApiPath
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHttpException
 
 from src.backend.api.query import DataUnavailableError, QueryError, QueryService
-from src.backend.evaluation.service import Config, StudyService
-from src.backend.evaluation.router import router as study_router
-from src.backend.release import metadata
 from src.backend.api.schemas import (
     CfgResponse,
     ErrorDetail,
@@ -23,12 +21,14 @@ from src.backend.api.schemas import (
     ExamplesResponse,
     HealthResponse,
     IrResponse,
-    StatesResponse,
-    SourceResponse,
     SourceMappingsResponse,
+    SourceResponse,
+    StatesResponse,
     SummaryResponse,
 )
-
+from src.backend.evaluation.router import router as study_router
+from src.backend.evaluation.service import Config, StudyService
+from src.backend.release import metadata
 
 FRONTEND_ROOT = Path(__file__).resolve().parents[2] / "frontend"
 ExampleId = Annotated[str, ApiPath(min_length=1)]

@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
+import hashlib
+import re
+import shlex
 from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
 from pathlib import Path
-import shlex
-import hashlib
-import re
-
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 EXAMPLES_ROOT = REPO_ROOT / "examples" / "curated"

@@ -2,16 +2,15 @@
 
 from __future__ import annotations
 
-from collections import Counter, defaultdict
-from dataclasses import dataclass, field
 import re
+from collections import Counter, defaultdict
+from collections.abc import Callable, Iterable, Mapping, Sequence
+from dataclasses import dataclass, field
 from types import MappingProxyType
-from typing import Callable, Iterable, Mapping, Sequence
 
 from src.backend.model.correspondence import Correspondence, Link, validate_correspondence
 from src.backend.model.graph import Edge, Node, StateGraph
 from src.backend.model.timeline import OptimisationTimeline, PassStep
-
 
 COMPARABLE_KINDS = ("Function", "BasicBlock", "Instruction")
 _VALUE_NAME_RE = re.compile(r"%[-A-Za-z0-9_.$]+")

@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
+from src.backend.model.correspondence import Correspondence, Link
 from src.backend.model.graph import (
     Edge,
     ModelValidationError,
@@ -13,9 +15,7 @@ from src.backend.model.graph import (
     SourceLocation,
     StateGraph,
 )
-from src.backend.model.correspondence import Correspondence, Link
 from src.backend.model.timeline import OptimisationTimeline, PassStep, StepOrigin
-
 
 FORMAT_VERSION = 2
 _TYPE_KEY = "__irexplorer_type__"

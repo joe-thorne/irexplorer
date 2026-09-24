@@ -3,10 +3,8 @@
 from __future__ import annotations
 
 import hashlib
-from pathlib import Path
 
 from src.backend.toolchain.curated import ARTEFACTS_ROOT, REPO_ROOT, ToolchainError
-
 
 CHECKSUM_PATH = REPO_ROOT / "docs" / "curated-artefacts.sha256"
 

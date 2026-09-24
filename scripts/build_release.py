@@ -1,13 +1,13 @@
 """Fingerprint the actual image inputs, including uncommitted source changes."""
 import hashlib
 import json
-from pathlib import Path
 import re
 import sys
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from src.backend.toolchain.integrity import verify_curated_snapshot
+from src.backend.toolchain.integrity import verify_curated_snapshot  # noqa: E402 - needs ROOT on sys.path
 
 
 def digest_files(paths):

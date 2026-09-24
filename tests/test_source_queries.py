@@ -1,10 +1,12 @@
 import json
-from pathlib import Path
 import shutil
-from tempfile import TemporaryDirectory
 import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
+
 from fastapi.testclient import TestClient
+
 from src.backend.api import QueryService, create_app
 from src.backend.ingest import bake_curated_model_records, load_prebaked_curated_source
 from src.backend.model import ModelValidationError
@@ -65,10 +67,10 @@ class SourceQueriesTests(unittest.TestCase):
 
     def test_damaged_source_record_is_unavailable(self):
         damaged = ModelValidationError('damaged source record')
-        with patch('src.backend.api.query.load_prebaked_curated_source', side_effect=damaged), \
-                TestClient(create_app(QueryService(preload=False))) as client:
-            with self.assertLogs('src.backend.api.app', level='ERROR'):
-                response = client.get('/api/examples/score/source')
+        with (patch('src.backend.api.query.load_prebaked_curated_source', side_effect=damaged),
+              TestClient(create_app(QueryService(preload=False))) as client,
+              self.assertLogs('src.backend.api.app', level='ERROR')):
+            response = client.get('/api/examples/score/source')
         self.assertEqual(response.status_code, 503)
         self.assertNotIn('damaged', response.text)
 
@@ -76,10 +78,10 @@ class SourceQueriesTests(unittest.TestCase):
         with TemporaryDirectory() as temporary:
             staged = Path(temporary) / 'curated'
             shutil.copytree(curated.ARTEFACTS_ROOT, staged)
-            with curated.using_artefacts_root(staged), \
-                    patch.object(curated, 'read_source', return_value='changed input'):
-                with self.assertRaisesRegex(curated.ToolchainError, 'does not match the pinned input'):
-                    bake_curated_model_records()
+            with (curated.using_artefacts_root(staged),
+                  patch.object(curated, 'read_source', return_value='changed input'),
+                  self.assertRaisesRegex(curated.ToolchainError, 'does not match the pinned input')):
+                bake_curated_model_records()
 
     def test_untrustworthy_source_records_are_rejected(self):
         record = json.loads(curated.model_source_path('score').read_text(encoding='utf-8'))

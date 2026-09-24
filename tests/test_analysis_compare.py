@@ -1,9 +1,9 @@
 import unittest
 
 from src.backend.analysis import (
+    compare_timeline_step,
     compose_correspondences,
     compose_timeline_correspondences,
-    compare_timeline_step,
     is_identity_correspondence,
     load_prebaked_curated_correspondence,
     load_prebaked_curated_correspondences,

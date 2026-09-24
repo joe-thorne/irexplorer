@@ -5,7 +5,6 @@ from src.backend.analysis.report import SAME_STATE_CONTEXT, describe_comparison
 from src.backend.ingest import load_prebaked_curated_timeline
 from src.backend.toolchain import curated
 
-
 SPANS = [(n, n + 1) for n in range(13)] + [(0, 9), (0, 13), (4, 6)]
 
 

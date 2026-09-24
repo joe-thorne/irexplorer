@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from types import MappingProxyType
-from typing import Literal, Mapping, Protocol
+from typing import Literal, Protocol
 
 from src.backend.model.graph import ModelValidationError, StateGraph
-
 
 Relation = Literal[
     "same",

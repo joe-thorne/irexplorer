@@ -1,9 +1,11 @@
 """Bounded same-origin HTTP boundary for final study submissions."""
 import asyncio
 import json
+
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from starlette.concurrency import run_in_threadpool
+
 from .service import MAX_BODY, StudyError
 
 
@@ -40,7 +42,7 @@ def router(service):
             return JSONResponse(receipt, status_code=201 if created else 200, headers={'Cache-Control': 'no-store'})
         except (ValueError, UnicodeError, RecursionError):
             error = StudyError(422, 'invalid_json', 'Invalid submission JSON.')
-        except asyncio.TimeoutError:
+        except TimeoutError:
             error = StudyError(408, 'request_timeout', 'Submission timed out. Retry the same submission.')
         except StudyError as exc:
             error = exc

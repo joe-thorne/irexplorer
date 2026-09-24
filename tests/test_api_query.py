@@ -1,5 +1,5 @@
-from concurrent.futures import ThreadPoolExecutor
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
@@ -63,9 +63,8 @@ class QueryServiceTests(unittest.TestCase):
         with patch(
             "src.backend.api.query.load_prebaked_curated_timeline",
             side_effect=internal_failure,
-        ):
-            with self.assertRaises(DataUnavailableError) as context:
-                service.list_states("score")
+        ), self.assertRaises(DataUnavailableError) as context:
+            service.list_states("score")
 
         self.assertEqual(
             str(context.exception),
@@ -194,9 +193,8 @@ class FastApiTests(unittest.TestCase):
         with patch(
             "src.backend.api.query.load_prebaked_curated_timeline",
             side_effect=lambda _example_id: deserialise_timeline(invalid_record),
-        ):
-            with self.assertLogs("src.backend.api.app", level="ERROR") as logs:
-                response = client.get("/api/examples/score/states")
+        ), self.assertLogs("src.backend.api.app", level="ERROR") as logs:
+            response = client.get("/api/examples/score/states")
 
         self.assertEqual(response.status_code, 503)
         self.assertEqual(response.json()["error"]["code"], "data_unavailable")

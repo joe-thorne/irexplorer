@@ -7,8 +7,8 @@ from __future__ import annotations
 
 import re
 
-from src.backend.model.graph import Node, StateGraph
 from src.backend.model.correspondence import Correspondence
+from src.backend.model.graph import StateGraph
 from src.backend.model.timeline import OptimisationTimeline, PassStep
 
 _BINARY = re.compile(

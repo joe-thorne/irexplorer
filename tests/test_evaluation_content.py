@@ -1,11 +1,13 @@
 """Participant boundary and survey contract; no collection API."""
-import json
 import importlib.util
+import json
 import re
+import tempfile
 import unittest
 from pathlib import Path
-import tempfile
+
 from fastapi.testclient import TestClient
+
 from src.backend.api.app import create_app
 from src.backend.evaluation.content import participant_content, validate_answers
 from src.backend.evaluation.service import Config

@@ -3,9 +3,9 @@
 import csv
 import hashlib
 import json
-from pathlib import Path
 import re
 import unittest
+from pathlib import Path
 
 from src.backend.analysis import (
     compare_timeline_step,
@@ -14,7 +14,6 @@ from src.backend.analysis import (
 from src.backend.analysis.compare import summarise_correspondence
 from src.backend.ingest import load_curated_timeline, load_prebaked_curated_timeline
 from src.backend.toolchain import curated
-
 
 DATA = Path(__file__).parent / 'data' / 'expected_links'
 
@@ -71,7 +70,7 @@ class ArtefactExpectedLinkTests(unittest.TestCase):
                 self.assertEqual(step.kind, case['stepKind'])
                 self.assertTrue(case['story'])
                 for side, ordinal, artefact in zip(
-                    ('from', 'to'), (case['fromOrdinal'], case['toOrdinal']), case['artefacts']
+                    ('from', 'to'), (case['fromOrdinal'], case['toOrdinal']), case['artefacts'], strict=True
                 ):
                     state = timeline.state(ordinal)
                     path = curated.REPO_ROOT / artefact['path']

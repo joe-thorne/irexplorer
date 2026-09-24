@@ -7,15 +7,15 @@ curated example or produced some other way.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any, Sequence
+from typing import Any
 
 from src.backend.analysis.compare import compose_timeline_correspondences, summarise_correspondence
 from src.backend.analysis.optimisations import explain_comparison
 from src.backend.model.correspondence import Correspondence, Link
 from src.backend.model.graph import StateGraph
 from src.backend.model.timeline import OptimisationTimeline, PassStep
-
 
 SAME_STATE_CONTEXT = "Same recorded state; no cross-state change is being compared."
 

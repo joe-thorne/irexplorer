@@ -1,14 +1,14 @@
-from pathlib import Path
 import re
 import subprocess
 import sys
-from tempfile import TemporaryDirectory
 import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
+from src.backend import bake
 from src.backend.toolchain import generate_curated
 from src.backend.toolchain.curated import ToolchainError
-from src.backend import bake
 
 
 class CuratedGenerationTests(unittest.TestCase):
@@ -78,9 +78,8 @@ class CuratedGenerationTests(unittest.TestCase):
                 generate_curated,
                 "_generate_snapshot",
                 side_effect=fail_after_partial_output,
-            ):
-                with self.assertRaisesRegex(ToolchainError, "simulated"):
-                    bake.generate_all(artefacts_root=live_root)
+            ), self.assertRaisesRegex(ToolchainError, "simulated"):
+                bake.generate_all(artefacts_root=live_root)
 
             self.assertEqual(
                 (live_root / "last-good.txt").read_text(encoding="utf-8"),
@@ -133,9 +132,8 @@ class CuratedGenerationTests(unittest.TestCase):
                 side_effect=complete_snapshot,
             ), patch.object(bake, "bake_curated_snapshot"), patch.object(
                 Path, "replace", fail_staged_install
-            ):
-                with self.assertRaisesRegex(ToolchainError, "Could not install"):
-                    bake.generate_all(artefacts_root=live_root)
+            ), self.assertRaisesRegex(ToolchainError, "Could not install"):
+                bake.generate_all(artefacts_root=live_root)
 
             self.assertEqual(
                 (live_root / "last-good.txt").read_text(encoding="utf-8"),

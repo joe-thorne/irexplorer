@@ -1,8 +1,7 @@
 import unittest
 
 from src.backend.analysis import compare_states, compare_timeline_step, compose_correspondences
-from src.backend.ingest import parse_ir_state, load_prebaked_curated_timeline
-from src.backend.api import QueryService
+from src.backend.ingest import load_prebaked_curated_timeline, parse_ir_state
 
 
 def state(body, ordinal, *, column=4, function="f"):

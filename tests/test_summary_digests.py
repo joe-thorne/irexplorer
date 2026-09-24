@@ -8,12 +8,11 @@ Regenerate only after a deliberate, reviewed change to summary behaviour:
 
 import argparse
 import json
+import unittest
 from hashlib import sha256
 from pathlib import Path
-import unittest
 
 from src.backend.api import QueryService
-
 
 FIXTURE = Path(__file__).parent / "data" / "summary-digests.sha256"
 HEADER = (

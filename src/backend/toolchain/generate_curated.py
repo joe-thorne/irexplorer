@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 import shutil
 import subprocess
+from pathlib import Path
 
-from src.backend.toolchain import curated as curated_paths
 from src.backend.toolchain.curated import (
     ARTEFACTS_ROOT,
     EXAMPLES_ROOT,
@@ -15,7 +14,6 @@ from src.backend.toolchain.curated import (
     ToolchainError,
     list_examples,
 )
-
 
 WORKSPACE_ROOT = Path("/workspace")
 
@@ -191,8 +189,7 @@ def _run_and_record(
         _docker_command(command, artefacts_root),
         cwd=REPO_ROOT,
         text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
         check=False,
     )
 
@@ -216,8 +213,7 @@ def _tool_version(
         _docker_command(command, artefacts_root),
         cwd=REPO_ROOT,
         text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
         check=False,
     )
     if result.returncode != 0:

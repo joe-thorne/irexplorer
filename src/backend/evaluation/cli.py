@@ -3,8 +3,8 @@ import argparse
 import csv
 import json
 import os
-from pathlib import Path
 import sqlite3
+from pathlib import Path
 
 from .content import participant_content
 from .service import Config, canonical
@@ -90,7 +90,7 @@ def export(source, directory):
             base['consentVersion'] = p['consent']['version']
             base.update(record['release']); base['receiptId'] = record['receipt']['receiptId']
             def row(**values):
-                writer.writerow({k: safe_cell(v) for k, v in {**base, **values}.items()})
+                writer.writerow({k: safe_cell(v) for k, v in {**base, **values}.items()})  # noqa: B023 - called only within this iteration
             for key, value in p['consent']['acknowledgements'].items():
                 row(stage='consent', itemId=key, status='acknowledged', value=value)
             for stage in ('pre', 'post'):

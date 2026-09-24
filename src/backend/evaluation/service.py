@@ -2,15 +2,16 @@
 import hashlib
 import json
 import os
-from pathlib import Path
 import re
 import sqlite3
 import tempfile
 import uuid
 from dataclasses import dataclass
+from pathlib import Path
+
+from src.backend.release import metadata
 
 from .content import participant_content, validate_answers
-from src.backend.release import metadata
 
 ROOT = Path(__file__).resolve().parents[3]
 UUID = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$', re.I)

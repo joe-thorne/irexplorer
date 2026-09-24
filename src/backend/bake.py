@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 import shutil
 import tempfile
+from pathlib import Path
 
 from src.backend.analysis.curated import bake_curated_comparison_records
 from src.backend.ingest.curated import bake_curated_model_records

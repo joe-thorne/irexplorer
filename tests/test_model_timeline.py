@@ -1,5 +1,5 @@
-from dataclasses import replace
 import unittest
+from dataclasses import replace
 
 from src.backend.ingest import load_curated_timeline, load_prebaked_curated_timeline
 from src.backend.model import (

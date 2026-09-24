@@ -1,10 +1,9 @@
 import json
+import unittest
 from collections import Counter
 from pathlib import Path
-import unittest
 
 from src.backend.api import QueryService
-
 
 FIXTURE = Path(__file__).parent / "data" / "adjacent-overlay-distribution.json"
 RELATIONS = (

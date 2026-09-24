@@ -1,19 +1,21 @@
 """Synthetic final-only submission failures, persistence, and research export."""
-from concurrent.futures import ThreadPoolExecutor
-from copy import deepcopy
 import csv
 import json
-from pathlib import Path
 import sqlite3
 import tempfile
 import unittest
-from unittest.mock import patch
 import uuid
+from concurrent.futures import ThreadPoolExecutor
+from copy import deepcopy
+from pathlib import Path
+from unittest.mock import patch
+
 from fastapi.testclient import TestClient
+
 from src.backend.api.app import create_app
+from src.backend.evaluation.cli import backup, export, open_db
 from src.backend.evaluation.content import participant_content
-from src.backend.evaluation.service import Config, StudyService, StudyError, MAX_BODY
-from src.backend.evaluation.cli import export, backup, open_db
+from src.backend.evaluation.service import MAX_BODY, Config, StudyError, StudyService
 
 
 def synthetic():
@@ -103,9 +105,9 @@ class SubmissionTests(unittest.TestCase):
         self.assertTrue(all(created for _,created in results))
 
     def test_write_failure_sanitised_and_retryable(self):
-        with patch.object(StudyService, 'connect', side_effect=sqlite3.OperationalError('secret /private/path synthetic-answer')):
-            with self.assertNoLogs('src.backend.evaluation', level='DEBUG'):
-                failed = self.post()
+        with (patch.object(StudyService, 'connect', side_effect=sqlite3.OperationalError('secret /private/path synthetic-answer')),
+              self.assertNoLogs('src.backend.evaluation', level='DEBUG')):
+            failed = self.post()
         self.assertEqual(failed.status_code,503)
         self.assertNotIn('secret',failed.text)
         self.assertEqual(self.post().status_code,201)
@@ -136,7 +138,7 @@ class SubmissionTests(unittest.TestCase):
         with self.assertRaises(FileExistsError): backup(copy,restored)
 
     def test_pre_setup_outcomes_validate_and_export_without_invented_time(self):
-        for task, status in zip(self.payload['tasks'][1:3], ['skipped', 'could_not_work_out']):
+        for task, status in zip(self.payload['tasks'][1:3], ['skipped', 'could_not_work_out'], strict=True):
             task.update(setupReached=False, status=status, durationMs=0)
         self.payload['post']['Q8'] = {'status': 'answered', 'value': [3, 1]}
         self.payload['tasks'][4]['answers']['T4c'] = {'status': 'answered', 'value': 3}

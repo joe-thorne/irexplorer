@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import re
+from dataclasses import dataclass
 
 from src.backend.model.graph import (
     Edge,
@@ -40,14 +40,14 @@ class _FunctionBuild:
     name: str
     args: tuple[str, ...]
     header: str
-    blocks: list["_BlockBuild"]
+    blocks: list[_BlockBuild]
 
 
 @dataclass
 class _BlockBuild:
     id: str
     label: str
-    instructions: list["_InstructionBuild"]
+    instructions: list[_InstructionBuild]
 
 
 @dataclass

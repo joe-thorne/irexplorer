@@ -2,20 +2,19 @@
 
 from __future__ import annotations
 
-from hashlib import sha256
 import shutil
+from hashlib import sha256
 
 from src.backend.ingest.llvm_ir import parse_ir_state
+from src.backend.model.graph import ModelValidationError, Remark
 from src.backend.model.serialisation import (
     deserialise_json,
     deserialise_timeline,
     serialise_json,
     serialise_timeline,
 )
-from src.backend.model.graph import ModelValidationError, Remark
 from src.backend.model.timeline import OptimisationTimeline, PassStep, StepOrigin
 from src.backend.toolchain import curated
-
 
 SOURCE_RECORD_FORMAT_VERSION = 1
 
