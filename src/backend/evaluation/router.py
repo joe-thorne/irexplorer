@@ -19,7 +19,8 @@ def router(service):
     @api.post('/api/study/submissions')
     async def submit(request: Request):
         try:
-            if request.headers.get('origin') != service.config.origin or request.headers.get('sec-fetch-site', 'same-origin') not in ('same-origin', 'none'):
+            if (request.headers.get('origin') != service.config.origin
+                    or request.headers.get('sec-fetch-site', 'same-origin') not in ('same-origin', 'none')):
                 raise StudyError(403, 'invalid_origin', 'Submission must come from the configured study origin.')
             if request.headers.get('content-type', '').split(';')[0].strip().lower() != 'application/json':
                 raise StudyError(415, 'invalid_content_type', 'Send JSON content.')
@@ -28,7 +29,8 @@ def router(service):
                 async for chunk in request.stream():
                     body.extend(chunk)
                     if len(body) > MAX_BODY:
-                        raise StudyError(413, 'request_too_large', 'Responses exceed the 128 KiB submission limit. Shorten free text before submitting.')
+                        raise StudyError(413, 'request_too_large', 'Responses exceed the 128 KiB submission limit. '
+                                         'Shorten free text before submitting.')
             await asyncio.wait_for(read(), timeout=15)
             def pairs(items):
                 result = {}
@@ -37,7 +39,8 @@ def router(service):
                         raise ValueError('Duplicate key')
                     result[k] = v
                 return result
-            payload = json.loads(body, object_pairs_hook=pairs, parse_constant=lambda _: (_ for _ in ()).throw(ValueError()))
+            payload = json.loads(body, object_pairs_hook=pairs,
+                                 parse_constant=lambda _: (_ for _ in ()).throw(ValueError()))
             receipt, created = await run_in_threadpool(service.submit, payload)
             return JSONResponse(receipt, status_code=201 if created else 200, headers={'Cache-Control': 'no-store'})
         except (ValueError, UnicodeError, RecursionError):
@@ -46,5 +49,6 @@ def router(service):
             error = StudyError(408, 'request_timeout', 'Submission timed out. Retry the same submission.')
         except StudyError as exc:
             error = exc
-        return JSONResponse({'error': {'code': error.code, 'message': error.message}}, status_code=error.status, headers={'Cache-Control': 'no-store'})
+        return JSONResponse({'error': {'code': error.code, 'message': error.message}}, status_code=error.status,
+                            headers={'Cache-Control': 'no-store'})
     return api

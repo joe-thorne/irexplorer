@@ -62,30 +62,37 @@ def canonical(value):
 
 def validate(payload):
     c = participant_content()
-    keys = {'submissionId', 'participantCode', 'studyVersion', 'contentVersion', 'instrumentVersion', 'consent', 'pre', 'post', 'tasks'}
+    keys = {'submissionId', 'participantCode', 'studyVersion', 'contentVersion', 'instrumentVersion', 'consent',
+            'pre', 'post', 'tasks'}
     def require(ok):
         if not ok:
-            raise StudyError(422, 'invalid_submission', 'Check consent, P1, versions, task outcomes, and answer limits. No answers were changed.')
+            raise StudyError(422, 'invalid_submission',
+                             'Check consent, P1, versions, task outcomes, and answer limits. No answers were changed.')
     require(isinstance(payload, dict) and set(payload) == keys)
-    require(all(isinstance(payload[k], str) and UUID.fullmatch(payload[k]) for k in ('submissionId', 'participantCode')))
+    require(all(isinstance(payload[k], str) and UUID.fullmatch(payload[k])
+                for k in ('submissionId', 'participantCode')))
     require(payload['submissionId'] != payload['participantCode'])
     require(all(payload[k] == c[k] for k in ('studyVersion', 'contentVersion', 'instrumentVersion')))
     consent = payload['consent']
     require(isinstance(consent, dict) and set(consent) == {'version', 'acknowledgements'})
     require(consent['version'] == c['contentVersion'])
     a = consent['acknowledgements']
-    require(isinstance(a, dict) and set(a) == {f['id'] for f in c['fields'] if f['id'].startswith('C')} and all(v is True for v in a.values()))
+    require(isinstance(a, dict) and set(a) == {f['id'] for f in c['fields'] if f['id'].startswith('C')}
+            and all(v is True for v in a.values()))
     def answers(stage, values):
         prefix = {'pre': 'P', 'post': 'Q'}.get(stage, stage)
-        require(isinstance(values, dict) and set(values) == {f['id'] for f in c['fields'] if f['id'].startswith(prefix)})
+        require(isinstance(values, dict)
+                and set(values) == {f['id'] for f in c['fields'] if f['id'].startswith(prefix)})
         require(not validate_answers(stage, values, complete=True))
     answers('pre', payload['pre'])
     answers('post', payload['post'])
     ts = payload['tasks']
     require(isinstance(ts, list) and len(ts) == 7)
     for i, t in enumerate(ts):
-        require(isinstance(t, dict) and set(t) == {'id', 'status', 'setupReached', 'durationMs', 'interrupted', 'answers'})
-        require(t['id'] == f'T{i}' and t['status'] in (['completed'] if i == 0 else ['completed', 'skipped', 'could_not_work_out']))
+        require(isinstance(t, dict)
+                and set(t) == {'id', 'status', 'setupReached', 'durationMs', 'interrupted', 'answers'})
+        require(t['id'] == f'T{i}'
+                and t['status'] in (['completed'] if i == 0 else ['completed', 'skipped', 'could_not_work_out']))
         require(type(t['durationMs']) is int and 0 <= t['durationMs'] <= 86400000 and type(t['interrupted']) is bool)
         answers(t['id'], t['answers'])
         require(type(t['setupReached']) is bool)
@@ -120,7 +127,8 @@ class StudyService:
             if version not in (0, 1):
                 raise sqlite3.DatabaseError('Unsupported schema')
             if version == 0:
-                db.execute('CREATE TABLE IF NOT EXISTS responses (submission_id TEXT PRIMARY KEY, digest TEXT NOT NULL, payload TEXT NOT NULL, receipt TEXT NOT NULL, release TEXT NOT NULL)')
+                db.execute('CREATE TABLE IF NOT EXISTS responses (submission_id TEXT PRIMARY KEY, '
+                           'digest TEXT NOT NULL, payload TEXT NOT NULL, receipt TEXT NOT NULL, release TEXT NOT NULL)')
                 db.execute('PRAGMA user_version=1')
                 db.commit()
             return db
@@ -136,7 +144,9 @@ class StudyService:
         digest = hashlib.sha256(body.encode()).hexdigest()
         receipt = {k: payload[k] for k in ('submissionId', 'participantCode', 'studyVersion')}
         receipt['receiptId'] = str(uuid.uuid4())
-        checksum = next(line.split('=', 1)[1] for line in (ROOT / 'docs/curated-artefacts.sha256').read_text().splitlines() if line.startswith('sha256='))
+        checksum = next(line.split('=', 1)[1]
+                        for line in (ROOT / 'docs/curated-artefacts.sha256').read_text().splitlines()
+                        if line.startswith('sha256='))
         release = {'schemaVersion': 2, 'canonicalVersion': 1, 'mode': self.config.mode,
                    'appRevision': self.config.app_revision, 'artefactSha256': checksum}
         db = None
@@ -144,15 +154,20 @@ class StudyService:
             db = self.connect()
             with db:
                 db.execute('BEGIN IMMEDIATE')
-                row = db.execute('SELECT digest, receipt FROM responses WHERE submission_id=?', (payload['submissionId'],)).fetchone()
+                row = db.execute('SELECT digest, receipt FROM responses WHERE submission_id=?',
+                                 (payload['submissionId'],)).fetchone()
                 if row:
                     if row[0] != digest:
-                        raise StudyError(409, 'submission_conflict', 'This submission ID was used with different answers. Keep the code and contact the researcher.')
+                        raise StudyError(409, 'submission_conflict',
+                                         'This submission ID was used with different answers. '
+                                         'Keep the code and contact the researcher.')
                     return json.loads(row[1]), False
-                db.execute('INSERT INTO responses VALUES (?, ?, ?, ?, ?)', (payload['submissionId'], digest, body, canonical(receipt), canonical(release)))
+                db.execute('INSERT INTO responses VALUES (?, ?, ?, ?, ?)',
+                           (payload['submissionId'], digest, body, canonical(receipt), canonical(release)))
             return receipt, True
         except (sqlite3.Error, OSError):
-            raise StudyError(503, 'storage_unavailable', 'Receipt unavailable. Retain this tab and retry the same submission.') from None
+            raise StudyError(503, 'storage_unavailable',
+                             'Receipt unavailable. Retain this tab and retry the same submission.') from None
         finally:
             if db is not None:
                 db.close()

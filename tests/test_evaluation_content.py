@@ -15,10 +15,12 @@ from src.backend.evaluation.service import Config
 
 class EvaluationContentTests(unittest.TestCase):
     def test_public_content_projects_reviewed_information_and_consent(self):
-        reviewed = (Path(__file__).resolve().parents[2] / 'Docs/evaluation/instruments/00-participant-information.md').read_text()
+        reviewed = (Path(__file__).resolve().parents[2]
+                    / 'Docs/evaluation/instruments/00-participant-information.md').read_text()
         information, consent = reviewed.split('## Consent\n', 1)
         expected_titles = re.findall(r'^## (.+)$', information, re.MULTILINE)
-        expected_consent = [re.sub(r'\*\*(.*?)\*\*', r'\1', item) for item in re.findall(r'^- \[ \] (.+)$', consent, re.MULTILINE)]
+        expected_consent = [re.sub(r'\*\*(.*?)\*\*', r'\1', item)
+                            for item in re.findall(r'^- \[ \] (.+)$', consent, re.MULTILINE)]
         builder_path = Path(__file__).resolve().parents[2] / 'scripts/irexplorer-research/build_content.py'
         spec = importlib.util.spec_from_file_location('build_content', builder_path)
         builder = importlib.util.module_from_spec(spec)
@@ -27,14 +29,18 @@ class EvaluationContentTests(unittest.TestCase):
         content = participant_content()
 
         self.assertEqual([section['title'] for section in content['information']], expected_titles)
-        self.assertEqual([field['prompt'] for field in content['fields'] if field['id'].startswith('C')], expected_consent)
+        self.assertEqual([field['prompt'] for field in content['fields'] if field['id'].startswith('C')],
+                         expected_consent)
         self.assertEqual(content['information'], expected_information)
         self.assertEqual([field for field in content['fields'] if field['id'].startswith('C')], expected_fields)
         self.assertIn('[Joe/Joel to confirm:', json.dumps(content))
 
     def test_revised_response_types_reject_old_codes(self):
-        a = lambda value: {'status': 'answered', 'value': value}
-        for stage, field, value in [('post', 'Q8', [1, 2, 3]), ('T4', 'T4c', 5), ('T5', 'T5a', 'Two instructions merge into one'), ('T5', 'T5c', 5), ('post', 'Q20', 5)]:
+        def a(value):
+            return {'status': 'answered', 'value': value}
+        for stage, field, value in [('post', 'Q8', [1, 2, 3]), ('T4', 'T4c', 5),
+                                    ('T5', 'T5a', 'Two instructions merge into one'), ('T5', 'T5c', 5),
+                                    ('post', 'Q20', 5)]:
             self.assertEqual(validate_answers(stage, {field: a(value)}), {})
         for value in [1, [1, 4], [4, 4], []]:
             self.assertIn('Q8', validate_answers('post', {'Q8': a(value)}))
@@ -48,12 +54,15 @@ class EvaluationContentTests(unittest.TestCase):
         setup = task['setup']
         example, left, right = setup['example'], setup['left']['ordinal'], setup['right']['ordinal']
         function = next(f for f in service.ir(example, right)['functions'] if f['name'] == setup['function'])
-        line = next(i for i, text in enumerate(service.source(example)['text'].splitlines(), 1) if 'if (a[j] <= pivot)' in text)
+        line = next(i for i, text in enumerate(service.source(example)['text'].splitlines(), 1)
+                    if 'if (a[j] <= pivot)' in text)
         mappings = service.source_mappings(example, right, function['id'])['mappings']
         ids = {m['instructionId'] for m in mappings if m['location']['line'] == line}
-        targets = [i for b in function['blocks'] for i in b['instructions'] if i['id'] in ids and i['opcode'] == 'getelementptr']
+        targets = [i for b in function['blocks'] for i in b['instructions']
+                   if i['id'] in ids and i['opcode'] == 'getelementptr']
         self.assertEqual(len(targets), 1)
-        links = [link for link in service.summary(example, left, right)['links'] if targets[0]['id'] in link['toNodeIds']]
+        links = [link for link in service.summary(example, left, right)['links']
+                 if targets[0]['id'] in link['toNodeIds']]
         self.assertEqual(len(links), 1)
         self.assertEqual((links[0]['relation'], links[0]['confidence']), ('merged', 'approximate'))
         self.assertEqual((len(links[0]['fromNodeIds']), len(links[0]['toNodeIds'])), (2, 1))
@@ -88,29 +97,35 @@ class EvaluationContentTests(unittest.TestCase):
             self.assertEqual(content['mode'], 'preview')
             self.assertTrue(content['submissionEnabled'])
             self.assertEqual(len(content['fields']), 60)
-            allowed = {'id', 'prompt', 'type', 'required', 'options', 'scale', 'notApplicableLabel', 'maxLength', 'exclusiveValue', 'optionStatuses', 'condition', 'inabilityLabel'}
+            allowed = {'id', 'prompt', 'type', 'required', 'options', 'scale', 'notApplicableLabel', 'maxLength',
+                       'exclusiveValue', 'optionStatuses', 'condition', 'inabilityLabel'}
             for field in content['fields']:
                 self.assertLessEqual(set(field), allowed)
             for forbidden in ['(R)', 'stratification', 'reverse-scored', 'marking key', 'expected answer']:
                 self.assertNotIn(forbidden, response.text)
-            for path in ['/participant-content.json', '/src/backend/evaluation/participant-content.json', '/tests/private-fixture.json']:
+            for path in ['/participant-content.json', '/src/backend/evaluation/participant-content.json',
+                         '/tests/private-fixture.json']:
                 self.assertEqual(client.get(path).status_code, 404)
             self.assertIn(client.post('/api/study/submissions', json={'pre': {}}).status_code, (403,))
 
     def test_required_optional_and_separate_nonanswer_states(self):
-        answered = lambda value: {'status': 'answered', 'value': value}
+        def answered(value):
+            return {'status': 'answered', 'value': value}
         self.assertEqual(validate_answers('pre', {}), {})
         self.assertEqual(set(validate_answers('pre', {}, complete=True)), {'P1'})
         self.assertEqual(validate_answers('pre', {'P1': answered(5)}, complete=True), {})
         self.assertEqual(validate_answers('post', {}, complete=True), {})
         self.assertEqual(validate_answers('post', {'Q1': {'status': 'not_applicable', 'value': None}}), {})
         self.assertEqual(validate_answers('pre', {'P2': {'status': 'not_applicable', 'value': None}}), {})
-        for field, answer in [('Q19', {'status': 'not_applicable', 'value': None}), ('Q1', answered(0)), ('Q1', answered(True)), ('Q1', answered(6)), ('Q1', {'status': 'unanswered', 'value': 3})]:
+        for field, answer in [('Q19', {'status': 'not_applicable', 'value': None}), ('Q1', answered(0)),
+                              ('Q1', answered(True)), ('Q1', answered(6)),
+                              ('Q1', {'status': 'unanswered', 'value': 3})]:
             self.assertIn(field, validate_answers('post', {field: answer}))
         self.assertIn('P2', validate_answers('pre', {'P2': answered(6)}))
 
     def test_exclusive_choices_and_conditional_details(self):
-        a = lambda value: {'status': 'answered', 'value': value}
+        def a(value):
+            return {'status': 'answered', 'value': value}
         for values in [[6, 1], [1, 1], [], [True], ['1']]:
             self.assertIn('P3', validate_answers('pre', {'P3': a(values)}))
         self.assertEqual(validate_answers('pre', {'P3': a([1, 7]), 'P3.other': a('Synthetic course')}), {})
@@ -120,7 +135,8 @@ class EvaluationContentTests(unittest.TestCase):
 
     def test_text_bounds_raw_unicode_and_unknown_keys(self):
         text = '🙂' * 4000
-        a = lambda value: {'status': 'answered', 'value': value}
+        def a(value):
+            return {'status': 'answered', 'value': value}
         self.assertEqual(validate_answers('post', {'Q14': a(text)}), {})
         self.assertIn('Q14', validate_answers('post', {'Q14': a(text + 'x')}))
         self.assertIn('Q14', validate_answers('post', {'Q14': a('  \n ')}))
@@ -147,7 +163,8 @@ class EvaluationContentTests(unittest.TestCase):
         self.assertEqual(tasks['T5']['setup']['right']['ordinal'], 9)
         self.assertEqual(tasks['T5']['setup']['left']['ordinal'], 8)
         self.assertEqual(tasks['T5']['setup']['function'], 'partition')
-        self.assertEqual([f['id'] for f in content['fields'] if f.get('scale') == 'confidence'], ['T1b', 'T2c', 'T3c', 'T4d'])
+        self.assertEqual([f['id'] for f in content['fields'] if f.get('scale') == 'confidence'],
+                         ['T1b', 'T2c', 'T3c', 'T4d'])
         for task in tasks.values():
             self.assertEqual(set(task), {'id', 'title', 'goal', 'instructions', 'fields', 'setup'})
             self.assertTrue(task['goal'])
@@ -158,15 +175,19 @@ class EvaluationContentTests(unittest.TestCase):
                     self.assertEqual(set(task['setup'][side]), {'ordinal', 'view'})
 
     def test_task_partial_answers_inability_and_not_applicable(self):
-        a = lambda value: {'status': 'answered', 'value': value}
+        def a(value):
+            return {'status': 'answered', 'value': value}
         t2a = next(field for field in participant_content()['fields'] if field['id'] == 'T2a')
         self.assertEqual(t2a['options'][4], {'value': 105, 'label': '5 · instcombine,simplifycfg · cleanup'})
         self.assertEqual(validate_answers('T2', {'T2a': a(102)}), {})
         for stage in [f'T{i}' for i in range(7)]:
             self.assertEqual(validate_answers(stage, {}, complete=True), {})
-        for task, field, status in [('T2', 'T2a', 'could_not_work_out'), ('T3', 'T3a', 'could_not_work_out'), ('T4', 'T4a', 'could_not_work_out'), ('T5', 'T5a', 'could_not_work_out')]:
+        for task, field, status in [('T2', 'T2a', 'could_not_work_out'), ('T3', 'T3a', 'could_not_work_out'),
+                                    ('T4', 'T4a', 'could_not_work_out'), ('T5', 'T5a', 'could_not_work_out')]:
             self.assertEqual(validate_answers(task, {field: {'status': status, 'value': None}}), {})
-        for task, field, answer in [('T2', 'T2a', a(12)), ('T2', 'T2a', {'status': 'not_applicable', 'value': None}), ('T4', 'T4d', a(True)), ('T5', 'T5a', a(4)), ('T6', 'T6a', {'status': 'could_not_work_out', 'value': None})]:
+        for task, field, answer in [('T2', 'T2a', a(12)), ('T2', 'T2a', {'status': 'not_applicable', 'value': None}),
+                                    ('T4', 'T4d', a(True)), ('T5', 'T5a', a(4)),
+                                    ('T6', 'T6a', {'status': 'could_not_work_out', 'value': None})]:
             self.assertIn(field, validate_answers(task, {field: answer}))
         self.assertIn('T1a', validate_answers('T0', {'T1a': a('No orientation answers')}))
         self.assertIn('T5confidence', validate_answers('T5', {'T5confidence': a(5)}))

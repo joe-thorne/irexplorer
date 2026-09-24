@@ -217,14 +217,16 @@ class SummaryQueriesTests(unittest.TestCase):
         with TestClient(create_app(self.service)) as client:
             for example in curated.list_examples():
                 for before, after in [(0, 1), (0, 9), (0, 13), (13, 0), (12, 13), (4, 4), (3, 4)]:
-                    response = client.get(f'/api/examples/{example}/summary', params={'fromOrdinal': before, 'toOrdinal': after})
+                    response = client.get(f'/api/examples/{example}/summary',
+                                          params={'fromOrdinal': before, 'toOrdinal': after})
                     self.assertEqual(response.status_code, 200, response.text)
                     self.assertEqual(response.json(), self.service.summary(example, before, after))
             for query, status in [('fromOrdinal=-1&toOrdinal=1', 422), ('fromOrdinal=0', 422),
                                   ('fromOrdinal=0&toOrdinal=99', 404)]:
                 self.assertEqual(client.get('/api/examples/score/summary?' + query).status_code, status)
             self.assertEqual(client.get('/api/examples/missing/summary?fromOrdinal=0&toOrdinal=1').status_code, 404)
-            with patch('src.backend.analysis.report.compose_timeline_correspondences', side_effect=ValueError('private path')):
+            with patch('src.backend.analysis.report.compose_timeline_correspondences',
+                       side_effect=ValueError('private path')):
                 with self.assertLogs('src.backend.api.app', level='ERROR'):
                     response = client.get('/api/examples/score/summary?fromOrdinal=0&toOrdinal=9')
                 self.assertEqual(response.status_code, 503)

@@ -22,7 +22,8 @@ def validate_answers(stage, answers, *, complete=False):
     content = participant_content()
     if stage not in ('pre', 'post', *[f'T{i}' for i in range(7)]) or not isinstance(answers, dict):
         return {'stage': 'Invalid survey.'}
-    fields = {f['id']: f for f in content['fields'] if f['id'].startswith('P' if stage == 'pre' else 'Q' if stage == 'post' else stage)}
+    fields = {f['id']: f for f in content['fields']
+              if f['id'].startswith('P' if stage == 'pre' else 'Q' if stage == 'post' else stage)}
     errors = {key: 'Unknown item.' for key in answers.keys() - fields.keys()}
     for key, field in fields.items():
         answer = answers.get(key, {'status': 'unanswered', 'value': None})
@@ -34,7 +35,12 @@ def validate_answers(stage, answers, *, complete=False):
             if complete and field['required']:
                 errors[key] = 'Choose an answer for P1.'
             continue
-        if value is None and ((status == 'not_applicable' and (field.get('notApplicableLabel') or status in field.get('optionStatuses', {}).values())) or (status == 'could_not_work_out' and (field.get('inabilityLabel') or status in field.get('optionStatuses', {}).values()))):
+        if value is None and (
+            (status == 'not_applicable'
+             and (field.get('notApplicableLabel') or status in field.get('optionStatuses', {}).values()))
+            or (status == 'could_not_work_out'
+                and (field.get('inabilityLabel') or status in field.get('optionStatuses', {}).values()))
+        ):
             continue
         valid = status == 'answered'
         if field['type'] in ('text', 'short_text'):
@@ -43,9 +49,11 @@ def validate_answers(stage, answers, *, complete=False):
             options = field.get('options') or content['scales'][field['scale']]
             allowed = {o['value'] for o in options if str(o['value']) not in field.get('optionStatuses', {})}
             values = value if field['type'] == 'multiple' else [value]
-            valid = valid and isinstance(values, list) and bool(values) and all(type(v) is int and v in allowed for v in values)
+            valid = (valid and isinstance(values, list) and bool(values)
+                     and all(type(v) is int and v in allowed for v in values))
             if valid:
-                valid = len(set(values)) == len(values) and not (field.get('exclusiveValue') in values and len(values) > 1)
+                valid = (len(set(values)) == len(values)
+                         and not (field.get('exclusiveValue') in values and len(values) > 1))
         if valid and 'condition' in field:
             condition = field['condition']
             parent = answers.get(condition['field'], {})

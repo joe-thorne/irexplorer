@@ -3,14 +3,11 @@
 [tool.ruff]
 target-version = "py312"
 line-length = 120
-extend-exclude = ["examples", "artefacts"]
+extend-exclude = ["examples", "artefacts", ".claude"]
 
 [tool.ruff.lint]
 # Explicit selection so the result does not drift with ruff's default set.
 select = ["E", "F", "I", "UP", "B", "SIM"]
-# Layout rules are left to authors: no formatter is adopted, and the evaluation
-# modules use a deliberate compact style.
-ignore = ["E501", "E701", "E702", "E731"]
 
 [tool.mypy]
 python_version = "3.12"

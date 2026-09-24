@@ -24,9 +24,11 @@ def synthetic():
         return {f['id']: {'status': 'unanswered', 'value': None} for f in c['fields'] if f['id'].startswith(prefix)}
     p = {k: c[k] for k in ('studyVersion', 'contentVersion', 'instrumentVersion')}
     p.update(submissionId=str(uuid.uuid4()), participantCode=str(uuid.uuid4()),
-             consent={'version': c['contentVersion'], 'acknowledgements': {f['id']: True for f in c['fields'] if f['id'].startswith('C')}},
+             consent={'version': c['contentVersion'],
+                      'acknowledgements': {f['id']: True for f in c['fields'] if f['id'].startswith('C')}},
              pre=answers('P'), post=answers('Q'),
-             tasks=[{'id': f'T{i}', 'status': 'completed', 'setupReached': True, 'durationMs': 1234, 'interrupted': False, 'answers': answers(f'T{i}')} for i in range(7)])
+             tasks=[{'id': f'T{i}', 'status': 'completed', 'setupReached': True, 'durationMs': 1234,
+                     'interrupted': False, 'answers': answers(f'T{i}')} for i in range(7)])
     p['pre']['P1'] = {'status': 'answered', 'value': 5}
     return p
 
@@ -42,7 +44,8 @@ class SubmissionTests(unittest.TestCase):
         self.payload = synthetic()
 
     def post(self, p=None, **kwargs):
-        return self.client.post('/api/study/submissions', json=p or self.payload, headers={'Origin': 'http://testserver'}, **kwargs)
+        return self.client.post('/api/study/submissions', json=p or self.payload, headers={'Origin': 'http://testserver'},
+                                **kwargs)
 
     def test_storage_boundary_is_independent_of_parent_checkout(self):
         # A standalone checkout may share its parent with a legitimate data directory.
@@ -60,12 +63,17 @@ class SubmissionTests(unittest.TestCase):
                 Config(alias / 'data')
 
     def test_commit_retry_conflict_restart_and_minimal_receipt(self):
-        first = self.post(); self.assertEqual(first.status_code, 201)
+        first = self.post()
+        self.assertEqual(first.status_code, 201)
         self.assertEqual(set(first.json()), {'receiptId', 'participantCode', 'submissionId', 'studyVersion'})
-        retry = self.post(); self.assertEqual(retry.status_code, 200); self.assertEqual(first.json(), retry.json())
+        retry = self.post()
+        self.assertEqual(retry.status_code, 200)
+        self.assertEqual(first.json(), retry.json())
         receipt, created = StudyService(self.config).submit(self.payload)
-        self.assertFalse(created); self.assertEqual(receipt, first.json())
-        changed = deepcopy(self.payload); changed['tasks'][0]['durationMs'] += 1
+        self.assertFalse(created)
+        self.assertEqual(receipt, first.json())
+        changed = deepcopy(self.payload)
+        changed['tasks'][0]['durationMs'] += 1
         self.assertEqual(self.post(changed).status_code, 409)
         self.assertNotIn('1234', self.post(changed).text)
 
@@ -80,8 +88,10 @@ class SubmissionTests(unittest.TestCase):
             lambda p: p['tasks'][2].update(durationMs=True), lambda p: p['tasks'][2].update(status='pending'),
             lambda p: p['post'].update(Q18={'status':'answered','value':'x'*4001})]
         for mutate in mutations:
-            p = deepcopy(self.payload); mutate(p)
-            with self.subTest(p=p): self.assertEqual(self.post(p).status_code, 422)
+            p = deepcopy(self.payload)
+            mutate(p)
+            with self.subTest(p=p):
+                self.assertEqual(self.post(p).status_code, 422)
         self.assertFalse(self.config.path.exists())
 
     def test_origin_content_type_body_limit_and_malformed_json(self):
@@ -105,7 +115,8 @@ class SubmissionTests(unittest.TestCase):
         self.assertTrue(all(created for _,created in results))
 
     def test_write_failure_sanitised_and_retryable(self):
-        with (patch.object(StudyService, 'connect', side_effect=sqlite3.OperationalError('secret /private/path synthetic-answer')),
+        with (patch.object(StudyService, 'connect',
+                           side_effect=sqlite3.OperationalError('secret /private/path synthetic-answer')),
               self.assertNoLogs('src.backend.evaluation', level='DEBUG')):
             failed = self.post()
         self.assertEqual(failed.status_code,503)
@@ -118,7 +129,8 @@ class SubmissionTests(unittest.TestCase):
         self.payload['pre']['P3']={'status':'answered','value':[2,1]}
         self.payload['tasks'][3]['status']='skipped'
         self.service.submit(self.payload)
-        reordered = deepcopy(self.payload); reordered['pre']['P3']['value']=[1,2]
+        reordered = deepcopy(self.payload)
+        reordered['pre']['P3']['value']=[1,2]
         self.assertFalse(self.service.submit(reordered)[1])
         self.service.submit(synthetic())
         destination=Path(self.tmp.name)/'export'
@@ -127,22 +139,30 @@ class SubmissionTests(unittest.TestCase):
         record=next(r for r in raw if r['response']['submissionId']==self.payload['submissionId'])
         self.assertEqual(record['response']['post'],self.payload['post'])
         self.assertEqual(record['release']['mode'],'preview')
-        with open(destination/'responses.csv',newline='') as f: rows=list(csv.DictReader(f))
+        with open(destination/'responses.csv',newline='') as f:
+            rows=list(csv.DictReader(f))
         cell=next(r for r in rows if r['submissionId']==self.payload['submissionId'] and r['itemId']=='Q18')
         self.assertEqual(cell['value'],"'"+self.payload['post']['Q18']['value'])
-        self.assertEqual(next(r for r in rows if r['itemId']=='Q1' and r['submissionId']==self.payload['submissionId'])['status'],'not_applicable')
-        copy=Path(self.tmp.name)/'backup.sqlite3'; restored=Path(self.tmp.name)/'restored.sqlite3'
-        backup(self.config.path,copy); backup(copy,restored)
+        self.assertEqual(next(r for r in rows
+                              if r['itemId']=='Q1' and r['submissionId']==self.payload['submissionId'])['status'],
+                         'not_applicable')
+        copy=Path(self.tmp.name)/'backup.sqlite3'
+        restored=Path(self.tmp.name)/'restored.sqlite3'
+        backup(self.config.path,copy)
+        backup(copy,restored)
         db=open_db(restored)
-        self.assertEqual(db.execute('SELECT COUNT(*) FROM responses').fetchone()[0],2);db.close()
-        with self.assertRaises(FileExistsError): backup(copy,restored)
+        self.assertEqual(db.execute('SELECT COUNT(*) FROM responses').fetchone()[0],2)
+        db.close()
+        with self.assertRaises(FileExistsError):
+            backup(copy,restored)
 
     def test_pre_setup_outcomes_validate_and_export_without_invented_time(self):
         for task, status in zip(self.payload['tasks'][1:3], ['skipped', 'could_not_work_out'], strict=True):
             task.update(setupReached=False, status=status, durationMs=0)
         self.payload['post']['Q8'] = {'status': 'answered', 'value': [3, 1]}
         self.payload['tasks'][4]['answers']['T4c'] = {'status': 'answered', 'value': 3}
-        self.payload['tasks'][5]['answers']['T5a'] = {'status': 'answered', 'value': 'Two inputs merge into one result.'}
+        self.payload['tasks'][5]['answers']['T5a'] = {'status': 'answered',
+                                                      'value': 'Two inputs merge into one result.'}
         self.assertEqual(self.post().status_code, 201)
         destination = Path(self.tmp.name) / 'early-export'
         export(self.config.path, destination)
@@ -202,10 +222,12 @@ class SubmissionTests(unittest.TestCase):
         for mode in ('pilot',):
             service=StudyService(Config(Path(self.tmp.name),mode=mode))
             self.assertFalse(service.content()['submissionEnabled'])
-            with self.assertRaises(StudyError) as caught: service.submit(self.payload)
+            with self.assertRaises(StudyError) as caught:
+                service.submit(self.payload)
             self.assertEqual(caught.exception.status,503)
             self.assertFalse(service.config.path.exists())
-        for path in ('/responses.sqlite3','/api/study/submissions','/api/study/export','/src/backend/evaluation/service.py'):
+        for path in ('/responses.sqlite3','/api/study/submissions','/api/study/export',
+                     '/src/backend/evaluation/service.py'):
             self.assertIn(self.client.get(path).status_code,(404,405))
         schema=self.client.get('/openapi.json').json()
         for path, methods in schema['paths'].items():
@@ -226,7 +248,9 @@ class SubmissionTests(unittest.TestCase):
 
     def test_schema_fail_closed(self):
         self.service.submit(self.payload)
-        db=sqlite3.connect(self.config.path);db.execute('PRAGMA user_version=99');db.close()
+        db=sqlite3.connect(self.config.path)
+        db.execute('PRAGMA user_version=99')
+        db.close()
         self.assertEqual(self.post().status_code,503)
 
     def test_local_collection_is_separate_and_records_server_release(self):
@@ -251,4 +275,5 @@ class SubmissionTests(unittest.TestCase):
         self.assertEqual(record['release']['appRevision'], '0.1.0+tested-source')
 
 
-if __name__ == '__main__': unittest.main()
+if __name__ == '__main__':
+    unittest.main()

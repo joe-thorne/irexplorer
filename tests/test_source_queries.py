@@ -47,7 +47,8 @@ class SourceQueriesTests(unittest.TestCase):
 
     def test_wasted_multiple_matches_and_missing_locations(self):
         service = QueryService()
-        counts = [sum(m['location']['line'] == 3 for m in service.source_mappings('score', n, 'fn0')['mappings']) for n in (0, 1, 2, 8, 12, 13)]
+        counts = [sum(m['location']['line'] == 3 for m in service.source_mappings('score', n, 'fn0')['mappings'])
+                  for n in (0, 1, 2, 8, 12, 13)]
         self.assertGreater(counts[0], 1)
         self.assertGreater(counts[1], 1)
         self.assertEqual(counts[2:], [0, 0, 0, 0])
@@ -60,7 +61,8 @@ class SourceQueriesTests(unittest.TestCase):
             self.assertEqual(client.get('/api/examples/score/source').status_code, 200)
             path = '/api/examples/score/states/0/source-mappings'
             self.assertEqual(client.get(path, params={'functionId': 'fn0'}).status_code, 200)
-            for url in ('/api/examples/missing/source', '/api/examples/score/states/99/source-mappings?functionId=fn0', path+'?functionId=fn0/bb0'):
+            for url in ('/api/examples/missing/source', '/api/examples/score/states/99/source-mappings?functionId=fn0',
+                        path+'?functionId=fn0/bb0'):
                 self.assertEqual(client.get(url).status_code, 404)
             self.assertEqual(client.get(path).status_code, 422)
             self.assertIn(client.post('/api/analyse', json={'source': 'int main() {}'}).status_code, (404, 405))

@@ -139,7 +139,8 @@ def detect_optimisations(before: StateGraph, after: StateGraph,
                     replacements.append(target)
                 if len(replacements) == len(users):
                     emit("Constant folding", "Evaluate constant arithmetic at compile time.",
-                         f"The {node.attributes['opcode']} calculation becomes the constant {value} in its recorded uses.",
+                         f"The {node.attributes['opcode']} calculation becomes the constant {value} "
+                         "in its recorded uses.",
                          [node, *users], replacements)
             # Recognise the expression itself, then corroborate its disappearance.
             # Do not claim constant propagation or folding merely from an absent node.
@@ -152,7 +153,8 @@ def detect_optimisations(before: StateGraph, after: StateGraph,
                 if equivalent:
                     operands = [n for n in (left_node, right_node) if n]
                     emit("Algebraic simplification", "Remove arithmetic whose result is already known.",
-                         "Two identical values are subtracted, giving zero; this subtraction is absent in the later state.",
+                         "Two identical values are subtracted, giving zero; "
+                         "this subtraction is absent in the later state.",
                          [node, *operands], certainty="likely")
             if (node.attributes.get("opcode") in _PURE
                     and not before.value_flow_successors.get(node.stable_id)

@@ -934,7 +934,9 @@ def _match_instruction_groups(
             if min(len(old), len(new)) != 1 or len(old) == len(new):
                 continue
             boundary = _expression_boundary(from_state, old, {key: key for key in block_pairs})
-            if boundary is None or boundary != _expression_boundary(to_state, new, {value: key for key, value in block_pairs.items()}):
+            if boundary is None or boundary != _expression_boundary(
+                to_state, new, {value: key for key, value in block_pairs.items()}
+            ):
                 continue
             links.append(Link(
                 from_node_ids=tuple(node.stable_id for node in old),
@@ -962,7 +964,9 @@ def _match_source_rewrites_in_context(
     to_function: str,
     evidence: str = "unique debug source location after instruction rewrite",
 ) -> None:
-    source_key = lambda state, node: node.attributes.get("source")
+    def source_key(state, node):
+        return node.attributes.get("source")
+
     grouped_from = _group_unique(
         (
             node
