@@ -21,7 +21,7 @@ def higher_layer_imports(source: str) -> list[str]:
     bodies and relative imports, and ignores comments and strings.
     """
 
-    violations: list[tuple[int, str]] = []
+    violations: set[tuple[int, str]] = set()
     for node in ast.walk(ast.parse(source)):
         if isinstance(node, ast.Import):
             modules = [alias.name for alias in node.names]
@@ -30,13 +30,14 @@ def higher_layer_imports(source: str) -> list[str]:
             if node.level:
                 parent = TOOLCHAIN_PACKAGE.rsplit(".", node.level - 1)[0]
                 base = f"{parent}.{base}" if base else parent
-            modules = [base] if node.module else [f"{base}.{alias.name}" for alias in node.names]
+            # The imported names may themselves be modules (``from src.backend import bake``).
+            modules = [base, *(f"{base}.{alias.name}" for alias in node.names)]
         else:
             continue
         for module in modules:
             parts = module.split(".")
             if parts[:2] == ["src", "backend"] and len(parts) > 2 and parts[2] in HIGHER_LAYERS:
-                violations.append((node.lineno, f"src.backend.{parts[2]}"))
+                violations.add((node.lineno, f"src.backend.{parts[2]}"))
     return [f"{line}: {module}" for line, module in sorted(violations)]
 
 
@@ -66,6 +67,7 @@ class CuratedGenerationTests(unittest.TestCase):
             [],
         )
         self.assertEqual(higher_layer_imports("from .. import bake\n"), ["1: src.backend.bake"])
+        self.assertEqual(higher_layer_imports("from src.backend import api\n"), ["1: src.backend.api"])
         self.assertEqual(
             higher_layer_imports("def run():\n    from src.backend.ingest import curated\n"),
             ["2: src.backend.ingest"],
