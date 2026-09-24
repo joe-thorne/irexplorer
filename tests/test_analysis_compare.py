@@ -35,7 +35,7 @@ from src.backend.model import (
 from src.backend.toolchain import curated
 
 
-class EndpointComparisonTests(unittest.TestCase):
+class AdjacentComparisonTests(unittest.TestCase):
     def test_adjacent_comparison_returns_only_the_stored_correspondence(self) -> None:
         timeline = load_curated_timeline("score")
         correspondence = compare_timeline_step(timeline, 0)
@@ -282,7 +282,7 @@ join:
             )
         )
 
-    def test_score_anchor_comparison_is_coverage_complete_and_honest(self) -> None:
+    def test_score_recompiled_o3_comparison_is_coverage_complete_and_honest(self) -> None:
         timeline = load_curated_timeline("score")
         correspondence = compare_timeline_step(timeline, len(timeline.steps) - 1)
         from_state = timeline.state(12)

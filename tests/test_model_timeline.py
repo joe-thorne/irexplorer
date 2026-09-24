@@ -33,7 +33,7 @@ class OptimisationTimelineTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             load_curated_timeline("score", resolution="endpoints")  # type: ignore[call-arg]
 
-    def test_full_timeline_retains_every_pass_and_derived_provenance(self) -> None:
+    def test_timeline_retains_every_pass_and_derived_provenance(self) -> None:
         timeline = load_curated_timeline("score")
 
         self.assertEqual(len(timeline.states), 14)
