@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import PurePosixPath
 from threading import RLock
@@ -13,7 +13,7 @@ from src.backend.analysis.curated import load_prebaked_curated_correspondences
 from src.backend.analysis.report import ComparisonReport, RemarkReference, describe_comparison
 from src.backend.ingest.curated import load_prebaked_curated_source, load_prebaked_curated_timeline
 from src.backend.model.correspondence import Correspondence
-from src.backend.model.graph import Node, StateGraph
+from src.backend.model.graph import Node, Remark, StateGraph
 from src.backend.model.timeline import OptimisationTimeline
 from src.backend.toolchain import curated
 
@@ -234,13 +234,13 @@ def _summary_view(loaded: LoadedExample, report: ComparisonReport) -> dict[str, 
         "toOrdinal": report.to_ordinal,
         "scope": "whole example",
         "items": [{"text": item.text, "linkIndices": list(item.link_indices),
-                   "remarkIndices": _wire_remark_indices(item.remark_references, len(report.steps))}
+                   "remarkReferences": [_remark_reference_view(ref) for ref in item.remark_references]}
                   for item in report.items],
         "links": [{"fromNodeIds": list(link.from_node_ids), "toNodeIds": list(link.to_node_ids),
                    "relation": link.relation, "confidence": link.confidence, "evidence": link.evidence}
                   for link in report.links],
         "steps": [{"fromOrdinal": s.from_ordinal, "toOrdinal": s.to_ordinal, "kind": s.kind,
-                   "command": s.origin.command, "remarks": [asdict(r) for r in s.remarks]}
+                   "command": s.origin.command, "remarks": [_remark_view(r) for r in s.remarks]}
                   for s in report.steps],
         "optimisations": list(report.optimisations),
         "states": [_state_view(loaded, state) for state in report.states],
@@ -248,13 +248,18 @@ def _summary_view(loaded: LoadedExample, report: ComparisonReport) -> dict[str, 
     }
 
 
-def _wire_remark_indices(references: tuple[RemarkReference, ...], step_count: int) -> list[int]:
-    """Flatten remark references to the current wire format: indices into the final step's remarks.
+def _remark_reference_view(reference: RemarkReference) -> dict[str, int]:
+    """Address a remark by its step's position in the summary's steps, then within that step."""
+    return {"stepIndex": reference.step_index, "remarkIndex": reference.remark_index}
 
-    The browser resolves ``remarkIndices`` against ``summary.steps.at(-1)`` until the
-    wire format carries (step, remark) pairs (joe-thorne/irexplorer#7).
-    """
-    final_step = step_count - 1
-    if any(ref.step_index != final_step for ref in references):
-        raise ValueError("remark reference outside the final step cannot be sent in the current wire format")
-    return [ref.remark_index for ref in references]
+
+def _remark_view(remark: Remark) -> dict[str, Any]:
+    location = remark.location
+    return {
+        "passName": remark.pass_name,
+        "name": remark.name,
+        "function": remark.function,
+        "location": None if location is None
+        else {"file": location.file, "line": location.line, "column": location.column},
+        "raw": remark.raw,
+    }

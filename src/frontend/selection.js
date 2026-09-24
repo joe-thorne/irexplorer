@@ -114,18 +114,22 @@ function buildComparisonEvidence(summary, trace) {
   }
   const relationGroups = [...groups].map(([wording, count]) => ({ wording, count }));
   const linkIndices = new Set(trace.links.map(link => summary.links.indexOf(link)).filter(index => index >= 0));
-  const finalStep = (summary.steps || []).at(-1);
-  const finalRemarks = finalStep?.remarks || [];
-  const remarkIndices = new Set((summary.items || []).flatMap(item => item.remarkIndices || []).filter(index => {
-    const remark = finalRemarks[index];
-    return remark?.location && sourceMatches(remark.location, trace.anchors);
-  }));
-  const remarks = [...remarkIndices].map(index => ({
-    ...finalRemarks[index], fromOrdinal: finalStep.fromOrdinal, toOrdinal: finalStep.toOrdinal,
-  }));
+  // A remark reference addresses summary.steps[stepIndex].remarks[remarkIndex].
+  const steps = summary.steps || [];
+  const referenceKey = ref => ref.stepIndex + ':' + ref.remarkIndex;
+  const citedReferenceKeys = new Set();
+  const remarks = [];
+  for (const ref of (summary.items || []).flatMap(item => item.remarkReferences)) {
+    const step = steps[ref.stepIndex];
+    const remark = step?.remarks[ref.remarkIndex];
+    if (citedReferenceKeys.has(referenceKey(ref)) || !remark?.location || !sourceMatches(remark.location, trace.anchors))
+      continue;
+    citedReferenceKeys.add(referenceKey(ref));
+    remarks.push({ ...remark, fromOrdinal: step.fromOrdinal, toOrdinal: step.toOrdinal });
+  }
   const structuralClaims = (summary.items || []).filter(item =>
     item.linkIndices.some(index => linkIndices.has(index))
-      || item.remarkIndices.some(index => remarkIndices.has(index)));
+      || item.remarkReferences.some(ref => citedReferenceKeys.has(referenceKey(ref))));
   const optimisations = (summary.optimisations || []).filter(event =>
     event.linkIndices.some(index => linkIndices.has(index)));
   const optimisationGroups = groupOptimisations(optimisations);

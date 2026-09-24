@@ -126,10 +126,15 @@ class SourceMappingsResponse(ApiModel):
     mappings: list[SourceMappingResponse]
 
 
+class RemarkReferenceResponse(ApiModel):
+    stepIndex: int
+    remarkIndex: int
+
+
 class SummaryItemResponse(ApiModel):
     text: str
     linkIndices: list[int]
-    remarkIndices: list[int]
+    remarkReferences: list[RemarkReferenceResponse]
 
 
 class LinkResponse(ApiModel):
@@ -141,7 +146,7 @@ class LinkResponse(ApiModel):
 
 
 class RemarkResponse(ApiModel):
-    pass_name: str
+    passName: str
     name: str
     function: str
     location: SourceLocationResponse | None

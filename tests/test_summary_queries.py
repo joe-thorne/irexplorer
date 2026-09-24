@@ -1,10 +1,12 @@
 import hashlib
 import unittest
+from dataclasses import replace
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
 from src.backend.analysis.compare import ComposedCorrespondence, summarise_correspondence
+from src.backend.analysis.report import RemarkReference, ReportItem, describe_comparison
 from src.backend.api import QueryService, create_app
 from src.backend.ingest import load_prebaked_curated_timeline
 from src.backend.model import Correspondence, Link, StateGraph
@@ -27,19 +29,39 @@ class SummaryQueriesTests(unittest.TestCase):
                     self.assertEqual(response, service.summary(example, higher, lower))
                     self.assertEqual([s['ordinal'] for s in response['states']], list(range(lower, higher + 1)))
                     self.assertEqual(len(response['steps']), higher - lower)
-                    final_remarks = response['steps'][-1]['remarks']
                     for item in response['items']:
-                        self.assertTrue(item['linkIndices'] or item['remarkIndices'])
+                        self.assertEqual(set(item), {'text', 'linkIndices', 'remarkReferences'})
+                        self.assertTrue(item['linkIndices'] or item['remarkReferences'])
                         self.assertTrue(all(0 <= i < len(response['links']) for i in item['linkIndices']))
-                        # The browser resolves remark indices against the final step in the span.
-                        self.assertTrue(all(0 <= i < len(final_remarks) for i in item['remarkIndices']))
+                        # Each remark reference addresses a step in this span, then a remark in that step.
+                        for ref in item['remarkReferences']:
+                            self.assertEqual(set(ref), {'stepIndex', 'remarkIndex'})
+                            self.assertLess(ref['remarkIndex'], len(response['steps'][ref['stepIndex']]['remarks']))
                     for record, original in zip(response['steps'], timeline.steps[lower:higher], strict=True):
                         self.assertEqual(record['command'], original.origin.command)
                         self.assertEqual([r['raw'] for r in record['remarks']], [r.raw for r in original.remarks])
+                        self.assertEqual([r['passName'] for r in record['remarks']],
+                                         [r.pass_name for r in original.remarks])
+                        for remark in record['remarks']:
+                            self.assertEqual(set(remark), {'passName', 'name', 'function', 'location', 'raw'})
                     if higher == 13:
                         self.assertIn('not the effect of one optimisation pass', response['context'])
                     if higher > lower + 1:
                         self.assertIn('Composed comparison', response['context'])
+
+    def test_remark_reference_to_an_intermediate_step_reaches_the_wire(self):
+        # quick_sort step 3 (after gvn) records remarks; the final step of span 3→5 records none.
+        def cite_first_step(*args):
+            report = describe_comparison(*args)
+            item = ReportItem('An intermediate remark.', remark_references=(RemarkReference(0, 1),))
+            return replace(report, items=(*report.items, item))
+
+        with patch('src.backend.api.query.describe_comparison', side_effect=cite_first_step):
+            response = QueryService().summary('quick_sort', 3, 5)
+        self.assertEqual(response['steps'][-1]['remarks'], [])
+        self.assertEqual(response['items'][-1]['remarkReferences'], [{'stepIndex': 0, 'remarkIndex': 1}])
+        self.assertEqual(response['steps'][0]['remarks'][1]['raw'],
+                         load_prebaked_curated_timeline('quick_sort').steps[3].remarks[1].raw)
 
     def test_same_state_no_op_and_whole_example_scope(self):
         for example in curated.list_examples():

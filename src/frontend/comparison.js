@@ -73,7 +73,7 @@ function renderRemarks() {
     const card = document.createElement('details');
     card.className = 'compiler-remark';
     const summary = document.createElement('summary');
-    summary.textContent = [remark.passName || remark.pass_name, remark.name].filter(Boolean).join(' · ') || 'Captured compiler remark';
+    summary.textContent = [remark.passName, remark.name].filter(Boolean).join(' · ') || 'Captured compiler remark';
     const transition = document.createElement('small');
     transition.textContent = `Recorded transition: step ${remark.fromOrdinal} → step ${remark.toOrdinal}`;
     const raw = document.createElement('pre');

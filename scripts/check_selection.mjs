@@ -15,13 +15,14 @@ const summary = { links: [
   { fromNodeIds: ['b', 'c'], toNodeIds: ['y', 'z'], relation: 'merged', confidence: 'approximate' },
   { fromNodeIds: ['unknown'], toNodeIds: ['other'], relation: 'changed', confidence: 'none' },
 ], items: [
-  { text: 'The selected instruction remains.', linkIndices: [0], remarkIndices: [] },
-  { text: 'A recorded compiler remark for the selected instruction.', linkIndices: [], remarkIndices: [0] },
-  { text: 'The selected pair is merged.', linkIndices: [1], remarkIndices: [2] },
-  { text: 'An unrelated structural change.', linkIndices: [2], remarkIndices: [] },
+  { text: 'The selected instruction remains.', linkIndices: [0], remarkReferences: [] },
+  { text: 'A recorded compiler remark for the selected instruction.', linkIndices: [],
+    remarkReferences: [{ stepIndex: 0, remarkIndex: 0 }] },
+  { text: 'The selected pair is merged.', linkIndices: [1], remarkReferences: [{ stepIndex: 0, remarkIndex: 2 }] },
+  { text: 'An unrelated structural change.', linkIndices: [2], remarkReferences: [] },
 ], steps: [{ fromOrdinal: 0, toOrdinal: 1, remarks: [
-  { pass_name: 'instcombine', name: 'Simplified', raw: 'selected remark', location: { file: 'examples/curated/test.c', line: 1 } },
-  { pass_name: 'instcombine', name: 'Unrelated', raw: 'unrecorded remark', location: { file: 'examples/curated/test.c', line: 1 } },
+  { passName: 'instcombine', name: 'Simplified', raw: 'selected remark', location: { file: 'examples/curated/test.c', line: 1 } },
+  { passName: 'instcombine', name: 'Unrelated', raw: 'unrecorded remark', location: { file: 'examples/curated/test.c', line: 1 } },
 ] }], optimisations: [
   { name: 'One optimisation', purpose: 'Test grouping.', change: 'First change.', certainty: 'detected', fromOrdinal: 0, toOrdinal: 1, fromStateId: 'before', toStateId: 'after', linkIndices: [0] },
   { name: 'One optimisation', purpose: 'Test grouping.', change: 'Second change.', certainty: 'detected', fromOrdinal: 0, toOrdinal: 1, fromStateId: 'before', toStateId: 'after', linkIndices: [0] },
@@ -71,16 +72,30 @@ check('Selection evidence is render-ready across every confidence wording', () =
 check('Selection evidence retains only structural claims recorded for its links', () => {
   const evidence = context.buildComparisonEvidence(summary, trace(source(1)));
   assert.equal(JSON.stringify(evidence.structuralClaims), JSON.stringify([
-    { text: 'The selected instruction remains.', linkIndices: [0], remarkIndices: [] },
-    { text: 'A recorded compiler remark for the selected instruction.', linkIndices: [], remarkIndices: [0] },
+    { text: 'The selected instruction remains.', linkIndices: [0], remarkReferences: [] },
+    { text: 'A recorded compiler remark for the selected instruction.', linkIndices: [],
+      remarkReferences: [{ stepIndex: 0, remarkIndex: 0 }] },
   ]));
 });
 check('Selection evidence retains only recorded relevant compiler remarks with their transition', () => {
   const evidence = context.buildComparisonEvidence(summary, trace(source(1)));
   assert.equal(JSON.stringify(evidence.remarks), JSON.stringify([{
-    pass_name: 'instcombine', name: 'Simplified', raw: 'selected remark',
+    passName: 'instcombine', name: 'Simplified', raw: 'selected remark',
     location: { file: 'examples/curated/test.c', line: 1 }, fromOrdinal: 0, toOrdinal: 1,
   }]));
+});
+check('A remark from an intermediate step keeps that step\'s transition', () => {
+  const remark = (name, line) => ({ passName: 'gvn', name, raw: name, location: { file: 'examples/curated/test.c', line } });
+  const spanning = { ...summary, items: [
+    { text: 'An intermediate remark.', linkIndices: [], remarkReferences: [{ stepIndex: 0, remarkIndex: 1 }] },
+    { text: 'A final remark elsewhere.', linkIndices: [], remarkReferences: [{ stepIndex: 1, remarkIndex: 0 }] },
+  ], steps: [
+    { fromOrdinal: 0, toOrdinal: 1, remarks: [remark('Elsewhere', 9), remark('Intermediate', 1)] },
+    { fromOrdinal: 1, toOrdinal: 2, remarks: [remark('Final', 9)] },
+  ] };
+  const evidence = context.buildComparisonEvidence(spanning, trace(source(1)));
+  assert.equal(JSON.stringify(evidence.remarks), JSON.stringify([{ ...remark('Intermediate', 1), fromOrdinal: 0, toOrdinal: 1 }]));
+  assert.deepEqual(evidence.structuralClaims.map(item => item.text), ['An intermediate remark.']);
 });
 check('Equivalent optimisation records group without dropping concrete changes', () => {
   const evidence = context.buildComparisonEvidence(summary, trace(source(1)));
