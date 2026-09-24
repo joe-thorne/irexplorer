@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from src.backend.analysis.compare import ComposedCorrespondence
+from src.backend.analysis.composition import ComposedCorrespondence
 from src.backend.analysis.report import RemarkReference, ReportItem, describe_comparison
 from src.backend.analysis.summary import summarise_correspondence
 from src.backend.api import QueryService, create_app

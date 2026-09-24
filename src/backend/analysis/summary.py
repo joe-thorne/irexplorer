@@ -5,7 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from src.backend.analysis.cfg_diff import CfgEdgeDifference, cfg_edge_differences
-from src.backend.analysis.compare import ComposedCorrespondence, is_identity_correspondence
+from src.backend.analysis.compare import is_identity_correspondence
+from src.backend.analysis.composition import ComposedCorrespondence
 from src.backend.model.correspondence import Correspondence, Link
 from src.backend.model.graph import StateGraph
 from src.backend.model.timeline import PassStep

@@ -6,7 +6,7 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import NamedTuple
 
-from src.backend.analysis.compare import ComposedCorrespondence
+from src.backend.analysis.composition import ComposedCorrespondence
 from src.backend.model.correspondence import Correspondence
 from src.backend.model.graph import Edge, StateGraph
 

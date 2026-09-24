@@ -11,7 +11,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from src.backend.analysis.compare import compose_timeline_correspondences
+from src.backend.analysis.composition import compose_timeline_correspondences
 from src.backend.analysis.optimisations import explain_comparison
 from src.backend.analysis.summary import summarise_correspondence
 from src.backend.model.correspondence import Correspondence, Link

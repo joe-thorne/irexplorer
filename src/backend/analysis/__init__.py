@@ -1,12 +1,14 @@
 """Layer 4 pure comparison and summary functions."""
 
 from src.backend.analysis.compare import (
-    ComposedCorrespondence,
     compare_states,
     compare_timeline_step,
+    is_identity_correspondence,
+)
+from src.backend.analysis.composition import (
+    ComposedCorrespondence,
     compose_correspondences,
     compose_timeline_correspondences,
-    is_identity_correspondence,
 )
 from src.backend.analysis.curated import (
     bake_curated_comparison_records,
