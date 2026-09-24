@@ -1,0 +1,5 @@
+# Development-only checks: the runtime environment plus the pinned lint and
+# type-check tools. Not installed in the deployed image.
+-r requirements.lock
+ruff==0.16.9
+mypy==2.3.1
