@@ -27,6 +27,18 @@ are asserted against fresh analysis and served overlays. This is AI-assisted
 manual artefact evidence; independent human sign-off and fresh Docker
 regeneration are separate verification steps.
 
+## Lint and type checks
+
+Install the development tools over the runtime environment, then run both checks from the repository root. Their configuration is in `pyproject.toml`.
+
+```sh
+.venv/bin/python -m pip install -r src/backend/requirements-dev.txt
+.venv/bin/ruff check .
+.venv/bin/mypy
+```
+
+GitHub Actions (`.github/workflows/ci.yml`) runs these checks, the backend suite, and the study state checks on Python 3.12 for every push to `main` and every pull request.
+
 ## Study state
 
 With Node 22 or later, these standalone checks require no server or browser and write no evidence files:
