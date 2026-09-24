@@ -18,8 +18,9 @@ runtime code path invokes the toolchain.
 
 ## Decision
 
-- The runtime reads only serialised model records, never raw IR, CFG or remark
-  files.  `api/` loads records through the `load_prebaked_*` functions, uses
+- For curated examples, the runtime reads only serialised model records, never
+  raw IR, CFG or remark files.  Study responses are stored separately under
+  [ADR 0002](0002-final-only-study-storage.md).  `api/` loads records through the `load_prebaked_*` functions, uses
   `toolchain/curated` only to list the curated examples, and composes
   correspondences for non-adjacent spans in memory.
 - Compiler artefacts are produced and turned into model records offline, by
