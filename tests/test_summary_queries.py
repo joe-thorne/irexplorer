@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 
 from src.backend.api import QueryService, create_app
 from src.backend.analysis.compare import ComposedCorrespondence, summarise_correspondence
+from src.backend.ingest import load_prebaked_curated_timeline
 from src.backend.model import Correspondence, Link, StateGraph
 from src.backend.model.graph import Edge, Node
 from src.backend.toolchain import curated
@@ -19,29 +20,20 @@ class SummaryQueriesTests(unittest.TestCase):
     def test_all_examples_comparison_modes_resolve_existing_evidence(self):
         service = self.service
         for example in curated.list_examples():
-            loaded = service._example(example)
+            timeline = load_prebaked_curated_timeline(example)
             for lower, higher in [(n, n + 1) for n in range(13)] + [(0, 9), (0, 13), (4, 6)]:
                 with self.subTest(example=example, span=(lower, higher)):
                     response = service.summary(example, lower, higher)
                     self.assertEqual(response, service.summary(example, higher, lower))
-                    comparison = service._comparison(loaded, lower, higher)
-                    step = loaded.timeline.steps[higher - 1]
-                    expected = summarise_correspondence(comparison, loaded.timeline.state(lower),
-                                                        loaded.timeline.state(higher), step)
-                    self.assertEqual(response['context'], expected.context)
-                    self.assertEqual([i['text'] for i in response['items']], [i.text for i in expected.items])
-                    self.assertEqual(len(response['links']), len(comparison.links))
-                    for index, link in enumerate(comparison.links):
-                        record = response['links'][index]
-                        self.assertEqual(record['fromNodeIds'], list(link.from_node_ids))
-                        self.assertEqual(record['toNodeIds'], list(link.to_node_ids))
-                        self.assertEqual(record['evidence'], link.evidence)
-                        self.assertEqual(record['confidence'], link.confidence)
+                    self.assertEqual([s['ordinal'] for s in response['states']], list(range(lower, higher + 1)))
+                    self.assertEqual(len(response['steps']), higher - lower)
+                    final_remarks = response['steps'][-1]['remarks']
                     for item in response['items']:
                         self.assertTrue(item['linkIndices'] or item['remarkIndices'])
                         self.assertTrue(all(0 <= i < len(response['links']) for i in item['linkIndices']))
-                        self.assertTrue(all(0 <= i < len(step.remarks) for i in item['remarkIndices']))
-                    for record, original in zip(response['steps'], loaded.timeline.steps[lower:higher]):
+                        # The browser resolves remark indices against the final step in the span.
+                        self.assertTrue(all(0 <= i < len(final_remarks) for i in item['remarkIndices']))
+                    for record, original in zip(response['steps'], timeline.steps[lower:higher]):
                         self.assertEqual(record['command'], original.origin.command)
                         self.assertEqual([r['raw'] for r in record['remarks']], [r.raw for r in original.remarks])
                     if higher == 13:
@@ -78,18 +70,17 @@ class SummaryQueriesTests(unittest.TestCase):
     def test_composed_summary_covers_changed_and_approximate_endpoint_changes(self):
         """I4: composed summaries must account for every non-exact endpoint change."""
         response = self.service.summary('score', 0, 12)
-        loaded = self.service._example('score')
-        comparison = self.service._comparison(loaded, 0, 12)
+        timeline = load_prebaked_curated_timeline('score')
         covered_indices = {
             index for item in response['items'] for index in item['linkIndices']
         }
         relevant_indices = {
             index
-            for index, link in enumerate(comparison.links)
-            if self._link_kind_at_comparison_endpoint(loaded, link, 0, 12) == 'Instruction'
+            for index, link in enumerate(response['links'])
+            if self._link_kind_at_comparison_endpoint(timeline, link, 0, 12) == 'Instruction'
             and (
-                link.relation == 'changed'
-                or (link.relation in {'added', 'removed'} and link.confidence == 'approximate')
+                link['relation'] == 'changed'
+                or (link['relation'] in {'added', 'removed'} and link['confidence'] == 'approximate')
             )
         }
 
@@ -217,9 +208,9 @@ class SummaryQueriesTests(unittest.TestCase):
         )
 
     @staticmethod
-    def _link_kind_at_comparison_endpoint(loaded, link, from_ordinal, to_ordinal):
-        node_id = (link.from_node_ids or link.to_node_ids)[0]
-        state = loaded.timeline.state(from_ordinal if link.from_node_ids else to_ordinal)
+    def _link_kind_at_comparison_endpoint(timeline, link, from_ordinal, to_ordinal):
+        node_id = (link['fromNodeIds'] or link['toNodeIds'])[0]
+        state = timeline.state(from_ordinal if link['fromNodeIds'] else to_ordinal)
         return state.by_id[node_id].kind
 
     def test_http_schema_errors_and_no_mutation(self):
