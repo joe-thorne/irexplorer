@@ -86,11 +86,13 @@ def detect_optimisations(before: StateGraph, after: StateGraph,
         if len(old) == len(new) == 1 and link.confidence != "none":
             a, b = _binary(old[0]), _binary(new[0])
             if a and b and a[1:3] == b[1:3]:
+                constant: int | None
+                shift: int | None
                 try:
                     constant, shift = int(a[3]), int(b[3])
                 except ValueError:
-                    continue
-                if (0 <= shift < int(a[1])
+                    constant = shift = None
+                if (constant is not None and shift is not None and 0 <= shift < int(a[1])
                         and constant == 1 << shift
                         and ((a[0] == "mul" and b[0] == "shl")
                              or (a[0] in {"sdiv", "udiv"} and b[0] in {"lshr", "ashr"}))):
