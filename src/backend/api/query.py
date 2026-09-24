@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from hashlib import sha256
 from pathlib import PurePosixPath
 from threading import RLock
 from typing import Any
@@ -11,7 +10,7 @@ from typing import Any
 from src.backend.analysis.compare import is_identity_correspondence
 from src.backend.analysis.curated import load_prebaked_curated_correspondences
 from src.backend.analysis.report import ComparisonReport, RemarkReference, describe_comparison
-from src.backend.ingest.curated import load_prebaked_curated_source, load_prebaked_curated_timeline
+from src.backend.ingest.curated import SourceRecord, load_prebaked_curated_source, load_prebaked_curated_timeline
 from src.backend.model.correspondence import Correspondence
 from src.backend.model.graph import Node, Remark, StateGraph
 from src.backend.model.timeline import OptimisationTimeline
@@ -43,7 +42,7 @@ class LoadedExample:
     example_id: str
     timeline: OptimisationTimeline
     correspondences: tuple[Correspondence, ...]
-    source: str
+    source: SourceRecord
 
 
 class QueryService:
@@ -64,9 +63,9 @@ class QueryService:
         return {"states": [_state_view(loaded, state) for state in loaded.timeline.states]}
 
     def source(self, example_id: str) -> dict[str, Any]:
-        text = self._example(example_id).source
-        return {"exampleId": example_id, "file": f"{example_id}.c", "text": text,
-                "sha256": sha256(text.encode("utf-8")).hexdigest(), "inputVerified": True}
+        source = self._example(example_id).source
+        return {"exampleId": example_id, "file": source.file, "text": source.text,
+                "sha256": source.sha256, "inputVerified": source.input_verified}
 
     def source_mappings(self, example_id: str, ordinal: int, function_id: str) -> dict[str, Any]:
         state = self._state(example_id, ordinal)

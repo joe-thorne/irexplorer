@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import shutil
+from dataclasses import dataclass
 from hashlib import sha256
 
 from src.backend.ingest.llvm_ir import parse_ir_state
@@ -17,6 +18,20 @@ from src.backend.model.timeline import OptimisationTimeline, PassStep, StepOrigi
 from src.backend.toolchain import curated
 
 SOURCE_RECORD_FORMAT_VERSION = 1
+
+
+@dataclass(frozen=True)
+class SourceRecord:
+    """A curated example's C source, as checked against the pinned compilations.
+
+    ``input_verified`` records that the bake wrote this text only after it
+    matched every pinned compilation's debug checksum.
+    """
+
+    file: str
+    text: str
+    sha256: str
+    input_verified: bool
 
 
 def load_curated_timeline(
@@ -90,8 +105,8 @@ def load_prebaked_curated_timeline(example: str) -> OptimisationTimeline:
     return deserialise_timeline(deserialise_json(path.read_text(encoding="utf-8")))
 
 
-def load_prebaked_curated_source(example: str) -> str:
-    """Load the source text that was checked against every pinned compilation at bake time."""
+def load_prebaked_curated_source(example: str) -> SourceRecord:
+    """Load the source record that was checked against every pinned compilation at bake time."""
 
     path = curated.model_source_path(example)
     record = deserialise_json(path.read_text(encoding="utf-8"))
@@ -100,21 +115,25 @@ def load_prebaked_curated_source(example: str) -> str:
     if record.get("file") != f"{example}.c":
         raise ModelValidationError(f"source record does not belong to example '{example}'")
     text = record.get("text")
-    if not isinstance(text, str) or sha256(text.encode("utf-8")).hexdigest() != record.get("sha256"):
+    if not isinstance(text, str) or _source_digest(text) != record.get("sha256"):
         raise ModelValidationError(f"source record text failed its checksum for example '{example}'")
-    return text
+    return SourceRecord(file=record["file"], text=text, sha256=record["sha256"], input_verified=True)
+
+
+def _source_digest(text: str) -> str:
+    return sha256(text.encode("utf-8")).hexdigest()
 
 
 def _write_source_record(example: str) -> None:
     text = curated.verified_source(example)
-    path = curated.artefact_dir(example) / "model" / "source.json"
+    path = curated.model_source_path(example, must_exist=False)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         serialise_json(
             {
                 "formatVersion": SOURCE_RECORD_FORMAT_VERSION,
                 "file": f"{example}.c",
-                "sha256": sha256(text.encode("utf-8")).hexdigest(),
+                "sha256": _source_digest(text),
                 "text": text,
             }
         ),

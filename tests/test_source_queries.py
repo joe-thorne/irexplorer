@@ -8,7 +8,7 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 from src.backend.api import QueryService, create_app
-from src.backend.ingest import bake_curated_model_records, load_prebaked_curated_source
+from src.backend.ingest import SourceRecord, bake_curated_model_records, load_prebaked_curated_source
 from src.backend.model import ModelValidationError
 from src.backend.toolchain import curated
 
@@ -84,6 +84,28 @@ class SourceQueriesTests(unittest.TestCase):
                   patch.object(curated, 'read_source', return_value='changed input'),
                   self.assertRaisesRegex(curated.ToolchainError, 'does not match the pinned input')):
                 bake_curated_model_records()
+
+    def test_loader_returns_the_bake_verified_source_record(self):
+        stored = json.loads(curated.model_source_path('score').read_text(encoding='utf-8'))
+        record = load_prebaked_curated_source('score')
+        self.assertEqual(
+            record,
+            SourceRecord(file='score.c', text=curated.read_source('score'), sha256=stored['sha256'],
+                         input_verified=True),
+        )
+        self.assertEqual(QueryService(preload=False).source('score'), {
+            'exampleId': 'score', 'file': record.file, 'text': record.text,
+            'sha256': record.sha256, 'inputVerified': True,
+        })
+
+    def test_source_record_path_resolves_before_the_record_is_written(self):
+        with TemporaryDirectory() as temporary, curated.using_artefacts_root(Path(temporary)):
+            with self.assertRaises(curated.ToolchainError):
+                curated.model_source_path('score')
+            self.assertEqual(
+                curated.model_source_path('score', must_exist=False),
+                Path(temporary) / 'score' / 'model' / 'source.json',
+            )
 
     def test_untrustworthy_source_records_are_rejected(self):
         record = json.loads(curated.model_source_path('score').read_text(encoding='utf-8'))

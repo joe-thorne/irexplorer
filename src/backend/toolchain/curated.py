@@ -175,12 +175,14 @@ def model_timeline_path(example: str) -> Path:
     return path
 
 
-def model_source_path(example: str) -> Path:
-    """Resolve the pre-baked, checksum-verified source record for a curated example."""
+def model_source_path(example: str, *, must_exist: bool = True) -> Path:
+    """Resolve the pre-baked, checksum-verified source record for a curated example.
 
-    _require_example(example)
+    The bake passes ``must_exist=False`` to learn where to write the record.
+    """
+
     path = artefact_dir(example) / "model" / "source.json"
-    if not path.exists():
+    if must_exist and not path.exists():
         raise ToolchainError(
             f"Missing pre-baked source record for example '{example}': {path}"
         )
