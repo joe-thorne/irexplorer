@@ -1,4 +1,4 @@
-import re
+import ast
 import subprocess
 import sys
 import unittest
@@ -9,6 +9,35 @@ from unittest.mock import patch
 from src.backend import bake
 from src.backend.toolchain import generate_curated
 from src.backend.toolchain.curated import ToolchainError
+
+TOOLCHAIN_PACKAGE = "src.backend.toolchain"
+HIGHER_LAYERS = {"bake", "ingest", "model", "analysis", "api", "evaluation"}
+
+
+def higher_layer_imports(source: str) -> list[str]:
+    """Return ``line: module`` for each toolchain import of a higher layer.
+
+    Parsing rather than text search sees imports deferred into function
+    bodies and relative imports, and ignores comments and strings.
+    """
+
+    violations: list[tuple[int, str]] = []
+    for node in ast.walk(ast.parse(source)):
+        if isinstance(node, ast.Import):
+            modules = [alias.name for alias in node.names]
+        elif isinstance(node, ast.ImportFrom):
+            base = node.module or ""
+            if node.level:
+                parent = TOOLCHAIN_PACKAGE.rsplit(".", node.level - 1)[0]
+                base = f"{parent}.{base}" if base else parent
+            modules = [base] if node.module else [f"{base}.{alias.name}" for alias in node.names]
+        else:
+            continue
+        for module in modules:
+            parts = module.split(".")
+            if parts[:2] == ["src", "backend"] and len(parts) > 2 and parts[2] in HIGHER_LAYERS:
+                violations.append((node.lineno, f"src.backend.{parts[2]}"))
+    return [f"{line}: {module}" for line, module in sorted(violations)]
 
 
 class CuratedGenerationTests(unittest.TestCase):
@@ -31,19 +60,25 @@ class CuratedGenerationTests(unittest.TestCase):
 
         self.assertEqual(completed.returncode, 0, completed.stderr)
 
-    def test_toolchain_source_never_references_higher_layers(self) -> None:
-        # The import probe above cannot see imports deferred into function bodies.
-        higher_layer = re.compile(
-            r"src\.backend\.(bake|ingest|model|analysis|api|evaluation)\b"
+    def test_boundary_scan_reads_imports_not_text(self) -> None:
+        self.assertEqual(
+            higher_layer_imports("# Layers above, such as src.backend.bake, read these files.\n"),
+            [],
         )
+        self.assertEqual(higher_layer_imports("from .. import bake\n"), ["1: src.backend.bake"])
+        self.assertEqual(
+            higher_layer_imports("def run():\n    from src.backend.ingest import curated\n"),
+            ["2: src.backend.ingest"],
+        )
+        self.assertEqual(higher_layer_imports("from . import integrity\n"), [])
+
+    def test_toolchain_source_never_imports_higher_layers(self) -> None:
+        # The import probe above cannot see imports deferred into function bodies.
         toolchain_root = generate_curated.REPO_ROOT / "src" / "backend" / "toolchain"
         violations = [
-            f"{path.name}:{number}: {line.strip()}"
+            f"{path.name}:{violation}"
             for path in sorted(toolchain_root.glob("*.py"))
-            for number, line in enumerate(
-                path.read_text(encoding="utf-8").splitlines(), start=1
-            )
-            if higher_layer.search(line)
+            for violation in higher_layer_imports(path.read_text(encoding="utf-8"))
         ]
 
         self.assertEqual(violations, [])
