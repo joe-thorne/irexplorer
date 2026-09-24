@@ -1,9 +1,7 @@
 """Layer 4 pure comparison and summary functions."""
 
 from src.backend.analysis.compare import (
-    ComparisonSummary,
     ComposedCorrespondence,
-    SummaryItem,
     compare_states,
     compare_timeline_step,
     compose_correspondences,
@@ -15,6 +13,7 @@ from src.backend.analysis.curated import (
     load_prebaked_curated_correspondence,
     load_prebaked_curated_correspondences,
 )
+from src.backend.analysis.summary import ComparisonSummary, SummaryItem
 
 __all__ = [
     "ComparisonSummary",

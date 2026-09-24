@@ -13,8 +13,8 @@ from src.backend.analysis.compare import (
     _function_for_node,
     _instruction_operand_shape_is_compatible,
     _instruction_relation,
-    summarise_correspondence,
 )
+from src.backend.analysis.summary import summarise_correspondence
 from src.backend.ingest import (
     load_curated_timeline,
     load_prebaked_curated_timeline,

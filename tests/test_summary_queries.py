@@ -5,8 +5,9 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from src.backend.analysis.compare import ComposedCorrespondence, summarise_correspondence
+from src.backend.analysis.compare import ComposedCorrespondence
 from src.backend.analysis.report import RemarkReference, ReportItem, describe_comparison
+from src.backend.analysis.summary import summarise_correspondence
 from src.backend.api import QueryService, create_app
 from src.backend.ingest import load_prebaked_curated_timeline
 from src.backend.model import Correspondence, Link, StateGraph

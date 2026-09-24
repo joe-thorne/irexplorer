@@ -11,7 +11,7 @@ from src.backend.analysis import (
     compare_timeline_step,
     load_prebaked_curated_correspondence,
 )
-from src.backend.analysis.compare import summarise_correspondence
+from src.backend.analysis.summary import summarise_correspondence
 from src.backend.ingest import load_curated_timeline, load_prebaked_curated_timeline
 from src.backend.toolchain import curated
 

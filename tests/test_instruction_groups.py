@@ -1,7 +1,7 @@
 import unittest
 
 from src.backend.analysis import compare_states, compare_timeline_step, compose_correspondences
-from src.backend.analysis.compare import summarise_correspondence
+from src.backend.analysis.summary import summarise_correspondence
 from src.backend.ingest import load_prebaked_curated_timeline, parse_ir_state
 
 
