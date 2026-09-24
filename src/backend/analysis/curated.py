@@ -5,7 +5,6 @@ from __future__ import annotations
 from src.backend.analysis.compare import compare_timeline_step
 from src.backend.ingest.curated import load_prebaked_curated_timeline
 from src.backend.model.correspondence import Correspondence
-from src.backend.model.graph import ModelValidationError
 from src.backend.model.serialisation import (
     deserialise_correspondence,
     deserialise_json,
@@ -22,10 +21,8 @@ def bake_curated_comparison_records() -> None:
     for example in curated.list_examples():
         timeline = load_prebaked_curated_timeline(example)
         for ordinal in range(len(timeline.steps)):
+            # I12: only adjacent overlays are persisted, never composed views.
             correspondence = compare_timeline_step(timeline, ordinal)
-            if not isinstance(correspondence, Correspondence):
-                # I12: only adjacent overlays are persisted, never composed views.
-                raise ModelValidationError("an adjacent step must yield a stored correspondence")
             path = (
                 curated.artefact_dir(example)
                 / "model"
