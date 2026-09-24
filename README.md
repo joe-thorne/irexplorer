@@ -44,7 +44,7 @@ Open **http://127.0.0.1:8000**. Stop the Docker application first if it already 
 
 ## Development and verification
 
-- [Tests](tests/README.md): backend, browser, and study state checks.
+- [Tests](tests/README.md): backend, browser, and study state checks, plus lint and type checks (install `src/backend/requirements-dev.txt` for these).
 - [Compiler environment](docs/environment.md): pinned LLVM toolchain and intentional artefact regeneration.
 - [API](src/backend/api/README.md): curated query interfaces; interactive OpenAPI at `/docs` while running.
 - [Study operations](docs/evaluation-operations.md): configuration, export, backup, restore, and deletion.
