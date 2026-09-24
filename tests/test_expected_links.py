@@ -26,7 +26,7 @@ class ArtefactExpectedLinkTests(unittest.TestCase):
             raise ValueError('Unsupported expected-link fixture format')
         cls.cases = record['cases']
         cls.fresh = {
-            example: load_curated_timeline(example, resolution='full')
+            example: load_curated_timeline(example)
             for example in ('score', 'binary_search')
         }
         cls.baked = {

@@ -12,21 +12,29 @@ from src.backend.model import (
     serialise_state_graph,
     serialise_timeline,
 )
+from src.backend.toolchain import curated
 
 
 class OptimisationTimelineTests(unittest.TestCase):
-    def test_endpoint_timeline_is_an_honest_recompiled_anchor(self) -> None:
+    def test_curated_timeline_is_the_curated_pass_sequence_ending_in_the_recompiled_o3_state(
+        self,
+    ) -> None:
         timeline = load_curated_timeline("score")
 
-        self.assertEqual([state.state_id for state in timeline.states], ["O0", "O3"])
-        self.assertEqual(len(timeline.steps), 1)
-        step = timeline.steps[0]
+        self.assertEqual(timeline.config_id, "teaching-pass-chain")
+        self.assertEqual(
+            [state.state_id for state in timeline.states],
+            [state.state_id for state in curated.PASS_STATES],
+        )
+        step = timeline.steps[-1]
         self.assertEqual(step.kind, "recompiled")
         self.assertEqual(step.origin.level, "-O3")
-        self.assertEqual(step.origin.command, timeline.state(1).origin_command)
+        self.assertEqual(step.origin.command, timeline.states[-1].origin_command)
+        with self.assertRaises(TypeError):
+            load_curated_timeline("score", resolution="endpoints")  # type: ignore[call-arg]
 
     def test_full_timeline_retains_every_pass_and_derived_provenance(self) -> None:
-        timeline = load_curated_timeline("score", resolution="full")
+        timeline = load_curated_timeline("score")
 
         self.assertEqual(len(timeline.states), 14)
         self.assertEqual(len(timeline.steps), 13)
@@ -37,13 +45,13 @@ class OptimisationTimelineTests(unittest.TestCase):
         self.assertEqual(timeline.steps[-1].origin.level, "-O3")
         self.assertEqual(timeline.steps[-1].remarks, timeline.state(13).remarks)
 
-        quick_sort_timeline = load_curated_timeline("quick_sort", resolution="full")
+        quick_sort_timeline = load_curated_timeline("quick_sort")
         gvn_step = quick_sort_timeline.steps[3]
         self.assertGreater(len(gvn_step.remarks), 0)
         self.assertEqual(gvn_step.remarks, quick_sort_timeline.state(4).remarks)
 
     def test_timeline_round_trips_through_plain_json_and_rebuilds_indices(self) -> None:
-        original = load_curated_timeline("binary_search", resolution="full")
+        original = load_curated_timeline("binary_search")
         record = serialise_timeline(original)
         loaded = deserialise_timeline(deserialise_json(serialise_json(record)))
 
@@ -94,17 +102,17 @@ class OptimisationTimelineTests(unittest.TestCase):
 
         for example in ("score", "binary_search", "quick_sort"):
             with self.subTest(example=example):
-                fresh = load_curated_timeline(example, resolution="full")
+                fresh = load_curated_timeline(example)
                 baked = load_prebaked_curated_timeline(example)
                 self.assertEqual(serialise_timeline(fresh), serialise_timeline(baked))
 
     def test_invalid_step_provenance_is_rejected_at_load_boundary(self) -> None:
         timeline = load_curated_timeline("score")
         invalid_step = replace(
-            timeline.steps[0],
+            timeline.steps[-1],
             origin=StepOrigin(command="clang -O3 wrong.c -o wrong.ll", level="-O3"),
         )
-        invalid = replace(timeline, steps=(invalid_step,))
+        invalid = replace(timeline, steps=(*timeline.steps[:-1], invalid_step))
 
         with self.assertRaises(ModelValidationError) as context:
             invalid.validate()
@@ -113,7 +121,7 @@ class OptimisationTimelineTests(unittest.TestCase):
 
     def test_invalid_serialised_record_is_a_controlled_failure(self) -> None:
         record = serialise_timeline(load_curated_timeline("score"))
-        record["steps"][0]["origin"]["level"] = None
+        record["steps"][-1]["origin"]["level"] = None
 
         with self.assertRaises(ModelValidationError) as context:
             deserialise_timeline(record)

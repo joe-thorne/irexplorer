@@ -37,7 +37,7 @@ from src.backend.toolchain import curated
 
 class EndpointComparisonTests(unittest.TestCase):
     def test_adjacent_comparison_returns_only_the_stored_correspondence(self) -> None:
-        timeline = load_curated_timeline("score", resolution="full")
+        timeline = load_curated_timeline("score")
         correspondence = compare_timeline_step(timeline, 0)
         self.assertIs(type(correspondence), Correspondence)
         self.assertEqual(correspondence, compare_states(timeline.state(0), timeline.state(1)))
@@ -45,7 +45,7 @@ class EndpointComparisonTests(unittest.TestCase):
     def test_hybrid_matcher_validates_all_curated_pass_pairs(self) -> None:
         for example in ("score", "binary_search", "quick_sort"):
             with self.subTest(example=example):
-                timeline = load_curated_timeline(example, resolution="full")
+                timeline = load_curated_timeline(example)
                 for ordinal in range(len(timeline.steps)):
                     correspondence = compare_timeline_step(timeline, ordinal)
                     correspondence.validate(
@@ -53,7 +53,7 @@ class EndpointComparisonTests(unittest.TestCase):
                     )
 
     def test_hybrid_matcher_uses_eager_value_flow_across_early_passes(self) -> None:
-        timeline = load_curated_timeline("score", resolution="full")
+        timeline = load_curated_timeline("score")
         for ordinal in range(3):
             with self.subTest(pass_name=timeline.steps[ordinal].origin.pass_name):
                 correspondence = compare_timeline_step(timeline, ordinal)
@@ -91,7 +91,7 @@ class EndpointComparisonTests(unittest.TestCase):
 
     def test_instruction_relation_describes_paired_text_not_fallback_tier(self) -> None:
         """Fallback evidence must not make unchanged IR look renamed or moved."""
-        score = load_curated_timeline("score", resolution="full")
+        score = load_curated_timeline("score")
         mem2reg = compare_timeline_step(score, 0)
         unchanged_link = next(
             link
@@ -107,7 +107,7 @@ class EndpointComparisonTests(unittest.TestCase):
         )
         self.assertEqual((rewritten_link.relation, rewritten_link.confidence), ("changed", "approximate"))
 
-        quick_sort = load_curated_timeline("quick_sort", resolution="full")
+        quick_sort = load_curated_timeline("quick_sort")
         indvars = compare_timeline_step(quick_sort, 8)
         phi_link = next(
             link
@@ -125,7 +125,7 @@ class EndpointComparisonTests(unittest.TestCase):
         )
 
     def test_unresolved_candidates_are_explicit_none_links(self) -> None:
-        timeline = load_curated_timeline("binary_search", resolution="full")
+        timeline = load_curated_timeline("binary_search")
         correspondence = compare_timeline_step(timeline, 2)
         unresolved = [link for link in correspondence.links if link.confidence == "none"]
 
@@ -141,7 +141,7 @@ class EndpointComparisonTests(unittest.TestCase):
         """Exact local-node claims require their containing function in both states."""
         violations = []
         for example in ("score", "binary_search", "quick_sort"):
-            timeline = load_curated_timeline(example, resolution="full")
+            timeline = load_curated_timeline(example)
             for ordinal in range(len(timeline.steps)):
                 from_state = timeline.state(ordinal)
                 to_state = timeline.state(ordinal + 1)
@@ -172,7 +172,7 @@ class EndpointComparisonTests(unittest.TestCase):
         self.assertFalse(violations, "\n".join(violations))
 
     def test_quick_sort_vanished_partition_nodes_are_unresolved(self) -> None:
-        timeline = load_curated_timeline("quick_sort", resolution="full")
+        timeline = load_curated_timeline("quick_sort")
         from_state = timeline.state(12)
         correspondence = compare_timeline_step(timeline, 12)
         partition = next(
@@ -199,7 +199,7 @@ class EndpointComparisonTests(unittest.TestCase):
 
     def test_recompiled_renamed_block_branch_links_are_plausible(self) -> None:
         """A renamed paired block is qualified evidence, not a definite deletion."""
-        timeline = load_curated_timeline("binary_search", resolution="full")
+        timeline = load_curated_timeline("binary_search")
         from_state = timeline.state(12)
         to_state = timeline.state(13)
         correspondence = compare_timeline_step(timeline, 12)
@@ -235,7 +235,7 @@ class EndpointComparisonTests(unittest.TestCase):
         }
         for (example, ordinal), expected in expected_none_counts.items():
             with self.subTest(example=example, ordinal=ordinal):
-                timeline = load_curated_timeline(example, resolution="full")
+                timeline = load_curated_timeline(example)
                 correspondence = compare_timeline_step(timeline, ordinal)
                 self.assertEqual(
                     sum(link.confidence == "none" for link in correspondence.links), expected
@@ -283,7 +283,7 @@ join:
         )
 
     def test_score_anchor_comparison_is_coverage_complete_and_honest(self) -> None:
-        timeline = load_curated_timeline("score", resolution="full")
+        timeline = load_curated_timeline("score")
         correspondence = compare_timeline_step(timeline, len(timeline.steps) - 1)
         from_state = timeline.state(12)
         to_state = timeline.state(13)
@@ -326,25 +326,28 @@ join:
             {item.text for item in summary.items},
         )
 
-    def test_endpoint_correspondences_validate_for_all_curated_examples(self) -> None:
+    def test_recompiled_step_correspondences_validate_for_all_curated_examples(self) -> None:
         for example in ("score", "binary_search", "quick_sort"):
             with self.subTest(example=example):
                 timeline = load_curated_timeline(example)
-                correspondence = compare_timeline_step(timeline)
-                correspondence.validate(timeline.state(0), timeline.state(1))
+                last = len(timeline.steps) - 1
+                correspondence = compare_timeline_step(timeline, last)
+                correspondence.validate(timeline.state(last), timeline.state(last + 1))
 
     def test_correspondence_round_trips_and_rejects_invalid_endpoint_ids(self) -> None:
         timeline = load_curated_timeline("score")
-        correspondence = compare_timeline_step(timeline)
+        last = len(timeline.steps) - 1
+        before, after = timeline.state(last), timeline.state(last + 1)
+        correspondence = compare_timeline_step(timeline, last)
         record = serialise_correspondence(correspondence)
         loaded = deserialise_correspondence(
-            deserialise_json(serialise_json(record)), timeline.state(0), timeline.state(1)
+            deserialise_json(serialise_json(record)), before, after
         )
         self.assertEqual(loaded, correspondence)
 
         record["links"][0]["fromNodeIds"] = ["missing"]
         with self.assertRaises(ModelValidationError):
-            deserialise_correspondence(record, timeline.state(0), timeline.state(1))
+            deserialise_correspondence(record, before, after)
 
     def test_prebaked_adjacent_correspondences_load_for_all_examples(self) -> None:
         for example in ("score", "binary_search", "quick_sort"):
@@ -395,7 +398,7 @@ join:
         )
 
     def test_pass_summary_cites_its_own_captured_remarks(self) -> None:
-        timeline = load_curated_timeline("quick_sort", resolution="full")
+        timeline = load_curated_timeline("quick_sort")
         summary = _step_summary(timeline, 3)
 
         remark_item = next(item for item in summary.items if item.remark_indices)
@@ -403,7 +406,7 @@ join:
         self.assertIn("compiler remarks were captured for this step", remark_item.text)
 
     def test_cfg_summary_reports_relabelled_branch_edges(self) -> None:
-        timeline = load_curated_timeline("quick_sort", resolution="full")
+        timeline = load_curated_timeline("quick_sort")
         correspondence = compare_timeline_step(timeline, 1)
         summary_text = " ".join(item.text for item in _step_summary(timeline, 1).items)
 
@@ -421,14 +424,14 @@ join:
         self.assertEqual((changed_block.relation, changed_block.confidence), ("changed", "approximate"))
 
     def test_cfg_summary_reports_named_added_and_removed_edges(self) -> None:
-        timeline = load_curated_timeline("binary_search", resolution="full")
+        timeline = load_curated_timeline("binary_search")
         summary_text = " ".join(item.text for item in _step_summary(timeline, 6).items)
 
         self.assertIn("CFG edges changed: removed entry → while.cond [unconditional]", summary_text)
         self.assertIn("added entry → while.body.lr.ph [true]", summary_text)
 
     def test_composed_view_coarsens_relation_and_degrades_confidence(self) -> None:
-        timeline = load_curated_timeline("binary_search", resolution="full")
+        timeline = load_curated_timeline("binary_search")
         correspondences = tuple(
             compare_timeline_step(timeline, ordinal)
             for ordinal in range(len(timeline.steps))

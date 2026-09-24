@@ -34,20 +34,14 @@ class SourceRecord:
     input_verified: bool
 
 
-def load_curated_timeline(
-    example: str,
-    *,
-    resolution: str = "endpoints",
-) -> OptimisationTimeline:
-    """Load a curated example as an honest endpoint or full-pass timeline.
+def load_curated_timeline(example: str) -> OptimisationTimeline:
+    """Load a curated example's optimisation timeline from its compiler artefacts.
 
-    ``endpoints`` is the initial MVP view: the single transition is explicitly
-    marked as a recompiled ``-O3`` anchor.  ``full`` retains every generated
-    pass state and therefore only claims derivation for the ``opt`` steps that
-    actually produced their target artefact.
+    Every state in the curated pass sequence is retained, so derivation is
+    claimed only for the ``opt`` steps that actually produced their target
+    artefact; the final step leads to the recompiled O3 state.
     """
 
-    states_to_load = _states_for_resolution(resolution)
     states = tuple(
         parse_ir_state(
             curated.read_ir(example, state.state_id),
@@ -66,7 +60,7 @@ def load_curated_timeline(
                 )
             ),
         )
-        for ordinal, state in enumerate(states_to_load)
+        for ordinal, state in enumerate(curated.PASS_STATES)
     )
     steps = tuple(
         _step_for_target(
@@ -75,11 +69,11 @@ def load_curated_timeline(
             states[ordinal].origin_command,
             states[ordinal].remarks,
         )
-        for ordinal, state in enumerate(states_to_load[1:], start=1)
+        for ordinal, state in enumerate(curated.PASS_STATES[1:], start=1)
     )
     timeline = OptimisationTimeline(
         example_id=example,
-        config_id=("O0-to-O3" if resolution == "endpoints" else "teaching-pass-chain"),
+        config_id="teaching-pass-chain",
         states=states,
         steps=steps,
     )
@@ -94,7 +88,7 @@ def bake_curated_model_records() -> None:
         model_dir = curated.artefact_dir(example) / "model"
         if model_dir.exists():
             shutil.rmtree(model_dir)
-        _write_timeline_record(load_curated_timeline(example, resolution="full"))
+        _write_timeline_record(load_curated_timeline(example))
         _write_source_record(example)
 
 
@@ -148,14 +142,6 @@ def _write_timeline_record(timeline: OptimisationTimeline) -> None:
         serialise_json(serialise_timeline(timeline)),
         encoding="utf-8",
     )
-
-
-def _states_for_resolution(resolution: str) -> tuple[curated.PassState, ...]:
-    if resolution == "endpoints":
-        return (curated.PASS_STATES[0], curated.PASS_STATES[-1])
-    if resolution == "full":
-        return curated.PASS_STATES
-    raise ValueError(f"unknown curated timeline resolution: {resolution}")
 
 
 def _step_for_target(
