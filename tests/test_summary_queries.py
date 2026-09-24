@@ -224,7 +224,7 @@ class SummaryQueriesTests(unittest.TestCase):
                                   ('fromOrdinal=0&toOrdinal=99', 404)]:
                 self.assertEqual(client.get('/api/examples/score/summary?' + query).status_code, status)
             self.assertEqual(client.get('/api/examples/missing/summary?fromOrdinal=0&toOrdinal=1').status_code, 404)
-            with patch('src.backend.api.query.compose_timeline_correspondences', side_effect=ValueError('private path')):
+            with patch('src.backend.analysis.report.compose_timeline_correspondences', side_effect=ValueError('private path')):
                 with self.assertLogs('src.backend.api.app', level='ERROR'):
                     response = client.get('/api/examples/score/summary?fromOrdinal=0&toOrdinal=9')
                 self.assertEqual(response.status_code, 503)
