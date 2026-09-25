@@ -4,8 +4,9 @@
 const [originArgument, expectedCollectionMode, ...extra] = process.argv.slice(2);
 const enabledModes = new Set(['local', 'preview']);
 const supportedModes = new Set([...enabledModes, 'pilot', 'live']);
-if (!originArgument || !supportedModes.has(expectedCollectionMode) || extra.length) {
-  throw Error('Usage: node scripts/check_deployment.mjs <https://origin> <local|preview|pilot|live>');
+if (!originArgument || !supportedModes.has(expectedCollectionMode) || extra.length !== 1 ||
+    extra[0] !== '--service-environment-stdin') {
+  throw Error('Usage: node scripts/check_deployment.mjs <https://origin> <local|preview|pilot|live> --service-environment-stdin');
 }
 
 const origin = new URL(originArgument);
@@ -35,6 +36,16 @@ async function json(response, path) {
 function require(condition, message) {
   if (!condition) throw Error(message);
 }
+
+let serviceEnvironment = '';
+for await (const chunk of process.stdin) serviceEnvironment += chunk;
+const serviceSettings = new Map(
+  serviceEnvironment.trim().split(/\s+/).filter(Boolean).map(setting => setting.split('=', 2)),
+);
+require(!serviceSettings.has('IREXPLORER_STUDY_MODE'),
+        'systemd still sets retired IREXPLORER_STUDY_MODE; application startup rejects it');
+require(serviceSettings.get('IREXPLORER_COLLECTION_MODE') === expectedCollectionMode,
+        `systemd must set IREXPLORER_COLLECTION_MODE=${expectedCollectionMode}`);
 
 function noStore(response, path) {
   require(response.headers.get('cache-control')?.toLowerCase().split(',').map(value => value.trim()).includes('no-store'),
