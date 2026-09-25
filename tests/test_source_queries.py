@@ -14,11 +14,17 @@ from src.backend.toolchain import curated
 
 
 class SourceQueriesTests(unittest.TestCase):
+    def test_source_response_contains_only_contract_fields(self):
+        with TestClient(create_app()) as client:
+            response = client.get('/api/examples/score/source')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(set(response.json()), {'exampleId', 'file', 'text', 'sha256'})
+
     def test_all_sources_and_function_scoped_mappings(self):
         service = QueryService()
         for example in curated.list_examples():
             source = service.source(example)
-            self.assertTrue(source['inputVerified'])
+            self.assertEqual(set(source), {'exampleId', 'file', 'text', 'sha256'})
             self.assertEqual(source['text'], curated.read_source(example))
             for ordinal in range(14):
                 state = service._state(example, ordinal)
@@ -43,7 +49,7 @@ class SourceQueriesTests(unittest.TestCase):
             source = service.source('score')
         self.assertEqual(source['text'], expected)
         self.assertEqual(source['file'], 'score.c')
-        self.assertTrue(source['inputVerified'])
+        self.assertEqual(set(source), {'exampleId', 'file', 'text', 'sha256'})
 
     def test_wasted_multiple_matches_and_missing_locations(self):
         service = QueryService()
@@ -90,12 +96,11 @@ class SourceQueriesTests(unittest.TestCase):
         record = load_curated_source_record('score')
         self.assertEqual(
             record,
-            SourceRecord(file='score.c', text=curated.read_source('score'), sha256=stored['sha256'],
-                         input_verified=True),
+            SourceRecord(file='score.c', text=curated.read_source('score'), sha256=stored['sha256']),
         )
         self.assertEqual(QueryService(preload=False).source('score'), {
             'exampleId': 'score', 'file': record.file, 'text': record.text,
-            'sha256': record.sha256, 'inputVerified': True,
+            'sha256': record.sha256,
         })
 
     def test_source_record_path_resolves_before_the_record_is_written(self):
@@ -121,5 +126,7 @@ class SourceQueriesTests(unittest.TestCase):
                 model_dir = staged / 'score' / 'model'
                 model_dir.mkdir(parents=True)
                 (model_dir / 'source.json').write_text(json.dumps(damaged), encoding='utf-8')
-                with curated.using_artefacts_root(staged), self.assertRaises(ModelValidationError):
+                with curated.using_artefacts_root(staged), self.assertRaises(ModelValidationError) as raised:
                     load_curated_source_record('score')
+                if name == 'edited text':
+                    self.assertIn('failed its checksum', str(raised.exception))

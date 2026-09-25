@@ -66,7 +66,7 @@ class QueryService:
     def source(self, example_id: str) -> dict[str, Any]:
         source = self._example(example_id).source
         return {"exampleId": example_id, "file": source.file, "text": source.text,
-                "sha256": source.sha256, "inputVerified": source.input_verified}
+                "sha256": source.sha256}
 
     def source_mappings(self, example_id: str, ordinal: int, function_id: str) -> dict[str, Any]:
         state = self._state(example_id, ordinal)

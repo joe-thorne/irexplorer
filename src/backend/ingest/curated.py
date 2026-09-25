@@ -22,16 +22,11 @@ SOURCE_RECORD_FORMAT_VERSION = 1
 
 @dataclass(frozen=True)
 class SourceRecord:
-    """A curated example's C source, as checked against the pinned compilations.
-
-    ``input_verified`` records that the bake wrote this text only after it
-    matched every pinned compilation's debug checksum.
-    """
+    """A curated example's C source, checked against pinned compilations at bake time."""
 
     file: str
     text: str
     sha256: str
-    input_verified: bool
 
 
 def load_curated_timeline(example: str) -> OptimisationTimeline:
@@ -111,7 +106,7 @@ def load_curated_source_record(example: str) -> SourceRecord:
     text = record.get("text")
     if not isinstance(text, str) or _source_digest(text) != record.get("sha256"):
         raise ModelValidationError(f"source record text failed its checksum for example '{example}'")
-    return SourceRecord(file=record["file"], text=text, sha256=record["sha256"], input_verified=True)
+    return SourceRecord(file=record["file"], text=text, sha256=record["sha256"])
 
 
 def _source_digest(text: str) -> str:

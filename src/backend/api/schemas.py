@@ -102,7 +102,6 @@ class SourceResponse(ApiModel):
     file: str
     text: str
     sha256: str
-    inputVerified: Literal[True]
 
 
 class SourceLocationResponse(ApiModel):
