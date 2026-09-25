@@ -37,6 +37,15 @@ class ComparisonSummary:
     claims: tuple[StructuralClaim, ...]
 
 
+@dataclass(frozen=True)
+class _ClassifiedLink:
+    """A correspondence link's summary-relevant fields, resolved once."""
+
+    relation: str
+    kind: str
+    confidence: str
+
+
 def summarise_correspondence(
     correspondence: Correspondence | ComposedCorrespondence,
     from_state: StateGraph,
@@ -68,6 +77,12 @@ def summarise_correspondence(
 
     claims: list[StructuralClaim] = []
     all_indices = tuple(range(len(correspondence.links)))
+    # Resolve each link's endpoint kind once; claim builders query this compact
+    # classification instead of repeatedly looking up link endpoints.
+    classified_links = tuple(
+        _ClassifiedLink(link.relation, _link_kind(link, from_state, to_state), link.confidence)
+        for link in correspondence.links
+    )
     if is_identity_correspondence(correspondence):
         claims.append(
             StructuralClaim(
@@ -82,9 +97,7 @@ def summarise_correspondence(
             for kind in ("Function", "BasicBlock", "Instruction"):
                 for confidence in ("exact", "approximate", "plausible"):
                     indices = _link_indices(
-                        correspondence,
-                        from_state,
-                        to_state,
+                        classified_links,
                         relation=relation,
                         kind=kind,
                         confidence=confidence,
@@ -107,9 +120,7 @@ def summarise_correspondence(
                 ("moved", "moved correspondences"),
             ):
                 indices = _link_indices(
-                    correspondence,
-                    from_state,
-                    to_state,
+                    classified_links,
                     relation=relation,
                     kind=kind,
                 )
@@ -127,7 +138,7 @@ def summarise_correspondence(
         for kind in ("BasicBlock", "Instruction"):
             for relation in ("split", "merged"):
                 indices = _link_indices(
-                    correspondence, from_state, to_state, relation=relation, kind=kind
+                    classified_links, relation=relation, kind=kind
                 )
                 if indices:
                     before_count = sum(len(correspondence.links[i].from_node_ids) for i in indices)
@@ -140,9 +151,7 @@ def summarise_correspondence(
                         f"{_confidence_phrase(correspondence, indices)}.", indices))
 
         changed_instructions = _link_indices(
-            correspondence,
-            from_state,
-            to_state,
+            classified_links,
             relation="changed",
             kind="Instruction",
         )
@@ -156,9 +165,7 @@ def summarise_correspondence(
             )
 
         changed_blocks = _link_indices(
-            correspondence,
-            from_state,
-            to_state,
+            classified_links,
             relation="changed",
             kind="BasicBlock",
         )
@@ -171,7 +178,7 @@ def summarise_correspondence(
                 )
             )
 
-        basic_block_indices = _indices_for_kind(correspondence, from_state, to_state, "BasicBlock")
+        basic_block_indices = _indices_for_kind(classified_links, "BasicBlock")
         if basic_block_indices:
             removed_edges, added_edges, relabelled_edges = cfg_edge_differences(
                 correspondence, from_state, to_state
@@ -190,9 +197,8 @@ def summarise_correspondence(
                 )
 
         unresolved = tuple(
-            index
-            for index, link in enumerate(correspondence.links)
-            if link.confidence == "unresolved"
+            index for index, item in enumerate(classified_links)
+            if item.confidence == "unresolved"
         )
         if unresolved:
             claims.append(
@@ -233,9 +239,7 @@ def summarise_correspondence(
 
 
 def _link_indices(
-    correspondence: Correspondence | ComposedCorrespondence,
-    from_state: StateGraph,
-    to_state: StateGraph,
+    classified_links: tuple[_ClassifiedLink, ...],
     *,
     relation: str,
     kind: str,
@@ -243,23 +247,21 @@ def _link_indices(
 ) -> tuple[int, ...]:
     return tuple(
         index
-        for index, link in enumerate(correspondence.links)
+        for index, link in enumerate(classified_links)
         if link.relation == relation
-        and _link_kind(link, from_state, to_state) == kind
+        and link.kind == kind
         and (confidence is None or link.confidence == confidence)
     )
 
 
 def _indices_for_kind(
-    correspondence: Correspondence | ComposedCorrespondence,
-    from_state: StateGraph,
-    to_state: StateGraph,
+    classified_links: tuple[_ClassifiedLink, ...],
     kind: str,
 ) -> tuple[int, ...]:
     return tuple(
         index
-        for index, link in enumerate(correspondence.links)
-        if _link_kind(link, from_state, to_state) == kind
+        for index, link in enumerate(classified_links)
+        if link.kind == kind
     )
 
 

@@ -5,7 +5,9 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
+from src.backend.analysis import summary
 from src.backend.analysis.composition import ComposedCorrespondence
+from src.backend.analysis.curated import load_stored_curated_correspondence
 from src.backend.analysis.report import describe_comparison
 from src.backend.analysis.summary import RemarkReference, StructuralClaim, summarise_correspondence
 from src.backend.api import QueryService, create_app
@@ -89,6 +91,16 @@ class SummaryQueriesTests(unittest.TestCase):
             'for.body → if.end [false → true].',
         )
         self.assertTrue(cfg_item['linkIndices'])
+
+    def test_each_correspondence_link_is_classified_once_for_summary_building(self):
+        timeline = load_curated_timeline_record('score')
+        correspondence = load_stored_curated_correspondence('score', 0)
+        with patch('src.backend.analysis.summary._link_kind', wraps=summary._link_kind) as classify:
+            summarise_correspondence(
+                correspondence, timeline.state(0), timeline.state(1), timeline.steps[0]
+            )
+
+        self.assertEqual(classify.call_count, len(correspondence.links))
 
     def test_composed_summary_covers_changed_and_approximate_endpoint_changes(self):
         """I4: composed summaries must account for every non-exact endpoint change."""
