@@ -1,5 +1,5 @@
 // Deployment boundary check. Node 22+; no dependencies or writes.
-// Usage: node scripts/check_deployment.mjs https://canonical-host.example preview
+// Usage: node scripts/check_deployment.mjs https://canonical-host.example preview --service-environment-stdin
 
 const [originArgument, expectedCollectionMode, ...extra] = process.argv.slice(2);
 const enabledModes = new Set(['local', 'preview']);
