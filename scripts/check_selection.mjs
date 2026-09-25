@@ -77,6 +77,14 @@ check('Selection evidence retains only structural claims recorded for its links'
       remarkReferences: [{ stepIndex: 0, remarkIndex: 0 }] },
   ]));
 });
+check('Structural claims with link evidence do not require compiler remark references', () => {
+  const report = {
+    ...comparisonReport,
+    structuralClaims: [{ text: 'The selected instruction remains.', linkIndices: [0] }],
+  };
+  const evidence = context.buildComparisonEvidence(report, trace(source(1)));
+  assert.deepEqual(evidence.structuralClaims.map(item => item.text), ['The selected instruction remains.']);
+});
 check('Selection evidence retains only recorded relevant compiler remarks with their transition', () => {
   const evidence = context.buildComparisonEvidence(comparisonReport, trace(source(1)));
   assert.equal(JSON.stringify(evidence.remarks), JSON.stringify([{

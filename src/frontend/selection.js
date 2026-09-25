@@ -119,7 +119,7 @@ function buildComparisonEvidence(comparisonReport, trace) {
   const referenceKey = ref => ref.stepIndex + ':' + ref.remarkIndex;
   const citedReferenceKeys = new Set();
   const remarks = [];
-  for (const ref of (comparisonReport.structuralClaims || []).flatMap(item => item.remarkReferences)) {
+  for (const ref of (comparisonReport.structuralClaims || []).flatMap(item => item.remarkReferences || [])) {
     const step = steps[ref.stepIndex];
     const remark = step?.remarks[ref.remarkIndex];
     if (citedReferenceKeys.has(referenceKey(ref)) || !remark?.location || !sourceMatches(remark.location, trace.sourceLocations))
@@ -129,7 +129,7 @@ function buildComparisonEvidence(comparisonReport, trace) {
   }
   const structuralClaims = (comparisonReport.structuralClaims || []).filter(item =>
     item.linkIndices.some(index => linkIndices.has(index))
-      || item.remarkReferences.some(ref => citedReferenceKeys.has(referenceKey(ref))));
+      || (item.remarkReferences || []).some(ref => citedReferenceKeys.has(referenceKey(ref))));
   const optimisations = (comparisonReport.optimisations || []).filter(event =>
     event.linkIndices.some(index => linkIndices.has(index)));
   const optimisationGroups = groupOptimisations(optimisations);
