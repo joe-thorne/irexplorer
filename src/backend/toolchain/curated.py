@@ -163,12 +163,12 @@ def manifest_path(example: str) -> Path:
     return path
 
 
-def model_timeline_path(example: str) -> Path:
+def model_timeline_path(example: str, *, must_exist: bool = True) -> Path:
     """Resolve the curated optimisation timeline record for a curated example."""
 
     _require_example(example)
     path = artefact_dir(example) / "model" / "timeline.json"
-    if not path.exists():
+    if must_exist and not path.exists():
         raise ToolchainError(
             f"Missing curated timeline record for example '{example}': {path}"
         )
@@ -190,7 +190,9 @@ def model_source_path(example: str, *, must_exist: bool = True) -> Path:
     return path
 
 
-def model_correspondence_path(example: str, from_ordinal: int) -> Path:
+def model_correspondence_path(
+    example: str, from_ordinal: int, *, must_exist: bool = True
+) -> Path:
     """Resolve one persisted adjacent correspondence for a curated timeline."""
 
     _require_example(example)
@@ -202,7 +204,7 @@ def model_correspondence_path(example: str, from_ordinal: int) -> Path:
         / "correspondences"
         / f"{from_ordinal:02d}-{from_ordinal + 1:02d}.json"
     )
-    if not path.exists():
+    if must_exist and not path.exists():
         raise ToolchainError(
             f"Missing stored adjacent correspondence for example '{example}' "
             f"from ordinal {from_ordinal}: {path}"

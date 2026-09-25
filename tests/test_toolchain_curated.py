@@ -90,6 +90,35 @@ class CuratedToolchainTests(unittest.TestCase):
         with self.assertRaises(curated.ToolchainError):
             curated.ir_path("missing", "O0")
 
+    def test_model_record_paths_resolve_for_writing_and_require_files_for_reading(self) -> None:
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+
+        with TemporaryDirectory() as temporary, curated.using_artefacts_root(
+            Path(temporary)
+        ):
+            timeline = Path(temporary) / "score" / "model" / "timeline.json"
+            correspondence = (
+                Path(temporary)
+                / "score"
+                / "model"
+                / "correspondences"
+                / "00-01.json"
+            )
+            self.assertEqual(
+                curated.model_timeline_path("score", must_exist=False), timeline
+            )
+            self.assertEqual(
+                curated.model_correspondence_path(
+                    "score", 0, must_exist=False
+                ),
+                correspondence,
+            )
+            with self.assertRaises(curated.ToolchainError):
+                curated.model_timeline_path("score")
+            with self.assertRaises(curated.ToolchainError):
+                curated.model_correspondence_path("score", 0)
+
 
 if __name__ == "__main__":
     unittest.main()

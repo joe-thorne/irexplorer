@@ -136,7 +136,7 @@ def _write_source_record(example: str) -> None:
 
 
 def _write_timeline_record(timeline: OptimisationTimeline) -> None:
-    path = curated.artefact_dir(timeline.example_id) / "model" / "timeline.json"
+    path = curated.model_timeline_path(timeline.example_id, must_exist=False)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         serialise_json(serialise_timeline(timeline)),

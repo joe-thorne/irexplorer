@@ -23,11 +23,8 @@ def bake_curated_comparison_records() -> None:
         for ordinal in range(len(timeline.steps)):
             # I12: only adjacent correspondences are persisted, never composed views.
             correspondence = compare_timeline_step(timeline, ordinal)
-            path = (
-                curated.artefact_dir(example)
-                / "model"
-                / "correspondences"
-                / f"{ordinal:02d}-{ordinal + 1:02d}.json"
+            path = curated.model_correspondence_path(
+                example, ordinal, must_exist=False
             )
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(
