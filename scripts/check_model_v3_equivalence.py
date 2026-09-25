@@ -41,11 +41,11 @@ CONTEXT_RENAMES = (
 )
 
 
-def normalise(value: Any, *, key: str | None = None) -> Any:
+def normalise_v2_to_v3(value: Any, *, key: str | None = None) -> Any:
     if isinstance(value, dict):
-        return {name: normalise(item, key=name) for name, item in value.items()}
+        return {name: normalise_v2_to_v3(item, key=name) for name, item in value.items()}
     if isinstance(value, list):
-        return [normalise(item) for item in value]
+        return [normalise_v2_to_v3(item) for item in value]
     if key == "formatVersion" and value == 2:
         return 3
     if key == "configId" and value == "teaching-pass-chain":
@@ -74,7 +74,10 @@ def compare_model_records(previous_root: Path) -> int:
     for old_path in sorted(previous.glob("*/model/**/*.json")):
         relative = old_path.relative_to(previous)
         new_path = current / relative
-        if not new_path.is_file() or normalise(read_json(old_path)) != read_json(new_path):
+        if (
+            not new_path.is_file()
+            or normalise_v2_to_v3(read_json(old_path)) != read_json(new_path)
+        ):
             raise SystemExit(f"model record differs beyond the declared renames: {relative}")
         count += 1
     if count == 0 or len(list(current.glob("*/model/**/*.json"))) != count:
@@ -128,7 +131,7 @@ def compare_responses(previous_root: Path) -> int:
         if old_files != new_files:
             raise SystemExit("the old and new comparison response sets differ")
         for name in sorted(old_files):
-            if normalise(read_json(old_dir / name)) != read_json(new_dir / name):
+            if normalise_v2_to_v3(read_json(old_dir / name)) != read_json(new_dir / name):
                 raise SystemExit(f"comparison response differs beyond the declared renames: {name}")
         return len(old_files)
 
