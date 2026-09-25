@@ -1,4 +1,4 @@
-"""Read-only, stateless queries over pre-baked optimisation model records."""
+"""Read-only, stateless queries over curated model records."""
 
 from __future__ import annotations
 
@@ -8,9 +8,10 @@ from threading import RLock
 from typing import Any
 
 from src.backend.analysis.compare import is_identity_correspondence
-from src.backend.analysis.curated import load_prebaked_curated_correspondences
-from src.backend.analysis.report import ComparisonReport, RemarkReference, describe_comparison
-from src.backend.ingest.curated import SourceRecord, load_prebaked_curated_source, load_prebaked_curated_timeline
+from src.backend.analysis.curated import load_stored_curated_correspondences
+from src.backend.analysis.report import ComparisonReport, describe_comparison
+from src.backend.analysis.summary import RemarkReference
+from src.backend.ingest.curated import SourceRecord, load_curated_source_record, load_curated_timeline_record
 from src.backend.model.correspondence import Correspondence
 from src.backend.model.graph import Node, Remark, StateGraph
 from src.backend.model.timeline import OptimisationTimeline
@@ -25,7 +26,7 @@ class QueryError(ValueError):
 
 
 class DataUnavailableError(RuntimeError):
-    """Raised when pre-baked model data cannot be loaded or composed safely."""
+    """Raised when model records cannot be loaded or composed safely."""
 
     status_code = 503
     code = "data_unavailable"
@@ -37,7 +38,7 @@ class DataUnavailableError(RuntimeError):
 
 @dataclass(frozen=True)
 class LoadedExample:
-    """Immutable, pre-baked records for one curated example."""
+    """Immutable model records for one curated example."""
 
     example_id: str
     timeline: OptimisationTimeline
@@ -166,12 +167,12 @@ class QueryService:
             except KeyError:
                 pass
             try:
-                timeline = load_prebaked_curated_timeline(example_id)
-                correspondences = load_prebaked_curated_correspondences(
+                timeline = load_curated_timeline_record(example_id)
+                correspondences = load_stored_curated_correspondences(
                     example_id,
                     timeline,
                 )
-                source = load_prebaked_curated_source(example_id)
+                source = load_curated_source_record(example_id)
             except (OSError, ValueError, RuntimeError) as exc:
                 raise DataUnavailableError(example_id) from exc
             loaded = LoadedExample(example_id, timeline, correspondences, source)
@@ -234,7 +235,7 @@ def _summary_view(loaded: LoadedExample, report: ComparisonReport) -> dict[str, 
         "scope": "whole example",
         "items": [{"text": item.text, "linkIndices": list(item.link_indices),
                    "remarkReferences": [_remark_reference_view(ref) for ref in item.remark_references]}
-                  for item in report.items],
+                  for item in report.claims],
         "links": [{"fromNodeIds": list(link.from_node_ids), "toNodeIds": list(link.to_node_ids),
                    "relation": link.relation, "confidence": link.confidence, "evidence": link.evidence}
                   for link in report.links],

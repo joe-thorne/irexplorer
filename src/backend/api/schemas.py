@@ -131,7 +131,7 @@ class RemarkReferenceResponse(ApiModel):
     remarkIndex: int
 
 
-class SummaryItemResponse(ApiModel):
+class StructuralClaimResponse(ApiModel):
     text: str
     linkIndices: list[int]
     remarkReferences: list[RemarkReferenceResponse]
@@ -182,7 +182,7 @@ class SummaryResponse(ApiModel):
     scope: Literal["whole example"]
     context: str
     optimisations: list[OptimisationResponse]
-    items: list[SummaryItemResponse]
+    items: list[StructuralClaimResponse]
     links: list[LinkResponse]
     steps: list[SummaryStepResponse]
     states: list[StateResponse]

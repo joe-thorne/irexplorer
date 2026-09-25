@@ -92,14 +92,14 @@ def bake_curated_model_records() -> None:
         _write_source_record(example)
 
 
-def load_prebaked_curated_timeline(example: str) -> OptimisationTimeline:
+def load_curated_timeline_record(example: str) -> OptimisationTimeline:
     """Load the validated full-pass timeline that the browser API will serve."""
 
     path = curated.model_timeline_path(example)
     return deserialise_timeline(deserialise_json(path.read_text(encoding="utf-8")))
 
 
-def load_prebaked_curated_source(example: str) -> SourceRecord:
+def load_curated_source_record(example: str) -> SourceRecord:
     """Load the source record that was checked against every pinned compilation at bake time."""
 
     path = curated.model_source_path(example)

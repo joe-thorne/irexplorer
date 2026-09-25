@@ -60,7 +60,7 @@ def canonical(value):
     return json.dumps(value, sort_keys=True, ensure_ascii=False, separators=(',', ':'), allow_nan=False)
 
 
-def validate(payload):
+def validate(submission):
     c = participant_content()
     keys = {'submissionId', 'participantCode', 'studyVersion', 'contentVersion', 'instrumentVersion', 'consent',
             'pre', 'post', 'tasks'}
@@ -68,25 +68,25 @@ def validate(payload):
         if not ok:
             raise StudyError(422, 'invalid_submission',
                              'Check consent, P1, versions, task outcomes, and answer limits. No answers were changed.')
-    require(isinstance(payload, dict) and set(payload) == keys)
-    require(all(isinstance(payload[k], str) and UUID.fullmatch(payload[k])
+    require(isinstance(submission, dict) and set(submission) == keys)
+    require(all(isinstance(submission[k], str) and UUID.fullmatch(submission[k])
                 for k in ('submissionId', 'participantCode')))
-    require(payload['submissionId'] != payload['participantCode'])
-    require(all(payload[k] == c[k] for k in ('studyVersion', 'contentVersion', 'instrumentVersion')))
-    consent = payload['consent']
+    require(submission['submissionId'] != submission['participantCode'])
+    require(all(submission[k] == c[k] for k in ('studyVersion', 'contentVersion', 'instrumentVersion')))
+    consent = submission['consent']
     require(isinstance(consent, dict) and set(consent) == {'version', 'acknowledgements'})
     require(consent['version'] == c['contentVersion'])
     a = consent['acknowledgements']
     require(isinstance(a, dict) and set(a) == {f['id'] for f in c['fields'] if f['id'].startswith('C')}
             and all(v is True for v in a.values()))
-    def answers(stage, values):
-        prefix = {'pre': 'P', 'post': 'Q'}.get(stage, stage)
+    def answers(section, values):
+        prefix = {'pre': 'P', 'post': 'Q'}.get(section, section)
         require(isinstance(values, dict)
                 and set(values) == {f['id'] for f in c['fields'] if f['id'].startswith(prefix)})
-        require(not validate_answers(stage, values, complete=True))
-    answers('pre', payload['pre'])
-    answers('post', payload['post'])
-    ts = payload['tasks']
+        require(not validate_answers(section, values, complete=True))
+    answers('pre', submission['pre'])
+    answers('post', submission['post'])
+    ts = submission['tasks']
     require(isinstance(ts, list) and len(ts) == 7)
     for i, t in enumerate(ts):
         require(isinstance(t, dict)
@@ -100,7 +100,7 @@ def validate(payload):
             require(t['status'] in ('skipped', 'could_not_work_out') and t['durationMs'] == 0 and not t['interrupted'])
             require(all(a['status'] == 'unanswered' for a in t['answers'].values()))
     # Multi-choice order has no research meaning; preserve raw codes as a set.
-    result = json.loads(canonical(payload))
+    result = json.loads(canonical(submission))
     for group in [result['pre'], result['post'], *[t['answers'] for t in result['tasks']]]:
         for answer in group.values():
             if isinstance(answer['value'], list):
@@ -136,13 +136,13 @@ class StudyService:
             db.close()
             raise
 
-    def submit(self, payload):
+    def submit(self, submission):
         if not self.config.enabled:
             raise StudyError(503, 'collection_disabled', 'Participant collection is not enabled.')
-        payload = validate(payload)
-        body = canonical(payload)
+        submission = validate(submission)
+        body = canonical(submission)
         digest = hashlib.sha256(body.encode()).hexdigest()
-        receipt = {k: payload[k] for k in ('submissionId', 'participantCode', 'studyVersion')}
+        receipt = {k: submission[k] for k in ('submissionId', 'participantCode', 'studyVersion')}
         receipt['receiptId'] = str(uuid.uuid4())
         checksum = next(line.split('=', 1)[1]
                         for line in (ROOT / 'docs/curated-artefacts.sha256').read_text().splitlines()
@@ -155,7 +155,7 @@ class StudyService:
             with db:
                 db.execute('BEGIN IMMEDIATE')
                 row = db.execute('SELECT digest, receipt FROM responses WHERE submission_id=?',
-                                 (payload['submissionId'],)).fetchone()
+                                 (submission['submissionId'],)).fetchone()
                 if row:
                     if row[0] != digest:
                         raise StudyError(409, 'submission_conflict',
@@ -163,7 +163,7 @@ class StudyService:
                                          'Keep the code and contact the researcher.')
                     return json.loads(row[1]), False
                 db.execute('INSERT INTO responses VALUES (?, ?, ?, ?, ?)',
-                           (payload['submissionId'], digest, body, canonical(receipt), canonical(release)))
+                           (submission['submissionId'], digest, body, canonical(receipt), canonical(release)))
             return receipt, True
         except (sqlite3.Error, OSError):
             raise StudyError(503, 'storage_unavailable',

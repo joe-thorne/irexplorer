@@ -5,7 +5,7 @@ from pathlib import Path
 
 from src.backend.api import QueryService
 
-FIXTURE = Path(__file__).parent / "data" / "adjacent-overlay-distribution.json"
+FIXTURE = Path(__file__).parent / "data" / "adjacent-correspondence-distribution.json"
 RELATIONS = (
     "same",
     "removed",
@@ -18,11 +18,11 @@ RELATIONS = (
 )
 
 
-class AdjacentOverlayDistributionTests(unittest.TestCase):
-    def test_adjacent_overlay_relation_confidence_distribution_matches_fixture(self) -> None:
-        """Expose model drift across every adjacent overlay through QueryService."""
+class AdjacentCorrespondenceDistributionTests(unittest.TestCase):
+    def test_adjacent_correspondence_relation_confidence_distribution_matches_fixture(self) -> None:
+        """Expose model drift across every adjacent stored correspondence through QueryService."""
         service = QueryService()
-        overlays = {}
+        correspondences = {}
         totals = Counter()
 
         for example in service.list_examples()["examples"]:
@@ -37,14 +37,14 @@ class AdjacentOverlayDistributionTests(unittest.TestCase):
                     ).items()
                 ))
                 totals.update(link["relation"] for link in links)
-            overlays[example] = pairs
+            correspondences[example] = pairs
 
         actual = {
             "summary": {
-                "adjacentPairs": sum(len(pairs) for pairs in overlays.values()),
+                "adjacentPairs": sum(len(pairs) for pairs in correspondences.values()),
                 "relationTotals": {relation: totals[relation] for relation in RELATIONS},
             },
-            "overlays": overlays,
+            "correspondences": correspondences,
         }
         expected = json.loads(FIXTURE.read_text(encoding="utf-8"))
         self.assertEqual(actual, expected)

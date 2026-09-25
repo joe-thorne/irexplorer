@@ -1,9 +1,9 @@
 // One instruction-level trace for C ranges, IR instructions, and whole CFG blocks.
 // Source-location context and recorded cross-state links remain distinct evidence.
-function sourceMatches(location, anchors) {
+function sourceMatches(location, sourceLocations) {
   const filename = path => path.split('/').at(-1);
-  return anchors.some(anchor => filename(anchor.file) === filename(location.file) && anchor.line === location.line
-    && (anchor.column === undefined || anchor.column === location.column));
+  return sourceLocations.some(sourceLocation => filename(sourceLocation.file) === filename(location.file) && sourceLocation.line === location.line
+    && (sourceLocation.column === undefined || sourceLocation.column === location.column));
 }
 
 function uniqueLocations(locations) {
@@ -22,16 +22,16 @@ function buildSelectionTrace(panels, summary, selection) {
   const sides = ['left', 'right'];
   const validIds = Object.fromEntries(sides.map(side => [side, new Set((panels[side].function?.blocks || []).flatMap(block => block.instructions.map(instruction => instruction.id)))]));
   const seeds = { left: new Set(), right: new Set() };
-  let anchors = selection.anchors || [];
+  let sourceLocations = selection.sourceLocations || [];
   if (selection.kind === 'node') {
     const panel = panels[selection.side];
     for (const id of instructionIds(panel, selection.nodeId)) seeds[selection.side].add(id);
-    anchors = uniqueLocations((panel.mappings || [])
+    sourceLocations = uniqueLocations((panel.mappings || [])
       .filter(mapping => seeds[selection.side].has(mapping.instructionId)).map(mapping => mapping.location));
   } else {
     for (const side of sides) {
       for (const mapping of panels[side].mappings || []) {
-        if (validIds[side].has(mapping.instructionId) && sourceMatches(mapping.location, anchors)) seeds[side].add(mapping.instructionId);
+        if (validIds[side].has(mapping.instructionId) && sourceMatches(mapping.location, sourceLocations)) seeds[side].add(mapping.instructionId);
       }
     }
   }
@@ -65,14 +65,14 @@ function buildSelectionTrace(panels, summary, selection) {
     }
   }
   if (selection.kind === 'node') {
-    anchors = uniqueLocations(sides.flatMap(side => (panels[side].mappings || [])
+    sourceLocations = uniqueLocations(sides.flatMap(side => (panels[side].mappings || [])
       .filter(mapping => members[side].has(mapping.instructionId)).map(mapping => mapping.location)));
   }
   const missing = sides.reduce((count, side) =>
     count + [...seeds[side]].filter(id => !covered[side].has(id)).length, 0);
   const unresolved = missing > 0 || links.some(link => link.confidence === 'none')
     || !sides.some(side => seeds[side].size);
-  return { seeds, members, anchors, links, sameState, missing, unresolved };
+  return { seeds, members, sourceLocations, links, sameState, missing, unresolved };
 }
 
 function relationWording(link) {
@@ -122,7 +122,7 @@ function buildComparisonEvidence(summary, trace) {
   for (const ref of (summary.items || []).flatMap(item => item.remarkReferences)) {
     const step = steps[ref.stepIndex];
     const remark = step?.remarks[ref.remarkIndex];
-    if (citedReferenceKeys.has(referenceKey(ref)) || !remark?.location || !sourceMatches(remark.location, trace.anchors))
+    if (citedReferenceKeys.has(referenceKey(ref)) || !remark?.location || !sourceMatches(remark.location, trace.sourceLocations))
       continue;
     citedReferenceKeys.add(referenceKey(ref));
     remarks.push({ ...remark, fromOrdinal: step.fromOrdinal, toOrdinal: step.toOrdinal });
@@ -162,10 +162,10 @@ function selectSourceLine(line, extend = false) {
   if (!appState.ready || !sourceState.data) return;
   const start = extend && sourceState.rangeStart !== null ? sourceState.rangeStart : line;
   if (!extend || sourceState.rangeStart === null) sourceState.rangeStart = line;
-  const anchors = [];
+  const sourceLocations = [];
   for (let number = Math.min(start, line); number <= Math.max(start, line); number++)
-    anchors.push({ file: sourceState.data.file, line: number });
-  selectWorkspace({ kind: 'source', anchors });
+    sourceLocations.push({ file: sourceState.data.file, line: number });
+  selectWorkspace({ kind: 'source', sourceLocations });
 }
 
 function selectNode(side, nodeId) {
@@ -182,7 +182,7 @@ function selectWorkspace(input, { scroll = true } = {}) {
   appState.selectionInput = input;
   const trace = buildSelectionTrace(appState.panels, appState.summary, input);
   const evidence = buildComparisonEvidence(appState.summary, trace);
-  sourceState.anchors = trace.anchors;
+  sourceState.sourceLocations = trace.sourceLocations;
   appState.selection = {
     originSide: input.kind === 'node' ? input.side : 'source',
     trace,
@@ -190,7 +190,7 @@ function selectWorkspace(input, { scroll = true } = {}) {
     unresolved: trace.unresolved,
     text: (input.kind === 'node'
       ? formatNode(nodeContext(appState.panels[input.side].ir, input.nodeId))
-      : `C source selection (${input.anchors.length} ${input.anchors.length === 1 ? 'line' : 'lines'})`)
+      : `C source selection (${input.sourceLocations.length} ${input.sourceLocations.length === 1 ? 'line' : 'lines'})`)
       + '. ' + traceDescription(trace),
   };
   for (const side of ['left', 'right']) {
@@ -218,7 +218,7 @@ function selectWorkspace(input, { scroll = true } = {}) {
       ? displayNodeIds(panel, [input.nodeId])[0] : input.nodeId;
     const focused = elements[input.side].viewer.querySelector(`[data-node-id="${CSS.escape(focusId || input.nodeId)}"]`);
     (focused?.querySelector('.ir-block-heading') || focused)?.focus({ preventScroll: true });
-    if (trace.anchors.length) {
+    if (trace.sourceLocations.length) {
       document.querySelector('#source-panel').open = true;
       scrollWithin(document.querySelector('#source-lines'), document.querySelector('.source-line.is-source'));
     }

@@ -39,9 +39,9 @@ def router(service):
                         raise ValueError('Duplicate key')
                     result[k] = v
                 return result
-            payload = json.loads(body, object_pairs_hook=pairs,
+            submission = json.loads(body, object_pairs_hook=pairs,
                                  parse_constant=lambda _: (_ for _ in ()).throw(ValueError()))
-            receipt, created = await run_in_threadpool(service.submit, payload)
+            receipt, created = await run_in_threadpool(service.submit, submission)
             return JSONResponse(receipt, status_code=201 if created else 200, headers={'Cache-Control': 'no-store'})
         except (ValueError, UnicodeError, RecursionError):
             error = StudyError(422, 'invalid_json', 'Invalid submission JSON.')

@@ -30,7 +30,7 @@ const summary = { links: [
 const trace = selection => context.buildSelectionTrace({ left, right }, summary, selection);
 const ids = set => [...set].sort();
 const node = (side, nodeId) => ({ kind: 'node', side, nodeId });
-const source = (...lines) => ({ kind: 'source', anchors: lines.map(line => ({ file: 'test.c', line })) });
+const source = (...lines) => ({ kind: 'source', sourceLocations: lines.map(line => ({ file: 'test.c', line })) });
 let checks = 0;
 function check(name, run) { run(); checks++; console.log('PASS ' + name); }
 check('Equivalent C and IR selections trace the same link and members', () => {
@@ -154,7 +154,7 @@ check('Missing source locations do not prevent an IR trace', () => {
   const result = context.buildSelectionTrace(
     { left: panel(0, ['a']), right }, summary, node('left', 'a'));
   assert.deepEqual(ids(result.members.right), ['x']);
-  assert.equal(result.anchors[0].line, 1);
+  assert.equal(result.sourceLocations[0].line, 1);
 });
 check('Unmapped C selections do not assert removal', () => {
   const result = trace(source(99));

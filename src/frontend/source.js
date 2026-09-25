@@ -1,5 +1,5 @@
 // Source rendering and source-location context for the shared instruction trace.
-const sourceState = { data: null, anchors: [], rangeStart: null };
+const sourceState = { data: null, sourceLocations: [], rangeStart: null };
 
 function renderSource() {
   const viewer = document.querySelector('#source-lines');
@@ -37,23 +37,23 @@ function renderSource() {
 function applySourceHighlights(message = '') {
   const data = sourceState.data;
   if (!data) return;
-  const anchors = sourceState.anchors;
-  const matchesAnchor = location => sourceMatches(location, anchors);
+  const sourceLocations = sourceState.sourceLocations;
+  const matchesSourceLocation = location => sourceMatches(location, sourceLocations);
   for (const side of ['left', 'right']) {
     const panel = appState.panels[side];
-    const matches = (panel.mappings || []).filter(m => matchesAnchor(m.location));
+    const matches = (panel.mappings || []).filter(m => matchesSourceLocation(m.location));
     panel.sourceNodeIds = new Set(matches.flatMap(m => [m.instructionId, m.blockId]));
   }
   const leftMatches = new Set((appState.panels.left.mappings || [])
-    .filter(mapping => matchesAnchor(mapping.location)).map(mapping => mapping.instructionId)).size;
-  document.querySelector('#source-status').textContent = message || (anchors.length
+    .filter(mapping => matchesSourceLocation(mapping.location)).map(mapping => mapping.instructionId)).size;
+  document.querySelector('#source-status').textContent = message || (sourceLocations.length
     ? leftMatches ? leftMatches + " " + (leftMatches === 1 ? "instruction in Left maps" : "instructions in Left map")
-      + " to the selected C location" + (anchors.length === 1 ? "." : "s.")
+      + " to the selected C location" + (sourceLocations.length === 1 ? "." : "s.")
       : "No recorded source mapping in Left. Missing mappings do not establish removal."
     : appState.selection ? "No recorded C source location for this selection."
       : "Select a C line to see its mapped instructions in Left. Shift-click to select a range.");
   for (const line of document.querySelectorAll('.source-line')) {
-    const selected = anchors.some(a => a.file === data.file && a.line === Number(line.dataset.line));
+    const selected = sourceLocations.some(a => a.file === data.file && a.line === Number(line.dataset.line));
     line.classList.toggle('is-source', selected);
     line.setAttribute('aria-pressed', String(selected));
   }

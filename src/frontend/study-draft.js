@@ -2,15 +2,15 @@
 window.StudyDraft = (() => {
   const KEY = 'irexplorer.study.v0.5'; // New key prevents an older instrument draft from being restored.
   const blank = () => ({ status: 'unanswered', value: null });
-  const fieldsFor = (content, stage) => content.fields.filter(f => f.id.startsWith(stage === 'pre' ? 'P' : stage === 'post' ? 'Q' : stage));
+  const fieldsFor = (content, section) => content.fields.filter(f => f.id.startsWith(section === 'pre' ? 'P' : section === 'post' ? 'Q' : section));
   function visible(field, answers) {
     if (!field.condition) return true;
     const parent = answers[field.condition.field];
     const values = Array.isArray(parent?.value) ? parent.value : [parent?.value];
     return parent?.status === 'answered' && values.some(v => field.condition.values.includes(v));
   }
-  function validate(content, stage, answers, complete = false, recovering = false) {
-    const fields = fieldsFor(content, stage), errors = {};
+  function validate(content, section, answers, complete = false, recovering = false) {
+    const fields = fieldsFor(content, section), errors = {};
     if (!answers || typeof answers !== 'object' || Array.isArray(answers)) return { stage: 'Invalid survey.' };
     for (const id of Object.keys(answers)) if (!fields.some(f => f.id === id)) errors[id] = 'Unknown item.';
     for (const field of fields) {
@@ -68,9 +68,9 @@ window.StudyDraft = (() => {
           (!t.started && Object.values(t.answers).some(a => a.status !== 'unanswered'))) throw new Error('Invalid task progress or responses.');
       if (t.status === 'pending') pending = true;
     }
-    for (const stage of ['pre', 'post']) {
-      if (Object.keys(validate(content, stage, d[stage], stage === 'pre' && d.preComplete, true)).length) throw new Error('Invalid answers.');
-      if (fieldsFor(content, stage).some(f => !Object.hasOwn(d[stage], f.id))) throw new Error('Incomplete draft structure.');
+    for (const section of ['pre', 'post']) {
+      if (Object.keys(validate(content, section, d[section], section === 'pre' && d.preComplete, true)).length) throw new Error('Invalid answers.');
+      if (fieldsFor(content, section).some(f => !Object.hasOwn(d[section], f.id))) throw new Error('Incomplete draft structure.');
     }
     return d;
   }

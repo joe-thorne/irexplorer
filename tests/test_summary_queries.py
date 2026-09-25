@@ -6,10 +6,10 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 from src.backend.analysis.composition import ComposedCorrespondence
-from src.backend.analysis.report import RemarkReference, ReportItem, describe_comparison
-from src.backend.analysis.summary import summarise_correspondence
+from src.backend.analysis.report import describe_comparison
+from src.backend.analysis.summary import RemarkReference, StructuralClaim, summarise_correspondence
 from src.backend.api import QueryService, create_app
-from src.backend.ingest import load_prebaked_curated_timeline
+from src.backend.ingest import load_curated_timeline_record
 from src.backend.model import Correspondence, Link, StateGraph
 from src.backend.model.graph import Edge, Node
 from src.backend.toolchain import curated
@@ -23,7 +23,7 @@ class SummaryQueriesTests(unittest.TestCase):
     def test_all_examples_comparison_modes_resolve_existing_evidence(self):
         service = self.service
         for example in curated.list_examples():
-            timeline = load_prebaked_curated_timeline(example)
+            timeline = load_curated_timeline_record(example)
             for lower, higher in [(n, n + 1) for n in range(13)] + [(0, 9), (0, 13), (4, 6)]:
                 with self.subTest(example=example, span=(lower, higher)):
                     response = service.summary(example, lower, higher)
@@ -54,15 +54,15 @@ class SummaryQueriesTests(unittest.TestCase):
         # quick_sort step 3 (after gvn) records remarks; the final step of span 3→5 records none.
         def cite_first_step(*args):
             report = describe_comparison(*args)
-            item = ReportItem('An intermediate remark.', remark_references=(RemarkReference(0, 1),))
-            return replace(report, items=(*report.items, item))
+            item = StructuralClaim('An intermediate remark.', remark_references=(RemarkReference(0, 1),))
+            return replace(report, claims=(*report.claims, item))
 
         with patch('src.backend.api.query.describe_comparison', side_effect=cite_first_step):
             response = QueryService().summary('quick_sort', 3, 5)
         self.assertEqual(response['steps'][-1]['remarks'], [])
         self.assertEqual(response['items'][-1]['remarkReferences'], [{'stepIndex': 0, 'remarkIndex': 1}])
         self.assertEqual(response['steps'][0]['remarks'][1]['raw'],
-                         load_prebaked_curated_timeline('quick_sort').steps[3].remarks[1].raw)
+                         load_curated_timeline_record('quick_sort').steps[3].remarks[1].raw)
 
     def test_same_state_no_op_and_whole_example_scope(self):
         for example in curated.list_examples():
@@ -93,7 +93,7 @@ class SummaryQueriesTests(unittest.TestCase):
     def test_composed_summary_covers_changed_and_approximate_endpoint_changes(self):
         """I4: composed summaries must account for every non-exact endpoint change."""
         response = self.service.summary('score', 0, 12)
-        timeline = load_prebaked_curated_timeline('score')
+        timeline = load_curated_timeline_record('score')
         covered_indices = {
             index for item in response['items'] for index in item['linkIndices']
         }
@@ -201,7 +201,7 @@ class SummaryQueriesTests(unittest.TestCase):
         moved.validate(from_state, moved_state)
         self.assertIn(
             '1 basic block was linked as moved correspondences.',
-            {item.text for item in summarise_correspondence(moved, from_state, moved_state, None).items},
+            {item.text for item in summarise_correspondence(moved, from_state, moved_state, None).claims},
         )
 
         split_state = _block_state(2, 'left', 'right')
@@ -214,7 +214,7 @@ class SummaryQueriesTests(unittest.TestCase):
         split.validate(from_state, split_state)
         self.assertIn(
             '1 basic block groups split: 1 → 2 basic blocks with approximate correspondence evidence.',
-            {item.text for item in summarise_correspondence(split, from_state, split_state, None).items},
+            {item.text for item in summarise_correspondence(split, from_state, split_state, None).claims},
         )
 
         merged_state = _block_state(4, 'merged')
@@ -227,7 +227,7 @@ class SummaryQueriesTests(unittest.TestCase):
         merged.validate(split_state, merged_state)
         self.assertIn(
             '1 basic block groups merged: 2 → 1 basic block with approximate correspondence evidence.',
-            {item.text for item in summarise_correspondence(merged, split_state, merged_state, None).items},
+            {item.text for item in summarise_correspondence(merged, split_state, merged_state, None).claims},
         )
 
     @staticmethod

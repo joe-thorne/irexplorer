@@ -6,8 +6,8 @@ from src.backend.analysis import (
     compose_correspondences,
     compose_timeline_correspondences,
     is_identity_correspondence,
-    load_prebaked_curated_correspondence,
-    load_prebaked_curated_correspondences,
+    load_stored_curated_correspondence,
+    load_stored_curated_correspondences,
 )
 from src.backend.analysis.compare import (
     _function_for_node,
@@ -17,7 +17,7 @@ from src.backend.analysis.compare import (
 from src.backend.analysis.summary import summarise_correspondence
 from src.backend.ingest import (
     load_curated_timeline,
-    load_prebaked_curated_timeline,
+    load_curated_timeline_record,
     parse_ir_state,
 )
 from src.backend.model import (
@@ -300,11 +300,11 @@ join:
             sum(1 for node in to_state.nodes if node.kind != "Module"),
         )
 
-        for item in summary.items:
-            self.assertTrue(item.link_indices or item.remark_indices)
+        for item in summary.claims:
+            self.assertTrue(item.link_indices or tuple(ref.remark_index for ref in item.remark_references))
             for index in item.link_indices:
                 self.assertLess(index, len(correspondence.links))
-            for index in item.remark_indices:
+            for index in tuple(ref.remark_index for ref in item.remark_references):
                 self.assertLess(index, len(timeline.steps[-1].remarks))
 
         conservative_matches = [
@@ -323,7 +323,7 @@ join:
         )
         self.assertIn(
             "CFG unchanged across the recorded basic-block correspondences.",
-            {item.text for item in summary.items},
+            {item.text for item in summary.claims},
         )
 
     def test_recompiled_step_correspondences_validate_for_all_curated_examples(self) -> None:
@@ -352,8 +352,8 @@ join:
     def test_prebaked_adjacent_correspondences_load_for_all_examples(self) -> None:
         for example in ("score", "binary_search", "quick_sort"):
             with self.subTest(example=example):
-                timeline = load_prebaked_curated_timeline(example)
-                correspondences = load_prebaked_curated_correspondences(example, timeline)
+                timeline = load_curated_timeline_record(example)
+                correspondences = load_stored_curated_correspondences(example, timeline)
                 self.assertEqual(len(correspondences), len(timeline.steps))
                 for ordinal, correspondence in enumerate(correspondences):
                     self.assertEqual(
@@ -364,13 +364,13 @@ join:
                         timeline.state(ordinal), timeline.state(ordinal + 1)
                     )
                 self.assertGreater(
-                    len(load_prebaked_curated_correspondence(example).links), 0
+                    len(load_stored_curated_correspondence(example).links), 0
                 )
 
     def test_prebaked_overlays_match_the_current_adjacent_matcher(self) -> None:
         """Require an intentional re-bake whenever matcher behaviour changes."""
         for example in ("score", "binary_search", "quick_sort"):
-            timeline = load_prebaked_curated_timeline(example)
+            timeline = load_curated_timeline_record(example)
             for ordinal in range(len(timeline.steps)):
                 with self.subTest(example=example, ordinal=ordinal):
                     baked = deserialise_json(
@@ -384,16 +384,16 @@ join:
                     self.assertEqual(fresh, baked)
 
     def test_noop_steps_are_identity_correspondences(self) -> None:
-        timeline = load_prebaked_curated_timeline("score")
-        correspondences = load_prebaked_curated_correspondences("score", timeline)
+        timeline = load_curated_timeline_record("score")
+        correspondences = load_stored_curated_correspondences("score", timeline)
 
         self.assertTrue(is_identity_correspondence(correspondences[3]))
         self.assertFalse(is_identity_correspondence(correspondences[0]))
 
         summary = _step_summary(timeline, 3)
-        self.assertIn("retained as a no-op", summary.items[0].text)
+        self.assertIn("retained as a no-op", summary.claims[0].text)
         self.assertEqual(
-            summary.items[0].link_indices,
+            summary.claims[0].link_indices,
             tuple(range(len(correspondences[3].links))),
         )
 
@@ -401,14 +401,15 @@ join:
         timeline = load_curated_timeline("quick_sort")
         summary = _step_summary(timeline, 3)
 
-        remark_item = next(item for item in summary.items if item.remark_indices)
-        self.assertEqual(remark_item.remark_indices, tuple(range(len(timeline.steps[3].remarks))))
+        remark_item = next(item for item in summary.claims if tuple(ref.remark_index for ref in item.remark_references))
+        self.assertEqual(tuple(ref.remark_index for ref in remark_item.remark_references),
+                         tuple(range(len(timeline.steps[3].remarks))))
         self.assertIn("compiler remarks were captured for this step", remark_item.text)
 
     def test_cfg_summary_reports_relabelled_branch_edges(self) -> None:
         timeline = load_curated_timeline("quick_sort")
         correspondence = compare_timeline_step(timeline, 1)
-        summary_text = " ".join(item.text for item in _step_summary(timeline, 1).items)
+        summary_text = " ".join(item.text for item in _step_summary(timeline, 1).claims)
 
         self.assertNotIn("CFG unchanged", summary_text)
         self.assertIn(
@@ -425,7 +426,7 @@ join:
 
     def test_cfg_summary_reports_named_added_and_removed_edges(self) -> None:
         timeline = load_curated_timeline("binary_search")
-        summary_text = " ".join(item.text for item in _step_summary(timeline, 6).items)
+        summary_text = " ".join(item.text for item in _step_summary(timeline, 6).claims)
 
         self.assertIn("CFG edges changed: removed entry → while.cond [unconditional]", summary_text)
         self.assertIn("added entry → while.body.lr.ph [true]", summary_text)
@@ -506,7 +507,7 @@ class CorrespondenceCompositionTests(unittest.TestCase):
         )
         self.assertIn(
             "1 basic block removed with plausible but unconfirmed correspondence evidence.",
-            {item.text for item in summary.items},
+            {item.text for item in summary.claims},
         )
 
     def test_composition_preserves_a_split_across_the_intermediate_state(self) -> None:

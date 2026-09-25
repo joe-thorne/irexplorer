@@ -61,7 +61,7 @@ class QueryServiceTests(unittest.TestCase):
         internal_failure = FileNotFoundError("/private/model/timeline.json")
 
         with patch(
-            "src.backend.api.query.load_prebaked_curated_timeline",
+            "src.backend.api.query.load_curated_timeline_record",
             side_effect=internal_failure,
         ), self.assertRaises(DataUnavailableError) as context:
             service.list_states("score")
@@ -193,7 +193,7 @@ class FastApiTests(unittest.TestCase):
         del invalid_record["formatVersion"]
 
         with patch(
-            "src.backend.api.query.load_prebaked_curated_timeline",
+            "src.backend.api.query.load_curated_timeline_record",
             side_effect=lambda _example_id: deserialise_timeline(invalid_record),
         ), self.assertLogs("src.backend.api.app", level="ERROR") as logs:
             response = client.get("/api/examples/score/states")

@@ -13,17 +13,17 @@ def participant_content():
     )}
 
 
-def validate_answers(stage, answers, *, complete=False):
+def validate_answers(section, answers, *, complete=False):
     """Validate E4/E5 raw survey and task values; E6 still owns the submission envelope.
 
     Return item errors without echoing answers. Missing optional items remain
     unanswered. In-progress drafts may omit P1; a completed pre-survey may not.
     """
     content = participant_content()
-    if stage not in ('pre', 'post', *[f'T{i}' for i in range(7)]) or not isinstance(answers, dict):
+    if section not in ('pre', 'post', *[f'T{i}' for i in range(7)]) or not isinstance(answers, dict):
         return {'stage': 'Invalid survey.'}
     fields = {f['id']: f for f in content['fields']
-              if f['id'].startswith('P' if stage == 'pre' else 'Q' if stage == 'post' else stage)}
+              if f['id'].startswith('P' if section == 'pre' else 'Q' if section == 'post' else section)}
     errors = {key: 'Unknown item.' for key in answers.keys() - fields.keys()}
     for key, field in fields.items():
         answer = answers.get(key, {'status': 'unanswered', 'value': None})

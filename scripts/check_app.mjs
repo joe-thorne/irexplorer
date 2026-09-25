@@ -103,9 +103,9 @@ try {
 
   await check('C selection follows recorded cross-state links', `appState.selection?.trace.links.length > 0 && document.querySelector('#selection-status').textContent.includes('recorded link')`);
   await value(`document.querySelector('.source-line[data-line="5"]').dispatchEvent(new MouseEvent('click', { bubbles: true, shiftKey: true }))`);
-  await check('Shift-click selects the complete C range', `JSON.stringify(sourceState.anchors.map(a => a.line)) === '[3,4,5]' && document.querySelectorAll('.source-line.is-source').length === 3`);
+  await check('Shift-click selects the complete C range', `JSON.stringify(sourceState.sourceLocations.map(a => a.line)) === '[3,4,5]' && document.querySelectorAll('.source-line.is-source').length === 3`);
   await value(`document.querySelector('.source-line[data-line="6"]').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', shiftKey: true, bubbles: true }))`);
-  await check('Keyboard range selection retains its starting line', `JSON.stringify(sourceState.anchors.map(a => a.line)) === '[3,4,5,6]'`);
+  await check('Keyboard range selection retains its starting line', `JSON.stringify(sourceState.sourceLocations.map(a => a.line)) === '[3,4,5,6]'`);
   await value(`window.traceBeforeView = JSON.stringify(['left', 'right'].map(side => [...appState.panels[side].selectedInstructionIds].sort()))`);
   await select('#right-view', 'cfg'); await until('window.StudyWorkspace.ready');
   await check('IR to CFG preserves instruction membership', `window.traceBeforeView === JSON.stringify(['left', 'right'].map(side => [...appState.panels[side].selectedInstructionIds].sort())) && document.querySelector('#right-viewer .cfg-node.is-linked title').textContent.includes('instructions belong to the current trace')`);
@@ -185,7 +185,7 @@ try {
   await select('#example-select', 'quick_sort'); await until('window.StudyWorkspace.ready');
   await select('#left-state', '3'); await select('#right-state', '4'); await select('#left-view', 'ir'); await select('#right-view', 'ir'); await until('appState.summary?.fromOrdinal === 3 && appState.summary?.toOrdinal === 4');
   await select('#function-select', 'partition'); await until(`appState.functionName === 'partition' && window.StudyWorkspace.ready`); await click('.source-line[data-line="12"]'); await until('Boolean(appState.selection?.evidence)');
-  await check('Selection presents relevant captured compiler remarks with their recorded transition', `(() => { const text = document.querySelector('#compiler-remarks').textContent; const remarks = appState.selection?.evidence?.remarks || []; return remarks.length > 0 && remarks.every(remark => remark.location && sourceMatches(remark.location, appState.selection.trace.anchors)) && text.includes('Captured compiler remarks') && text.includes('recorded remarks are evidence') && text.includes('not a complete explanation of compiler intent') && text.includes('absence does not establish that no optimisation occurred') && text.includes('Recorded transition: step 3 → step 4'); })()`);
+  await check('Selection presents relevant captured compiler remarks with their recorded transition', `(() => { const text = document.querySelector('#compiler-remarks').textContent; const remarks = appState.selection?.evidence?.remarks || []; return remarks.length > 0 && remarks.every(remark => remark.location && sourceMatches(remark.location, appState.selection.trace.sourceLocations)) && text.includes('Captured compiler remarks') && text.includes('recorded remarks are evidence') && text.includes('not a complete explanation of compiler intent') && text.includes('absence does not establish that no optimisation occurred') && text.includes('Recorded transition: step 3 → step 4'); })()`);
 
   await select('#example-select', 'quick_sort'); await until('window.StudyWorkspace.ready');
   await select('#left-state', '8'); await select('#right-state', '9'); await until('window.StudyWorkspace.ready');

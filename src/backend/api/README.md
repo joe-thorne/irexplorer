@@ -1,6 +1,6 @@
 # Query API boundary
 
-FastAPI serves the static browser application and stateless queries over included compiler artefacts. Every query names its example; the browser owns pane and selection state. The immutable per-example cache contains no participant responses. No runtime source upload or compiler execution is supported.
+FastAPI serves the static browser application and stateless queries over included compiler artefacts. Every query names its example; the browser owns panel and selection state. The immutable per-example cache contains no participant responses. No runtime source upload or compiler execution is supported.
 
 Run `.venv/bin/python -m src.backend.api.server` from the repository root and open `http://127.0.0.1:8000`. Interactive HTTP schemas are available at `/docs`.
 
@@ -16,7 +16,7 @@ Run `.venv/bin/python -m src.backend.api.server` from the repository root and op
 
 Unknown examples and model nodes return `404`; invalid query combinations return `422`. Missing or corrupt model data produces a sanitised `503`.
 
-Source bytes are checked against recorded compiler metadata. Source locations are distinct from cross-state correspondence confidence. Summaries cover the whole example and order their evidence by timeline, independent of pane order or selected function; the browser resolves selection counterparts from `summary.links`. Wider comparisons compose adjacent overlays transiently; the separately compiled optimisation anchor retains its own provenance.
+Source bytes are checked against recorded compiler metadata. Source locations are distinct from cross-state correspondence confidence. Summaries cover the whole example and order their evidence by timeline, independent of panel order or selected function; the browser resolves selection counterparts from `summary.links`. Wider comparisons compose stored correspondences transiently; the independently recompiled O3 state retains its own provenance.
 
 ## Application and study
 

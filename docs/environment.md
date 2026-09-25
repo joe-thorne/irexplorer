@@ -1,8 +1,8 @@
-# Environment Pin
+# Pinned toolchain
 
-Canonical generation for `irexplorer` uses one controlled Linux environment. Local host toolchains are convenience-only and must not produce golden artefacts.
+Compiler artefacts for `irexplorer` are generated with one pinned Linux toolchain. Local host toolchains are for exploration and must not produce shipped compiler artefacts.
 
-## Canonical Toolchain
+## Pinned toolchain
 
 - Target: Linux/x86-64 from the start.
 - Target triple: `x86_64-unknown-linux-gnu`.
@@ -13,7 +13,7 @@ Canonical generation for `irexplorer` uses one controlled Linux environment. Loc
   extraction against SHA-256
   `df0e1ecf16caf3489a272a5eea4eec9b0d82878f6477fa309504f918a0006384`.
 - Tools: `clang` and `opt` from LLVM 22.1.8.
-- Canonical artefacts: shipped pre-baked examples and golden fixtures.
+- Compiler artefacts: the shipped IR, CFG, and remark output for curated examples.
 
 ## Docker Files
 
@@ -41,7 +41,7 @@ docker compose run --rm toolchain ./scripts/smoke-toolchain.sh
 - `binary_search`: single-function loop and CFG example.
 - `quick_sort`: recursive, multi-function example.
 
-## Default Teaching Pass Chain
+## Curated pass sequence
 
 The default configurable pass sequence is:
 
@@ -70,16 +70,16 @@ Run the canonical generator from `irexplorer/` inside the local Python virtual e
 .venv/bin/python -m src.backend.bake
 ```
 
-Generated artefacts are written to `artefacts/curated/<example>/`. Each example directory contains the `-O0` IR/bitcode, the 12 teaching-pass IR states, the recompiled `clang -O3` anchor, one YAML pass-remark record per `opt` state (including empty records when LLVM emitted none), captured `clang -Rpass` text, the aggregate `.opt.yaml` optimisation record, and a command manifest.
+Generated artefacts are written to `artefacts/curated/<example>/`. Each example directory contains the `-O0` IR/bitcode, the 12 curated-pass IR states, the recompiled `clang -O3` state, one YAML pass-remark record per `opt` state (including empty records when LLVM emitted none), captured `clang -Rpass` text, the aggregate `.opt.yaml` optimisation record, and a command manifest.
 
 Generation first writes the complete compiler artefact, model, and
-correspondence snapshot to a temporary sibling directory. Docker overlays that
+correspondence snapshot to a temporary sibling directory. Docker mounts that
 directory at the canonical `/workspace/artefacts/curated` path, keeping paths
 inside IR and manifests deterministic. Only after every step succeeds does the
 generator swap the staged tree into place; a failed build is deleted without
 touching the last good snapshot, and a failed install restores its backup.
 
-`docs/curated-artefacts.sha256` records a deterministic aggregate SHA-256 over the 138 generated artefacts, including one serialised full timeline, one checksum-verified source record, and 13 adjacent correspondence overlays per example. The backend test suite verifies it, so an unintended change to any canonical artefact fails locally before it can become a new fixture. After an intentional Docker regeneration, review the changed artefacts and update this checksum deliberately.
+`docs/curated-artefacts.sha256` records a deterministic aggregate SHA-256 over the 138 generated artefacts, including one serialised full timeline, one checksum-verified source record, and 13 stored correspondences per example. The backend test suite verifies it, so an unintended change to any compiler artefact fails locally before it can become a new fixture. After an intentional Docker regeneration, review the changed artefacts and update this checksum deliberately.
 
 ```sh
 clang -O0 -g \

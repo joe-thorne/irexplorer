@@ -56,7 +56,7 @@ def compare_states(
     *,
     step: PassStep | None = None,
 ) -> Correspondence:
-    """Return a deterministic, coverage-complete hybrid overlay.
+    """Return a deterministic, coverage-complete hybrid correspondence.
 
     The matcher combines containment/CFG structure, eager SSA def-use edges,
     debug source locations, and a deliberately weak positional tiebreak.
@@ -88,7 +88,7 @@ def compare_states(
         evidence="unique function name",
     )
     if step is not None and step.kind == "recompiled":
-        _match_anchor_blocks(
+        _match_recompiled_blocks(
             unmatched_from,
             unmatched_to,
             links,
@@ -96,7 +96,7 @@ def compare_states(
             to_state,
             function_pairs,
         )
-        _match_anchor_instructions(
+        _match_recompiled_instructions(
             unmatched_from,
             unmatched_to,
             links,
@@ -248,7 +248,7 @@ def _match_blocks(
     return pairs
 
 
-def _match_anchor_blocks(
+def _match_recompiled_blocks(
     unmatched_from: dict[str, Node],
     unmatched_to: dict[str, Node],
     links: list[Link],
@@ -256,9 +256,9 @@ def _match_anchor_blocks(
     to_state: StateGraph,
     function_pairs: dict[str, str],
 ) -> dict[str, str]:
-    """Match anchor blocks only on their retained labels, never layout guesses.
+    """Match recompiled-state blocks only on their retained labels, never layout guesses.
 
-    A recompiled anchor has no pass derivation. Its labels and CFG layout can
+    A recompiled O3 state has no pass derivation. Its labels and CFG layout can
     independently change, so even a unique label is informative but only
     approximate; unmatched blocks remain visible rather than being paired by
     position.
@@ -359,7 +359,7 @@ def _match_instructions(
         )
 
 
-def _match_anchor_instructions(
+def _match_recompiled_instructions(
     unmatched_from: dict[str, Node],
     unmatched_to: dict[str, Node],
     links: list[Link],
@@ -367,7 +367,7 @@ def _match_anchor_instructions(
     to_state: StateGraph,
     function_pairs: dict[str, str],
 ) -> None:
-    """Use only source-backed approximate evidence for a recompiled anchor."""
+    """Use only source-backed approximate evidence for a recompiled O3 state."""
 
     for from_function, to_function in function_pairs.items():
         _match_unique_in_context(
@@ -644,7 +644,7 @@ def _match_instruction_groups(
     Require exact source locations, matched block context, connected def-use
     structure and equal external input/result-use boundaries. These are
     approximate structural correspondences, not proofs of equivalence.
-    Recompiled anchors do not use this derived-state heuristic.
+    Recompiled O3 states do not use this derived-state heuristic.
     """
     def groups(state: StateGraph, block: str, unmatched: dict[str, Node]) -> dict:
         result: dict[object, list[Node]] = defaultdict(list)
@@ -763,7 +763,7 @@ def _append_unmatched_links(
             node, to_candidates, from_state, to_state, function_pairs
         ) else "exact"
         if confidence == "exact" and step is not None and step.kind == "recompiled" and (
-            _has_renamed_block_anchor_reference(
+            _has_renamed_block_recompiled_reference(
                 node, to_candidates, from_state, to_state, function_pairs
             )
         ):
@@ -793,7 +793,7 @@ def _append_unmatched_links(
             inverse_function_pairs,
         ) else "exact"
         if confidence == "exact" and step is not None and step.kind == "recompiled" and (
-            _has_renamed_block_anchor_reference(
+            _has_renamed_block_recompiled_reference(
                 node, from_candidates, to_state, from_state, inverse_function_pairs
             )
         ):
@@ -846,14 +846,14 @@ def _has_plausible_target(
     return False
 
 
-def _has_renamed_block_anchor_reference(
+def _has_renamed_block_recompiled_reference(
     node: Node,
     candidates: Iterable[Node],
     state: StateGraph,
     candidate_state: StateGraph,
     function_pairs: dict[str, str],
 ) -> bool:
-    """Identify the qualified renamed-block case at a recompiled anchor."""
+    """Identify the qualified renamed-block case at a recompiled O3 state."""
 
     if node.kind != "Instruction":
         return False
@@ -871,7 +871,7 @@ def _has_renamed_block_anchor_reference(
     block_labels.update(_BLOCK_REFERENCE_RE.findall(str(node.attributes.get("text", ""))))
     if not block_labels - candidate_blocks:
         return False
-    # At an anchor, a missing block label is plausible only when the paired
+    # At a recompiled O3 state, a missing block label is plausible only when the paired
     # function retains an otherwise-unmapped block and every other checked
     # structural reference still has a counterpart. A vanished function stays none.
     if not any(

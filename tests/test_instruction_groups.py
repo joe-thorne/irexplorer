@@ -2,7 +2,7 @@ import unittest
 
 from src.backend.analysis import compare_states, compare_timeline_step, compose_correspondences
 from src.backend.analysis.summary import summarise_correspondence
-from src.backend.ingest import load_prebaked_curated_timeline, parse_ir_state
+from src.backend.ingest import load_curated_timeline_record, parse_ir_state
 
 
 def state(body, ordinal, *, column=4, function="f"):
@@ -46,7 +46,7 @@ class InstructionGroupTests(unittest.TestCase):
                 self.assertEqual(link.confidence, "approximate")
                 self.assertIn("result-use", link.evidence)
                 summary = summarise_correspondence(correspondence, a, b, None)
-                self.assertTrue(any(relation in item.text for item in summary.items))
+                self.assertTrue(any(relation in item.text for item in summary.claims))
                 self.assertEqual(correspondence, compare_states(a, b))
 
     def test_rejects_same_source_without_connected_value_flow(self):
@@ -93,7 +93,7 @@ class InstructionGroupTests(unittest.TestCase):
         self.assertEqual(len(link.to_node_ids), 1)
 
     def test_curated_indvars_merge_and_conservative_anchor(self):
-        timeline = load_prebaked_curated_timeline("quick_sort")
+        timeline = load_curated_timeline_record("quick_sort")
         links = grouped(compare_timeline_step(timeline, 8))
         self.assertEqual(len(links), 1)
         self.assertEqual((len(links[0].from_node_ids), len(links[0].to_node_ids)), (2, 1))
@@ -104,7 +104,7 @@ class InstructionGroupTests(unittest.TestCase):
 
 
     def test_consumed_group_does_not_upgrade_other_ambiguity(self):
-        timeline = load_prebaked_curated_timeline("quick_sort")
+        timeline = load_curated_timeline_record("quick_sort")
         correspondence = compare_timeline_step(timeline, 8)
         added_extensions = [
             link for link in correspondence.links
@@ -154,7 +154,7 @@ class MinMaxRewriteTests(unittest.TestCase):
                 self.assertFalse(grouped(compare_states(state(pair, 0), state(call, 1))))
 
     def test_score_cleanup_links_both_original_instructions(self):
-        timeline = load_prebaked_curated_timeline('score')
+        timeline = load_curated_timeline_record('score')
         links = grouped(compare_timeline_step(timeline, 4))
         self.assertEqual(len(links), 1)
         self.assertEqual([timeline.state(4).by_id[node].attributes['opcode']

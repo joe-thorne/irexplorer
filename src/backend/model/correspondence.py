@@ -26,7 +26,7 @@ Confidence = Literal["exact", "approximate", "plausible", "none"]
 
 @dataclass(frozen=True)
 class Link:
-    """One confidence-bearing bipartite hyperedge between two state graphs."""
+    """One confidence-bearing link between two state graphs."""
 
     from_node_ids: tuple[str, ...]
     to_node_ids: tuple[str, ...]
@@ -37,7 +37,7 @@ class Link:
 
 @dataclass(frozen=True)
 class Correspondence:
-    """A separate overlay that accounts for every declared comparable node."""
+    """A stored correspondence that accounts for every comparable node."""
 
     from_ordinal: int
     to_ordinal: int
@@ -75,7 +75,7 @@ class Correspondence:
 
 
 class CorrespondenceView(Protocol):
-    """The common read-only shape shared by stored and composed overlays."""
+    """The common read-only shape shared by stored and composed correspondences."""
 
     @property
     def from_ordinal(self) -> int: ...

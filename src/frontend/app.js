@@ -116,7 +116,7 @@ async function loadExample() {
   appState.ready = false;
   clearSelection();
   sourceState.data = null;
-  sourceState.anchors = [];
+  sourceState.sourceLocations = [];
   renderSource();
   elements.workspace.hidden = true;
   elements.exampleSelect.disabled = true;
@@ -205,7 +205,7 @@ async function refreshWorkspace() {
   if (!appState.exampleId || Object.values(appState.panels).some(panel => panel.ordinal === null || !panel.viewType)) return;
   let selectionInput = appState.selectionInput;
   if (selectionInput?.kind === "node" && selectionInput.ordinal !== appState.panels[selectionInput.side].ordinal)
-    selectionInput = sourceState.anchors.length ? { kind: "source", anchors: sourceState.anchors } : null;
+    selectionInput = sourceState.sourceLocations.length ? { kind: "source", sourceLocations: sourceState.sourceLocations } : null;
   const refreshId = ++appState.refreshId;
   appState.ready = false;
   appState.summary = null;
@@ -279,7 +279,7 @@ function renderFunctionOptions(names) {
 function clearSelection() {
   appState.selection = null;
   appState.selectionInput = null;
-  sourceState.anchors = [];
+  sourceState.sourceLocations = [];
   sourceState.rangeStart = null;
   for (const panel of Object.values(appState.panels)) {
     panel.selectedNodeIds = new Set();
@@ -306,7 +306,7 @@ function renderComparison() {
     elements.selectionStatus.textContent = "The recorded correspondence and detected optimisations will appear here.";
     return;
   }
-  const source = [...new Set(sourceState.anchors.map(a => a.file + ":" + a.line))].join(", ");
+  const source = [...new Set(sourceState.sourceLocations.map(a => a.file + ":" + a.line))].join(", ");
   context.textContent = input.kind === "source" ? "C source · " + source
     : (input.side === "left" ? "Left" : "Right") + " panel · "
       + formatNode(nodeContext(appState.panels[input.side].ir, input.nodeId)) + (source ? " · " + source : "");
@@ -404,7 +404,7 @@ function renderCfg(side) {
     return;
   }
   description.textContent = `${panel.ir.stateId} · ${panel.function.name} · ${cfg.blocks.length} basic blocks · ${cfg.edges.length} edges`;
-  // Layout depends on topology, never on pane width. Zoom scales the finished drawing.
+  // Layout depends on topology, never on panel width. Zoom scales the finished drawing.
   const graph = new dagre.graphlib.Graph({ multigraph: true });
   graph.setGraph({ rankdir: "TB", nodesep: 36, edgesep: 18, ranksep: 32, marginx: 24, marginy: 24 });
   cfg.blocks.forEach(block => graph.setNode(block.id, { width: Math.max(100, block.label.length * 7.3 + 28), height: 48 }));
@@ -641,7 +641,7 @@ function apiRoot(exampleId) {
 elements.exampleSelect.addEventListener("change", loadExample);
 elements.functionSelect.addEventListener("change", () => {
   appState.functionName = elements.functionSelect.value;
-  sourceState.anchors = [];
+  sourceState.sourceLocations = [];
   clearSelection();
   refreshWorkspace();
 });
@@ -684,7 +684,7 @@ window.StudyWorkspace = {
     appState.functionName = null;
     clearSelection();
     sourceState.data = null;
-    sourceState.anchors = [];
+    sourceState.sourceLocations = [];
     renderSource();
     elements.exampleSelect.value = "";
     elements.exampleSelect.disabled = false;

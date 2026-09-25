@@ -19,10 +19,10 @@ from src.backend.model.timeline import OptimisationTimeline
 
 @dataclass(frozen=True)
 class ComposedCorrespondence:
-    """A transient non-adjacent view derived from stored adjacent overlays.
+    """A transient non-adjacent view derived from stored correspondences.
 
     It intentionally is not a Layer 3 ``Correspondence``: I12 permits only
-    adjacent overlays to be persisted. The shape remains identical so callers
+    stored correspondences to span non-adjacent states. The shape lets callers
     can use the same query and summary code without special-case traversal.
     """
 
@@ -72,10 +72,10 @@ def compose_timeline_correspondences(
     from_ordinal: int,
     to_ordinal: int,
 ) -> ComposedCorrespondence:
-    """Compose a non-adjacent view from the timeline's stored overlays.
+    """Compose a non-adjacent view from the timeline's stored correspondences.
 
-    The fold is deliberately performed over the adjacent overlay sequence,
-    never over a pre-baked skip-level record. This keeps I12 intact while
+    The fold uses only the adjacent stored correspondences,
+    never a stored non-adjacent record. This keeps I12 intact while
     making confidence degradation and relation coarsening deterministic.
     """
 
@@ -118,10 +118,10 @@ def compose_correspondences(
     intermediate_state: StateGraph,
     to_state: StateGraph,
 ) -> ComposedCorrespondence:
-    """Relationally compose two contiguous overlays without persisting them.
+    """Relationally compose two contiguous correspondences without persisting them.
 
     Links that share intermediate nodes form connected components. Each
-    component becomes one endpoint hyperedge, preserving complete coverage
+    component becomes one endpoint link, preserving complete coverage
     when splits or merges join otherwise separate links.
     """
 

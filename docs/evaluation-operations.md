@@ -4,7 +4,7 @@ The local container stores assessment sessions separately from compiler queries.
 
 | Setting | Container behaviour |
 |---|---|
-| `IREXPLORER_STUDY_MODE` | `local`; legacy `preview` remains supported; `pilot` and `live` remain disabled |
+| `IREXPLORER_STUDY_MODE` | `local`; `preview` is for synthetic testing; `pilot` and `live` remain disabled pending separate approval |
 | `IREXPLORER_STUDY_DIR` | `/data`, backed by the named `study-data` volume; each mode has its own database |
 | `IREXPLORER_STUDY_ORIGIN` | `http://localhost:8000`; the exact origin is required for submission |
 | Application revision | Baked version plus source fingerprint, also exposed by `/api/release`; recorded by the server on submission |
@@ -25,7 +25,7 @@ Run commands locally as the researcher; no HTTP export/list endpoint exists. Use
 docker compose exec app python -m src.backend.evaluation.cli export /data/local/responses.sqlite3 /data/my-export
 ```
 
-`responses.json` preserves raw strings, ratings, non-answer statuses, consent, ordered tasks, receipts, and release metadata. `responses.csv` is UTF-8 long format: participant/submission/receipt IDs, study/content/instrument/consent versions, server release metadata, stage, item ID, status, raw value, duration, interruption flag, and setupReached. Task summary rows carry outcomes/time; item rows retain partial answers separately. Null is an empty value with an explicit status. Multi-choice codes are JSON arrays. `codebook.json` includes all source-backed field IDs/options/scales and the analysis/timing rules.
+`responses.json` preserves raw strings, ratings, non-answer statuses, consent, ordered tasks, receipts, and release metadata. `responses.csv` is UTF-8 long format: participant/submission/receipt IDs, study/content/instrument/consent versions, server release metadata, `stage` (the study section), item ID, status, raw value, duration, interruption flag, and setupReached. Task summary rows carry outcomes/time; item rows retain partial answers separately. Null is an empty value with an explicit status. Multi-choice codes are JSON arrays. `codebook.json` includes all source-backed field IDs/options/scales and the analysis/timing rules.
 
 CSV text beginning with formula operators after whitespace, or tab/line-break prefixes, receives a leading apostrophe. JSON preserves the original text; do not strip that CSV protection when opening free text in a spreadsheet. CSV quoting preserves commas, quotes, and multiline Unicode text. Raw ratings are never reverse-scored during collection/export. For the current v0.5 instrument, a later, separate analysis applies `6 - value` only to answered Q3; Q8 is multiple choice and Q10 is positive. The older Q3/Q8/Q10 reversal applies only to v0.1; retain not-applicable/unanswered counts and P13/Q14 pairing. Keep researcher coding and assistance notes separate, joined by participant code and item/task ID. P3 measures completed/current course exposure together. Report background flags non-exclusively, including overlap and unknown where optional data are missing.
 
@@ -52,11 +52,11 @@ The application runner disables Uvicorn access logs. Study errors are controlled
 
 ## Failure and receipt behaviour
 
-Only Submit responses sends answers. Before it, Stop/discard removes local drafts. Before a request, the browser saves a frozen envelope and a new cryptographic submission UUID in a separate tab-scoped recovery record. It does not send on unload. A first successful commit returns 201; an identical retry returns 200 with the original receipt; conflicting reuse returns 409 without stored answers. Transport failure/timeouts retain the exact envelope, including ID and rounded durations. In-flight and uncertain states prevent edits and discard/reset claims. Refresh restores retry state; closing the tab is not a supported recovery workflow.
+Only Submit responses sends answers. Before it, Stop/discard removes local drafts. Before a request, the browser saves a frozen submission and a new cryptographic submission UUID in a separate tab-scoped recovery record. It does not send on unload. A first successful commit returns 201; an identical retry returns 200 with the original receipt; conflicting reuse returns 409 without stored answers. Transport failure/timeouts retain the exact submission, including ID and rounded durations. In-flight and uncertain states prevent edits and discard/reset claims. Refresh restores retry state; closing the tab is not a supported recovery workflow.
 
-An acknowledged receipt replaces the frozen payload, then the original answer draft is removed. Failure in either cleanup step stays visible and offers retry; success is not falsely described as local erasure. An explicitly selected memory-only session can submit but cannot promise refresh recovery, and unavailable storage can require cleanup retry. Keep the tab and receipt code. Corrupt/unreadable submission recovery blocks normal progression and offers recovery retry or explicitly acknowledged memory-only continuation; a previous server record may exist.
+An acknowledged receipt replaces the frozen submission, then the original answer draft is removed. Failure in either cleanup step stays visible and offers retry; success is not falsely described as local erasure. An explicitly selected memory-only participant journey can submit but cannot promise refresh recovery, and unavailable storage can require cleanup retry. Keep the tab and receipt code. Corrupt/unreadable submission recovery blocks normal progression and offers recovery retry or explicitly acknowledged memory-only continuation; a previous server record may exist.
 
-The included flow supports local evaluation. Pilot and live collection remain disabled.
+The included flow supports local collection and synthetic preview testing. Pilot and live collection require separate approval and remain disabled.
 
 ## Release step: enabling live collection
 
@@ -65,7 +65,7 @@ This is a future, human-approved release step; it does not enable collection in 
 ```python
 @property
 def enabled(self):
-    # Local assessment and legacy preview stores stay separate from research data.
+    # Local assessment and synthetic preview stores stay separate from research data.
     return self.mode in ('local', 'preview', 'live')
 ```
 

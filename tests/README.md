@@ -21,9 +21,9 @@ The suite covers compiler fixtures and invariants, ingestion, correspondence, so
 
 [Artefact-reviewed expected-link tables](data/expected_links/README.md) additionally
 check ten complete `score`/`binary_search` comparisons across mem2reg,
-instcombine, simplifycfg, loop-rotate, and the recompiled anchor. Their 353
+instcombine, simplifycfg, loop-rotate, and the recompiled O3 state. Their 353
 explicit links, IR/source fields, labelled CFG edges, and summary expectations
-are asserted against fresh analysis and served overlays. This is AI-assisted
+are asserted against fresh analysis and served correspondences. This is AI-assisted
 manual artefact evidence; independent human sign-off and fresh Docker
 regeneration are separate verification steps.
 

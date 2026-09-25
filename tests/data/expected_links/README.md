@@ -2,7 +2,7 @@
 
 These ten tables cover `score` and `binary_search` at mem2reg (0→1), instcombine
 (1→2), simplifycfg (2→3), loop-rotate (6→7), and the independently recompiled
-`-O3` anchor (12→13). They contain 353 expected links and account for every
+recompiled O3 state (12→13). They contain 353 expected links and account for every
 Function, BasicBlock, and Instruction in each pair exactly once at each
 endpoint. Module and source-location nodes are outside correspondence coverage.
 
@@ -26,7 +26,7 @@ every possible semantic counterpart, or establish compiler intent.
 `none` means an inspected identity could not be resolved: paired one-sided
 removal/addition rows must not be read as proven semantic destruction/creation.
 In particular, the source-only initial-hi-store→hi-phi link, the unresolved
-`binary_search` moved `%add2`, rotated phis, and anchor controls are retained as
+`binary_search` moved `%add2`, rotated phis, and recompiled O3 controls are retained as
 visible heuristic limitations. `score` loop-rotate is a genuine no-op. Line-zero
 debug locations record no source line; a missing column on a positive source
 line is recorded as column zero.
@@ -43,7 +43,7 @@ denote no recorded location. All links here are one-to-one or one-sided.
 `cases.json` pins both `.ll` paths and byte hashes, ordinals, state IDs,
 transition kind, full labelled CFG edge sets, the reviewed change story, and
 summary claims. `tests/test_expected_links.py` checks these records against
-fresh ingestion/analysis and the pre-baked records consumed by the API. It
+fresh ingestion/analysis and the model records consumed by the API. It
 compares complete link sets without depending on link ordering or generated
 evidence strings, and verifies summary claims and evidence references.
 

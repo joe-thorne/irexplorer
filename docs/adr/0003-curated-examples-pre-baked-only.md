@@ -46,3 +46,13 @@ The design's "same code path" claim does not hold.  The curated loaders in
 one of two interchangeable implementations.  A live adapter would need its
 own input validation, isolated worker, resource bounds and controlled failures
 before it could be enabled, as ADR 0001 already notes.
+
+## Terminology note — 25 Sep 2026
+
+The offline generator produces compiler artefacts and serialised model records.
+The runtime loads those records and composes stored correspondences on request.
+The historical “pre-baked” wording and loader names above describe the original
+decision; current application guidance uses the glossary terms. Preview
+collection is synthetic testing, while pilot collection with real participants
+requires separate approval. These vocabulary changes do not alter the stored
+record format or the participant journey.

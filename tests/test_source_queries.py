@@ -8,7 +8,7 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 from src.backend.api import QueryService, create_app
-from src.backend.ingest import SourceRecord, bake_curated_model_records, load_prebaked_curated_source
+from src.backend.ingest import SourceRecord, bake_curated_model_records, load_curated_source_record
 from src.backend.model import ModelValidationError
 from src.backend.toolchain import curated
 
@@ -69,7 +69,7 @@ class SourceQueriesTests(unittest.TestCase):
 
     def test_damaged_source_record_is_unavailable(self):
         damaged = ModelValidationError('damaged source record')
-        with (patch('src.backend.api.query.load_prebaked_curated_source', side_effect=damaged),
+        with (patch('src.backend.api.query.load_curated_source_record', side_effect=damaged),
               TestClient(create_app(QueryService(preload=False))) as client,
               self.assertLogs('src.backend.api.app', level='ERROR')):
             response = client.get('/api/examples/score/source')
@@ -87,7 +87,7 @@ class SourceQueriesTests(unittest.TestCase):
 
     def test_loader_returns_the_bake_verified_source_record(self):
         stored = json.loads(curated.model_source_path('score').read_text(encoding='utf-8'))
-        record = load_prebaked_curated_source('score')
+        record = load_curated_source_record('score')
         self.assertEqual(
             record,
             SourceRecord(file='score.c', text=curated.read_source('score'), sha256=stored['sha256'],
@@ -122,4 +122,4 @@ class SourceQueriesTests(unittest.TestCase):
                 model_dir.mkdir(parents=True)
                 (model_dir / 'source.json').write_text(json.dumps(damaged), encoding='utf-8')
                 with curated.using_artefacts_root(staged), self.assertRaises(ModelValidationError):
-                    load_prebaked_curated_source('score')
+                    load_curated_source_record('score')

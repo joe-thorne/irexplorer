@@ -13,12 +13,20 @@ from src.backend.model.timeline import PassStep
 
 
 @dataclass(frozen=True)
-class SummaryItem:
-    """One claim, traceable to correspondence links and/or pass remarks."""
+class RemarkReference:
+    """A compiler remark addressed by its step and remark positions in a report."""
+
+    step_index: int
+    remark_index: int
+
+
+@dataclass(frozen=True)
+class StructuralClaim:
+    """One claim traceable to correspondence links and/or compiler remarks."""
 
     text: str
     link_indices: tuple[int, ...] = ()
-    remark_indices: tuple[int, ...] = ()
+    remark_references: tuple[RemarkReference, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -26,7 +34,7 @@ class ComparisonSummary:
     """Concise, evidence-backed description of a comparison."""
 
     context: str
-    items: tuple[SummaryItem, ...]
+    claims: tuple[StructuralClaim, ...]
 
 
 def summarise_correspondence(
@@ -34,6 +42,8 @@ def summarise_correspondence(
     from_state: StateGraph,
     to_state: StateGraph,
     step: PassStep | None,
+    *,
+    remark_step_index: int = 0,
 ) -> ComparisonSummary:
     if isinstance(correspondence, ComposedCorrespondence) and step is not None and step.kind == "recompiled":
         context = (
@@ -56,11 +66,11 @@ def summarise_correspondence(
     else:
         context = "Adjacent optimisation-state comparison."
 
-    items: list[SummaryItem] = []
+    claims: list[StructuralClaim] = []
     all_indices = tuple(range(len(correspondence.links)))
     if is_identity_correspondence(correspondence):
-        items.append(
-            SummaryItem(
+        claims.append(
+            StructuralClaim(
                 ("No structural or value-level changes were detected across these recorded endpoints."
                  if isinstance(correspondence, ComposedCorrespondence) or (step and step.kind == "recompiled")
                  else "No structural or value-level changes were detected; this pass is retained as a no-op."),
@@ -81,8 +91,8 @@ def summarise_correspondence(
                     )
                     if indices:
                         noun = _plural(_kind_label(kind), len(indices))
-                        items.append(
-                            SummaryItem(
+                        claims.append(
+                            StructuralClaim(
                                 f"{len(indices)} {noun} {verb}"
                                 f"{_confidence_phrase(correspondence, indices)}.",
                                 indices,
@@ -107,8 +117,8 @@ def summarise_correspondence(
                     confidence = _confidence_phrase(correspondence, indices)
                     verb = "was" if len(indices) == 1 else "were"
                     noun = _plural(_kind_label(kind), len(indices))
-                    items.append(
-                        SummaryItem(
+                    claims.append(
+                        StructuralClaim(
                             f"{len(indices)} {noun} {verb} linked as {label}{confidence}.",
                             indices,
                         )
@@ -124,7 +134,7 @@ def summarise_correspondence(
                     after_count = sum(len(correspondence.links[i].to_node_ids) for i in indices)
                     label = _kind_label(kind)
                     endpoint_label = "instructions" if kind == "Instruction" else _plural(label, after_count)
-                    items.append(SummaryItem(
+                    claims.append(StructuralClaim(
                         f"{len(indices)} {label} groups {relation}: "
                         f"{before_count} → {after_count} {endpoint_label}"
                         f"{_confidence_phrase(correspondence, indices)}.", indices))
@@ -137,8 +147,8 @@ def summarise_correspondence(
             kind="Instruction",
         )
         if changed_instructions:
-            items.append(
-                SummaryItem(
+            claims.append(
+                StructuralClaim(
                     f"{len(changed_instructions)} {_plural('instruction', len(changed_instructions))} "
                     f"changed{_confidence_phrase(correspondence, changed_instructions)}.",
                     changed_instructions,
@@ -153,8 +163,8 @@ def summarise_correspondence(
             kind="BasicBlock",
         )
         if changed_blocks:
-            items.append(
-                SummaryItem(
+            claims.append(
+                StructuralClaim(
                     f"{len(changed_blocks)} {_plural('basic block', len(changed_blocks))} "
                     f"changed shape{_confidence_phrase(correspondence, changed_blocks)}.",
                     changed_blocks,
@@ -170,10 +180,10 @@ def summarise_correspondence(
                 removed_edges, added_edges, relabelled_edges
             )
             if edge_difference_item is not None:
-                items.append(edge_difference_item)
+                claims.append(edge_difference_item)
             else:
-                items.append(
-                    SummaryItem(
+                claims.append(
+                    StructuralClaim(
                         "CFG unchanged across the recorded basic-block correspondences.",
                         basic_block_indices,
                     )
@@ -185,16 +195,16 @@ def summarise_correspondence(
             if link.confidence == "none"
         )
         if unresolved:
-            items.append(
-                SummaryItem(
+            claims.append(
+                StructuralClaim(
                     f"{len(unresolved)} {_plural('node', len(unresolved))} could not be classified "
                     "with the available matching evidence.",
                     unresolved,
                 )
             )
-        if not items:
-            items.append(
-                SummaryItem("No comparable structural changes were detected.", all_indices)
+        if not claims:
+            claims.append(
+                StructuralClaim("No comparable structural changes were detected.", all_indices)
             )
 
     if step is not None and step.remarks:
@@ -210,14 +220,16 @@ def summarise_correspondence(
             if isinstance(correspondence, ComposedCorrespondence)
             else "this step"
         )
-        items.append(
-            SummaryItem(
+        claims.append(
+            StructuralClaim(
                 f"{len(step.remarks)} compiler {_plural('remark', len(step.remarks))} "
                 f"were captured for {remark_scope} ({labels}); expand the evidence to inspect them.",
-                remark_indices=tuple(range(len(step.remarks))),
+                remark_references=tuple(
+                    RemarkReference(remark_step_index, index) for index in range(len(step.remarks))
+                ),
             )
         )
-    return ComparisonSummary(context=context, items=tuple(items))
+    return ComparisonSummary(context=context, claims=tuple(claims))
 
 
 def _link_indices(
@@ -287,7 +299,7 @@ def _cfg_difference_summary_item(
     removed: tuple[CfgEdgeDifference, ...],
     added: tuple[CfgEdgeDifference, ...],
     relabelled: tuple[CfgEdgeDifference, ...],
-) -> SummaryItem | None:
+) -> StructuralClaim | None:
     """Render named CFG edge differences with their supporting block links."""
 
     differences = removed + added + relabelled
@@ -312,7 +324,7 @@ def _cfg_difference_summary_item(
                 if item.before and item.after
             )
         )
-    return SummaryItem(
+    return StructuralClaim(
         "CFG edges changed: " + "; ".join(parts) + ".",
         tuple(sorted({index for item in differences for index in item.link_indices})),
     )

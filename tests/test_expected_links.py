@@ -9,10 +9,10 @@ from pathlib import Path
 
 from src.backend.analysis import (
     compare_timeline_step,
-    load_prebaked_curated_correspondence,
+    load_stored_curated_correspondence,
 )
 from src.backend.analysis.summary import summarise_correspondence
-from src.backend.ingest import load_curated_timeline, load_prebaked_curated_timeline
+from src.backend.ingest import load_curated_timeline, load_curated_timeline_record
 from src.backend.toolchain import curated
 
 DATA = Path(__file__).parent / 'data' / 'expected_links'
@@ -30,7 +30,7 @@ class ArtefactExpectedLinkTests(unittest.TestCase):
             for example in ('score', 'binary_search')
         }
         cls.baked = {
-            example: load_prebaked_curated_timeline(example)
+            example: load_curated_timeline_record(example)
             for example in cls.fresh
         }
 
@@ -99,19 +99,19 @@ class ArtefactExpectedLinkTests(unittest.TestCase):
         for case in self.cases:
             with self.subTest(table=case['table']):
                 fresh = compare_timeline_step(self.fresh[case['example']], case['fromOrdinal'])
-                baked = load_prebaked_curated_correspondence(
+                baked = load_stored_curated_correspondence(
                     case['example'], case['fromOrdinal']
                 )
-                # Compare reviewed rows here only when fresh and stored overlays
-                # agree; the served-overlay test below always checks the fixture.
+                # Compare reviewed rows here only when fresh and stored correspondences
+                # agree; the served-correspondence test below always checks the fixture.
                 if self.actual_links(fresh) != self.actual_links(baked):
                     continue
                 self.assertEqual(self.actual_links(fresh), self.expected_links(self.rows(case)))
 
-    def test_served_overlays_match_reviewed_links(self) -> None:
+    def test_served_correspondences_match_reviewed_links(self) -> None:
         for case in self.cases:
             with self.subTest(table=case['table']):
-                correspondence = load_prebaked_curated_correspondence(
+                correspondence = load_stored_curated_correspondence(
                     case['example'], case['fromOrdinal']
                 )
                 self.assertEqual(self.actual_links(correspondence), self.expected_links(self.rows(case)))
@@ -119,7 +119,7 @@ class ArtefactExpectedLinkTests(unittest.TestCase):
     def test_cfg_and_summary_match_the_reviewed_artefact_story(self) -> None:
         for case in self.cases:
             for dataset in (self.fresh, self.baked):
-                with self.subTest(table=case['table'], prebaked=dataset is self.baked):
+                with self.subTest(table=case['table'], model_records=dataset is self.baked):
                     timeline = dataset[case['example']]
                     before = timeline.state(case['fromOrdinal'])
                     after = timeline.state(case['toOrdinal'])
@@ -134,13 +134,13 @@ class ArtefactExpectedLinkTests(unittest.TestCase):
                     if dataset is self.fresh:
                         correspondence = compare_timeline_step(timeline, case['fromOrdinal'])
                     else:
-                        correspondence = load_prebaked_curated_correspondence(
+                        correspondence = load_stored_curated_correspondence(
                             case['example'], case['fromOrdinal']
                         )
                     summary = summarise_correspondence(
                         correspondence, before, after, step=timeline.steps[case['fromOrdinal']]
                     )
-                    text = ' '.join(item.text for item in summary.items)
+                    text = ' '.join(item.text for item in summary.claims)
                     claims = (
                         case.get('freshSummaryContains', case['summaryContains'])
                         if dataset is self.fresh
@@ -155,11 +155,11 @@ class ArtefactExpectedLinkTests(unittest.TestCase):
                                    and before.by_id[link.from_node_ids[0]].kind != 'Function']
                         self.assertTrue(matched)
                         self.assertTrue(all(link.confidence == 'approximate' for link in matched))
-                    for item in summary.items:
-                        self.assertTrue(item.link_indices or item.remark_indices)
+                    for item in summary.claims:
+                        self.assertTrue(item.link_indices or tuple(ref.remark_index for ref in item.remark_references))
                         self.assertTrue(all(0 <= index < len(correspondence.links) for index in item.link_indices))
                         self.assertTrue(all(0 <= index < len(timeline.steps[case['fromOrdinal']].remarks)
-                                            for index in item.remark_indices))
+                                            for index in tuple(ref.remark_index for ref in item.remark_references)))
 
 
 if __name__ == '__main__':

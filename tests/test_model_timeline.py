@@ -1,7 +1,7 @@
 import unittest
 from dataclasses import replace
 
-from src.backend.ingest import load_curated_timeline, load_prebaked_curated_timeline
+from src.backend.ingest import load_curated_timeline, load_curated_timeline_record
 from src.backend.model import (
     ModelValidationError,
     StepOrigin,
@@ -75,7 +75,7 @@ class OptimisationTimelineTests(unittest.TestCase):
     def test_prebaked_full_timeline_loads_without_reingestion(self) -> None:
         for example in ("score", "binary_search", "quick_sort"):
             with self.subTest(example=example):
-                timeline = load_prebaked_curated_timeline(example)
+                timeline = load_curated_timeline_record(example)
                 self.assertEqual(timeline.config_id, "teaching-pass-chain")
                 self.assertEqual(
                     [state.state_id for state in timeline.states],
@@ -103,7 +103,7 @@ class OptimisationTimelineTests(unittest.TestCase):
         for example in ("score", "binary_search", "quick_sort"):
             with self.subTest(example=example):
                 fresh = load_curated_timeline(example)
-                baked = load_prebaked_curated_timeline(example)
+                baked = load_curated_timeline_record(example)
                 self.assertEqual(serialise_timeline(fresh), serialise_timeline(baked))
 
     def test_invalid_step_provenance_is_rejected_at_load_boundary(self) -> None:

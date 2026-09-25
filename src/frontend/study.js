@@ -15,7 +15,7 @@
   const heading = text => `<h2 id="route-heading" tabindex="-1">${text}</h2>`;
   let content, store, draft = null, editingPre = false, errors = {}, loaded = false, loadError = false;
   let activeTask = null, clock = null, setupReady = false, stopConfirming = false, returnFocusToStop = false;
-  const answersFor = stage => stage.startsWith('T') ? draft.tasks[stage].answers : draft[stage];
+  const answersFor = section => section.startsWith('T') ? draft.tasks[section].answers : draft[section];
   const outcomeLabel = status => ({ completed: 'Completed', skipped: 'Skipped', could_not_work_out: 'Could not work this out', pending: 'In progress' })[status];
   const taskRoute = () => '/study/tasks/' + D.currentTask(draft);
   function leaveTask(route) {
@@ -114,9 +114,9 @@
     } else area.innerHTML = `<p role="status">${store.mode === 'memory' ? 'Memory only: keep this tab open. Refreshing loses your answers.' + (store.unreadable ? ' Any older saved copy could not be checked or removed.' : '') : draft ? 'Saved in this tab. You can refresh; keep the tab open until you submit.' : 'After consent, your answers are saved in this tab until submission. Keep the tab open.'}</p>`;
   }
   function available() { if (store.mode === 'local' || store.mode === 'memory') return true; screen.querySelector('#draft-status')?.focus(); return false; }
-  function fieldHtml(field, stage) {
-    const answer = answersFor(stage)[field.id], id = field.id.replaceAll('.', '-');
-    const locked = stage.startsWith('T') ? draft.tasks[stage].status !== 'pending' : stage === 'pre' && ((draft.preComplete && !editingPre) || (field.id === 'P13' && draft.p13Locked));
+  function fieldHtml(field, section) {
+    const answer = answersFor(section)[field.id], id = field.id.replaceAll('.', '-');
+    const locked = section.startsWith('T') ? draft.tasks[section].status !== 'pending' : section === 'pre' && ((draft.preComplete && !editingPre) || (field.id === 'P13' && draft.p13Locked));
     const label = `${field.id}. ${field.prompt}`;
     let control;
     if (['text', 'short_text'].includes(field.type)) control = `<label class="sr-only" for="answer-${id}">${esc(label)}</label><textarea id="answer-${id}" name="${field.id}" rows="3" aria-describedby="note-${id} error-${id}"${locked ? ' readonly' : ''}>${esc(answer.status === 'answered' ? answer.value : '')}</textarea>`;
@@ -128,12 +128,12 @@
         return `<label class="answer-option${o.status === 'not_applicable' ? ' not-applicable' : ''}" for="answer-${id}-${n}"><input id="answer-${id}-${n}" type="${field.type === 'multiple' ? 'checkbox' : 'radio'}" name="${field.id}" value="${o.value}" data-status="${o.status}"${selected ? ' checked' : ''}${locked ? ' disabled' : ''}${field.required ? ' required' : ''} aria-describedby="note-${id} error-${id}"><span>${field.type === 'rating' && o.status === 'answered' ? `<span class="rating-number">${o.value}</span>` : ''}${esc(o.label)}</span></label>`;
       }).join('')}</div>`;
     }
-    const note = locked ? (field.id === 'P13' ? 'Locked when the T0 orientation started; kept as your pre-exposure answer.' : stage.startsWith('T') ? 'Saved task answer; read-only.' : 'Saved answer. Use Edit background answers to correct it.') : ['text', 'short_text'].includes(field.type) ? `${field.required ? 'Required' : 'Optional'} · up to ${field.maxLength.toLocaleString()} characters.` : field.required ? 'Required.' : field.type === 'multiple' ? 'Optional · select all that apply.' : 'Optional.';
-    return `<fieldset class="survey-item" data-field="${field.id}"${D.visible(field, answersFor(stage)) ? '' : ' hidden'}><legend>${esc(label)}</legend><p id="note-${id}" class="form-note">${note}</p>${control}${field.inabilityLabel && !locked ? `<label class="answer-option"><input type="checkbox" name="${field.id}" data-inability="true"${answer.status === 'could_not_work_out' ? ' checked' : ''}>${esc(field.inabilityLabel)}</label>` : ''}${field.inabilityLabel && locked && answer.status === 'could_not_work_out' ? `<p>${esc(field.inabilityLabel)}</p>` : ''}<p id="error-${id}" class="field-error" role="alert"></p>${!locked && !['text', 'short_text'].includes(field.type) ? `<button type="button" class="clear-answer" data-clear="${field.id}" aria-label="Clear answer for ${field.id}">Clear answer</button>` : ''}</fieldset>`;
+    const note = locked ? (field.id === 'P13' ? 'Locked when the T0 orientation started; kept as your pre-exposure answer.' : section.startsWith('T') ? 'Saved task answer; read-only.' : 'Saved answer. Use Edit background answers to correct it.') : ['text', 'short_text'].includes(field.type) ? `${field.required ? 'Required' : 'Optional'} · up to ${field.maxLength.toLocaleString()} characters.` : field.required ? 'Required.' : field.type === 'multiple' ? 'Optional · select all that apply.' : 'Optional.';
+    return `<fieldset class="survey-item" data-field="${field.id}"${D.visible(field, answersFor(section)) ? '' : ' hidden'}><legend>${esc(label)}</legend><p id="note-${id}" class="form-note">${note}</p>${control}${field.inabilityLabel && !locked ? `<label class="answer-option"><input type="checkbox" name="${field.id}" data-inability="true"${answer.status === 'could_not_work_out' ? ' checked' : ''}>${esc(field.inabilityLabel)}</label>` : ''}${field.inabilityLabel && locked && answer.status === 'could_not_work_out' ? `<p>${esc(field.inabilityLabel)}</p>` : ''}<p id="error-${id}" class="field-error" role="alert"></p>${!locked && !['text', 'short_text'].includes(field.type) ? `<button type="button" class="clear-answer" data-clear="${field.id}" aria-label="Clear answer for ${field.id}">Clear answer</button>` : ''}</fieldset>`;
   }
-  function survey(stage) {
-    const sections = content[stage === 'pre' ? 'preSections' : 'postSections'];
-    return `<form id="survey-form" novalidate data-stage="${stage}"><p id="form-errors" role="alert" tabindex="-1"></p>${sections.map(s => `<section class="survey-section"><h3>${esc(s.title)}</h3>${s.intro ? `<p>${esc(s.intro)}</p>` : ''}${s.groups ? s.groups.map(g => `<h4>${esc(g.title)}</h4>${g.fields.map(id => fieldHtml(content.fields.find(f => f.id === id), stage)).join('')}`).join('') : s.fields.map(id => fieldHtml(content.fields.find(f => f.id === id), stage)).join('')}</section>`).join('')}<div class="screen-actions"><button type="submit" class="primary">${stage === 'post' ? 'Review responses' : editingPre ? 'Save background corrections' : draft.preComplete ? 'Return to tasks' : 'Save pre-survey and start T0'}</button>${stage === 'pre' && draft.preComplete && !editingPre ? button('edit-pre', 'Edit background answers') : ''}</div></form>`;
+  function survey(section) {
+    const sections = content[section === 'pre' ? 'preSections' : 'postSections'];
+    return `<form id="survey-form" novalidate data-stage="${section}"><p id="form-errors" role="alert" tabindex="-1"></p>${sections.map(s => `<section class="survey-section"><h3>${esc(s.title)}</h3>${s.intro ? `<p>${esc(s.intro)}</p>` : ''}${s.groups ? s.groups.map(g => `<h4>${esc(g.title)}</h4>${g.fields.map(id => fieldHtml(content.fields.find(f => f.id === id), section)).join('')}`).join('') : s.fields.map(id => fieldHtml(content.fields.find(f => f.id === id), section)).join('')}</section>`).join('')}<div class="screen-actions"><button type="submit" class="primary">${section === 'post' ? 'Review responses' : editingPre ? 'Save background corrections' : draft.preComplete ? 'Return to tasks' : 'Save pre-survey and start T0'}</button>${section === 'pre' && draft.preComplete && !editingPre ? button('edit-pre', 'Edit background answers') : ''}</div></form>`;
   }
   function informationSections(sections) {
     return sections.map(s => `<section><h3>${esc(s.title)}</h3>${s.blocks.map(b => b.kind === 'paragraph' ? `<p>${esc(b.text)}</p>` : `<${b.kind === 'ordered' ? 'ol' : 'ul'}>${b.items.map(i => `<li>${esc(i)}</li>`).join('')}</${b.kind === 'ordered' ? 'ol' : 'ul'}>`).join('')}</section>`).join('');
@@ -142,7 +142,7 @@
     return `<div class="participant-information">${informationSections(content.information.slice(0, -1))}</div><h3>Consent</h3><p>Please confirm each of the following before starting.</p><p>Your answers stay in this tab until you submit. You can stop and discard them before submission.</p>${content.fields.filter(f => f.id.startsWith('C')).map(f => `<label class="acknowledgement" for="${f.id}"><input id="${f.id}" type="checkbox"${draft ? ' checked disabled' : ''}>${esc(f.prompt)}</label>`).join('')}<p id="consent-error" role="alert"></p><div class="screen-actions">${button('start', draft ? 'Return to study' : 'Continue to pre-survey', true)}${!draft ? button('decline', 'Decline and exit') : ''}</div><div class="participant-information">${informationSections(content.information.slice(-1))}</div>`;
   }
   function review() {
-    return heading('Review responses') + (submission.issue ? `<p role="alert">${esc(submission.issue)}</p>` : '') + `<p><strong>Nothing has been submitted.</strong> Select Submit responses to save your consent, survey and task answers, outcomes, and active task durations. Your session is identified by a random participant code.</p><p>Once submission begins, answers are locked. If the connection fails, keep this tab open and retry. A receipt confirms that your responses were saved.</p><p>You can correct background answers and post-survey answers below. P13 stays locked.</p><div class="screen-actions">${button('edit-pre', 'Edit background answers')}<a href="#/study/post">Edit post-survey answers</a>${content.submissionEnabled ? button('submit-responses', 'Submit responses', true) : '<button disabled>Participant collection disabled</button>'}</div>${taskReview()}${['pre', 'post'].map(stage => `<details class="response-review"><summary>${stage === 'pre' ? 'Pre-survey' : 'Post-survey'} answers</summary><dl>${D.fieldsFor(content, stage).filter(f => D.visible(f, draft[stage])).map(f => { const a = draft[stage][f.id]; let value = 'Unanswered'; if (a.status === 'not_applicable') value = f.notApplicableLabel || 'Not applicable'; if (a.status === 'answered') value = f.type === 'text' ? a.value : (Array.isArray(a.value) ? a.value : [a.value]).map(v => (f.options || content.scales[f.scale]).find(o => o.value === v).label).join('; '); return `<dt>${esc(f.id + '. ' + f.prompt)}</dt><dd>${esc(value)}</dd>`; }).join('')}</dl></details>`).join('')}`;
+    return heading('Review responses') + (submission.issue ? `<p role="alert">${esc(submission.issue)}</p>` : '') + `<p><strong>Nothing has been submitted.</strong> Select Submit responses to save your consent, survey and task answers, outcomes, and active task durations. Your session is identified by a random participant code.</p><p>Once submission begins, answers are locked. If the connection fails, keep this tab open and retry. A receipt confirms that your responses were saved.</p><p>You can correct background answers and post-survey answers below. P13 stays locked.</p><div class="screen-actions">${button('edit-pre', 'Edit background answers')}<a href="#/study/post">Edit post-survey answers</a>${content.submissionEnabled ? button('submit-responses', 'Submit responses', true) : '<button disabled>Participant collection disabled</button>'}</div>${taskReview()}${['pre', 'post'].map(section => `<details class="response-review"><summary>${section === 'pre' ? 'Pre-survey' : 'Post-survey'} answers</summary><dl>${D.fieldsFor(content, section).filter(f => D.visible(f, draft[section])).map(f => { const a = draft[section][f.id]; let value = 'Unanswered'; if (a.status === 'not_applicable') value = f.notApplicableLabel || 'Not applicable'; if (a.status === 'answered') value = f.type === 'text' ? a.value : (Array.isArray(a.value) ? a.value : [a.value]).map(v => (f.options || content.scales[f.scale]).find(o => o.value === v).label).join('; '); return `<dt>${esc(f.id + '. ' + f.prompt)}</dt><dd>${esc(value)}</dd>`; }).join('')}</dl></details>`).join('')}`;
   }
   function submissionHtml() {
     const state = submission.state;
@@ -203,28 +203,28 @@
   function updateAnswer(event) {
     const input = event.target, form = input.closest('#survey-form');
     if (!form || !draft || !input.name) return;
-    const stage = form.dataset.stage, field = content.fields.find(f => f.id === input.name);
-    if (!field || (stage.startsWith('T') && (draft.tasks[stage].status !== 'pending' || !draft.tasks[stage].started || draft.tasks[stage].paused)) || (stage === 'pre' && ((draft.preComplete && !editingPre) || (field.id === 'P13' && draft.p13Locked)))) return;
-    if (input.dataset.inability) { answersFor(stage)[field.id] = input.checked ? { status: 'could_not_work_out', value: null } : D.blank(); input.closest('fieldset').querySelector('textarea').value = ''; }
-    else if (['text', 'short_text'].includes(field.type)) answersFor(stage)[field.id] = input.value.trim() ? { status: 'answered', value: input.value } : D.blank();
+    const section = form.dataset.stage, field = content.fields.find(f => f.id === input.name);
+    if (!field || (section.startsWith('T') && (draft.tasks[section].status !== 'pending' || !draft.tasks[section].started || draft.tasks[section].paused)) || (section === 'pre' && ((draft.preComplete && !editingPre) || (field.id === 'P13' && draft.p13Locked)))) return;
+    if (input.dataset.inability) { answersFor(section)[field.id] = input.checked ? { status: 'could_not_work_out', value: null } : D.blank(); input.closest('fieldset').querySelector('textarea').value = ''; }
+    else if (['text', 'short_text'].includes(field.type)) answersFor(section)[field.id] = input.value.trim() ? { status: 'answered', value: input.value } : D.blank();
     else if (event.type === 'change') {
       if (field.type === 'multiple') {
         const inputs = [...input.closest('fieldset').querySelectorAll('input')];
         if (input.checked) for (const other of inputs) if (other !== input && (Number(input.value) === field.exclusiveValue || Number(other.value) === field.exclusiveValue)) other.checked = false;
         const values = inputs.filter(e => e.checked).map(e => Number(e.value));
-        answersFor(stage)[field.id] = values.length ? { status: 'answered', value: values } : D.blank();
-      } else answersFor(stage)[field.id] = { status: input.dataset.status, value: input.dataset.status === 'answered' ? Number(input.value) : null };
+        answersFor(section)[field.id] = values.length ? { status: 'answered', value: values } : D.blank();
+      } else answersFor(section)[field.id] = { status: input.dataset.status, value: input.dataset.status === 'answered' ? Number(input.value) : null };
     } else return;
     if (field.inabilityLabel && !input.dataset.inability) input.closest('fieldset').querySelector('[data-inability]').checked = false;
-    for (const dependent of D.fieldsFor(content, stage).filter(f => f.condition)) {
-      const shown = D.visible(dependent, draft[stage]);
+    for (const dependent of D.fieldsFor(content, section).filter(f => f.condition)) {
+      const shown = D.visible(dependent, draft[section]);
       const group = screen.querySelector(`[data-field="${dependent.id}"]`);
       group.hidden = !shown;
-      if (!shown) { draft[stage][dependent.id] = D.blank(); group.querySelector('textarea').value = ''; }
+      if (!shown) { draft[section][dependent.id] = D.blank(); group.querySelector('textarea').value = ''; }
     }
-    if (stage === 'pre' && editingPre) draft.preComplete = !Object.keys(D.validate(content, stage, draft.pre, true)).length;
-    if (stage === 'post') draft.reviewReady = false;
-    const current = D.validate(content, stage, answersFor(stage));
+    if (section === 'pre' && editingPre) draft.preComplete = !Object.keys(D.validate(content, section, draft.pre, true)).length;
+    if (section === 'post') draft.reviewReady = false;
+    const current = D.validate(content, section, answersFor(section));
     errors = Object.fromEntries(Object.entries(current).filter(([id]) => id === field.id || errors[id]));
     showErrors(); save();
   }
@@ -232,13 +232,13 @@
   screen.addEventListener('submit', event => {
     event.preventDefault();
     if (!draft || !available()) return;
-    const stage = event.target.dataset.stage;
-    if (stage.startsWith('T')) { finishTask(stage, 'completed'); return; }
-    errors = D.validate(content, stage, draft[stage], true);
+    const section = event.target.dataset.stage;
+    if (section.startsWith('T')) { finishTask(section, 'completed'); return; }
+    errors = D.validate(content, section, draft[section], true);
     if (Object.keys(errors).length) { showErrors(); screen.querySelector('[aria-invalid="true"]')?.focus(); return; }
-    if (stage === 'pre') { draft.preComplete = true; editingPre = false; }
+    if (section === 'pre') { draft.preComplete = true; editingPre = false; }
     else draft.reviewReady = true;
-    save(); if (available()) go(stage === 'pre' ? D.tasksComplete(draft) ? '/study/post' : taskRoute() : '/study/complete');
+    save(); if (available()) go(section === 'pre' ? D.tasksComplete(draft) ? '/study/post' : taskRoute() : '/study/complete');
   });
   async function load() {
     loaded = false; loadError = false; render();
@@ -269,17 +269,17 @@
     if (clear && draft) {
       const group = event.target.closest('fieldset');
       group.querySelectorAll('input').forEach(e => { e.checked = false; });
-      const stage = event.target.closest('form').dataset.stage;
-      if (stage.startsWith('T') && (draft.tasks[stage].status !== 'pending' || draft.tasks[stage].paused || !draft.tasks[stage].started)) return;
-      answersFor(stage)[clear] = D.blank();
+      const section = event.target.closest('form').dataset.stage;
+      if (section.startsWith('T') && (draft.tasks[section].status !== 'pending' || draft.tasks[section].paused || !draft.tasks[section].started)) return;
+      answersFor(section)[clear] = D.blank();
       // Reuse dependency clearing and validation without manufacturing a choice.
       const field = content.fields.find(f => f.id === clear);
       for (const dependent of content.fields.filter(f => f.condition?.field === field.id)) {
-        draft[stage][dependent.id] = D.blank();
+        draft[section][dependent.id] = D.blank();
         const g = screen.querySelector(`[data-field="${dependent.id}"]`); g.hidden = true; g.querySelector('textarea').value = '';
       }
-      if (stage === 'pre' && editingPre) draft.preComplete = !Object.keys(D.validate(content, stage, draft.pre, true)).length;
-      if (stage === 'post') draft.reviewReady = false;
+      if (section === 'pre' && editingPre) draft.preComplete = !Object.keys(D.validate(content, section, draft.pre, true)).length;
+      if (section === 'post') draft.reviewReady = false;
       delete errors[clear]; showErrors(); save(); return;
     }
     const action = event.target.closest('[data-action]')?.dataset.action;

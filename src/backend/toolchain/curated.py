@@ -164,19 +164,19 @@ def manifest_path(example: str) -> Path:
 
 
 def model_timeline_path(example: str) -> Path:
-    """Resolve the pre-baked full-pass model timeline for a curated example."""
+    """Resolve the curated optimisation timeline record for a curated example."""
 
     _require_example(example)
     path = artefact_dir(example) / "model" / "timeline.json"
     if not path.exists():
         raise ToolchainError(
-            f"Missing pre-baked full-pass timeline for example '{example}': {path}"
+            f"Missing curated timeline record for example '{example}': {path}"
         )
     return path
 
 
 def model_source_path(example: str, *, must_exist: bool = True) -> Path:
-    """Resolve the pre-baked, checksum-verified source record for a curated example.
+    """Resolve the checksum-verified curated source record for a curated example.
 
     The bake passes ``must_exist=False`` to learn where to write the record.
     """
@@ -185,7 +185,7 @@ def model_source_path(example: str, *, must_exist: bool = True) -> Path:
     path = artefact_dir(example) / "model" / "source.json"
     if must_exist and not path.exists():
         raise ToolchainError(
-            f"Missing pre-baked source record for example '{example}': {path}"
+            f"Missing curated source record for example '{example}': {path}"
         )
     return path
 
@@ -204,7 +204,7 @@ def model_correspondence_path(example: str, from_ordinal: int) -> Path:
     )
     if not path.exists():
         raise ToolchainError(
-            f"Missing pre-baked adjacent correspondence for example '{example}' "
+            f"Missing stored adjacent correspondence for example '{example}' "
             f"from ordinal {from_ordinal}: {path}"
         )
     return path

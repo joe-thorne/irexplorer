@@ -88,7 +88,7 @@ select { background: #fff; border: 1px solid #9fb3c8; border-radius: .35rem; col
 @media (max-width: 900px) { .panel-grid { grid-template-columns: 1fr; } }
 @media (max-width: 700px) { .site-header, .viewer-heading { align-items: stretch; flex-direction: column; } .header-note { text-align: left; } .viewer-controls { justify-content: start; } .viewer-controls label, .viewer-controls select { max-width: none; width: 100%; } .viewer-content { min-height: 18rem; } }
 
-/* Route shell. Code panes retain their independent state and scrolling. */
+/* Route shell. Code panels retain their independent state and scrolling. */
 [hidden] { display: none !important; }
 a { color: var(--accent); }
 a:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visible,
