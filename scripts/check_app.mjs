@@ -1,15 +1,16 @@
-// Application regression. Node 22+ and an isolated headless Chrome CDP on :9239.
+// Application regression. Node 22+ and an isolated headless Chrome CDP.
 // Optional IREXPLORER_CHECK_OUTPUT directory for screenshots and JSON; otherwise stdout only.
 import { writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
 const base = process.env.IREXPLORER_ORIGIN || 'http://localhost:8000';
 const captures = process.env.IREXPLORER_CHECK_OUTPUT;
+const cdp = `http://127.0.0.1:${process.env.IREXPLORER_CDP_PORT || '9239'}`;
 if (captures) await mkdir(captures, { recursive: true });
 const release = await (await fetch(base + '/api/release')).json();
 
 // A new tab has no opener and no inherited session draft, making reruns independent.
-const page = await (await fetch('http://127.0.0.1:9239/json/new?about:blank', { method: 'PUT' })).json();
+const page = await (await fetch(`${cdp}/json/new?about:blank`, { method: 'PUT' })).json();
 const ws = new WebSocket(page.webSocketDebuggerUrl);
 await new Promise(resolve => ws.addEventListener('open', resolve, { once: true }));
 let sequence = 0;
@@ -54,7 +55,7 @@ async function select(selector, selected) {
   await value(`(() => { const e = document.querySelector(${JSON.stringify(selector)}); e.value = ${JSON.stringify(selected)}; e.dispatchEvent(new Event('change', { bubbles: true })); })()`);
 }
 async function task(id) {
-  await until(`document.querySelector('#survey-form')?.dataset.stage === '${id}'`);
+  await until(`document.querySelector('#survey-form')?.dataset.section === '${id}'`);
   await check(`${id} requires a fresh source choice`, `document.querySelector('#example-select').value === '' && !window.StudyWorkspace.ready`);
   const setup = {
     T0: ['score', '0', '1', 'ir', 'ir'], T1: ['score', '0', '12', 'ir', 'ir'],
@@ -66,7 +67,7 @@ async function task(id) {
   await until(`!document.querySelector('#workspace').hidden && !document.querySelector('#example-select').disabled`);
   await check(`${id} requires explicit states and views`, `['left', 'right'].every(side => document.querySelector('#' + side + '-state').value === '' && document.querySelector('#' + side + '-view').value === '')`);
   for (const [selector, selected] of [['#left-state', setup[1]], ['#right-state', setup[2]], ['#left-view', setup[3]], ['#right-view', setup[4]]]) await select(selector, selected);
-  await until(`document.querySelector('#survey-form')?.dataset.stage === '${id}' && !document.querySelector('.task-inputs').disabled`);
+  await until(`document.querySelector('#survey-form')?.dataset.section === '${id}' && !document.querySelector('.task-inputs').disabled`);
   if (id === 'T5') await select('#function-select', 'partition');
   await check(`${id} keeps task goal focused`, `location.hash === '#/study/tasks/${id}' && document.activeElement.id === 'route-heading'`);
 }
@@ -223,7 +224,7 @@ try {
   await click('#survey-form button[type="submit"]');
   for (const id of ['T1', 'T2', 'T3', 'T4', 'T5', 'T6']) {
     if (id === 'T1' || id === 'T2') {
-      await until(`document.querySelector('#survey-form')?.dataset.stage === '${id}'`);
+      await until(`document.querySelector('#survey-form')?.dataset.section === '${id}'`);
       await check(`${id} permits an outcome before setup`, `!document.querySelector('[data-action="skip-task"]').disabled && document.querySelector('.task-complete').disabled && !window.StudyWorkspace.ready`);
       await click(id === 'T1' ? '[data-action="skip-task"]' : '[data-action="unable-task"]');
       continue;
@@ -232,16 +233,16 @@ try {
     if (id === 'T4') await snap('task-cfg.png');
     await click('[data-action="skip-task"]');
   }
-  await screen('Post-survey'); await choose('Q1', 'na'); await fill('Q14', 'Container test post response'); await click('#survey-form button[type="submit"]'); await screen('Review responses');
+  await screen('Post-survey'); await choose('Q1', 'na'); await fill('Q14', 'Container test post answer'); await click('#survey-form button[type="submit"]'); await screen('Review answers');
   await check('Review provides an explicit final submission action', `!!document.querySelector('[data-action="submit-responses"]')`);
   await snap('study-review.png');
   await value(`window.testFetch = window.fetch; window.fetch = async (...args) => { const response = await window.testFetch(...args); if (args[0] === '/api/study/submissions') throw Error('Synthetic lost acknowledgement'); return response; };`);
   await click('[data-action="submit-responses"]'); await screen('Receipt not yet confirmed');
   await check('Uncertain submit prevents further answer edits', `!document.querySelector('#survey-form') && document.querySelector('#study-screen').textContent.includes('may already exist')`);
-  if (captures) await writeFile(join(captures, 'pending.json'), await value(`sessionStorage.getItem('irexplorer.study.submission.e6')`));
+  if (captures) await writeFile(join(captures, 'pending.json'), await value(`sessionStorage.getItem('irexplorer.submission.v1')`));
   await send('Page.reload'); await screen('Receipt not yet confirmed');
-  await click('[data-action="retry-submit"]'); await screen('Responses received');
-  await check('Retry produces a durable receipt and removes answer draft', `sessionStorage.getItem('irexplorer.study.e4') === null && JSON.parse(sessionStorage.getItem('irexplorer.study.submission.e6')).kind === 'receipt'`);
+  await click('[data-action="retry-submit"]'); await screen('Submission received');
+  await check('Retry produces a durable receipt and removes answer draft', `sessionStorage.getItem('irexplorer.study.v0.5') === null && JSON.parse(sessionStorage.getItem('irexplorer.submission.v1')).kind === 'receipt'`);
 
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: false });
   await send('Emulation.setPageScaleFactor', { pageScaleFactor: 2 });
@@ -249,14 +250,14 @@ try {
   await send('Emulation.setPageScaleFactor', { pageScaleFactor: 1 }); await snap('receipt-narrow.png');
 
   const newTarget = await send('Target.createTarget', { url: 'about:blank' });
-  const second = (await (await fetch('http://127.0.0.1:9239/json/list')).json()).find(item => item.id === newTarget.targetId);
+  const second = (await (await fetch(`${cdp}/json/list`)).json()).find(item => item.id === newTarget.targetId);
   const other = new WebSocket(second.webSocketDebuggerUrl); await new Promise(resolve => other.addEventListener('open', resolve, { once: true }));
   let otherId = 0; const otherPending = new Map();
   other.addEventListener('message', ({ data }) => { const message = JSON.parse(data); if (otherPending.has(message.id)) { const resolve = otherPending.get(message.id); otherPending.delete(message.id); resolve(message.result); } });
   const otherSend = (method, params = {}) => new Promise(resolve => { const id = ++otherId; otherPending.set(id, resolve); other.send(JSON.stringify({ id, method, params })); });
   await otherSend('Runtime.enable'); await otherSend('Page.enable'); await otherSend('Page.navigate', { url: `${base}/#/study` });
   for (let attempt = 0; attempt < 100; attempt += 1) { const result = await otherSend('Runtime.evaluate', { expression: `document.querySelector('#route-heading')?.textContent`, returnByValue: true }); if (result.result.value === 'Information and consent') break; await new Promise(resolve => setTimeout(resolve, 75)); }
-  const isolated = await otherSend('Runtime.evaluate', { expression: `!sessionStorage.getItem('irexplorer.study.e4') && !document.querySelector('[data-action="new-study"]')`, returnByValue: true });
+  const isolated = await otherSend('Runtime.evaluate', { expression: `!sessionStorage.getItem('irexplorer.study.v0.5') && !document.querySelector('[data-action="new-study"]')`, returnByValue: true });
   if (!isolated.result.value) throw Error('Failed: Independent browser tab does not start without the first tab’s draft.');
   checks.push('Independent browser tab has no first-session draft or receipt'); other.close(); await send('Target.closeTarget', { targetId: newTarget.targetId });
   await route('/explore'); await select('#example-select', 'score');
@@ -272,5 +273,5 @@ try {
   console.log(JSON.stringify(result));
 } finally {
   ws.close();
-  await fetch(`http://127.0.0.1:9239/json/close/${page.id}`);
+  await fetch(`${cdp}/json/close/${page.id}`);
 }

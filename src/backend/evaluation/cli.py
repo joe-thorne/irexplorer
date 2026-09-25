@@ -19,11 +19,18 @@ def private_path(path):
 
 def open_db(path):
     db = sqlite3.connect(f'{Path(path).resolve().as_uri()}?mode=ro', uri=True)
-    if (db.execute('PRAGMA user_version').fetchone()[0] != 1
-            or db.execute('PRAGMA integrity_check').fetchone()[0] != 'ok'):
+    version = db.execute('PRAGMA user_version').fetchone()[0]
+    table = 'responses' if version == 1 else 'submissions' if version == 2 else None
+    tables = {row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+    if (table not in tables or db.execute('PRAGMA integrity_check').fetchone()[0] != 'ok'):
         db.close()
         raise ValueError('Unsupported or damaged study database')
     return db
+
+
+def submission_storage_columns(db):
+    return ('responses', 'payload') if db.execute('PRAGMA user_version').fetchone()[0] == 1 else (
+        'submissions', 'submission_json')
 
 
 def backup(source, destination):
@@ -59,8 +66,10 @@ def export(source, directory):
     directory = private_path(Path(directory) / 'placeholder').parent
     db = open_db(source)
     try:
-        records = [{'response': json.loads(p), 'receipt': json.loads(r), 'release': json.loads(v)}
-                   for p, r, v in db.execute('SELECT payload, receipt, release FROM responses ORDER BY submission_id')]
+        table, submission_json = submission_storage_columns(db)
+        records = [{'submission': json.loads(p), 'receipt': json.loads(r), 'release': json.loads(v)}
+                   for p, r, v in db.execute(
+                       f'SELECT {submission_json}, receipt, release FROM {table} ORDER BY submission_id')]
     finally:
         db.close()
     def write(name, value):
@@ -68,13 +77,14 @@ def export(source, directory):
         with open(path, 'x', encoding='utf-8') as f:
             os.chmod(path, 0o600)
             json.dump(value, f, ensure_ascii=False, indent=2)
-    write('responses.json', records)
+    write('submissions.json', records)
     content = participant_content()
     write('codebook.json', {
         'schemaVersion': 2, 'fields': content['fields'], 'scales': content['scales'],
         'versions': {k: content[k] for k in ('studyVersion', 'instrumentVersion', 'contentVersion')},
         'csv': (
-            'Long format; value is the raw numeric code, JSON array, or text. Empty value with status is '
+            'Long format uses section to identify consent, survey, or task. Value is the raw numeric code, '
+            'JSON array, or text. Empty value with status is '
             'missing, never zero. Formula-like strings have a leading apostrophe; JSON preserves original '
             'text.'
         ),
@@ -115,14 +125,14 @@ def export(source, directory):
     })
     columns = ['participantCode', 'submissionId', 'receiptId', 'studyVersion', 'contentVersion', 'instrumentVersion',
                'consentVersion', 'schemaVersion', 'canonicalVersion', 'mode', 'appRevision', 'artefactSha256',
-               'stage', 'itemId', 'status', 'value', 'durationMs', 'interrupted', 'setupReached']
-    path = directory / 'responses.csv'
+               'section', 'itemId', 'status', 'value', 'durationMs', 'interrupted', 'setupReached']
+    path = directory / 'submissions.csv'
     with open(path, 'x', encoding='utf-8', newline='') as f:
         os.chmod(path, 0o600)
         writer = csv.DictWriter(f, fieldnames=columns)
         writer.writeheader()
         for record in records:
-            p = record['response']
+            p = record['submission']
             base = {k: p[k] for k in
                     ('participantCode', 'submissionId', 'studyVersion', 'contentVersion', 'instrumentVersion')}
             base['consentVersion'] = p['consent']['version']
@@ -131,15 +141,15 @@ def export(source, directory):
             def row(**values):
                 writer.writerow({k: safe_cell(v) for k, v in {**base, **values}.items()})  # noqa: B023 - called only within this iteration
             for key, value in p['consent']['acknowledgements'].items():
-                row(stage='consent', itemId=key, status='acknowledged', value=value)
-            for stage in ('pre', 'post'):
-                for key, answer in p[stage].items():
-                    row(stage=stage, itemId=key, **answer)
+                row(section='consent', itemId=key, status='acknowledged', value=value)
+            for section in ('pre', 'post'):
+                for key, answer in p[section].items():
+                    row(section=section, itemId=key, **answer)
             for t in p['tasks']:
-                row(stage=t['id'], itemId=t['id'], status=t['status'], durationMs=t['durationMs'],
+                row(section=t['id'], itemId=t['id'], status=t['status'], durationMs=t['durationMs'],
                     interrupted=t['interrupted'], setupReached=t.get('setupReached'))
                 for key, answer in t['answers'].items():
-                    row(stage=t['id'], itemId=key, **answer)
+                    row(section=t['id'], itemId=key, **answer)
     return len(records)
 
 
@@ -173,9 +183,10 @@ def main():
             try:
                 db.execute('PRAGMA secure_delete=ON')
                 with db:
-                    rows = db.execute('SELECT submission_id, payload FROM responses').fetchall()
+                    table, submission_json = submission_storage_columns(db)
+                    rows = db.execute(f'SELECT submission_id, {submission_json} FROM {table}').fetchall()
                     ids = [(sid,) for sid, p in rows if json.loads(p)['participantCode'] == args.participant_code]
-                    db.executemany('DELETE FROM responses WHERE submission_id=?', ids)
+                    db.executemany(f'DELETE FROM {table} WHERE submission_id=?', ids)
                 db.execute('VACUUM')
             finally:
                 db.close()

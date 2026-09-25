@@ -87,14 +87,15 @@ class EvaluationContentTests(unittest.TestCase):
 
     def test_public_content_is_preview_only_and_participant_only(self):
         with tempfile.TemporaryDirectory() as directory, TestClient(create_app(
-            study_config=Config(Path(directory), mode='preview')
+            study_config=Config(Path(directory), collection_mode='preview')
         )) as client:
             response = client.get('/api/study/content')
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.headers['cache-control'], 'no-store')
             content = response.json()
-            self.assertEqual(content, {**participant_content(), 'submissionEnabled': True})
-            self.assertEqual(content['mode'], 'preview')
+            self.assertEqual(content, {**participant_content(), 'collectionMode': 'preview',
+                                       'submissionEnabled': True})
+            self.assertEqual(content['collectionMode'], 'preview')
             self.assertTrue(content['submissionEnabled'])
             self.assertEqual(len(content['fields']), 60)
             allowed = {'id', 'prompt', 'type', 'required', 'options', 'scale', 'notApplicableLabel', 'maxLength',

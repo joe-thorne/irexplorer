@@ -4,7 +4,7 @@ ARG APP_VERSION=0.1.0
 LABEL org.opencontainers.image.title="irexplorer" \
       org.opencontainers.image.version="${APP_VERSION}"
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
-    IREXPLORER_STUDY_DIR=/data IREXPLORER_STUDY_MODE=local \
+    IREXPLORER_STUDY_DIR=/data IREXPLORER_COLLECTION_MODE=local \
     IREXPLORER_STUDY_ORIGIN=http://localhost:8000
 WORKDIR /opt/irexplorer
 COPY src/backend/requirements.lock /tmp/requirements.lock

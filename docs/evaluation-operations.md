@@ -4,28 +4,28 @@ The local container stores assessment sessions separately from compiler queries.
 
 | Setting | Container behaviour |
 |---|---|
-| `IREXPLORER_STUDY_MODE` | `local`; `preview` is for synthetic testing; `pilot` and `live` remain disabled pending separate approval |
+| `IREXPLORER_COLLECTION_MODE` | `local`; `preview` is for synthetic testing; `pilot` and `live` remain disabled pending separate approval |
 | `IREXPLORER_STUDY_DIR` | `/data`, backed by the named `study-data` volume; each mode has its own database |
 | `IREXPLORER_STUDY_ORIGIN` | `http://localhost:8000`; the exact origin is required for submission |
 | Application revision | Baked version plus source fingerprint, also exposed by `/api/release`; recorded by the server on submission |
 
-SQLite schema and canonicalisation remain version 1. Writes are transactional, duplicate retries return the original receipt, and conflicting reuse is rejected. Server acknowledgement follows commit. Directories use mode 0700 and database files 0600. Local collection starts on first submission. Application changes do not rewrite existing records or their release metadata.
+The submission store is `/data/<collection-mode>/submissions.sqlite3`. SQLite schema version 2 stores rows in `submissions`, with submitted JSON in `submission_json`; first use moves a legacy `responses.sqlite3` file into place and migrates a version-1 `responses` table without rewriting submitted answers, receipts, or release metadata. Local and preview stores migrate independently. Version-1 backups remain readable and can be restored; opening a restored version-1 store performs the same migration. Canonicalisation remains version 1 and the submitted JSON schema remains version 2. Writes are transactional, duplicate retries return the original receipt, and conflicting reuse is rejected. Server acknowledgement follows commit. Directories use mode 0700 and database files 0600. Local collection starts on first submission. Application changes do not rewrite existing records or their release metadata.
 
 The image binds Uvicorn inside the container, while Compose publishes only the Mac's localhost port. Access logging is disabled. This local baseline does not configure hosted infrastructure or amend the study instruments.
 
 ## Host Python configuration
 
-The Python runner defaults to origin `http://127.0.0.1:8000` and mode `preview`. Set `IREXPLORER_STUDY_DIR` to an absolute writable directory outside the repository to choose storage explicitly. Set `IREXPLORER_STUDY_MODE=local` and `IREXPLORER_STUDY_ORIGIN=http://127.0.0.1:8000` for a host local run. These environment variables apply to the process at startup. Run the CLI below with `.venv/bin/python -m src.backend.evaluation.cli` and the corresponding database path when using host Python.
+The Python runner defaults to origin `http://127.0.0.1:8000` and collection mode `preview`. Set `IREXPLORER_STUDY_DIR` to an absolute writable directory outside the repository to choose storage explicitly. Set `IREXPLORER_COLLECTION_MODE=local` and `IREXPLORER_STUDY_ORIGIN=http://127.0.0.1:8000` for a host local run. The retired `IREXPLORER_STUDY_MODE` variable causes a startup error that names `IREXPLORER_COLLECTION_MODE`. These environment variables apply to the process at startup. Run the CLI below with `.venv/bin/python -m src.backend.evaluation.cli` and the corresponding database path when using host Python.
 
 ## Export and codebook
 
 Run commands locally as the researcher; no HTTP export/list endpoint exists. Use a fresh output directory, outside the repositories:
 
 ```sh
-docker compose exec app python -m src.backend.evaluation.cli export /data/local/responses.sqlite3 /data/my-export
+docker compose exec app python -m src.backend.evaluation.cli export /data/local/submissions.sqlite3 /data/my-export
 ```
 
-`responses.json` preserves raw strings, ratings, non-answer statuses, consent, ordered tasks, receipts, and release metadata. `responses.csv` is UTF-8 long format: participant/submission/receipt IDs, study/content/instrument/consent versions, server release metadata, `stage` (the study section), item ID, status, raw value, duration, interruption flag, and setupReached. Task summary rows carry outcomes/time; item rows retain partial answers separately. Null is an empty value with an explicit status. Multi-choice codes are JSON arrays. `codebook.json` includes all source-backed field IDs/options/scales and the analysis/timing rules.
+`submissions.json` preserves submitted JSON answers and schema version, receipts, and release metadata. `submissions.csv` is UTF-8 long format: participant/submission/receipt IDs, study/content/instrument/consent versions, server release metadata, `section` (consent, pre-survey, post-survey, or task), item ID, status, raw value, duration, interruption flag, and setupReached. Task summary rows carry outcomes/time; item rows retain partial answers separately. Null is an empty value with an explicit status. Multi-choice codes are JSON arrays. `codebook.json` uses the same `section` term and includes all source-backed field IDs/options/scales and the analysis/timing rules.
 
 CSV text beginning with formula operators after whitespace, or tab/line-break prefixes, receives a leading apostrophe. JSON preserves the original text; do not strip that CSV protection when opening free text in a spreadsheet. CSV quoting preserves commas, quotes, and multiline Unicode text. Raw ratings are never reverse-scored during collection/export. For the current v0.5 instrument, a later, separate analysis applies `6 - value` only to answered Q3; Q8 is multiple choice and Q10 is positive. The older Q3/Q8/Q10 reversal applies only to v0.1; retain not-applicable/unanswered counts and P13/Q14 pairing. Keep researcher coding and assistance notes separate, joined by participant code and item/task ID. P3 measures completed/current course exposure together. Report background flags non-exclusively, including overlap and unknown where optional data are missing.
 
@@ -34,7 +34,7 @@ Post-setup active durations include visible reading, workspace exploration, and 
 ## Backup, restore, withdrawal, and retention
 
 ```sh
-docker compose exec app python -m src.backend.evaluation.cli backup /data/local/responses.sqlite3 /data/my-backup.sqlite3
+docker compose exec app python -m src.backend.evaluation.cli backup /data/local/submissions.sqlite3 /data/my-backup.sqlite3
 docker compose stop app
 docker compose run --rm --no-deps app python -m src.backend.evaluation.cli restore /data/my-backup.sqlite3 /data/my-restored.sqlite3
 ```
@@ -52,7 +52,7 @@ The application runner disables Uvicorn access logs. Study errors are controlled
 
 ## Failure and receipt behaviour
 
-Only Submit responses sends answers. Before it, Stop/discard removes local drafts. Before a request, the browser saves a frozen submission and a new cryptographic submission UUID in a separate tab-scoped recovery record. It does not send on unload. A first successful commit returns 201; an identical retry returns 200 with the original receipt; conflicting reuse returns 409 without stored answers. Transport failure/timeouts retain the exact submission, including ID and rounded durations. In-flight and uncertain states prevent edits and discard/reset claims. Refresh restores retry state; closing the tab is not a supported recovery workflow.
+Only Submit answers sends a submission. Before it, Stop/discard removes local drafts. Before a request, the browser saves a frozen submission and a new cryptographic submission UUID in a separate tab-scoped recovery record. It does not send on unload. A first successful commit returns 201; an identical retry returns 200 with the original receipt; conflicting reuse returns 409 without stored answers. Transport failure/timeouts retain the exact submission, including ID and rounded durations. In-flight and uncertain states prevent edits and discard/reset claims. Refresh restores retry state; closing the tab is not a supported recovery workflow.
 
 An acknowledged receipt replaces the frozen submission, then the original answer draft is removed. Failure in either cleanup step stays visible and offers retry; success is not falsely described as local erasure. An explicitly selected memory-only participant journey can submit but cannot promise refresh recovery, and unavailable storage can require cleanup retry. Keep the tab and receipt code. Corrupt/unreadable submission recovery blocks normal progression and offers recovery retry or explicitly acknowledged memory-only continuation; a previous server record may exist.
 
@@ -66,10 +66,10 @@ This is a future, human-approved release step; it does not enable collection in 
 @property
 def enabled(self):
     # Local assessment and synthetic preview stores stay separate from research data.
-    return self.mode in ('local', 'preview', 'live')
+    return self.collection_mode in ('local', 'preview', 'live')
 ```
 
-Do not apply that change to a development checkout or to a service with an HTTP, missing, or non-canonical origin. The live systemd environment must set `IREXPLORER_STUDY_MODE=live`, `IREXPLORER_STUDY_ORIGIN=https://<canonical-host>` and `IREXPLORER_STUDY_DIR=/var/lib/irexplorer`; deploy a non-development, immutable release whose `/api/release` fingerprint is recorded. The exact deployment and host checks are in [Prepare for live evaluation](../../deploy/uq-webproject/LIVE-EVALUATION.md), not in this local-collection guide.
+Do not apply that change to a development checkout or to a service with an HTTP, missing, or non-canonical origin. The live systemd environment must set `IREXPLORER_COLLECTION_MODE=live`, `IREXPLORER_STUDY_ORIGIN=https://<canonical-host>` and `IREXPLORER_STUDY_DIR=/var/lib/irexplorer`; deploy a non-development, immutable release whose `/api/release` fingerprint is recorded. The exact deployment and host checks are in [Prepare for live evaluation](../../deploy/uq-webproject/LIVE-EVALUATION.md), not in this local-collection guide.
 
 Before changing `Config.enabled`, record D3 (withdrawal process and participant code), D4 (private storage, access, backups, retention and deletion), and D5 (all participant-facing, ethics and infrastructure-disclosure confirmations) in the thesis instruments. Verify nginx, systemd journal and upstream UQ logging against the participant disclosure as required by `LIVE-EVALUATION.md`; application request logging alone is not that verification. Joe is the release approver, after Joel has confirmed the D3–D5 participant/ethics commitments.
 

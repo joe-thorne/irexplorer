@@ -26,12 +26,12 @@ class StudyError(Exception):
 @dataclass(frozen=True)
 class Config:
     directory: Path
-    mode: str = 'preview'
+    collection_mode: str = 'preview'
     origin: str = 'http://127.0.0.1:8000'
     app_revision: str = metadata()['revision']
 
     def __post_init__(self):
-        if self.mode not in ('local', 'preview', 'pilot', 'live'):
+        if self.collection_mode not in ('local', 'preview', 'pilot', 'live'):
             raise ValueError('Unsupported collection mode')
         if self.directory.resolve().is_relative_to(ROOT):
             raise ValueError('Study storage must be outside the application repository')
@@ -41,17 +41,19 @@ class Config:
     @property
     def enabled(self):
         # Local assessment and legacy preview stores are separate from research data.
-        return self.mode in ('local', 'preview')
+        return self.collection_mode in ('local', 'preview')
 
     @property
     def path(self):
-        return self.directory / self.mode / 'responses.sqlite3'
+        return self.directory / self.collection_mode / 'submissions.sqlite3'
 
     @classmethod
     def environment(cls):
+        if 'IREXPLORER_STUDY_MODE' in os.environ:
+            raise ValueError('IREXPLORER_STUDY_MODE was retired; use IREXPLORER_COLLECTION_MODE.')
         default = Path(tempfile.gettempdir()) / f'irexplorer-study-{os.getuid()}'
         return cls(Path(os.environ.get('IREXPLORER_STUDY_DIR', default)),
-                   os.environ.get('IREXPLORER_STUDY_MODE', 'preview'),
+                   os.environ.get('IREXPLORER_COLLECTION_MODE', 'preview'),
                    os.environ.get('IREXPLORER_STUDY_ORIGIN', 'http://127.0.0.1:8000'),
                    os.environ.get('IREXPLORER_APP_REVISION', metadata()['revision']))
 
@@ -113,26 +115,52 @@ class StudyService:
         self.config = config
 
     def content(self):
-        return {**participant_content(), 'mode': self.config.mode, 'submissionEnabled': self.config.enabled}
+        return {**participant_content(), 'collectionMode': self.config.collection_mode,
+                'submissionEnabled': self.config.enabled}
 
     def connect(self):
         path = self.config.path
         path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         os.chmod(path.parent, 0o700)
+        legacy_path = path.with_name('responses.sqlite3')
+        if legacy_path.exists():
+            if path.exists():
+                raise sqlite3.DatabaseError('Both the retired response store and submission store exist')
+            try:
+                os.replace(legacy_path, path)
+            except FileNotFoundError:
+                # Another request may have completed the one-time file move.
+                if not path.exists():
+                    raise
+            for suffix in ('-wal', '-shm', '-journal'):
+                old_sidecar = Path(str(legacy_path) + suffix)
+                if old_sidecar.exists():
+                    try:
+                        os.replace(old_sidecar, Path(str(path) + suffix))
+                    except FileNotFoundError:
+                        if not Path(str(path) + suffix).exists():
+                            raise
         db = sqlite3.connect(path, timeout=10)
         os.chmod(path, 0o600)
         try:
             db.execute('PRAGMA synchronous=FULL')
+            db.execute('BEGIN IMMEDIATE')
             version = db.execute('PRAGMA user_version').fetchone()[0]
-            if version not in (0, 1):
+            if version not in (0, 1, 2):
                 raise sqlite3.DatabaseError('Unsupported schema')
             if version == 0:
-                db.execute('CREATE TABLE IF NOT EXISTS responses (submission_id TEXT PRIMARY KEY, '
-                           'digest TEXT NOT NULL, payload TEXT NOT NULL, receipt TEXT NOT NULL, release TEXT NOT NULL)')
-                db.execute('PRAGMA user_version=1')
-                db.commit()
+                db.execute('CREATE TABLE IF NOT EXISTS submissions (submission_id TEXT PRIMARY KEY, '
+                           'digest TEXT NOT NULL, submission_json TEXT NOT NULL, receipt TEXT NOT NULL, '
+                           'release TEXT NOT NULL)')
+                db.execute('PRAGMA user_version=2')
+            elif version == 1:
+                db.execute('ALTER TABLE responses RENAME TO submissions')
+                db.execute('ALTER TABLE submissions RENAME COLUMN payload TO submission_json')
+                db.execute('PRAGMA user_version=2')
+            db.commit()
             return db
         except Exception:
+            db.rollback()
             db.close()
             raise
 
@@ -147,14 +175,14 @@ class StudyService:
         checksum = next(line.split('=', 1)[1]
                         for line in (ROOT / 'docs/curated-artefacts.sha256').read_text().splitlines()
                         if line.startswith('sha256='))
-        release = {'schemaVersion': 2, 'canonicalVersion': 1, 'mode': self.config.mode,
+        release = {'schemaVersion': 2, 'canonicalVersion': 1, 'mode': self.config.collection_mode,
                    'appRevision': self.config.app_revision, 'artefactSha256': checksum}
         db = None
         try:
             db = self.connect()
             with db:
                 db.execute('BEGIN IMMEDIATE')
-                row = db.execute('SELECT digest, receipt FROM responses WHERE submission_id=?',
+                row = db.execute('SELECT digest, receipt FROM submissions WHERE submission_id=?',
                                  (submission['submissionId'],)).fetchone()
                 if row:
                     if row[0] != digest:
@@ -162,7 +190,7 @@ class StudyService:
                                          'This submission ID was used with different answers. '
                                          'Keep the code and contact the researcher.')
                     return json.loads(row[1]), False
-                db.execute('INSERT INTO responses VALUES (?, ?, ?, ?, ?)',
+                db.execute('INSERT INTO submissions VALUES (?, ?, ?, ?, ?)',
                            (submission['submissionId'], digest, body, canonical(receipt), canonical(release)))
             return receipt, True
         except (sqlite3.Error, OSError):

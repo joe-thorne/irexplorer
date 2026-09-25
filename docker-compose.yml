@@ -11,7 +11,7 @@ services:
       - "127.0.0.1:8000:8000"
     environment:
       IREXPLORER_STUDY_ORIGIN: http://localhost:8000
-      IREXPLORER_STUDY_MODE: local
+      IREXPLORER_COLLECTION_MODE: local
       IREXPLORER_STUDY_DIR: /data
     volumes:
       - study-data:/data

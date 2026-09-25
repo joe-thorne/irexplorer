@@ -66,8 +66,8 @@ checks.push('/app.js Cache-Control: no-store');
 const contentResponse = await request('/api/study/content');
 require(contentResponse.status === 200, `/api/study/content: expected 200, got ${contentResponse.status}`);
 const content = await json(contentResponse, '/api/study/content');
-require(content?.mode === expectedMode,
-        `/api/study/content: expected mode ${expectedMode}, got ${content?.mode}`);
+require(content?.collectionMode === expectedMode,
+        `/api/study/content: expected collection mode ${expectedMode}, got ${content?.collectionMode}`);
 for (const field of ['studyVersion', 'contentVersion', 'instrumentVersion']) {
   require(typeof content?.[field] === 'string' && content[field].length > 0,
           `/api/study/content: expected a non-empty ${field}`);

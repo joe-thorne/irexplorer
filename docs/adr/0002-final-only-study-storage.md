@@ -6,7 +6,7 @@ Keep mutable study responses separate from the immutable compiler model and its 
 
 Create a tab-scoped draft only after consent. Only the final Submit action sends answers. Preserve a frozen envelope and submission ID across uncertain delivery and retries. SQLite commits before acknowledgement; identical retries return the original receipt and conflicting reuse is rejected. After acknowledgement, replace the stored envelope with the minimal receipt and clear the answer draft.
 
-Store SQLite outside the source tree and public assets. Export, backup, restore, and deletion are CLI operations, with no public listing or export endpoint. Collection mode and release metadata come from server configuration. Local and preview collection are supported; pilot and live collection remain disabled.
+Store SQLite outside the source tree and public assets. Schema version 2 uses a `submissions` table and `submissions.sqlite3`; startup moves and migrates a version-1 `responses` store without changing submitted JSON. Export, backup, restore, and deletion are CLI operations, with no public listing or export endpoint. Collection mode and release metadata come from server configuration. Local and preview collection are supported; pilot and live collection remain disabled.
 
 ## Consequences
 

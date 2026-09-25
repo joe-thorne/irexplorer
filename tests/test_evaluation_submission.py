@@ -1,5 +1,6 @@
 """Synthetic final-only submission failures, persistence, and research export."""
 import csv
+import hashlib
 import json
 import sqlite3
 import tempfile
@@ -15,7 +16,7 @@ from fastapi.testclient import TestClient
 from src.backend.api.app import create_app
 from src.backend.evaluation.cli import backup, export, open_db
 from src.backend.evaluation.content import participant_content
-from src.backend.evaluation.service import MAX_BODY, Config, StudyError, StudyService
+from src.backend.evaluation.service import MAX_BODY, Config, StudyError, StudyService, canonical
 
 
 def synthetic():
@@ -61,6 +62,22 @@ class SubmissionTests(unittest.TestCase):
             alias.symlink_to(checkout, target_is_directory=True)
             with self.assertRaises(ValueError):
                 Config(alias / 'data')
+
+    def test_submission_store_uses_v2_name_and_submission_json_schema(self):
+        self.assertEqual(self.config.path.name, 'submissions.sqlite3')
+        self.assertEqual(self.post().status_code, 201)
+        db = sqlite3.connect(self.config.path)
+        try:
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], 2)
+            self.assertEqual(db.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchone()[0],
+                             'submissions')
+            self.assertEqual({row[1] for row in db.execute('PRAGMA table_info(submissions)')},
+                             {'submission_id', 'digest', 'submission_json', 'receipt', 'release'})
+            serialized = json.loads(db.execute('SELECT submission_json FROM submissions').fetchone()[0])
+        finally:
+            db.close()
+        self.assertEqual(set(serialized), {'submissionId', 'participantCode', 'studyVersion', 'contentVersion',
+                                           'instrumentVersion', 'consent', 'pre', 'post', 'tasks'})
 
     def test_commit_retry_conflict_restart_and_minimal_receipt(self):
         first = self.post()
@@ -135,12 +152,15 @@ class SubmissionTests(unittest.TestCase):
         self.service.submit(synthetic())
         destination=Path(self.tmp.name)/'export'
         self.assertEqual(export(self.config.path,destination),2)
-        raw=json.loads((destination/'responses.json').read_text())
-        record=next(r for r in raw if r['response']['submissionId']==self.payload['submissionId'])
-        self.assertEqual(record['response']['post'],self.payload['post'])
+        raw=json.loads((destination/'submissions.json').read_text())
+        record=next(r for r in raw if r['submission']['submissionId']==self.payload['submissionId'])
+        self.assertEqual(record['submission']['post'],self.payload['post'])
+        self.assertEqual(record['release']['schemaVersion'], 2)
         self.assertEqual(record['release']['mode'],'preview')
-        with open(destination/'responses.csv',newline='') as f:
+        with open(destination/'submissions.csv',newline='') as f:
             rows=list(csv.DictReader(f))
+        self.assertIn('section', rows[0])
+        self.assertNotIn('stage', rows[0])
         cell=next(r for r in rows if r['submissionId']==self.payload['submissionId'] and r['itemId']=='Q18')
         self.assertEqual(cell['value'],"'"+self.payload['post']['Q18']['value'])
         self.assertEqual(next(r for r in rows
@@ -151,7 +171,7 @@ class SubmissionTests(unittest.TestCase):
         backup(self.config.path,copy)
         backup(copy,restored)
         db=open_db(restored)
-        self.assertEqual(db.execute('SELECT COUNT(*) FROM responses').fetchone()[0],2)
+        self.assertEqual(db.execute('SELECT COUNT(*) FROM submissions').fetchone()[0],2)
         db.close()
         with self.assertRaises(FileExistsError):
             backup(copy,restored)
@@ -169,7 +189,8 @@ class SubmissionTests(unittest.TestCase):
         book = json.loads((destination / 'codebook.json').read_text())
         self.assertEqual(book['versions']['instrumentVersion'], 'v0.5')
         self.assertIn('Q3 only', book['analysis'])
-        with open(destination / 'responses.csv', newline='') as handle:
+        self.assertIn('section', book['csv'])
+        with open(destination / 'submissions.csv', newline='') as handle:
             rows = list(csv.DictReader(handle))
         early = next(r for r in rows if r['itemId'] == 'T1')
         self.assertEqual((early['setupReached'], early['durationMs'], early['status']), ('False', '0', 'skipped'))
@@ -208,25 +229,25 @@ class SubmissionTests(unittest.TestCase):
         db = sqlite3.connect(self.config.path)
         try:
             with db:
-                db.execute('UPDATE responses SET payload=?', (json.dumps(legacy),))
+                db.execute('UPDATE submissions SET submission_json=?', (json.dumps(legacy),))
         finally:
             db.close()
         destination = Path(self.tmp.name) / 'legacy-export'
         export(self.config.path, destination)
-        with open(destination / 'responses.csv', newline='') as handle:
+        with open(destination / 'submissions.csv', newline='') as handle:
             rows = list(csv.DictReader(handle))
         self.assertEqual(next(r for r in rows if r['itemId'] == 'T1')['setupReached'], '')
         self.assertTrue(all(r['instrumentVersion'] == 'v0.1' for r in rows))
 
     def test_pilot_mode_and_private_http_boundary(self):
         for mode in ('pilot',):
-            service=StudyService(Config(Path(self.tmp.name),mode=mode))
+            service=StudyService(Config(Path(self.tmp.name),collection_mode=mode))
             self.assertFalse(service.content()['submissionEnabled'])
             with self.assertRaises(StudyError) as caught:
                 service.submit(self.payload)
             self.assertEqual(caught.exception.status,503)
             self.assertFalse(service.config.path.exists())
-        for path in ('/responses.sqlite3','/api/study/submissions','/api/study/export',
+        for path in ('/submissions.sqlite3','/api/study/submissions','/api/study/export',
                      '/src/backend/evaluation/service.py'):
             self.assertIn(self.client.get(path).status_code,(404,405))
         schema=self.client.get('/openapi.json').json()
@@ -236,7 +257,7 @@ class SubmissionTests(unittest.TestCase):
 
     def test_shipped_live_configuration_rejects_submissions(self):
         live = StudyService(Config(
-            Path(self.tmp.name), mode='live', origin='https://study.example.test',
+            Path(self.tmp.name), collection_mode='live', origin='https://study.example.test',
             app_revision='0.1.1-webproject.1',
         ))
 
@@ -254,10 +275,10 @@ class SubmissionTests(unittest.TestCase):
         self.assertEqual(self.post().status_code,503)
 
     def test_local_collection_is_separate_and_records_server_release(self):
-        local = Config(Path(self.tmp.name), mode='local', origin='http://testserver',
+        local = Config(Path(self.tmp.name), collection_mode='local', origin='http://testserver',
                        app_revision='0.1.0+tested-source')
         with TestClient(create_app(study_config=local)) as client:
-            self.assertEqual(client.get('/api/study/content').json()['mode'], 'local')
+            self.assertEqual(client.get('/api/study/content').json()['collectionMode'], 'local')
             first = client.post('/api/study/submissions', json=self.payload,
                                 headers={'Origin': local.origin})
             self.assertEqual(first.status_code, 201)
@@ -270,9 +291,81 @@ class SubmissionTests(unittest.TestCase):
         self.assertEqual(StudyService(local).submit(self.payload), (first.json(), False))
         destination = Path(self.tmp.name) / 'local-export'
         self.assertEqual(export(local.path, destination), 1)
-        record = json.loads((destination / 'responses.json').read_text())[0]
+        record = json.loads((destination / 'submissions.json').read_text())[0]
         self.assertEqual(record['release']['mode'], 'local')
         self.assertEqual(record['release']['appRevision'], '0.1.0+tested-source')
+
+    def test_v1_response_store_migrates_in_place_without_changing_answers(self):
+        legacy_path = self.config.directory / 'preview' / 'responses.sqlite3'
+        legacy_path.parent.mkdir(parents=True)
+        legacy_db = sqlite3.connect(legacy_path)
+        legacy_db.execute('CREATE TABLE responses (submission_id TEXT PRIMARY KEY, digest TEXT NOT NULL, '
+                          'payload TEXT NOT NULL, receipt TEXT NOT NULL, release TEXT NOT NULL)')
+        original_payload = json.dumps(self.payload, ensure_ascii=False, separators=(',', ':'))
+        receipt = {'receiptId': str(uuid.uuid4()), 'participantCode': self.payload['participantCode'],
+                   'submissionId': self.payload['submissionId'], 'studyVersion': self.payload['studyVersion']}
+        release = {'schemaVersion': 2, 'canonicalVersion': 1, 'mode': 'preview', 'appRevision': 'legacy',
+                   'artefactSha256': 'fixture'}
+        receipt_json, release_json = json.dumps(receipt), json.dumps(release)
+        legacy_db.execute('INSERT INTO responses VALUES (?, ?, ?, ?, ?)',
+                          (self.payload['submissionId'], hashlib.sha256(
+                              canonical(self.payload).encode()).hexdigest(), original_payload,
+                           receipt_json, release_json))
+        legacy_db.execute('PRAGMA user_version=1')
+        legacy_db.commit()
+        legacy_db.close()
+
+        db = self.service.connect()
+        try:
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], 2)
+            self.assertEqual(db.execute('SELECT submission_json, receipt, release FROM submissions').fetchone(),
+                             (original_payload, receipt_json, release_json))
+            self.assertNotIn('payload', {row[1] for row in db.execute('PRAGMA table_info(submissions)')})
+            self.assertEqual(self.service.submit(self.payload), (receipt, False))
+        finally:
+            db.close()
+        self.assertFalse(legacy_path.exists())
+        self.assertTrue(self.config.path.exists())
+
+    def test_backup_and_restore_accept_v1_stores(self):
+        legacy = Path(self.tmp.name) / 'legacy-v1.sqlite3'
+        db = sqlite3.connect(legacy)
+        db.execute('CREATE TABLE responses (submission_id TEXT PRIMARY KEY, digest TEXT NOT NULL, '
+                   'payload TEXT NOT NULL, receipt TEXT NOT NULL, release TEXT NOT NULL)')
+        raw_submission = canonical(self.payload)
+        db.execute('INSERT INTO responses VALUES (?, ?, ?, ?, ?)', (
+            self.payload['submissionId'], hashlib.sha256(raw_submission.encode()).hexdigest(), raw_submission,
+            canonical({'receiptId': str(uuid.uuid4()), 'participantCode': self.payload['participantCode'],
+                       'submissionId': self.payload['submissionId'], 'studyVersion': self.payload['studyVersion']}),
+            canonical({'schemaVersion': 2, 'canonicalVersion': 1, 'mode': 'preview', 'appRevision': 'legacy',
+                       'artefactSha256': 'fixture'})))
+        db.execute('PRAGMA user_version=1')
+        db.commit()
+        db.close()
+        copy = Path(self.tmp.name) / 'legacy-copy.sqlite3'
+        backup(legacy, copy)
+        checked = open_db(copy)
+        self.assertEqual(checked.execute('PRAGMA user_version').fetchone()[0], 1)
+        self.assertEqual(checked.execute('SELECT payload FROM responses').fetchone()[0], raw_submission)
+        checked.close()
+        old_export = Path(self.tmp.name) / 'legacy-export'
+        self.assertEqual(export(copy, old_export), 1)
+        self.assertEqual(json.loads((old_export / 'submissions.json').read_text())[0]['submission'], self.payload)
+        with (old_export / 'submissions.csv').open(newline='') as handle:
+            self.assertIn('section', csv.DictReader(handle).fieldnames)
+        restored = Path(self.tmp.name) / 'legacy-restored.sqlite3'
+        backup(copy, restored)
+        restored_db = sqlite3.connect(restored)
+        self.assertEqual(restored_db.execute('PRAGMA user_version').fetchone()[0], 1)
+        self.assertEqual(restored_db.execute('SELECT payload FROM responses').fetchone()[0], raw_submission)
+        restored_db.close()
+
+    def test_retired_study_mode_environment_name_fails_clearly(self):
+        with (patch.dict('os.environ', {'IREXPLORER_STUDY_MODE': 'preview'}, clear=True),
+              self.assertRaisesRegex(ValueError, 'IREXPLORER_STUDY_MODE.*IREXPLORER_COLLECTION_MODE')):
+            Config.environment()
+        with patch.dict('os.environ', {'IREXPLORER_COLLECTION_MODE': 'local'}, clear=True):
+            self.assertEqual(Config.environment().collection_mode, 'local')
 
 
 if __name__ == '__main__':

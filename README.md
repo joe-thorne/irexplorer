@@ -28,7 +28,7 @@ docker compose start      # Resume.
 docker compose down       # Remove container; retain local submissions.
 ```
 
-Only localhost port 8000 is published. The application runs as a non-root user with read-only application files. Local study data lives in the named `study-data` volume, at `/data/local/responses.sqlite3`; the database is created on the first submission. Use `localhost` consistently because submission validation checks the exact origin.
+Only localhost port 8000 is published. The application runs as a non-root user with read-only application files. Local submissions live in the named `study-data` volume, at `/data/local/submissions.sqlite3`; the database is created on the first submission. A legacy `/data/local/responses.sqlite3` store is moved and migrated on first use. Use `localhost` consistently because submission validation checks the exact origin.
 
 ## Run with Python
 
