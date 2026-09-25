@@ -32,7 +32,7 @@ class DataUnavailableError(RuntimeError):
     code = "data_unavailable"
 
     def __init__(self, example_id: str) -> None:
-        super().__init__("Pre-baked model data is temporarily unavailable.")
+        super().__init__("Model records are temporarily unavailable.")
         self.example_id = example_id
 
 
@@ -143,7 +143,7 @@ class QueryService:
             ],
         }
 
-    def summary(self, example_id: str, from_ordinal: int, to_ordinal: int) -> dict[str, Any]:
+    def comparison_report(self, example_id: str, from_ordinal: int, to_ordinal: int) -> dict[str, Any]:
         """Whole-example outcomes in timeline order, with resolvable evidence indices."""
         loaded = self._example(example_id)
         for ordinal in sorted((from_ordinal, to_ordinal)):
@@ -152,7 +152,7 @@ class QueryService:
             report = describe_comparison(loaded.timeline, loaded.correspondences, from_ordinal, to_ordinal)
         except (IndexError, ValueError) as exc:
             raise DataUnavailableError(example_id) from exc
-        return _summary_view(loaded, report)
+        return _comparison_report_view(loaded, report)
 
     def _example(self, example_id: str) -> LoadedExample:
         if example_id not in curated.list_examples():
@@ -210,11 +210,11 @@ def _state_view(loaded: LoadedExample, state: StateGraph) -> dict[str, Any]:
         "ordinal": state.ordinal,
         "stateId": state.state_id,
         "originCommand": state.origin_command,
-        "transition": _transition_view(loaded, state.ordinal),
+        "step": _step_view(loaded, state.ordinal),
     }
 
 
-def _transition_view(loaded: LoadedExample, ordinal: int) -> dict[str, Any] | None:
+def _step_view(loaded: LoadedExample, ordinal: int) -> dict[str, Any] | None:
     if ordinal == 0:
         return None
     step = loaded.timeline.steps[ordinal - 1]
@@ -227,13 +227,13 @@ def _transition_view(loaded: LoadedExample, ordinal: int) -> dict[str, Any] | No
     }
 
 
-def _summary_view(loaded: LoadedExample, report: ComparisonReport) -> dict[str, Any]:
+def _comparison_report_view(loaded: LoadedExample, report: ComparisonReport) -> dict[str, Any]:
     return {
         "exampleId": loaded.example_id,
         "fromOrdinal": report.from_ordinal,
         "toOrdinal": report.to_ordinal,
         "scope": "whole example",
-        "items": [{"text": item.text, "linkIndices": list(item.link_indices),
+        "structuralClaims": [{"text": item.text, "linkIndices": list(item.link_indices),
                    "remarkReferences": [_remark_reference_view(ref) for ref in item.remark_references]}
                   for item in report.claims],
         "links": [{"fromNodeIds": list(link.from_node_ids), "toNodeIds": list(link.to_node_ids),

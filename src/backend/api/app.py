@@ -16,6 +16,7 @@ from starlette.exceptions import HTTPException as StarletteHttpException
 from src.backend.api.query import DataUnavailableError, QueryError, QueryService
 from src.backend.api.schemas import (
     CfgResponse,
+    ComparisonReportResponse,
     ErrorDetail,
     ErrorResponse,
     ExamplesResponse,
@@ -24,7 +25,6 @@ from src.backend.api.schemas import (
     SourceMappingsResponse,
     SourceResponse,
     StatesResponse,
-    SummaryResponse,
 )
 from src.backend.evaluation.router import router as study_router
 from src.backend.evaluation.service import Config, StudyService
@@ -125,11 +125,11 @@ def create_app(
     def source(example_id: ExampleId) -> dict[str, object]:
         return query_service.source(example_id)
 
-    @app.get("/api/examples/{example_id}/summary", response_model=SummaryResponse)
-    def summary(example_id: ExampleId,
-                from_ordinal: Annotated[int, Query(alias="fromOrdinal", ge=0)],
-                to_ordinal: Annotated[int, Query(alias="toOrdinal", ge=0)]) -> dict[str, object]:
-        return query_service.summary(example_id, from_ordinal, to_ordinal)
+    @app.get("/api/examples/{example_id}/comparison-report", response_model=ComparisonReportResponse)
+    def comparison_report(example_id: ExampleId,
+                          from_ordinal: Annotated[int, Query(alias="fromOrdinal", ge=0)],
+                          to_ordinal: Annotated[int, Query(alias="toOrdinal", ge=0)]) -> dict[str, object]:
+        return query_service.comparison_report(example_id, from_ordinal, to_ordinal)
 
     @app.get("/api/examples/{example_id}/states/{ordinal}/source-mappings",
              response_model=SourceMappingsResponse)

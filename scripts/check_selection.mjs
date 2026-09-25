@@ -10,11 +10,11 @@ const panel = (ordinal, ids, mappings = []) => ({
 });
 const left = panel(0, ['a', 'b', 'c', 'unknown'], [['a', 1], ['b', 2], ['c', 2]]);
 const right = panel(1, ['x', 'y', 'z', 'other'], [['x', 1], ['y', 2], ['z', 2]]);
-const summary = { links: [
+const comparisonReport = { links: [
   { fromNodeIds: ['a'], toNodeIds: ['x'], relation: 'same', confidence: 'exact' },
   { fromNodeIds: ['b', 'c'], toNodeIds: ['y', 'z'], relation: 'merged', confidence: 'approximate' },
   { fromNodeIds: ['unknown'], toNodeIds: ['other'], relation: 'changed', confidence: 'unresolved' },
-], items: [
+], structuralClaims: [
   { text: 'The selected instruction remains.', linkIndices: [0], remarkReferences: [] },
   { text: 'A recorded compiler remark for the selected instruction.', linkIndices: [],
     remarkReferences: [{ stepIndex: 0, remarkIndex: 0 }] },
@@ -27,7 +27,7 @@ const summary = { links: [
   { name: 'One optimisation', purpose: 'Test grouping.', change: 'First change.', certainty: 'detected', fromOrdinal: 0, toOrdinal: 1, fromStateId: 'before', toStateId: 'after', linkIndices: [0] },
   { name: 'One optimisation', purpose: 'Test grouping.', change: 'Second change.', certainty: 'detected', fromOrdinal: 0, toOrdinal: 1, fromStateId: 'before', toStateId: 'after', linkIndices: [0] },
 ]};
-const trace = selection => context.buildSelectionTrace({ left, right }, summary, selection);
+const trace = selection => context.buildSelectionTrace({ left, right }, comparisonReport, selection);
 const ids = set => [...set].sort();
 const node = (side, nodeId) => ({ kind: 'node', side, nodeId });
 const source = (...lines) => ({ kind: 'source', sourceLocations: lines.map(line => ({ file: 'test.c', line })) });
@@ -41,7 +41,7 @@ check('Equivalent C and IR selections trace the same link and members', () => {
 });
 check('Right-side selection follows the same evidence in reverse', () => {
   assert.deepEqual(ids(trace(node('right', 'x')).members.left), ['a']);
-  const reversed = context.buildSelectionTrace({ left: right, right: left }, summary, node('left', 'x'));
+  const reversed = context.buildSelectionTrace({ left: right, right: left }, comparisonReport, node('left', 'x'));
   assert.deepEqual(ids(reversed.members.right), ['a']);
 });
 check('Existing grouped links retain every member', () => {
@@ -54,12 +54,12 @@ check('Selection evidence is render-ready across every confidence wording', () =
   const currentTrace = {
     ...trace(source(1, 2)),
     links: [
-      ...summary.links.slice(0, 2),
+      ...comparisonReport.links.slice(0, 2),
       { fromNodeIds: ['a'], toNodeIds: ['x'], relation: 'changed', confidence: 'plausible' },
-      summary.links[2],
+      comparisonReport.links[2],
     ],
   };
-  const evidence = context.buildComparisonEvidence(summary, currentTrace);
+  const evidence = context.buildComparisonEvidence(comparisonReport, currentTrace);
   assert.equal(evidence.trace, currentTrace);
   assert.deepEqual(evidence.links, currentTrace.links);
   assert.equal(JSON.stringify(evidence.relationGroups), JSON.stringify([
@@ -70,7 +70,7 @@ check('Selection evidence is render-ready across every confidence wording', () =
   ]));
 });
 check('Selection evidence retains only structural claims recorded for its links', () => {
-  const evidence = context.buildComparisonEvidence(summary, trace(source(1)));
+  const evidence = context.buildComparisonEvidence(comparisonReport, trace(source(1)));
   assert.equal(JSON.stringify(evidence.structuralClaims), JSON.stringify([
     { text: 'The selected instruction remains.', linkIndices: [0], remarkReferences: [] },
     { text: 'A recorded compiler remark for the selected instruction.', linkIndices: [],
@@ -78,7 +78,7 @@ check('Selection evidence retains only structural claims recorded for its links'
   ]));
 });
 check('Selection evidence retains only recorded relevant compiler remarks with their transition', () => {
-  const evidence = context.buildComparisonEvidence(summary, trace(source(1)));
+  const evidence = context.buildComparisonEvidence(comparisonReport, trace(source(1)));
   assert.equal(JSON.stringify(evidence.remarks), JSON.stringify([{
     passName: 'instcombine', name: 'Simplified', raw: 'selected remark',
     location: { file: 'examples/curated/test.c', line: 1 }, fromOrdinal: 0, toOrdinal: 1,
@@ -86,7 +86,7 @@ check('Selection evidence retains only recorded relevant compiler remarks with t
 });
 check('A remark from an intermediate step keeps that step\'s transition', () => {
   const remark = (name, line) => ({ passName: 'gvn', name, raw: name, location: { file: 'examples/curated/test.c', line } });
-  const spanning = { ...summary, items: [
+  const spanning = { ...comparisonReport, structuralClaims: [
     { text: 'An intermediate remark.', linkIndices: [], remarkReferences: [{ stepIndex: 0, remarkIndex: 1 }] },
     { text: 'A final remark elsewhere.', linkIndices: [], remarkReferences: [{ stepIndex: 1, remarkIndex: 0 }] },
   ], steps: [
@@ -98,7 +98,7 @@ check('A remark from an intermediate step keeps that step\'s transition', () => 
   assert.deepEqual(evidence.structuralClaims.map(item => item.text), ['An intermediate remark.']);
 });
 check('Equivalent optimisation records group without dropping concrete changes', () => {
-  const evidence = context.buildComparisonEvidence(summary, trace(source(1)));
+  const evidence = context.buildComparisonEvidence(comparisonReport, trace(source(1)));
   assert.equal(JSON.stringify(evidence.optimisationGroups), JSON.stringify([{
     name: 'One optimisation', purpose: 'Test grouping.', certainty: 'detected', fromOrdinal: 0,
     toOrdinal: 1, fromStateId: 'before', toStateId: 'after', changes: ['First change.', 'Second change.'],
@@ -109,8 +109,8 @@ check('Equivalent C, IR, and CFG selections use the same evidence interface', ()
   const singleRight = panel(1, ['x'], [['x', 1]]);
   const selections = [source(1), node('left', 'a'), node('left', 'block0')];
   const evidence = selections.map(selection => {
-    const currentTrace = context.buildSelectionTrace({ left: singleLeft, right: singleRight }, summary, selection);
-    const result = context.buildComparisonEvidence(summary, currentTrace);
+    const currentTrace = context.buildSelectionTrace({ left: singleLeft, right: singleRight }, comparisonReport, selection);
+    const result = context.buildComparisonEvidence(comparisonReport, currentTrace);
     assert.equal(result.trace, currentTrace);
     return result;
   });
@@ -119,11 +119,11 @@ check('Equivalent C, IR, and CFG selections use the same evidence interface', ()
     members: { left: ids(result.trace.members.left), right: ids(result.trace.members.right) },
   }));
   assert.equal(JSON.stringify(summaries), JSON.stringify([{
-    links: [summary.links[0]], members: { left: ['a'], right: ['x'] },
+    links: [comparisonReport.links[0]], members: { left: ['a'], right: ['x'] },
   }, {
-    links: [summary.links[0]], members: { left: ['a'], right: ['x'] },
+    links: [comparisonReport.links[0]], members: { left: ['a'], right: ['x'] },
   }, {
-    links: [summary.links[0]], members: { left: ['a'], right: ['x'] },
+    links: [comparisonReport.links[0]], members: { left: ['a'], right: ['x'] },
   }]));
 });
 check('CFG selection preserves all instructions including ones without C mappings', () => {
@@ -152,7 +152,7 @@ check('Plausible records retain qualified counterparts', () => {
 });
 check('Missing source locations do not prevent an IR trace', () => {
   const result = context.buildSelectionTrace(
-    { left: panel(0, ['a']), right }, summary, node('left', 'a'));
+    { left: panel(0, ['a']), right }, comparisonReport, node('left', 'a'));
   assert.deepEqual(ids(result.members.right), ['x']);
   assert.equal(result.sourceLocations[0].line, 1);
 });
@@ -175,19 +175,19 @@ check('Known removal and missing coverage remain distinct', () => {
   assert.equal(context.buildSelectionTrace({ left, right }, { links: [] }, node('left', 'a')).missing, 1);
 });
 check('Comparison evidence qualifies special states without inventing an optimisation', () => {
-  const sameState = context.buildComparisonEvidence({ links: [], items: [], optimisations: [] }, {
+  const sameState = context.buildComparisonEvidence({ links: [], structuralClaims: [], optimisations: [] }, {
     ...trace(node('left', 'a')), links: [], sameState: true, unresolved: false,
   });
   assert.equal(sameState.optimisationNote, 'Same state: no cross-state optimisation change is being compared.');
 
-  const unchanged = context.buildComparisonEvidence({ links: [], items: [], optimisations: [] }, {
+  const unchanged = context.buildComparisonEvidence({ links: [], structuralClaims: [], optimisations: [] }, {
     ...trace(node('left', 'a')),
     links: [{ fromNodeIds: ['a'], toNodeIds: ['x'], relation: 'same', confidence: 'exact' }],
     sameState: false, unresolved: false,
   });
   assert.equal(unchanged.optimisationNote, 'No instruction change recorded for this selection between these states.');
 
-  const recognisedChange = context.buildComparisonEvidence({ links: [], items: [], optimisations: [] }, {
+  const recognisedChange = context.buildComparisonEvidence({ links: [], structuralClaims: [], optimisations: [] }, {
     ...trace(node('left', 'a')),
     links: [
       { fromNodeIds: ['a'], toNodeIds: [], relation: 'removed', confidence: 'exact' },
@@ -200,7 +200,7 @@ check('Comparison evidence qualifies special states without inventing an optimis
   assert.doesNotMatch(recognisedChange.statusText, /cannot be traced/);
   assert.equal(recognisedChange.optimisationNote, 'No specific optimisation identified for this selection from the recorded evidence.');
 
-  const unresolved = context.buildComparisonEvidence({ links: [], items: [], optimisations: [] }, {
+  const unresolved = context.buildComparisonEvidence({ links: [], structuralClaims: [], optimisations: [] }, {
     ...trace(node('left', 'a')),
     links: [{ fromNodeIds: ['a'], toNodeIds: [], relation: 'removed', confidence: 'unresolved' }],
     sameState: false, unresolved: true,
@@ -209,7 +209,7 @@ check('Comparison evidence qualifies special states without inventing an optimis
   assert.match(unresolved.statusText, /cannot be traced with the available evidence/);
 });
 check('Source records and links cannot leak into a different function', () => {
-  const result = context.buildSelectionTrace({ left: panel(0, ['a'], [['not-in-function', 3]]), right }, summary, source(3));
+  const result = context.buildSelectionTrace({ left: panel(0, ['a'], [['not-in-function', 3]]), right }, comparisonReport, source(3));
   assert.deepEqual(ids(result.members.left), []);
 });
 console.log(checks + ' selection checks passed.');

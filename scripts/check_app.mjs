@@ -82,6 +82,9 @@ try {
   await check('Default page opens Explore without entering Study', `!location.hash && document.querySelector('#study-screen').hidden && !document.querySelector('#explore-heading').hidden`);
   await select('#example-select', 'score');
   await until('window.StudyWorkspace?.ready');
+  await check('Explore names the comparison, trace and trace evidence', `document.body.innerText.includes('State-to-State comparison') && document.querySelector('.current-selection .comparison-label').textContent === 'Trace' && [...document.querySelectorAll('.comparison-section-title')][1].textContent === 'Trace evidence'`);
+  await check('Steps label only the State-to-State comparison', `document.querySelector('#ir-step-heading').textContent === 'Steps' && document.querySelector('#source-mapping-heading').parentElement.querySelector('.comparison-caption').textContent === 'Source mapping'`);
+  await check('State comparison names the curated pass sequence', `document.querySelector('#comparison-action').textContent.includes('curated pass sequence')`);
   await check('All three curated examples are available', `document.querySelectorAll('#example-select option').length === 4`);
   await check('Source box contains only source and heading', `document.querySelector('#source-prompt').hidden && !/Compiler debug|debugLoc/.test(document.querySelector('#source-panel').innerText)`);
   await check('Comparison has no expandable evidence', `document.querySelectorAll('.comparison-status details').length === 0`);
@@ -102,6 +105,7 @@ try {
   await check('Source line highlights mapped IR in both panes', `document.querySelectorAll('.source-line.is-source').length === 1 && document.querySelectorAll('#left-viewer .is-source, #right-viewer .is-source').length > 0`);
 
   await check('C selection follows recorded cross-state links', `appState.selection?.trace.links.length > 0 && document.querySelector('#selection-status').textContent.includes('recorded link')`);
+  await check('Trace labels its readable relations', `document.querySelector('#selection-status').textContent.includes('relation:')`);
   await value(`document.querySelector('.source-line[data-line="5"]').dispatchEvent(new MouseEvent('click', { bubbles: true, shiftKey: true }))`);
   await check('Shift-click selects the complete C range', `JSON.stringify(sourceState.sourceLocations.map(a => a.line)) === '[3,4,5]' && document.querySelectorAll('.source-line.is-source').length === 3`);
   await value(`document.querySelector('.source-line[data-line="6"]').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', shiftKey: true, bubbles: true }))`);
@@ -138,19 +142,19 @@ try {
   await select('#left-state', '2'); await select('#right-state', '0'); await until('window.StudyWorkspace.ready');
   await check('Reversing panes preserves chronological optimisation explanations', `document.querySelector('#optimisation-explanations').textContent === window.explanationText`);
   await select('#left-state', '0'); await select('#right-state', '12'); await until('window.StudyWorkspace.ready');
-  await check('Long comparisons identify the intermediate transition', `(() => { const event = appState.summary.optimisations.find(e => e.name === 'Strength reduction'); return event.fromOrdinal === 1 && event.toOrdinal === 2 && document.querySelector('#optimisation-explanations').textContent.includes(event.fromStateId + ' → ' + event.toStateId); })()`);
+  await check('Long comparisons identify the intermediate step', `(() => { const event = appState.comparisonReport.optimisations.find(e => e.name === 'Strength reduction'); return event.fromOrdinal === 1 && event.toOrdinal === 2 && document.querySelector('#optimisation-explanations').textContent.includes(event.fromStateId + ' → ' + event.toStateId); })()`);
   await click('.source-line[data-line="4"]');
   await check('Changing selection removes unrelated explanations', `!document.querySelector('#optimisation-explanations').textContent.includes('Strength reduction') && document.querySelector('#optimisation-explanations').textContent.includes('Arithmetic canonicalisation')`);
   await select('#left-state', '12'); await until('window.StudyWorkspace.ready');
   await check('Same-state selection says no cross-state optimisation is being compared', `document.querySelector('#optimisation-explanations').textContent.includes('no cross-state optimisation change is being compared')`);
   await select('#example-select', 'quick_sort'); await until('window.StudyWorkspace.ready');
-  await select('#left-state', '12'); await select('#right-state', '13'); await select('#left-view', 'ir'); await select('#right-view', 'ir'); await until('appState.summary?.fromOrdinal === 12 && appState.summary?.toOrdinal === 13');
-  await value(`window.exactRemoval = appState.summary.links.find(link => link.relation === 'removed' && link.confidence === 'exact');`);
+  await select('#left-state', '12'); await select('#right-state', '13'); await select('#left-view', 'ir'); await select('#right-view', 'ir'); await until('appState.comparisonReport?.fromOrdinal === 12 && appState.comparisonReport?.toOrdinal === 13');
+  await value(`window.exactRemoval = appState.comparisonReport.links.find(link => link.relation === 'removed' && link.confidence === 'exact');`);
   await check('Curated comparison includes an exact removal', `Boolean(exactRemoval)`);
   const removalFunction = await value(`appState.panels.left.ir.functions.find(fn => fn.id === exactRemoval.fromNodeIds[0].split('/')[0]).name`);
   await select('#function-select', removalFunction); await until('window.StudyWorkspace.ready'); await value(`selectNode('left', exactRemoval.fromNodeIds[0])`);
   await check('Exact removal and unresolved coverage remain distinct', `document.querySelector('#selection-status').textContent.includes('removed · exact confidence') && document.querySelector('#selection-status').textContent.includes('unresolved') && document.querySelector('#selection-status').textContent.includes('cannot be traced with the available evidence')`);
-  await value(`window.unresolvedRemoval = appState.summary.links.find(link => link.relation === 'removed' && link.confidence === 'unresolved');`);
+  await value(`window.unresolvedRemoval = appState.comparisonReport.links.find(link => link.relation === 'removed' && link.confidence === 'unresolved');`);
   await check('Curated comparison includes unresolved correspondence coverage', `Boolean(unresolvedRemoval)`);
   const unresolvedFunction = await value(`appState.panels.left.ir.functions.find(fn => fn.id === unresolvedRemoval.fromNodeIds[0].split('/')[0]).name`);
   await select('#function-select', unresolvedFunction); await until('window.StudyWorkspace.ready'); await value(`selectNode('left', unresolvedRemoval.fromNodeIds[0])`);
@@ -158,7 +162,7 @@ try {
   await select('#example-select', 'score'); await until('window.StudyWorkspace.ready');
   await select('#left-state', '0'); await select('#right-state', '2'); await until('window.StudyWorkspace.ready');
   await click('.source-line[data-line="3"]');
-  await check('C selection recomputes against a newly selected state', `appState.selectionInput.kind === 'source' && appState.selection.trace.links.every(link => appState.summary.links.includes(link))`);
+  await check('C selection recomputes against a newly selected state', `appState.selectionInput.kind === 'source' && appState.selection.trace.links.every(link => appState.comparisonReport.links.includes(link))`);
   await select('#left-state', '2'); await select('#right-state', '0'); await until('window.StudyWorkspace.ready');
   await click('#right-viewer .ir-line');
   await check('Right-origin tracing works with reversed state order', `appState.selectionInput.side === 'right' && appState.selection.trace.links.length > 0`);
@@ -183,13 +187,13 @@ try {
 
 
   await select('#example-select', 'quick_sort'); await until('window.StudyWorkspace.ready');
-  await select('#left-state', '3'); await select('#right-state', '4'); await select('#left-view', 'ir'); await select('#right-view', 'ir'); await until('appState.summary?.fromOrdinal === 3 && appState.summary?.toOrdinal === 4');
+  await select('#left-state', '3'); await select('#right-state', '4'); await select('#left-view', 'ir'); await select('#right-view', 'ir'); await until('appState.comparisonReport?.fromOrdinal === 3 && appState.comparisonReport?.toOrdinal === 4');
   await select('#function-select', 'partition'); await until(`appState.functionName === 'partition' && window.StudyWorkspace.ready`); await click('.source-line[data-line="12"]'); await until('Boolean(appState.selection?.evidence)');
-  await check('Selection presents relevant captured compiler remarks with their recorded transition', `(() => { const text = document.querySelector('#compiler-remarks').textContent; const remarks = appState.selection?.evidence?.remarks || []; return remarks.length > 0 && remarks.every(remark => remark.location && sourceMatches(remark.location, appState.selection.trace.sourceLocations)) && text.includes('Captured compiler remarks') && text.includes('recorded remarks are evidence') && text.includes('not a complete explanation of compiler intent') && text.includes('absence does not establish that no optimisation occurred') && text.includes('Recorded transition: step 3 → step 4'); })()`);
+  await check('Selection presents relevant captured compiler remarks with their recorded step', `(() => { const text = document.querySelector('#compiler-remarks').textContent; const remarks = appState.selection?.evidence?.remarks || []; return remarks.length > 0 && remarks.every(remark => remark.location && sourceMatches(remark.location, appState.selection.trace.sourceLocations)) && text.includes('Captured compiler remarks') && text.includes('recorded remarks are evidence') && text.includes('not a complete explanation of compiler intent') && text.includes('absence does not establish that no optimisation occurred') && text.includes('Recorded step: State 3 → State 4'); })()`);
 
   await select('#example-select', 'quick_sort'); await until('window.StudyWorkspace.ready');
   await select('#left-state', '8'); await select('#right-state', '9'); await until('window.StudyWorkspace.ready');
-  await value(`window.mergeGroup = appState.summary.links.find(link => link.relation === 'merged');`);
+  await value(`window.mergeGroup = appState.comparisonReport.links.find(link => link.relation === 'merged');`);
   await check('Curated comparison includes a two-to-one group', `mergeGroup.fromNodeIds.length === 2 && mergeGroup.toNodeIds.length === 1`);
   const groupFunction = await value(`appState.panels.left.ir.functions.find(fn => fn.blocks.some(block => block.instructions.some(i => i.id === mergeGroup.fromNodeIds[0]))).name`);
   await select('#function-select', groupFunction); await until('window.StudyWorkspace.ready');
@@ -198,10 +202,11 @@ try {
   await value(`selectNode('right', mergeGroup.toNodeIds[0])`);
   await check('Selecting the merged result traces both inputs', `appState.panels.left.selectedInstructionIds.size === 2 && appState.panels.right.selectedInstructionIds.size === 1`);
   await check('Grouped rewrite has a succinct explanation', `document.querySelector('#optimisation-explanations').textContent.includes('Induction-variable widening · likely') && document.querySelector('#optimisation-explanations').textContent.includes('64-bit loop index')`);
-  await check('Comparison separates states, selection and transitions', `document.querySelectorAll('.comparison-state').length === 2 && document.querySelector('#selection-context').textContent.includes('Right panel') && document.querySelector('#ir-transition-heading').closest('section').contains(document.querySelector('#optimisation-explanations')) && document.querySelector('#source-transition-heading').closest('section').contains(document.querySelector('#source-status'))`);
+  await check('Comparison separates states, trace and steps', `document.querySelectorAll('.comparison-state').length === 2 && document.querySelector('#selection-context').textContent.includes('Right panel') && document.querySelector('#ir-step-heading').closest('section').contains(document.querySelector('#optimisation-explanations')) && document.querySelector('#source-mapping-heading').closest('section').contains(document.querySelector('#source-status'))`);
   await check('Source mapping text only describes Left', `!document.querySelector('#source-status').textContent.includes('Right:')`);
   await snap('workspace.png');
   await route('/study'); await screen('Information and consent');
+  await check('Study navigation identifies its current sections', `document.querySelector('#study-progress').getAttribute('aria-label') === 'Study sections' && document.querySelector('#study-progress [aria-current="step"]') !== null`);
   await check('Clean study interface and release label', `document.querySelector('#app-version').textContent === 'v${release.version}' && !/synthetic|preview|not.live|E7/i.test(document.body.innerText) && !location.search`);
   await value(`document.querySelector('#C1').focus()`); await key(' ', 'Space', 32);
   await check('Keyboard Space operates consent checkbox', `document.querySelector('#C1').checked`);
@@ -254,6 +259,13 @@ try {
   const isolated = await otherSend('Runtime.evaluate', { expression: `!sessionStorage.getItem('irexplorer.study.e4') && !document.querySelector('[data-action="new-study"]')`, returnByValue: true });
   if (!isolated.result.value) throw Error('Failed: Independent browser tab does not start without the first tab’s draft.');
   checks.push('Independent browser tab has no first-session draft or receipt'); other.close(); await send('Target.closeTarget', { targetId: newTarget.targetId });
+  await route('/explore'); await select('#example-select', 'score');
+  await until('!document.querySelector("#workspace").hidden && window.StudyWorkspace?.ready');
+  await value(`window.originalFetch = window.fetch; window.fetch = (input, options) => String(input).includes('/comparison-report') ? Promise.resolve(new Response(JSON.stringify({ error: { code: 'data_unavailable', message: 'Model records are temporarily unavailable.' } }), { status: 503, headers: { 'Content-Type': 'application/json' } })) : window.originalFetch(input, options);`);
+  await select('#right-state', '10');
+  await until(`document.querySelector('.error-state .error-message')?.textContent === 'Model records are temporarily unavailable.'`);
+  checks.push('Explore displays the model-record-unavailable message');
+  await value('window.fetch = window.originalFetch');
   if (exceptions.length) throw Error(JSON.stringify(exceptions));
   const result = { release, assertions: checks.length, checks, runtimeExceptions: exceptions.length };
   if (captures) await writeFile(join(captures, 'browser-checks.json'), JSON.stringify(result, null, 2) + '\n');

@@ -61,7 +61,7 @@ class EvaluationContentTests(unittest.TestCase):
         targets = [i for b in function['blocks'] for i in b['instructions']
                    if i['id'] in ids and i['opcode'] == 'getelementptr']
         self.assertEqual(len(targets), 1)
-        links = [link for link in service.summary(example, left, right)['links']
+        links = [link for link in service.comparison_report(example, left, right)['links']
                  if targets[0]['id'] in link['toNodeIds']]
         self.assertEqual(len(links), 1)
         self.assertEqual((links[0]['relation'], links[0]['confidence']), ('merged', 'approximate'))
@@ -73,10 +73,10 @@ class EvaluationContentTests(unittest.TestCase):
         derived = [
             {
                 'value': 100 + state['ordinal'],
-                'label': f"{state['ordinal']} · {state['transition']['passName']} · {state['stateId']}",
+                'label': f"{state['ordinal']} · {state['step']['passName']} · {state['stateId']}",
             }
             for state in states
-            if state['transition'] and state['transition']['kind'] == 'derived'
+            if state['step'] and state['step']['kind'] == 'derived'
         ]
         t2a = next(field for field in participant_content()['fields'] if field['id'] == 'T2a')
         self.assertEqual(t2a['options'], derived + [

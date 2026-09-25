@@ -29,7 +29,7 @@ class AdjacentCorrespondenceDistributionTests(unittest.TestCase):
             states = service.list_states(example)["states"]
             pairs = {}
             for ordinal in range(len(states) - 1):
-                links = service.summary(example, ordinal, ordinal + 1)["links"]
+                links = service.comparison_report(example, ordinal, ordinal + 1)["links"]
                 pairs[f"{ordinal}-{ordinal + 1}"] = dict(sorted(
                     Counter(
                         f"{link['relation']}/{link['confidence']}"

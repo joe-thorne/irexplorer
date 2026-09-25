@@ -57,7 +57,7 @@
 
       <section id="workspace" class="workspace" hidden aria-label="Side-by-side optimisation comparison">
         <section class="comparison-status panel" aria-label="Comparison explanation">
-          <h2 class="comparison-section-title">Selected states</h2>
+          <h2 class="comparison-section-title">State-to-State comparison</h2>
           <div class="comparison-states">
             <section class="comparison-state" aria-labelledby="left-selected-state">
               <span class="comparison-label">Left panel</span>
@@ -71,19 +71,20 @@
             </section>
           </div>
           <div class="current-selection">
-            <span class="comparison-label">Current selection</span>
+            <span class="comparison-label">Trace</span>
             <p id="selection-context"></p>
           </div>
-          <h2 class="comparison-section-title">Transitions</h2>
-          <div class="comparison-transitions">
-            <section class="comparison-transition" aria-labelledby="source-transition-heading">
-              <h3 id="source-transition-heading">C → Left</h3>
-              <p class="transition-caption">Source mapping</p>
+          <h2 class="comparison-section-title">Trace evidence</h2>
+          <div class="comparison-rows">
+            <section class="comparison-row" aria-labelledby="source-mapping-heading">
+              <h3 id="source-mapping-heading">C → Left</h3>
+              <p class="comparison-caption">Source mapping</p>
               <p id="source-status" role="status"></p>
             </section>
-            <section class="comparison-transition" aria-labelledby="ir-transition-heading">
-              <h3 id="ir-transition-heading">Left → Right</h3>
-              <p id="comparison-action" class="transition-caption"></p>
+            <section class="comparison-row" aria-labelledby="ir-step-heading">
+              <h3 id="ir-step-heading">Steps</h3>
+              <p class="comparison-caption">Left → Right</p>
+              <p id="comparison-action" class="comparison-caption"></p>
               <dl id="trace-counts" class="trace-counts" hidden>
                 <div><dt>Left instructions</dt><dd id="left-trace-count"></dd></div>
                 <div><dt>Right instructions</dt><dd id="right-trace-count"></dd></div>

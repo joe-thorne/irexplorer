@@ -167,6 +167,7 @@
     if (!loaded) {
       screen.innerHTML = heading(loadError ? 'Study content unavailable' : 'Loading study content…') + (loadError ? `<p>No study answers have been sent. Retry to load the forms and recover any compatible local draft.</p>${button('retry-content', 'Retry loading forms', true)}` : '');
     } else {
+      progress.setAttribute('aria-label', 'Study sections');
       progress.innerHTML = `<ol>${names.map((name, n) => `<li${n === index ? ' aria-current="step"' : ''}>${n + 1}. ${n <= maximum() ? `<a href="#${n === 2 && draft ? taskRoute() : routes[n]}">${name}</a>` : name}</li>`).join('')}</ol>`;
       let html;
       if (submission.state) html = submissionHtml();

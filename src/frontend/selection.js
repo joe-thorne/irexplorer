@@ -18,7 +18,7 @@ function instructionIds(panel, nodeId) {
   return [];
 }
 
-function buildSelectionTrace(panels, summary, selection) {
+function buildSelectionTrace(panels, comparisonReport, selection) {
   const sides = ['left', 'right'];
   const validIds = Object.fromEntries(sides.map(side => [side, new Set((panels[side].function?.blocks || []).flatMap(block => block.instructions.map(instruction => instruction.id)))]));
   const seeds = { left: new Set(), right: new Set() };
@@ -50,7 +50,7 @@ function buildSelectionTrace(panels, summary, selection) {
   } else {
     const fromSide = panels.left.ordinal < panels.right.ordinal ? 'left' : 'right';
     const toSide = fromSide === 'left' ? 'right' : 'left';
-    for (const link of summary?.links || []) {
+    for (const link of comparisonReport?.links || []) {
       if (!link.fromNodeIds.some(id => seeds[fromSide].has(id))
           && !link.toNodeIds.some(id => seeds[toSide].has(id))) continue;
       links.push(link);
@@ -105,21 +105,21 @@ function optimisationNote(trace, optimisationGroups) {
 }
 
 // The participant-facing comparison consumes this model without reinterpreting
-// the immutable summary record or the trace it produced.
-function buildComparisonEvidence(summary, trace) {
+// the immutable comparison report or the trace it produced.
+function buildComparisonEvidence(comparisonReport, trace) {
   const groups = new Map();
   for (const link of trace.links) {
     const wording = relationWording(link);
     groups.set(wording, (groups.get(wording) || 0) + 1);
   }
   const relationGroups = [...groups].map(([wording, count]) => ({ wording, count }));
-  const linkIndices = new Set(trace.links.map(link => summary.links.indexOf(link)).filter(index => index >= 0));
-  // A remark reference addresses summary.steps[stepIndex].remarks[remarkIndex].
-  const steps = summary.steps || [];
+  const linkIndices = new Set(trace.links.map(link => comparisonReport.links.indexOf(link)).filter(index => index >= 0));
+  // A remark reference addresses comparisonReport.steps[stepIndex].remarks[remarkIndex].
+  const steps = comparisonReport.steps || [];
   const referenceKey = ref => ref.stepIndex + ':' + ref.remarkIndex;
   const citedReferenceKeys = new Set();
   const remarks = [];
-  for (const ref of (summary.items || []).flatMap(item => item.remarkReferences)) {
+  for (const ref of (comparisonReport.structuralClaims || []).flatMap(item => item.remarkReferences)) {
     const step = steps[ref.stepIndex];
     const remark = step?.remarks[ref.remarkIndex];
     if (citedReferenceKeys.has(referenceKey(ref)) || !remark?.location || !sourceMatches(remark.location, trace.sourceLocations))
@@ -127,16 +127,16 @@ function buildComparisonEvidence(summary, trace) {
     citedReferenceKeys.add(referenceKey(ref));
     remarks.push({ ...remark, fromOrdinal: step.fromOrdinal, toOrdinal: step.toOrdinal });
   }
-  const structuralClaims = (summary.items || []).filter(item =>
+  const structuralClaims = (comparisonReport.structuralClaims || []).filter(item =>
     item.linkIndices.some(index => linkIndices.has(index))
       || item.remarkReferences.some(ref => citedReferenceKeys.has(referenceKey(ref))));
-  const optimisations = (summary.optimisations || []).filter(event =>
+  const optimisations = (comparisonReport.optimisations || []).filter(event =>
     event.linkIndices.some(index => linkIndices.has(index)));
   const optimisationGroups = groupOptimisations(optimisations);
   const note = optimisationNote(trace, optimisationGroups);
   const statusText = trace.sameState ? 'The same instructions are highlighted in both views.'
     : relationGroups.map(({ wording, count }) => count + ' recorded ' + (count === 1 ? 'link' : 'links')
-      + ': ' + wording + '.').join(' ')
+      + ' · relation: ' + wording + '.').join(' ')
       + (trace.unresolved ? ' Some instructions cannot be traced with the available evidence.' : '');
   return { trace, links: trace.links, relationGroups, remarks, structuralClaims, optimisations, optimisationGroups, optimisationNote: note, statusText };
 }
@@ -153,7 +153,7 @@ function traceDescription(trace) {
     groups.set(label, (groups.get(label) || 0) + 1);
   }
   const relations = [...groups].map(([label, count]) => `${count} ${label}`).join('; ');
-  return counts + (relations ? ` Recorded relations, earlier → later: ${relations}.` : '')
+  return counts + (relations ? ` Relation, earlier → later: ${relations}.` : '')
     + (trace.missing ? ` ${trace.missing} selected instructions have no recorded correspondence.` : '')
     + (trace.unresolved ? ' Part of this selection cannot be traced with the available evidence.' : '');
 }
@@ -180,8 +180,8 @@ function selectWorkspace(input, { scroll = true } = {}) {
   clearSelection();
   sourceState.rangeStart = rangeStart;
   appState.selectionInput = input;
-  const trace = buildSelectionTrace(appState.panels, appState.summary, input);
-  const evidence = buildComparisonEvidence(appState.summary, trace);
+  const trace = buildSelectionTrace(appState.panels, appState.comparisonReport, input);
+  const evidence = buildComparisonEvidence(appState.comparisonReport, trace);
   sourceState.sourceLocations = trace.sourceLocations;
   appState.selection = {
     originSide: input.kind === 'node' ? input.side : 'source',

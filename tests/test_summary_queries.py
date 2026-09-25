@@ -26,11 +26,11 @@ class SummaryQueriesTests(unittest.TestCase):
             timeline = load_curated_timeline_record(example)
             for lower, higher in [(n, n + 1) for n in range(13)] + [(0, 9), (0, 13), (4, 6)]:
                 with self.subTest(example=example, span=(lower, higher)):
-                    response = service.summary(example, lower, higher)
-                    self.assertEqual(response, service.summary(example, higher, lower))
+                    response = service.comparison_report(example, lower, higher)
+                    self.assertEqual(response, service.comparison_report(example, higher, lower))
                     self.assertEqual([s['ordinal'] for s in response['states']], list(range(lower, higher + 1)))
                     self.assertEqual(len(response['steps']), higher - lower)
-                    for item in response['items']:
+                    for item in response['structuralClaims']:
                         self.assertEqual(set(item), {'text', 'linkIndices', 'remarkReferences'})
                         self.assertTrue(item['linkIndices'] or item['remarkReferences'])
                         self.assertTrue(all(0 <= i < len(response['links']) for i in item['linkIndices']))
@@ -58,30 +58,30 @@ class SummaryQueriesTests(unittest.TestCase):
             return replace(report, claims=(*report.claims, item))
 
         with patch('src.backend.api.query.describe_comparison', side_effect=cite_first_step):
-            response = QueryService().summary('quick_sort', 3, 5)
+            response = QueryService().comparison_report('quick_sort', 3, 5)
         self.assertEqual(response['steps'][-1]['remarks'], [])
-        self.assertEqual(response['items'][-1]['remarkReferences'], [{'stepIndex': 0, 'remarkIndex': 1}])
+        self.assertEqual(response['structuralClaims'][-1]['remarkReferences'], [{'stepIndex': 0, 'remarkIndex': 1}])
         self.assertEqual(response['steps'][0]['remarks'][1]['raw'],
                          load_curated_timeline_record('quick_sort').steps[3].remarks[1].raw)
 
     def test_same_state_no_op_and_whole_example_scope(self):
         for example in curated.list_examples():
             for ordinal in range(14):
-                response = self.service.summary(example, ordinal, ordinal)
-                self.assertEqual(response['items'], [])
+                response = self.service.comparison_report(example, ordinal, ordinal)
+                self.assertEqual(response['structuralClaims'], [])
                 self.assertEqual(response['links'], [])
                 self.assertEqual(response['steps'], [])
                 self.assertEqual(response['states'][0]['ordinal'], ordinal)
                 self.assertIn('Same recorded state', response['context'])
-        no_op = self.service.summary('score', 3, 4)
-        self.assertIn('retained as a no-op', no_op['items'][0]['text'])
-        composed = self.service.summary('score', 4, 6)
-        self.assertNotIn('this pass', ' '.join(i['text'] for i in composed['items']))
-        self.assertEqual(self.service.summary('quick_sort', 0, 9)['scope'], 'whole example')
+        no_op = self.service.comparison_report('score', 3, 4)
+        self.assertIn('retained as a no-op', no_op['structuralClaims'][0]['text'])
+        composed = self.service.comparison_report('score', 4, 6)
+        self.assertNotIn('this pass', ' '.join(i['text'] for i in composed['structuralClaims']))
+        self.assertEqual(self.service.comparison_report('quick_sort', 0, 9)['scope'], 'whole example')
 
     def test_baked_cfg_summary_names_relabelled_branch_edges(self):
-        response = self.service.summary('quick_sort', 1, 2)
-        cfg_item = next(item for item in response['items'] if item['text'].startswith('CFG'))
+        response = self.service.comparison_report('quick_sort', 1, 2)
+        cfg_item = next(item for item in response['structuralClaims'] if item['text'].startswith('CFG'))
 
         self.assertEqual(
             cfg_item['text'],
@@ -92,10 +92,10 @@ class SummaryQueriesTests(unittest.TestCase):
 
     def test_composed_summary_covers_changed_and_approximate_endpoint_changes(self):
         """I4: composed summaries must account for every non-exact endpoint change."""
-        response = self.service.summary('score', 0, 12)
+        response = self.service.comparison_report('score', 0, 12)
         timeline = load_curated_timeline_record('score')
         covered_indices = {
-            index for item in response['items'] for index in item['linkIndices']
+            index for item in response['structuralClaims'] for index in item['linkIndices']
         }
         relevant_indices = {
             index
@@ -109,7 +109,7 @@ class SummaryQueriesTests(unittest.TestCase):
 
         self.assertTrue(relevant_indices)
         self.assertTrue(relevant_indices.issubset(covered_indices))
-        summary_text = ' '.join(item['text'] for item in response['items'])
+        summary_text = ' '.join(item['text'] for item in response['structuralClaims'])
         self.assertIn('instructions changed with approximate correspondence evidence.', summary_text)
         self.assertIn('instructions removed with approximate correspondence evidence.', summary_text)
 
@@ -120,10 +120,10 @@ class SummaryQueriesTests(unittest.TestCase):
         for example in self.service.list_examples()['examples']:
             for lower, higher in pairs:
                 with self.subTest(example=example, span=(lower, higher)):
-                    response = self.service.summary(example, lower, higher)
+                    response = self.service.comparison_report(example, lower, higher)
                     covered = {
                         index
-                        for item in response['items']
+                        for item in response['structuralClaims']
                         for index in item['linkIndices']
                     }
                     uncovered.extend(
@@ -182,7 +182,10 @@ class SummaryQueriesTests(unittest.TestCase):
         for key, expected_digest in expected_digests.items():
             example, span = key.split(':')
             lower, higher = map(int, span.split('-'))
-            texts = [item['text'] for item in self.service.summary(example, lower, higher)['items']]
+            texts = [
+                item['text']
+                for item in self.service.comparison_report(example, lower, higher)['structuralClaims']
+            ]
             if key in additions:
                 self.assertIn(additions[key], texts)
                 texts.remove(additions[key])
@@ -240,21 +243,22 @@ class SummaryQueriesTests(unittest.TestCase):
         with TestClient(create_app(self.service)) as client:
             for example in curated.list_examples():
                 for before, after in [(0, 1), (0, 9), (0, 13), (13, 0), (12, 13), (4, 4), (3, 4)]:
-                    response = client.get(f'/api/examples/{example}/summary',
+                    response = client.get(f'/api/examples/{example}/comparison-report',
                                           params={'fromOrdinal': before, 'toOrdinal': after})
                     self.assertEqual(response.status_code, 200, response.text)
-                    self.assertEqual(response.json(), self.service.summary(example, before, after))
+                    self.assertEqual(response.json(), self.service.comparison_report(example, before, after))
             for query, status in [('fromOrdinal=-1&toOrdinal=1', 422), ('fromOrdinal=0', 422),
                                   ('fromOrdinal=0&toOrdinal=99', 404)]:
-                self.assertEqual(client.get('/api/examples/score/summary?' + query).status_code, status)
-            self.assertEqual(client.get('/api/examples/missing/summary?fromOrdinal=0&toOrdinal=1').status_code, 404)
+                self.assertEqual(client.get('/api/examples/score/comparison-report?' + query).status_code, status)
+            missing = client.get('/api/examples/missing/comparison-report?fromOrdinal=0&toOrdinal=1')
+            self.assertEqual(missing.status_code, 404)
             with patch('src.backend.analysis.report.compose_timeline_correspondences',
                        side_effect=ValueError('private path')):
                 with self.assertLogs('src.backend.api.app', level='ERROR'):
-                    response = client.get('/api/examples/score/summary?fromOrdinal=0&toOrdinal=9')
+                    response = client.get('/api/examples/score/comparison-report?fromOrdinal=0&toOrdinal=9')
                 self.assertEqual(response.status_code, 503)
                 self.assertNotIn('private path', response.text)
-            self.assertIn(client.post('/api/examples/score/summary').status_code, (404, 405))
+            self.assertIn(client.post('/api/examples/score/comparison-report').status_code, (404, 405))
 
 
 def _block_state(ordinal, *function_ids):

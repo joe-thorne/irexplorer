@@ -12,11 +12,11 @@ Run `.venv/bin/python -m src.backend.api.server` from the repository root and op
 - `GET /api/examples/{exampleId}/states/{ordinal}/ir`
 - `GET /api/examples/{exampleId}/states/{ordinal}/cfg?functionId=...`
 - `GET /api/examples/{exampleId}/states/{ordinal}/source-mappings?functionId=...`
-- `GET /api/examples/{exampleId}/summary?fromOrdinal=...&toOrdinal=...`
+- `GET /api/examples/{exampleId}/comparison-report?fromOrdinal=...&toOrdinal=...`
 
 Unknown examples and model nodes return `404`; invalid query combinations return `422`. Missing or corrupt model data produces a sanitised `503`.
 
-Source bytes are checked against recorded compiler metadata. Source locations are distinct from cross-state correspondence confidence. Summaries cover the whole example and order their evidence by timeline, independent of panel order or selected function; the browser resolves selection counterparts from `summary.links`. Wider comparisons compose stored correspondences transiently; the independently recompiled O3 state retains its own provenance.
+Source bytes are checked against recorded compiler metadata. Source locations are distinct from cross-state correspondence confidence. Comparison reports cover the whole example in timeline order, independent of panel order or selected function. The route returns `steps`, `structuralClaims`, `links`, `optimisations`, and the compared `states`; each state exposes its producing `step`, and the browser resolves a selection's trace from `comparisonReport.links`. Wider comparisons compose stored correspondences transiently; the independently recompiled O3 state retains its own provenance.
 
 ## Application and study
 

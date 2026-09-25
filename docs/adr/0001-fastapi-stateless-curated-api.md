@@ -33,6 +33,11 @@ database, persistent user sessions, or application-level authentication.
 
 ## Consequences
 
+On 25 September 2026, the whole-example route and response vocabulary were
+aligned with the application glossary: `/comparison-report` returns steps and
+structural claims, and each state exposes its producing step. The stateless,
+read-only query boundary and response content remain the same.
+
 The new API contract is explicit, documented as OpenAPI, validates request
 parameters and response records, and can be tested in-process without binding
 a localhost socket.  Concurrent browsers can select different curated examples

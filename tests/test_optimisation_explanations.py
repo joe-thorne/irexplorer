@@ -77,9 +77,9 @@ class OptimisationExplanationTests(unittest.TestCase):
             ("binary_search", 2, 3), ("quick_sort", 8, 9),
         ):
             with self.subTest(example=example, span=(lower, higher)):
-                response = service.summary(example, lower, higher)
+                response = service.comparison_report(example, lower, higher)
                 self.assertTrue(response["optimisations"])
-                self.assertEqual(response, service.summary(example, higher, lower))
+                self.assertEqual(response, service.comparison_report(example, higher, lower))
                 timeline = service._example(example).timeline
                 for event in response["optimisations"]:
                     self.assertTrue(event["linkIndices"])
@@ -91,10 +91,10 @@ class OptimisationExplanationTests(unittest.TestCase):
                                         for node in event["fromNodeIds"]))
                     self.assertTrue(all(node in timeline.state(event["toOrdinal"]).by_id
                                         for node in event["toNodeIds"]))
-        events = service.summary("score", 0, 12)["optimisations"]
+        events = service.comparison_report("score", 0, 12)["optimisations"]
         strength = next(e for e in events if e["name"] == "Strength reduction")
         self.assertEqual((strength["fromOrdinal"], strength["toOrdinal"]), (1, 2))
         cancellation = next(e for e in events if e["name"] == "Algebraic simplification")
         self.assertEqual(cancellation["certainty"], "likely")
-        self.assertEqual(service.summary("score", 1, 1)["optimisations"], [])
-        self.assertEqual(service.summary("score", 12, 13)["optimisations"], [])
+        self.assertEqual(service.comparison_report("score", 1, 1)["optimisations"], [])
+        self.assertEqual(service.comparison_report("score", 12, 13)["optimisations"], [])

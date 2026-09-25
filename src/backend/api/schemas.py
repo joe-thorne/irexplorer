@@ -30,7 +30,7 @@ class ExamplesResponse(ApiModel):
     examples: list[str]
 
 
-class TransitionResponse(ApiModel):
+class StepResponse(ApiModel):
     kind: Literal["derived", "recompiled"]
     passName: str | None
     level: str | None
@@ -42,7 +42,7 @@ class StateResponse(ApiModel):
     ordinal: int
     stateId: str
     originCommand: str | None
-    transition: TransitionResponse | None
+    step: StepResponse | None
 
 
 class StatesResponse(ApiModel):
@@ -153,7 +153,7 @@ class RemarkResponse(ApiModel):
     raw: str
 
 
-class SummaryStepResponse(ApiModel):
+class ComparisonStepResponse(ApiModel):
     fromOrdinal: int
     toOrdinal: int
     kind: Literal["derived", "recompiled"]
@@ -175,14 +175,14 @@ class OptimisationResponse(ApiModel):
     linkIndices: list[int]
 
 
-class SummaryResponse(ApiModel):
+class ComparisonReportResponse(ApiModel):
     exampleId: str
     fromOrdinal: int
     toOrdinal: int
     scope: Literal["whole example"]
     context: str
     optimisations: list[OptimisationResponse]
-    items: list[StructuralClaimResponse]
+    structuralClaims: list[StructuralClaimResponse]
     links: list[LinkResponse]
-    steps: list[SummaryStepResponse]
+    steps: list[ComparisonStepResponse]
     states: list[StateResponse]

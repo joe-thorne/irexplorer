@@ -21,7 +21,7 @@ const appState = {
   loadId: 0,
   ready: false,
   manualSetup: false,
-  summary: null,
+  comparisonReport: null,
   panels: {
     left: { ordinal: 0, viewType: "ir", ir: null, cfg: null, function: null, selectedNodeIds: new Set() },
     right: { ordinal: 1, viewType: "ir", ir: null, cfg: null, function: null, selectedNodeIds: new Set() },
@@ -159,8 +159,8 @@ async function loadExample() {
         elements[side].heading.textContent = side === "left" ? "Left panel" : "Right panel";
         elements[side].previous.disabled = elements[side].next.disabled = true;
       }
-      appState.summary = null;
-      renderSummary();
+      appState.comparisonReport = null;
+      renderComparisonReport();
       elements.emptyState.hidden = true;
       elements.workspace.hidden = false;
       announce("Choose the states and views described in the task instructions.");
@@ -195,10 +195,10 @@ function renderStateOptions() {
 
 function stateOptionLabel(state) {
   if (state.ordinal === 0) return `0 · Unoptimised baseline · ${state.stateId}`;
-  if (state.transition?.kind === "recompiled") return `${state.ordinal} · Separately compiled ${state.transition.level} · ${state.stateId}`;
-  const noOp = state.transition?.noOp ? " · no recorded change" : "";
+  if (state.step?.kind === "recompiled") return `${state.ordinal} · Separately compiled ${state.step.level} · ${state.stateId}`;
+  const noOp = state.step?.noOp ? " · no recorded change" : "";
   const end = state.stateId === "final_cleanup" ? " · End of teaching chain" : "";
-  return `After pass ${state.ordinal}: ${state.transition?.passName || "recorded pass"} · ${state.stateId}${end}${noOp}`;
+  return `After pass ${state.ordinal}: ${state.step?.passName || "recorded pass"} · ${state.stateId}${end}${noOp}`;
 }
 
 async function refreshWorkspace() {
@@ -208,16 +208,16 @@ async function refreshWorkspace() {
     selectionInput = sourceState.sourceLocations.length ? { kind: "source", sourceLocations: sourceState.sourceLocations } : null;
   const refreshId = ++appState.refreshId;
   appState.ready = false;
-  appState.summary = null;
-  renderSummary();
+  appState.comparisonReport = null;
+  renderComparisonReport();
   elements.workspace.setAttribute("aria-busy", "true");
   document.querySelector("#source-status").textContent = "Loading recorded mappings…";
   const apiBase = apiRoot(appState.exampleId);
   try {
-    const [leftIr, rightIr, summary] = await Promise.all([
+    const [leftIr, rightIr, comparisonReport] = await Promise.all([
       request(`${apiBase}/states/${appState.panels.left.ordinal}/ir`),
       request(`${apiBase}/states/${appState.panels.right.ordinal}/ir`),
-      request(`${apiBase}/summary?fromOrdinal=${appState.panels.left.ordinal}&toOrdinal=${appState.panels.right.ordinal}`),
+      request(`${apiBase}/comparison-report?fromOrdinal=${appState.panels.left.ordinal}&toOrdinal=${appState.panels.right.ordinal}`),
     ]);
     if (refreshId !== appState.refreshId) return;
     appState.panels.left.ir = leftIr;
@@ -243,9 +243,9 @@ async function refreshWorkspace() {
     }));
     if (refreshId !== appState.refreshId) return;
     for (const view of views) Object.assign(appState.panels[view.side], view);
-    appState.summary = summary;
+    appState.comparisonReport = comparisonReport;
     appState.ready = true;
-    renderSummary();
+    renderComparisonReport();
     elements.workspace.setAttribute("aria-busy", "false");
     if (selectionInput) selectWorkspace(selectionInput, { scroll: false });
     else {
@@ -321,9 +321,9 @@ function comparisonAction(leftState, rightState) {
   const [from, to] = leftState.ordinal < rightState.ordinal ? [leftState, rightState] : [rightState, leftState];
   const direction = leftState.ordinal > rightState.ordinal
     ? "Tracing backwards. Explanations describe the forward change (Right → Left)." : "";
-  const scope = to.transition?.kind === "recompiled" ? "Separate compilation comparison."
-    : to.ordinal === from.ordinal + 1 ? "One recorded pass."
-    : (to.ordinal - from.ordinal) + " recorded passes.";
+  const scope = to.step?.kind === "recompiled" ? "Separate compilation comparison."
+    : to.ordinal === from.ordinal + 1 ? "One step in the curated pass sequence."
+    : (to.ordinal - from.ordinal) + " steps in the curated pass sequence.";
   return scope + (direction ? " " + direction : "");
 }
 
@@ -680,7 +680,7 @@ window.StudyWorkspace = {
     appState.ready = false;
     appState.exampleId = null;
     appState.states = null;
-    appState.summary = null;
+    appState.comparisonReport = null;
     appState.functionName = null;
     clearSelection();
     sourceState.data = null;

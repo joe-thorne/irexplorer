@@ -25,9 +25,9 @@ class QueryServiceTests(unittest.TestCase):
 
         states = service.list_states("score")["states"]
         self.assertEqual(len(states), 14)
-        self.assertEqual(states[1]["transition"]["passName"], "mem2reg")
-        self.assertTrue(states[4]["transition"]["noOp"])
-        self.assertEqual(states[-1]["transition"]["kind"], "recompiled")
+        self.assertEqual(states[1]["step"]["passName"], "mem2reg")
+        self.assertTrue(states[4]["step"]["noOp"])
+        self.assertEqual(states[-1]["step"]["kind"], "recompiled")
         timeline_id = id(service._examples["score"].timeline)
 
         ir = service.ir("score", 0)
@@ -68,7 +68,7 @@ class QueryServiceTests(unittest.TestCase):
 
         self.assertEqual(
             str(context.exception),
-            "Pre-baked model data is temporarily unavailable.",
+            "Model records are temporarily unavailable.",
         )
         self.assertIs(context.exception.__cause__, internal_failure)
 
@@ -157,6 +157,7 @@ class FastApiTests(unittest.TestCase):
         for retired_route in (
             "/api/source?ordinal=0",
             "/api/summary?fromOrdinal=0&toOrdinal=1",
+            "/api/examples/score/summary?fromOrdinal=0&toOrdinal=1",
             "/api/focus",
             "/api/examples/score/states/2/counterparts?nodeId=fn0%2Fbb0&toOrdinal=3",
         ):
@@ -164,6 +165,17 @@ class FastApiTests(unittest.TestCase):
                 response = self.client.get(retired_route)
                 self.assertEqual(response.status_code, 404)
                 self.assertEqual(response.json()["error"]["code"], "not_found")
+
+        report = self.client.get(
+            "/api/examples/score/comparison-report?fromOrdinal=0&toOrdinal=1"
+        )
+        self.assertEqual(report.status_code, 200)
+        report_data = report.json()
+        self.assertIn("steps", report_data)
+        self.assertIn("structuralClaims", report_data)
+        self.assertNotIn("items", report_data)
+        self.assertIn("step", report_data["states"][1])
+        self.assertNotIn("transition", report_data["states"][1])
 
         source_submission = self.client.post(
             "/api/analysis",
@@ -202,7 +214,7 @@ class FastApiTests(unittest.TestCase):
         self.assertEqual(response.json()["error"]["code"], "data_unavailable")
         self.assertEqual(
             response.json()["error"]["message"],
-            "Pre-baked model data is temporarily unavailable.",
+            "Model records are temporarily unavailable.",
         )
         self.assertNotIn("formatVersion", response.text)
         self.assertIn("formatVersion", "\n".join(logs.output))
@@ -220,7 +232,7 @@ class FastApiTests(unittest.TestCase):
                 "/api/examples",
                 "/api/examples/{example_id}/states",
                 "/api/examples/{example_id}/source",
-                "/api/examples/{example_id}/summary",
+                "/api/examples/{example_id}/comparison-report",
                 "/api/examples/{example_id}/states/{ordinal}/source-mappings",
                 "/api/examples/{example_id}/states/{ordinal}/ir",
                 "/api/examples/{example_id}/states/{ordinal}/cfg",

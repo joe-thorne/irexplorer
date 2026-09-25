@@ -1,22 +1,22 @@
 // Keep the explanation focused on the selected states and current trace.
 function statePurpose(state) {
   if (state.ordinal === 0) return "Most optimisations are disabled.";
-  if (state.transition?.kind === "recompiled") return "Aggressive optimisation pipeline, compiled separately from the teaching chain.";
-  const purpose = PASS_ACTIONS[state.transition?.passName] || "Apply the recorded compiler pass";
+  if (state.step?.kind === "recompiled") return "Separately compiled at -O3 after the curated pass sequence.";
+  const purpose = PASS_ACTIONS[state.step?.passName] || "Apply the recorded compiler pass";
   return purpose[0].toUpperCase() + purpose.slice(1) + ".";
 }
 
-function renderSummary() {
+function renderComparisonReport() {
   for (const side of ["left", "right"]) {
     const state = stateFor(side);
     const view = appState.panels[side].viewType;
     const name = !state ? "Choose a state" : state.ordinal === 0 ? "Unoptimised · -O0"
-      : state.transition?.kind === "recompiled" ? "Separately compiled · " + state.transition.level
-      : "After pass " + state.ordinal + " · " + state.transition?.passName;
+      : state.step?.kind === "recompiled" ? "Separately compiled · " + state.step.level
+      : "After pass " + state.ordinal + " · " + state.step?.passName;
     document.querySelector("#" + side + "-selected-state").textContent = name + (view ? " · " + view.toUpperCase() : "");
     document.querySelector("#" + side + "-purpose").textContent = state ? statePurpose(state) : "";
   }
-  if (!appState.summary) {
+  if (!appState.comparisonReport) {
     document.querySelector("#structural-claims").replaceChildren();
     document.querySelector("#compiler-remarks").replaceChildren();
     document.querySelector("#optimisation-explanations").replaceChildren();
@@ -74,11 +74,11 @@ function renderRemarks() {
     card.className = 'compiler-remark';
     const summary = document.createElement('summary');
     summary.textContent = [remark.passName, remark.name].filter(Boolean).join(' · ') || 'Captured compiler remark';
-    const transition = document.createElement('small');
-    transition.textContent = `Recorded transition: step ${remark.fromOrdinal} → step ${remark.toOrdinal}`;
+    const step = document.createElement('small');
+    step.textContent = `Recorded step: State ${remark.fromOrdinal} → State ${remark.toOrdinal}`;
     const raw = document.createElement('pre');
     raw.textContent = remark.raw;
-    card.append(summary, transition, raw);
+    card.append(summary, step, raw);
     container.append(card);
   }
 }

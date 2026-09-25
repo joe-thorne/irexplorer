@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from src.backend.api import QueryService
-from tests.test_summary_digests import summary_responses
+from tests.test_summary_digests import comparison_report_responses, normalise_report_renames
 
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE_RENAMES = (
@@ -120,10 +120,10 @@ def compare_responses(previous_root: Path) -> int:
             cwd=previous_root,
             check=True,
         )
-        for span, response in summary_responses(QueryService()):
+        for span, response in comparison_report_responses(QueryService()):
             name = span.replace(" ", "_") + ".json"
             (new_dir / name).write_text(
-                json.dumps(response, ensure_ascii=False, indent=2) + "\n",
+                json.dumps(normalise_report_renames(response), ensure_ascii=False, indent=2) + "\n",
                 encoding="utf-8",
             )
         old_files = {path.name for path in old_dir.glob("*.json")}
