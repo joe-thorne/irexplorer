@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from src.backend.analysis.cfg_diff import CfgEdgeDifference, cfg_edge_differences
+from src.backend.analysis.cfg_diff import (
+    CfgEdgeDescription,
+    CfgEdgeDifference,
+    cfg_edge_differences,
+)
 from src.backend.analysis.compare import is_identity_correspondence
 from src.backend.analysis.composition import ComposedCorrespondence
 from src.backend.model.correspondence import Correspondence, Link
@@ -293,8 +297,8 @@ def _kind_label(kind: str) -> str:
     return "basic block" if kind == "BasicBlock" else kind.lower()
 
 
-def _format_cfg_edge(edge: tuple[str, str, str]) -> str:
-    return f"{edge[0]} → {edge[1]} [{edge[2]}]"
+def _format_cfg_edge(edge: CfgEdgeDescription) -> str:
+    return f"{edge.source} → {edge.target} [{edge.label}]"
 
 
 def _cfg_difference_summary_item(
@@ -321,7 +325,8 @@ def _cfg_difference_summary_item(
     if relabelled:
         parts.append(
             "relabelled " + ", ".join(
-                f"{item.before[0]} → {item.before[1]} [{item.before[2]} → {item.after[2]}]"
+                f"{item.before.source} → {item.before.target} "
+                f"[{item.before.label} → {item.after.label}]"
                 for item in relabelled
                 if item.before and item.after
             )

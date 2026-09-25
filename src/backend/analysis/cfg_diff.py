@@ -12,11 +12,20 @@ from src.backend.model.graph import Edge, StateGraph
 
 
 @dataclass(frozen=True)
+class CfgEdgeDescription:
+    """A labelled CFG edge described with its endpoint display names."""
+
+    source: str
+    target: str
+    label: str
+
+
+@dataclass(frozen=True)
 class CfgEdgeDifference:
     """One CFG edge change, with links that support the rendered claim."""
 
-    before: tuple[str, str, str] | None
-    after: tuple[str, str, str] | None
+    before: CfgEdgeDescription | None
+    after: CfgEdgeDescription | None
     link_indices: tuple[int, ...]
 
 
@@ -93,18 +102,11 @@ def cfg_edge_differences(
         else:
             added.append((key, edge))
 
-    def describe_before(edge: Edge) -> tuple[str, str, str]:
-        return (
-            from_state.by_id[edge.from_id].display_name,
-            from_state.by_id[edge.to_id].display_name,
-            edge.label or "",
-        )
-
-    def describe_after(edge: Edge) -> tuple[str, str, str]:
-        return (
-            to_state.by_id[edge.from_id].display_name,
-            to_state.by_id[edge.to_id].display_name,
-            edge.label or "",
+    def describe_edge(edge: Edge, state: StateGraph) -> CfgEdgeDescription:
+        return CfgEdgeDescription(
+            source=state.by_id[edge.from_id].display_name,
+            target=state.by_id[edge.to_id].display_name,
+            label=edge.label or "",
         )
 
     def links_for(before: Edge | None, after: Edge | None) -> tuple[int, ...]:
@@ -138,19 +140,19 @@ def cfg_edge_differences(
         _, after = remaining_added.pop(match_index)
         relabelled.append(
             CfgEdgeDifference(
-                describe_before(before),
-                describe_after(after),
+                describe_edge(before, from_state),
+                describe_edge(after, to_state),
                 links_for(before, after),
             )
         )
 
     return CfgEdgeDifferences(
         removed=tuple(
-            CfgEdgeDifference(describe_before(before), None, links_for(before, None))
+            CfgEdgeDifference(describe_edge(before, from_state), None, links_for(before, None))
             for _, before in remaining_removed
         ),
         added=tuple(
-            CfgEdgeDifference(None, describe_after(after), links_for(None, after))
+            CfgEdgeDifference(None, describe_edge(after, to_state), links_for(None, after))
             for _, after in remaining_added
         ),
         relabelled=tuple(relabelled),

@@ -9,6 +9,7 @@ from src.backend.analysis import (
     load_stored_curated_correspondence,
     load_stored_curated_correspondences,
 )
+from src.backend.analysis.cfg_diff import CfgEdgeDescription, cfg_edge_differences
 from src.backend.analysis.compare import (
     _function_for_node,
     _instruction_operand_shape_is_compatible,
@@ -424,6 +425,24 @@ join:
             if link.from_node_ids == ("fn1/bb2",)
         )
         self.assertEqual((changed_block.relation, changed_block.confidence), ("changed", "approximate"))
+
+    def test_cfg_edge_differences_use_named_descriptions_on_both_states(self) -> None:
+        timeline = load_curated_timeline("quick_sort")
+        correspondence = compare_timeline_step(timeline, 1)
+
+        differences = cfg_edge_differences(
+            correspondence, timeline.state(1), timeline.state(2)
+        )
+
+        self.assertTrue(differences.relabelled)
+        for difference in differences.relabelled:
+            self.assertIs(type(difference.before), CfgEdgeDescription)
+            self.assertIs(type(difference.after), CfgEdgeDescription)
+        first = differences.relabelled[0]
+        self.assertEqual((first.before.source, first.before.target, first.before.label),
+                         ("for.body", "if.then", "true"))
+        self.assertEqual((first.after.source, first.after.target, first.after.label),
+                         ("for.body", "if.then", "false"))
 
     def test_cfg_summary_reports_named_added_and_removed_edges(self) -> None:
         timeline = load_curated_timeline("binary_search")
