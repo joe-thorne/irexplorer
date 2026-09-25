@@ -50,7 +50,7 @@ def cfg_edge_differences(
     endpoints as relabels rather than unrelated edge changes.
     """
 
-    from_to: dict[str, tuple[str, int]] = {}
+    from_to: dict[str, str] = {}
     from_link_indices: dict[str, int] = {}
     to_link_indices: dict[str, int] = {}
     for index, link in enumerate(correspondence.links):
@@ -66,12 +66,12 @@ def cfg_edge_differences(
                 from_state.by_id[from_id].kind == "BasicBlock"
                 and to_state.by_id[to_id].kind == "BasicBlock"
             ):
-                from_to[from_id] = (to_id, index)
+                from_to[from_id] = to_id
 
     def from_key(edge_from: str, edge_to: str, label: str) -> tuple[str | None, str | None, str]:
         return (
-            from_to.get(edge_from, (None, -1))[0],
-            from_to.get(edge_to, (None, -1))[0],
+            from_to.get(edge_from),
+            from_to.get(edge_to),
             label,
         )
 
