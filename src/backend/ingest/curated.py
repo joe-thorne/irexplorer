@@ -85,7 +85,7 @@ def bake_curated_model_records() -> None:
     """Persist the full teaching-pass timelines used by the runtime."""
 
     for example in curated.list_examples():
-        model_dir = curated.artefact_dir(example) / "model"
+        model_dir = curated.model_records_dir(example)
         if model_dir.exists():
             shutil.rmtree(model_dir)
         _write_timeline_record(load_curated_timeline(example))

@@ -163,16 +163,30 @@ def manifest_path(example: str) -> Path:
     return path
 
 
+def model_records_dir(example: str) -> Path:
+    """Resolve the directory that contains this example's model records."""
+
+    _require_example(example)
+    return artefact_dir(example) / "model"
+
+
+def _checked_model_record_path(
+    path: Path, *, must_exist: bool, missing_message: str
+) -> Path:
+    if must_exist and not path.exists():
+        raise ToolchainError(f"{missing_message}: {path}")
+    return path
+
+
 def model_timeline_path(example: str, *, must_exist: bool = True) -> Path:
     """Resolve the curated optimisation timeline record for a curated example."""
 
-    _require_example(example)
-    path = artefact_dir(example) / "model" / "timeline.json"
-    if must_exist and not path.exists():
-        raise ToolchainError(
-            f"Missing curated timeline record for example '{example}': {path}"
-        )
-    return path
+    path = model_records_dir(example) / "timeline.json"
+    return _checked_model_record_path(
+        path,
+        must_exist=must_exist,
+        missing_message=f"Missing curated timeline record for example '{example}'",
+    )
 
 
 def model_source_path(example: str, *, must_exist: bool = True) -> Path:
@@ -181,13 +195,12 @@ def model_source_path(example: str, *, must_exist: bool = True) -> Path:
     The bake passes ``must_exist=False`` to learn where to write the record.
     """
 
-    _require_example(example)
-    path = artefact_dir(example) / "model" / "source.json"
-    if must_exist and not path.exists():
-        raise ToolchainError(
-            f"Missing curated source record for example '{example}': {path}"
-        )
-    return path
+    path = model_records_dir(example) / "source.json"
+    return _checked_model_record_path(
+        path,
+        must_exist=must_exist,
+        missing_message=f"Missing curated source record for example '{example}'",
+    )
 
 
 def model_correspondence_path(
@@ -195,21 +208,18 @@ def model_correspondence_path(
 ) -> Path:
     """Resolve one persisted adjacent correspondence for a curated timeline."""
 
-    _require_example(example)
+    model_dir = model_records_dir(example)
     if from_ordinal < 0 or from_ordinal >= len(PASS_STATES) - 1:
         raise ToolchainError(f"Unknown adjacent correspondence ordinal: {from_ordinal}")
-    path = (
-        artefact_dir(example)
-        / "model"
-        / "correspondences"
-        / f"{from_ordinal:02d}-{from_ordinal + 1:02d}.json"
-    )
-    if must_exist and not path.exists():
-        raise ToolchainError(
+    path = model_dir / "correspondences" / f"{from_ordinal:02d}-{from_ordinal + 1:02d}.json"
+    return _checked_model_record_path(
+        path,
+        must_exist=must_exist,
+        missing_message=(
             f"Missing stored adjacent correspondence for example '{example}' "
-            f"from ordinal {from_ordinal}: {path}"
-        )
-    return path
+            f"from ordinal {from_ordinal}"
+        ),
+    )
 
 
 def origin_command(example: str, state_id: str) -> str:

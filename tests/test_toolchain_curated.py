@@ -97,6 +97,10 @@ class CuratedToolchainTests(unittest.TestCase):
         with TemporaryDirectory() as temporary, curated.using_artefacts_root(
             Path(temporary)
         ):
+            self.assertEqual(
+                curated.model_records_dir("score"),
+                Path(temporary) / "score" / "model",
+            )
             timeline = Path(temporary) / "score" / "model" / "timeline.json"
             correspondence = (
                 Path(temporary)
