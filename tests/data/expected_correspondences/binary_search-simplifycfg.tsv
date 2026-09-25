@@ -2,9 +2,9 @@ from_id	to_id	relation	confidence	from_text	to_text	from_source	to_source	ration
 fn0	fn0	same	exact	binary_search	binary_search			Unique retained function name; attributes may differ on recompilation.
 fn0/bb0	fn0/bb0	same	exact	entry	entry			Retained block label and labelled successor targets, entry role, predecessor count, and terminator.
 fn0/bb1	fn0/bb1	same	exact	while.cond	while.cond			Retained block label and labelled successor targets, entry role, predecessor count, and terminator.
-fn0/bb2	fn0/bb2	changed	approximate	while.body	while.body			Retained block label; changed CFG role or independently recompiled anchor permits only approximate identity.
+fn0/bb2	fn0/bb2	changed	approximate	while.body	while.body			Retained block label; changed CFG role or separately recompiled O3 state permits only approximate identity.
 fn0/bb6	fn0/bb3	same	exact	while.end	while.end			Retained block label and labelled successor targets, entry role, predecessor count, and terminator.
-fn0/bb7	fn0/bb4	changed	approximate	land.lhs.true	land.lhs.true			Retained block label; changed CFG role or independently recompiled anchor permits only approximate identity.
+fn0/bb7	fn0/bb4	changed	approximate	land.lhs.true	land.lhs.true			Retained block label; changed CFG role or separately recompiled O3 state permits only approximate identity.
 fn0/bb9	fn0/bb5	same	exact	if.end8	if.end8			Retained block label and labelled successor targets, entry role, predecessor count, and terminator.
 fn0/bb10	fn0/bb6	same	exact	return	return			Retained block label and labelled successor targets, entry role, predecessor count, and terminator.
 fn0/bb0/i0	fn0/bb0/i0	same	exact	br label %while.cond	br label %while.cond	binary_search.c:5:5	binary_search.c:5:5	Identical IR apart from !dbg; retained block and matching recorded source field, normalised text, and predecessor opcodes support exact identity.
@@ -32,7 +32,7 @@ fn0/bb10/i0	fn0/bb6/i0	changed	approximate	%retval.0 = phi i32 [ %lo.0, %if.then
 fn0/bb10/i1	fn0/bb6/i1	same	exact	ret i32 %retval.0	ret i32 %retval.0	binary_search.c:20:1	binary_search.c:20:1	Identical IR apart from !dbg; retained block and matching recorded source field, normalised text, and predecessor opcodes support exact identity.
 fn0/bb2/i7		removed	exact	br i1 %cmp1, label %if.then, label %if.else		binary_search.c:8:20		Branch/phi instruction disappears as CFG collapses; no unmatched target candidate with this opcode.
 fn0/bb3		removed	exact	if.then				Block label/role has no accepted counterpart in this step; inspect the recorded edge sets.
-fn0/bb3/i0		removed	none	%add2 = add nsw i32 %add, 1		binary_search.c:9:22		Unresolved identity: possible same-kind/opcode candidates exist, but source/structure gives no unique accepted pair. This is not proof of semantic removal or creation.
+fn0/bb3/i0		removed	unresolved	%add2 = add nsw i32 %add, 1		binary_search.c:9:22		Unresolved identity: possible same-kind/opcode candidates exist, but source/structure gives no unique accepted pair. This is not proof of semantic removal or creation.
 fn0/bb3/i1		removed	exact	br label %if.end		binary_search.c:10:9		Branch/phi instruction disappears as CFG collapses; no unmatched target candidate with this opcode.
 fn0/bb4		removed	exact	if.else				Block label/role has no accepted counterpart in this step; inspect the recorded edge sets.
 fn0/bb4/i0		removed	exact	br label %if.end				Branch/phi instruction disappears as CFG collapses; no unmatched target candidate with this opcode.
@@ -41,6 +41,6 @@ fn0/bb5/i0		removed	exact	%lo.1 = phi i32 [ %add2, %if.then ], [ %lo.0, %if.else
 fn0/bb5/i1		removed	exact	%hi.1 = phi i32 [ %hi.0, %if.then ], [ %add, %if.else ]				Branch/phi instruction disappears as CFG collapses; no unmatched target candidate with this opcode.
 fn0/bb8		removed	exact	if.then7				Block label/role has no accepted counterpart in this step; inspect the recorded edge sets.
 fn0/bb8/i0		removed	exact	br label %return		binary_search.c:16:9		Branch/phi instruction disappears as CFG collapses; no unmatched target candidate with this opcode.
-	fn0/bb2/i7	added	none		%add2 = add nsw i32 %add, 1		binary_search.c:8:20	Unresolved identity: possible same-kind/opcode candidates exist, but source/structure gives no unique accepted pair. This is not proof of semantic removal or creation.
+	fn0/bb2/i7	added	unresolved		%add2 = add nsw i32 %add, 1		binary_search.c:8:20	Unresolved identity: possible same-kind/opcode candidates exist, but source/structure gives no unique accepted pair. This is not proof of semantic removal or creation.
 	fn0/bb2/i8	added	exact		%lo.1 = select i1 %cmp1, i32 %add2, i32 %lo.0		binary_search.c:8:20	New select replaces branching/phi structure; no unmatched source select.
 	fn0/bb2/i9	added	exact		%hi.1 = select i1 %cmp1, i32 %hi.0, i32 %add		binary_search.c:8:20	New select replaces branching/phi structure; no unmatched source select.

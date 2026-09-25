@@ -19,7 +19,7 @@ docker run --rm --read-only --tmpfs /tmp --network none irexplorer-test
 
 The suite covers compiler fixtures and invariants, ingestion, correspondence, source and summary queries, API boundaries, study validation, transactional submission retries, export, and backup/restore. Compiler generation tests inspect the generation contract without regenerating the shipped fixtures.
 
-[Artefact-reviewed expected-link tables](data/expected_links/README.md) additionally
+[Artefact-reviewed expected-correspondence tables](data/expected_correspondences/README.md) additionally
 check ten complete `score`/`binary_search` comparisons across mem2reg,
 instcombine, simplifycfg, loop-rotate, and the recompiled O3 state. Their 353
 explicit links, IR/source fields, labelled CFG edges, and summary expectations

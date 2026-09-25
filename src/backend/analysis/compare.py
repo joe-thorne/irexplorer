@@ -63,7 +63,7 @@ def compare_states(
     Exact instruction links require the structural and value-flow signature to
     agree. Source-only and positional links are approximate. A candidate set
     which was inspected but could not be resolved remains an explicit
-    confidence-``none`` addition or removal; ``none`` never means that work is
+    confidence-``unresolved`` addition or removal; ``unresolved`` never means that work is
     pending.
     """
 
@@ -277,7 +277,7 @@ def _match_recompiled_blocks(
                 from_state=from_state,
                 to_state=to_state,
                 key=lambda state, node: node.display_name,
-                evidence="conservative anchor match on unique basic-block label",
+                evidence="conservative match to the separately recompiled O3 state by unique basic-block label",
                 relation="changed",
                 confidence="approximate",
             )
@@ -380,7 +380,10 @@ def _match_recompiled_instructions(
             from_state=from_state,
             to_state=to_state,
             key=lambda state, node: _source_opcode_key(node),
-            evidence="conservative anchor match on unique debug source location and opcode",
+            evidence=(
+                "conservative match to the separately recompiled O3 state by unique "
+                "debug source location and opcode"
+            ),
             relation="renamed",
             confidence="approximate",
             ignore_none=True,
@@ -394,7 +397,10 @@ def _match_recompiled_instructions(
             to_state,
             from_function,
             to_function,
-            evidence="conservative anchor match on unique debug source location after rewrite",
+            evidence=(
+                "conservative match to the separately recompiled O3 state by unique "
+                "debug source location after rewrite"
+            ),
         )
 
 
@@ -759,7 +765,7 @@ def _append_unmatched_links(
             from_candidates.extend(from_state.by_id[node_id] for node_id in link.from_node_ids)
             to_candidates.extend(to_state.by_id[node_id] for node_id in link.to_node_ids)
     for node in tuple(unmatched_from.values()):
-        confidence: Confidence = "none" if _has_plausible_target(
+        confidence: Confidence = "unresolved" if _has_plausible_target(
             node, to_candidates, from_state, to_state, function_pairs
         ) else "exact"
         if confidence == "exact" and step is not None and step.kind == "recompiled" and (
@@ -770,7 +776,7 @@ def _append_unmatched_links(
             confidence = "plausible"
         evidence = (
             "candidate counterparts were inspected but no unique hybrid match exists"
-            if confidence == "none"
+            if confidence == "unresolved"
             else "a paired function has an unmatched block whose renamed label is the only failed structural reference"
             if confidence == "plausible"
             else "no target node shares the structural matcher signature"
@@ -785,7 +791,7 @@ def _append_unmatched_links(
             )
         )
     for node in tuple(unmatched_to.values()):
-        confidence = "none" if _has_plausible_target(
+        confidence = "unresolved" if _has_plausible_target(
             node,
             from_candidates,
             to_state,
@@ -800,7 +806,7 @@ def _append_unmatched_links(
             confidence = "plausible"
         evidence = (
             "candidate counterparts were inspected but no unique hybrid match exists"
-            if confidence == "none"
+            if confidence == "unresolved"
             else "a paired function has an unmatched block whose renamed label is the only failed structural reference"
             if confidence == "plausible"
             else "no source node shares the structural matcher signature"
@@ -873,7 +879,7 @@ def _has_renamed_block_recompiled_reference(
         return False
     # At a recompiled O3 state, a missing block label is plausible only when the paired
     # function retains an otherwise-unmapped block and every other checked
-    # structural reference still has a counterpart. A vanished function stays none.
+    # structural reference still has a counterpart. A vanished function stays unresolved.
     if not any(
         candidate.kind == "BasicBlock"
         and _function_for_node(candidate_state, candidate) == expected_function

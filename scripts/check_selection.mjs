@@ -13,7 +13,7 @@ const right = panel(1, ['x', 'y', 'z', 'other'], [['x', 1], ['y', 2], ['z', 2]])
 const summary = { links: [
   { fromNodeIds: ['a'], toNodeIds: ['x'], relation: 'same', confidence: 'exact' },
   { fromNodeIds: ['b', 'c'], toNodeIds: ['y', 'z'], relation: 'merged', confidence: 'approximate' },
-  { fromNodeIds: ['unknown'], toNodeIds: ['other'], relation: 'changed', confidence: 'none' },
+  { fromNodeIds: ['unknown'], toNodeIds: ['other'], relation: 'changed', confidence: 'unresolved' },
 ], items: [
   { text: 'The selected instruction remains.', linkIndices: [0], remarkReferences: [] },
   { text: 'A recorded compiler remark for the selected instruction.', linkIndices: [],
@@ -202,7 +202,7 @@ check('Comparison evidence qualifies special states without inventing an optimis
 
   const unresolved = context.buildComparisonEvidence({ links: [], items: [], optimisations: [] }, {
     ...trace(node('left', 'a')),
-    links: [{ fromNodeIds: ['a'], toNodeIds: [], relation: 'removed', confidence: 'none' }],
+    links: [{ fromNodeIds: ['a'], toNodeIds: [], relation: 'removed', confidence: 'unresolved' }],
     sameState: false, unresolved: true,
   });
   assert.match(unresolved.statusText, /unresolved/);

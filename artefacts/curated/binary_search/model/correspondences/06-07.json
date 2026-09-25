@@ -4,7 +4,7 @@
     "BasicBlock",
     "Instruction"
   ],
-  "formatVersion": 2,
+  "formatVersion": 3,
   "fromOrdinal": 6,
   "links": [
     {
@@ -312,7 +312,7 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
+      "confidence": "unresolved",
       "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn0/bb1/i0"
@@ -321,7 +321,7 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
+      "confidence": "unresolved",
       "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn0/bb1/i1"
@@ -330,7 +330,7 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
+      "confidence": "unresolved",
       "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn0/bb1/i2"
@@ -339,7 +339,7 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
+      "confidence": "unresolved",
       "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn0/bb1/i3"
@@ -348,7 +348,7 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
+      "confidence": "unresolved",
       "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn0/bb2/i8"
@@ -357,7 +357,7 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
+      "confidence": "unresolved",
       "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn0/bb2/i9"
@@ -402,7 +402,7 @@
       ]
     },
     {
-      "confidence": "none",
+      "confidence": "unresolved",
       "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
@@ -429,7 +429,7 @@
       ]
     },
     {
-      "confidence": "none",
+      "confidence": "unresolved",
       "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
@@ -438,7 +438,7 @@
       ]
     },
     {
-      "confidence": "none",
+      "confidence": "unresolved",
       "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
@@ -447,7 +447,7 @@
       ]
     },
     {
-      "confidence": "none",
+      "confidence": "unresolved",
       "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
@@ -483,7 +483,7 @@
       ]
     },
     {
-      "confidence": "none",
+      "confidence": "unresolved",
       "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",

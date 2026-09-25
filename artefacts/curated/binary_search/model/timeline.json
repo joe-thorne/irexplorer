@@ -1,7 +1,7 @@
 {
-  "configId": "teaching-pass-chain",
+  "configId": "curated-pass-sequence",
   "exampleId": "binary_search",
-  "formatVersion": 2,
+  "formatVersion": 3,
   "states": [
     {
       "edges": [
@@ -1371,7 +1371,7 @@
           "toId": "fn0/bb10/i1"
         }
       ],
-      "formatVersion": 2,
+      "formatVersion": 3,
       "nodes": [
         {
           "attributes": {
@@ -4493,7 +4493,7 @@
           "toId": "fn0/bb10/i1"
         }
       ],
-      "formatVersion": 2,
+      "formatVersion": 3,
       "nodes": [
         {
           "attributes": {
@@ -6599,7 +6599,7 @@
           "toId": "fn0/bb10/i1"
         }
       ],
-      "formatVersion": 2,
+      "formatVersion": 3,
       "nodes": [
         {
           "attributes": {
@@ -8614,7 +8614,7 @@
           "toId": "fn0/bb6/i1"
         }
       ],
-      "formatVersion": 2,
+      "formatVersion": 3,
       "nodes": [
         {
           "attributes": {
@@ -10419,7 +10419,7 @@
           "toId": "fn0/bb6/i1"
         }
       ],
-      "formatVersion": 2,
+      "formatVersion": 3,
       "nodes": [
         {
           "attributes": {
@@ -12224,7 +12224,7 @@
           "toId": "fn0/bb6/i1"
         }
       ],
-      "formatVersion": 2,
+      "formatVersion": 3,
       "nodes": [
         {
           "attributes": {
@@ -14043,7 +14043,7 @@
           "toId": "fn0/bb6/i1"
         }
       ],
-      "formatVersion": 2,
+      "formatVersion": 3,
       "nodes": [
         {
           "attributes": {
@@ -15959,7 +15959,7 @@
           "toId": "fn0/bb7/i1"
         }
       ],
-      "formatVersion": 2,
+      "formatVersion": 3,
       "nodes": [
         {
           "attributes": {
@@ -18003,7 +18003,7 @@
           "toId": "fn0/bb7/i1"
         }
       ],
-      "formatVersion": 2,
+      "formatVersion": 3,
       "nodes": [
         {
           "attributes": {
@@ -20047,7 +20047,7 @@
           "toId": "fn0/bb7/i1"
         }
       ],
-      "formatVersion": 2,
+      "formatVersion": 3,
       "nodes": [
         {
           "attributes": {
@@ -22021,7 +22021,7 @@
           "toId": "fn0/bb5/i1"
         }
       ],
-      "formatVersion": 2,
+      "formatVersion": 3,
       "nodes": [
         {
           "attributes": {
@@ -23934,7 +23934,7 @@
           "toId": "fn0/bb7/i1"
         }
       ],
-      "formatVersion": 2,
+      "formatVersion": 3,
       "nodes": [
         {
           "attributes": {
@@ -26223,7 +26223,7 @@
           "toId": "fn0/bb5/i1"
         }
       ],
-      "formatVersion": 2,
+      "formatVersion": 3,
       "nodes": [
         {
           "attributes": {
@@ -28059,7 +28059,7 @@
           "toId": "fn0/bb5/i1"
         }
       ],
-      "formatVersion": 2,
+      "formatVersion": 3,
       "nodes": [
         {
           "attributes": {

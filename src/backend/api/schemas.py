@@ -141,7 +141,7 @@ class LinkResponse(ApiModel):
     fromNodeIds: list[str]
     toNodeIds: list[str]
     relation: str
-    confidence: Literal["exact", "approximate", "plausible", "none"]
+    confidence: Literal["exact", "approximate", "plausible", "unresolved"]
     evidence: str | None
 
 

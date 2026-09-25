@@ -4,7 +4,7 @@
     "BasicBlock",
     "Instruction"
   ],
-  "formatVersion": 2,
+  "formatVersion": 3,
   "fromOrdinal": 7,
   "links": [
     {

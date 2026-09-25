@@ -1,7 +1,7 @@
 {
-  "configId": "teaching-pass-chain",
+  "configId": "curated-pass-sequence",
   "exampleId": "score",
-  "formatVersion": 2,
+  "formatVersion": 3,
   "states": [
     {
       "edges": [
@@ -888,7 +888,7 @@
           "toId": "fn0/bb3/i1"
         }
       ],
-      "formatVersion": 2,
+      "formatVersion": 3,
       "nodes": [
         {
           "attributes": {
@@ -2739,7 +2739,7 @@
           "toId": "fn0/bb3/i1"
         }
       ],
-      "formatVersion": 2,
+      "formatVersion": 3,
       "nodes": [
         {
           "attributes": {
@@ -3550,7 +3550,7 @@
           "toId": "fn0/bb3/i1"
         }
       ],
-      "formatVersion": 2,
+      "formatVersion": 3,
       "nodes": [
         {
           "attributes": {
@@ -4122,7 +4122,7 @@
           "toId": "fn0/bb0/i5"
         }
       ],
-      "formatVersion": 2,
+      "formatVersion": 3,
       "nodes": [
         {
           "attributes": {
@@ -4525,7 +4525,7 @@
           "toId": "fn0/bb0/i5"
         }
       ],
-      "formatVersion": 2,
+      "formatVersion": 3,
       "nodes": [
         {
           "attributes": {
@@ -4893,7 +4893,7 @@
           "toId": "fn0/bb0/i4"
         }
       ],
-      "formatVersion": 2,
+      "formatVersion": 3,
       "nodes": [
         {
           "attributes": {
@@ -5223,7 +5223,7 @@
           "toId": "fn0/bb0/i4"
         }
       ],
-      "formatVersion": 2,
+      "formatVersion": 3,
       "nodes": [
         {
           "attributes": {
@@ -5553,7 +5553,7 @@
           "toId": "fn0/bb0/i4"
         }
       ],
-      "formatVersion": 2,
+      "formatVersion": 3,
       "nodes": [
         {
           "attributes": {
@@ -5883,7 +5883,7 @@
           "toId": "fn0/bb0/i4"
         }
       ],
-      "formatVersion": 2,
+      "formatVersion": 3,
       "nodes": [
         {
           "attributes": {
@@ -6213,7 +6213,7 @@
           "toId": "fn0/bb0/i4"
         }
       ],
-      "formatVersion": 2,
+      "formatVersion": 3,
       "nodes": [
         {
           "attributes": {
@@ -6543,7 +6543,7 @@
           "toId": "fn0/bb0/i4"
         }
       ],
-      "formatVersion": 2,
+      "formatVersion": 3,
       "nodes": [
         {
           "attributes": {
@@ -6873,7 +6873,7 @@
           "toId": "fn0/bb0/i4"
         }
       ],
-      "formatVersion": 2,
+      "formatVersion": 3,
       "nodes": [
         {
           "attributes": {
@@ -7203,7 +7203,7 @@
           "toId": "fn0/bb0/i4"
         }
       ],
-      "formatVersion": 2,
+      "formatVersion": 3,
       "nodes": [
         {
           "attributes": {
@@ -7533,7 +7533,7 @@
           "toId": "fn0/bb0/i4"
         }
       ],
-      "formatVersion": 2,
+      "formatVersion": 3,
       "nodes": [
         {
           "attributes": {

@@ -4,7 +4,7 @@
     "BasicBlock",
     "Instruction"
   ],
-  "formatVersion": 2,
+  "formatVersion": 3,
   "fromOrdinal": 2,
   "links": [
     {
@@ -367,7 +367,7 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
+      "confidence": "unresolved",
       "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn0/bb3/i0"
@@ -448,7 +448,7 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
+      "confidence": "unresolved",
       "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",

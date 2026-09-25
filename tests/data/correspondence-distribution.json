@@ -16,32 +16,32 @@
     "binary_search": {
       "0-1": {"added/exact": 4, "changed/approximate": 13, "removed/exact": 34, "renamed/exact": 2, "same/exact": 22, "simplifiedInto/approximate": 1},
       "1-2": {"changed/approximate": 1, "same/approximate": 2, "same/exact": 38, "simplifiedInto/approximate": 1},
-      "2-3": {"added/exact": 2, "added/none": 1, "changed/approximate": 6, "changed/exact": 1, "removed/exact": 10, "removed/none": 1, "same/exact": 24},
+      "2-3": {"added/exact": 2, "added/unresolved": 1, "changed/approximate": 6, "changed/exact": 1, "removed/exact": 10, "removed/unresolved": 1, "same/exact": 24},
       "3-4": {"same/approximate": 2, "same/exact": 32},
       "4-5": {"same/approximate": 2, "same/exact": 32},
       "5-6": {"added/exact": 1, "changed/exact": 3, "same/approximate": 2, "same/exact": 29},
-      "6-7": {"added/exact": 8, "added/none": 5, "changed/approximate": 4, "changed/exact": 2, "removed/exact": 3, "removed/none": 6, "same/exact": 20},
+      "6-7": {"added/exact": 8, "added/unresolved": 5, "changed/approximate": 4, "changed/exact": 2, "removed/exact": 3, "removed/unresolved": 6, "same/exact": 20},
       "7-8": {"same/approximate": 2, "same/exact": 37},
       "8-9": {"same/approximate": 2, "same/exact": 37},
       "9-10": {"changed/approximate": 5, "changed/exact": 3, "removed/exact": 5, "same/approximate": 2, "same/exact": 24},
       "10-11": {"added/exact": 5, "changed/approximate": 3, "changed/exact": 4, "same/approximate": 2, "same/exact": 25},
       "11-12": {"changed/approximate": 3, "changed/exact": 4, "removed/exact": 5, "same/approximate": 2, "same/exact": 25},
-      "12-13": {"added/none": 12, "added/plausible": 1, "changed/approximate": 13, "removed/none": 12, "removed/plausible": 1, "renamed/approximate": 1, "same/approximate": 4, "same/exact": 1, "simplifiedInto/approximate": 2}
+      "12-13": {"added/unresolved": 12, "added/plausible": 1, "changed/approximate": 13, "removed/unresolved": 12, "removed/plausible": 1, "renamed/approximate": 1, "same/approximate": 4, "same/exact": 1, "simplifiedInto/approximate": 2}
     },
     "quick_sort": {
       "0-1": {"added/exact": 3, "changed/approximate": 32, "changed/exact": 5, "removed/exact": 67, "renamed/exact": 6, "same/exact": 23},
       "1-2": {"added/exact": 2, "changed/approximate": 6, "changed/exact": 3, "removed/exact": 2, "renamed/exact": 2, "same/approximate": 2, "same/exact": 52, "simplifiedInto/approximate": 2},
-      "2-3": {"added/none": 1, "changed/approximate": 4, "changed/exact": 2, "removed/exact": 2, "removed/none": 1, "same/exact": 60},
+      "2-3": {"added/unresolved": 1, "changed/approximate": 4, "changed/exact": 2, "removed/exact": 2, "removed/unresolved": 1, "same/exact": 60},
       "3-4": {"changed/approximate": 1, "changed/exact": 7, "removed/exact": 14, "renamed/exact": 2, "same/exact": 43},
       "4-5": {"same/exact": 53},
       "5-6": {"added/exact": 1, "changed/exact": 2, "same/exact": 51},
-      "6-7": {"added/exact": 7, "added/none": 4, "changed/approximate": 5, "changed/exact": 4, "removed/exact": 3, "removed/none": 4, "same/exact": 38},
+      "6-7": {"added/exact": 7, "added/unresolved": 4, "changed/approximate": 5, "changed/exact": 4, "removed/exact": 3, "removed/unresolved": 4, "same/exact": 38},
       "7-8": {"same/exact": 58},
-      "8-9": {"added/none": 2, "changed/approximate": 3, "changed/exact": 8, "merged/approximate": 1, "renamed/exact": 5, "same/exact": 40},
+      "8-9": {"added/unresolved": 2, "changed/approximate": 3, "changed/exact": 8, "merged/approximate": 1, "renamed/exact": 5, "same/exact": 40},
       "9-10": {"changed/approximate": 2, "changed/exact": 3, "removed/exact": 3, "same/exact": 51},
       "10-11": {"added/exact": 3, "changed/approximate": 1, "changed/exact": 2, "same/exact": 53},
       "11-12": {"changed/approximate": 1, "changed/exact": 2, "removed/exact": 3, "same/exact": 53},
-      "12-13": {"added/exact": 58, "added/none": 13, "added/plausible": 13, "changed/approximate": 4, "removed/exact": 4, "removed/none": 45, "removed/plausible": 1, "same/approximate": 1, "same/exact": 1}
+      "12-13": {"added/exact": 58, "added/unresolved": 13, "added/plausible": 13, "changed/approximate": 4, "removed/exact": 4, "removed/unresolved": 45, "removed/plausible": 1, "same/approximate": 1, "same/exact": 1}
     },
     "score": {
       "0-1": {"added/exact": 1, "changed/approximate": 8, "removed/exact": 29, "same/exact": 9},
@@ -56,7 +56,7 @@
       "9-10": {"same/exact": 7},
       "10-11": {"same/exact": 7},
       "11-12": {"same/exact": 7},
-      "12-13": {"added/none": 1, "changed/approximate": 1, "removed/none": 1, "same/approximate": 4, "same/exact": 1}
+      "12-13": {"added/unresolved": 1, "changed/approximate": 1, "removed/unresolved": 1, "same/approximate": 4, "same/exact": 1}
     }
   }
 }

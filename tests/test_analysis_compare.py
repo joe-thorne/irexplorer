@@ -124,10 +124,10 @@ class AdjacentComparisonTests(unittest.TestCase):
             "renamed",
         )
 
-    def test_unresolved_candidates_are_explicit_none_links(self) -> None:
+    def test_unresolved_candidates_are_explicit_unresolved_links(self) -> None:
         timeline = load_curated_timeline("binary_search")
         correspondence = compare_timeline_step(timeline, 2)
-        unresolved = [link for link in correspondence.links if link.confidence == "none"]
+        unresolved = [link for link in correspondence.links if link.confidence == "unresolved"]
 
         self.assertTrue(unresolved)
         self.assertTrue(
@@ -189,7 +189,7 @@ class AdjacentComparisonTests(unittest.TestCase):
         ]
 
         self.assertTrue(partition_removed_links)
-        self.assertTrue(all(link.confidence == "none" for link in partition_removed_links))
+        self.assertTrue(all(link.confidence == "unresolved" for link in partition_removed_links))
         function_link = next(
             link for link in correspondence.links if link.from_node_ids == (partition.stable_id,)
         )
@@ -226,19 +226,19 @@ class AdjacentComparisonTests(unittest.TestCase):
         self.assertTrue(all(link.confidence != "exact" for link in branch_links.values()))
         self.assertTrue(all(link.confidence == "plausible" for link in branch_links.values()))
 
-    def test_operand_aware_plausibility_reduces_curated_none_links(self) -> None:
-        expected_none_counts = {
+    def test_operand_aware_plausibility_reduces_curated_unresolved_links(self) -> None:
+        expected_unresolved_counts = {
             ("binary_search", 6): 11,
             ("quick_sort", 6): 8,
             ("binary_search", 12): 24,
             ("quick_sort", 12): 58,
         }
-        for (example, ordinal), expected in expected_none_counts.items():
+        for (example, ordinal), expected in expected_unresolved_counts.items():
             with self.subTest(example=example, ordinal=ordinal):
                 timeline = load_curated_timeline(example)
                 correspondence = compare_timeline_step(timeline, ordinal)
                 self.assertEqual(
-                    sum(link.confidence == "none" for link in correspondence.links), expected
+                    sum(link.confidence == "unresolved" for link in correspondence.links), expected
                 )
 
     def test_phi_with_vanished_incoming_block_is_not_a_plausible_target(self) -> None:
@@ -290,6 +290,7 @@ join:
         summary = summarise_correspondence(correspondence, from_state, to_state, timeline.steps[-1])
 
         correspondence.validate(from_state, to_state)
+        self.assertIn("separately recompiled -O3 state", summary.context)
         self.assertIn("not the effect of one optimisation pass", summary.context)
         self.assertEqual(
             len(correspondence.links_from),
@@ -319,7 +320,7 @@ join:
             all(link.confidence == "approximate" for link in conservative_matches)
         )
         self.assertTrue(
-            all("conservative anchor" in (link.evidence or "") for link in conservative_matches)
+            all("separately recompiled O3 state" in (link.evidence or "") for link in conservative_matches)
         )
         self.assertIn(
             "CFG unchanged across the recorded basic-block correspondences.",
@@ -481,6 +482,7 @@ class CorrespondenceCompositionTests(unittest.TestCase):
 
         earlier.validate(from_state, intermediate_state)
         record = serialise_correspondence(earlier)
+        self.assertEqual(record["formatVersion"], 3)
         self.assertEqual(record["links"][0]["confidence"], "plausible")
         self.assertEqual(
             deserialise_correspondence(record, from_state, intermediate_state), earlier

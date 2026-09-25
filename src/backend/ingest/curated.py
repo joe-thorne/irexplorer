@@ -73,7 +73,7 @@ def load_curated_timeline(example: str) -> OptimisationTimeline:
     )
     timeline = OptimisationTimeline(
         example_id=example,
-        config_id="teaching-pass-chain",
+        config_id="curated-pass-sequence",
         states=states,
         steps=steps,
     )

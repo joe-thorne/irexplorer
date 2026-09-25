@@ -92,7 +92,7 @@ class InstructionGroupTests(unittest.TestCase):
         self.assertEqual(len(link.from_node_ids), 1)
         self.assertEqual(len(link.to_node_ids), 1)
 
-    def test_curated_indvars_merge_and_conservative_anchor(self):
+    def test_curated_indvars_merge_and_conservative_recompiled_o3_match(self):
         timeline = load_curated_timeline_record("quick_sort")
         links = grouped(compare_timeline_step(timeline, 8))
         self.assertEqual(len(links), 1)
@@ -113,7 +113,7 @@ class InstructionGroupTests(unittest.TestCase):
                 for node in link.to_node_ids)
         ]
         self.assertTrue(added_extensions)
-        self.assertTrue(all(link.confidence == "none" for link in added_extensions))
+        self.assertTrue(all(link.confidence == "unresolved" for link in added_extensions))
 
 
 class MinMaxRewriteTests(unittest.TestCase):

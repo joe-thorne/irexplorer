@@ -51,7 +51,7 @@ class SummaryQueriesTests(unittest.TestCase):
                         self.assertIn('Composed comparison', response['context'])
 
     def test_remark_reference_to_an_intermediate_step_reaches_the_wire(self):
-        # quick_sort step 3 (after gvn) records remarks; the final step of span 3→5 records none.
+        # quick_sort step 3 (after gvn) records remarks; the final step of span 3→5 records no compiler remarks.
         def cite_first_step(*args):
             report = describe_comparison(*args)
             item = StructuralClaim('An intermediate remark.', remark_references=(RemarkReference(0, 1),))

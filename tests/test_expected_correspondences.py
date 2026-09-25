@@ -15,15 +15,15 @@ from src.backend.analysis.summary import summarise_correspondence
 from src.backend.ingest import load_curated_timeline, load_curated_timeline_record
 from src.backend.toolchain import curated
 
-DATA = Path(__file__).parent / 'data' / 'expected_links'
+DATA = Path(__file__).parent / 'data' / 'expected_correspondences'
 
 
-class ArtefactExpectedLinkTests(unittest.TestCase):
+class ArtefactExpectedCorrespondenceTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         record = json.loads((DATA / 'cases.json').read_text(encoding='utf-8'))
         if record['formatVersion'] != 1:
-            raise ValueError('Unsupported expected-link fixture format')
+            raise ValueError('Unsupported expected-correspondence fixture format')
         cls.cases = record['cases']
         cls.fresh = {
             example: load_curated_timeline(example)
@@ -38,7 +38,7 @@ class ArtefactExpectedLinkTests(unittest.TestCase):
         with (DATA / case['table']).open(encoding='utf-8', newline='') as handle:
             return list(csv.DictReader(handle, delimiter='\t'))
 
-    def expected_links(self, rows):
+    def expected_correspondences(self, rows):
         return {
             (tuple(filter(None, row['from_id'].split(','))),
              tuple(filter(None, row['to_id'].split(','))),
@@ -56,14 +56,14 @@ class ArtefactExpectedLinkTests(unittest.TestCase):
         self.assertEqual(
             {(case['example'], case['stepType']) for case in self.cases},
             {(example, step) for example in self.fresh
-             for step in ('mem2reg', 'instcombine', 'simplifycfg', 'loop-rotate', 'anchor')},
+             for step in ('mem2reg', 'instcombine', 'simplifycfg', 'loop-rotate', 'recompiled-o3')},
         )
         self.assertEqual(len(self.cases), 10)
         for case in self.cases:
             with self.subTest(table=case['table']):
                 rows = self.rows(case)
                 self.assertTrue(rows)
-                self.assertEqual(len(self.expected_links(rows)), len(rows))
+                self.assertEqual(len(self.expected_correspondences(rows)), len(rows))
                 timeline = self.fresh[case['example']]
                 step = timeline.steps[case['fromOrdinal']]
                 self.assertEqual(step.to_ordinal, case['toOrdinal'])
@@ -106,7 +106,7 @@ class ArtefactExpectedLinkTests(unittest.TestCase):
                 # agree; the served-correspondence test below always checks the fixture.
                 if self.actual_links(fresh) != self.actual_links(baked):
                     continue
-                self.assertEqual(self.actual_links(fresh), self.expected_links(self.rows(case)))
+                self.assertEqual(self.actual_links(fresh), self.expected_correspondences(self.rows(case)))
 
     def test_served_correspondences_match_reviewed_links(self) -> None:
         for case in self.cases:
@@ -114,7 +114,7 @@ class ArtefactExpectedLinkTests(unittest.TestCase):
                 correspondence = load_stored_curated_correspondence(
                     case['example'], case['fromOrdinal']
                 )
-                self.assertEqual(self.actual_links(correspondence), self.expected_links(self.rows(case)))
+                self.assertEqual(self.actual_links(correspondence), self.expected_correspondences(self.rows(case)))
 
     def test_cfg_and_summary_match_the_reviewed_artefact_story(self) -> None:
         for case in self.cases:

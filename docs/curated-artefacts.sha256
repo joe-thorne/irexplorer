@@ -2,4 +2,4 @@
 # Update only after deliberately regenerating compiler fixtures in the pinned
 # Docker environment or derived model records, and reviewing the changes.
 files=138
-sha256=e6bae35a784b9fcb81e5016f6c92d5de7ff60266158e2adc462944bd014d26a2
+sha256=948f077326e73e43df7395c0b0f49bbbe5a686e895560498f73a027e2ef48fdd

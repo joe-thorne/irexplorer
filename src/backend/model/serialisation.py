@@ -17,7 +17,7 @@ from src.backend.model.graph import (
 )
 from src.backend.model.timeline import OptimisationTimeline, PassStep, StepOrigin
 
-FORMAT_VERSION = 2
+FORMAT_VERSION = 3
 _TYPE_KEY = "__irexplorer_type__"
 
 

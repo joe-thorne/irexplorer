@@ -83,7 +83,7 @@ def detect_optimisations(before: StateGraph, after: StateGraph,
         new = [after.by_id[node] for node in link.to_node_ids]
         if not old or any(n.kind != "Instruction" for n in old + new):
             continue
-        if len(old) == len(new) == 1 and link.confidence != "none":
+        if len(old) == len(new) == 1 and link.confidence != "unresolved":
             a, b = _binary(old[0]), _binary(new[0])
             if a and b and a[1:3] == b[1:3]:
                 constant: int | None
@@ -106,7 +106,7 @@ def detect_optimisations(before: StateGraph, after: StateGraph,
 
         # The grouped index rewrite exposes the removed conversion and the
         # widened PHI that now feeds the address directly.
-        if link.relation == "merged" and link.confidence != "none" and len(new) == 1:
+        if link.relation == "merged" and link.confidence != "unresolved" and len(new) == 1:
             conversions = [n for n in old if n.attributes.get("opcode") in {"sext", "zext"}]
             if (conversions and new[0].attributes.get("opcode") == "getelementptr"
                     and any(n.attributes.get("opcode") == "getelementptr" for n in old)):
@@ -129,7 +129,7 @@ def detect_optimisations(before: StateGraph, after: StateGraph,
             if value is not None and users:
                 for user in users:
                     mapped = correspondence.links_from.get(user.stable_id)
-                    if not mapped or mapped.confidence == "none" or len(mapped.to_node_ids) != 1:
+                    if not mapped or mapped.confidence == "unresolved" or len(mapped.to_node_ids) != 1:
                         break
                     target = after.by_id[mapped.to_node_ids[0]]
                     expected = re.sub(re.escape(node.attributes["result"]) + r"(?![-\w.$])",
@@ -237,7 +237,7 @@ def explain_comparison(timeline: OptimisationTimeline, correspondences, comparis
             return
         origin, target = (ordinal + 1, ordinal) if reverse else (ordinal, ordinal + 1)
         for link in correspondences[ordinal].links:
-            if link.confidence == "none":
+            if link.confidence == "unresolved":
                 continue
             source_ids = link.to_node_ids if reverse else link.from_node_ids
             target_ids = link.from_node_ids if reverse else link.to_node_ids

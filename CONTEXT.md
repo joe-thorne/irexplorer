@@ -84,11 +84,12 @@ _Avoid_: change type, edit kind
 
 **Confidence tier**:
 How firmly a link is established: exact, approximate, plausible, or unresolved.
-_Avoid_: certainty, score, "none" (the stored value for unresolved)
+The stored value `unresolved` means no counterpart could be established.
+_Avoid_: certainty, score, none
 
 **Unresolved**:
 The confidence tier of a link for which no counterpart could be established; the tool admits it does not know.
-_Avoid_: none, unmatched, missing
+_Avoid_: unmatched, missing
 
 **Compiler remark**:
 A message the compiler emitted during a step; evidence about what a pass did, not a complete explanation of its intent.

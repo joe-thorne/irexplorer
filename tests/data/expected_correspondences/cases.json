@@ -222,9 +222,9 @@
       "example": "score",
       "fromOrdinal": 12,
       "toOrdinal": 13,
-      "stepType": "anchor",
+      "stepType": "recompiled-o3",
       "stepKind": "recompiled",
-      "table": "score-anchor.tsv",
+      "table": "score-recompiled-o3.tsv",
       "artefacts": [
         {
           "stateId": "final_cleanup",
@@ -237,7 +237,7 @@
           "sha256": "8aaf4bb38e4e27e73652a2c19827dbb12d3f36b78975c66b3f68252f48a5edf7"
         }
       ],
-      "story": "The independently compiled -O3 anchor retains the arithmetic and return; the smin call gains tail. Both calls have DILocation line zero, which records no source line and therefore supplies no source-backed anchor key. Two one-sided none links explicitly withhold identity, despite apparent textual similarity.",
+      "story": "The separately recompiled -O3 state retains the arithmetic and return; the smin call gains tail. Both calls have DILocation line zero, which records no source line and therefore supplies no source-backed identity key. Two one-sided unresolved links explicitly withhold identity, despite apparent textual similarity.",
       "summaryContains": [
         "CFG unchanged",
         "2 nodes could not be classified"
@@ -879,9 +879,9 @@
       "example": "binary_search",
       "fromOrdinal": 12,
       "toOrdinal": 13,
-      "stepType": "anchor",
+      "stepType": "recompiled-o3",
       "stepKind": "recompiled",
-      "table": "binary_search-anchor.tsv",
+      "table": "binary_search-recompiled-o3.tsv",
       "artefacts": [
         {
           "stateId": "final_cleanup",
@@ -894,7 +894,7 @@
           "sha256": "da9d1fd913e6bd329a0ed4edba65dcd58b60165b26e3b18d60ad8360395cba3f"
         }
       ],
-      "story": "The independent -O3 compile renames return to cleanup, adds nuw/TBAA information, changes sext to zext nneg, and renames the division result. Source-less loop phis and several changed/shared-source controls have none links. Identical bound-update logic is not promoted to exact anchor identity; no single-pass attribution is allowed.",
+      "story": "The independent -O3 compile renames return to cleanup, adds nuw/TBAA information, changes sext to zext nneg, and renames the division result. Source-less loop phis and several changed/shared-source controls have unresolved links. Identical bound-update logic is not promoted to exact recompiled-state identity; no single-pass attribution is allowed.",
       "summaryContains": [
         "2 instructions were linked as simplifications with approximate correspondence evidence.",
         "1 instruction was linked as renamed correspondences with approximate correspondence evidence.",

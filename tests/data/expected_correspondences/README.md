@@ -1,8 +1,8 @@
-# Artefact-reviewed expected links
+# Artefact-reviewed expected correspondences
 
 These ten tables cover `score` and `binary_search` at mem2reg (0→1), instcombine
-(1→2), simplifycfg (2→3), loop-rotate (6→7), and the independently recompiled
-recompiled O3 state (12→13). They contain 353 expected links and account for every
+(1→2), simplifycfg (2→3), loop-rotate (6→7), and the separately recompiled
+O3 state (12→13). They contain 353 expected correspondences and account for every
 Function, BasicBlock, and Instruction in each pair exactly once at each
 endpoint. Module and source-location nodes are outside correspondence coverage.
 
@@ -23,7 +23,7 @@ every possible semantic counterpart, or establish compiler intent.
 
 `exact` describes correspondence evidence, and can accompany a `changed` or
 `renamed` instruction. `approximate` source/position links remain qualified.
-`none` means an inspected identity could not be resolved: paired one-sided
+`unresolved` means an inspected identity could not be resolved: paired one-sided
 removal/addition rows must not be read as proven semantic destruction/creation.
 In particular, the source-only initial-hi-store→hi-phi link, the unresolved
 `binary_search` moved `%add2`, rotated phis, and recompiled O3 controls are retained as
@@ -41,8 +41,8 @@ policy. Source locations use `filename:line:column`; blank fields explicitly
 denote no recorded location. All links here are one-to-one or one-sided.
 
 `cases.json` pins both `.ll` paths and byte hashes, ordinals, state IDs,
-transition kind, full labelled CFG edge sets, the reviewed change story, and
-summary claims. `tests/test_expected_links.py` checks these records against
+step kind, full labelled CFG edge sets, the reviewed change story, and
+summary claims. `tests/test_expected_correspondences.py` checks these records against
 fresh ingestion/analysis and the model records consumed by the API. It
 compares complete link sets without depending on link ordering or generated
 evidence strings, and verifies summary claims and evidence references.
@@ -50,7 +50,7 @@ evidence strings, and verifies summary claims and evidence references.
 Run from the application root:
 
 ```sh
-.venv/bin/python -m unittest discover -s tests -p test_expected_links.py -v
+.venv/bin/python -m unittest discover -s tests -p test_expected_correspondences.py -v
 ```
 
 Review these expectations against the `.ll` artefacts before changing them.
@@ -58,4 +58,4 @@ A failing matcher assertion requires investigation; copying matcher output into
 the tables would remove their value as reviewed test data. Intentional compiler
 or evidence-policy changes require a renewed artefact review, updated rationales
 and hashes, and the full suite. These files are application test data and are
-not included in the 135-file generated-artefact checksum.
+not included in the 138-file generated-artefact checksum.

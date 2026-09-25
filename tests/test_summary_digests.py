@@ -19,6 +19,9 @@ HEADER = (
     "# SHA-256 of each QueryService.summary response, serialised as compact JSON\n"
     "# in response key order. Update only after a deliberate, reviewed change to\n"
     "# summary behaviour: python -m tests.test_summary_digests --write\n"
+    "# The v3 re-pin followed exact comparison of 315 response payloads and 45\n"
+    "# model records under the declared rename mapping; see\n"
+    "# docs/model-record-v3-migration.md.\n"
 )
 
 

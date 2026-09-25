@@ -48,17 +48,17 @@ def summarise_correspondence(
     if isinstance(correspondence, ComposedCorrespondence) and step is not None and step.kind == "recompiled":
         context = (
             f"Composed comparison across {correspondence.to_ordinal - correspondence.from_ordinal} "
-            f"transitions, ending at the recompiled {step.origin.level} anchor: "
+            f"steps, ending at the separately recompiled {step.origin.level} state: "
             "these are output differences, not the effect of one optimisation pass."
         )
     elif isinstance(correspondence, ComposedCorrespondence):
         context = (
             f"Composed comparison across {correspondence.to_ordinal - correspondence.from_ordinal} "
-            "derived transitions."
+            "derived steps."
         )
     elif step is not None and step.kind == "recompiled":
         context = (
-            f"Recompiled {step.origin.level} anchor comparison: these are output "
+            f"Comparison with the separately recompiled {step.origin.level} state: these are output "
             "differences, not the effect of one optimisation pass."
         )
     elif step is not None:
@@ -192,7 +192,7 @@ def summarise_correspondence(
         unresolved = tuple(
             index
             for index, link in enumerate(correspondence.links)
-            if link.confidence == "none"
+            if link.confidence == "unresolved"
         )
         if unresolved:
             claims.append(

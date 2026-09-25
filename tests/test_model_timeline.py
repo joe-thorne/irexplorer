@@ -21,7 +21,8 @@ class OptimisationTimelineTests(unittest.TestCase):
     ) -> None:
         timeline = load_curated_timeline("score")
 
-        self.assertEqual(timeline.config_id, "teaching-pass-chain")
+        self.assertEqual(timeline.config_id, "curated-pass-sequence")
+        self.assertEqual(serialise_timeline(timeline)["formatVersion"], 3)
         self.assertEqual(
             [state.state_id for state in timeline.states],
             [state.state_id for state in curated.PASS_STATES],
@@ -76,7 +77,7 @@ class OptimisationTimelineTests(unittest.TestCase):
         for example in ("score", "binary_search", "quick_sort"):
             with self.subTest(example=example):
                 timeline = load_curated_timeline_record(example)
-                self.assertEqual(timeline.config_id, "teaching-pass-chain")
+                self.assertEqual(timeline.config_id, "curated-pass-sequence")
                 self.assertEqual(
                     [state.state_id for state in timeline.states],
                     [

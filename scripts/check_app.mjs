@@ -150,7 +150,7 @@ try {
   const removalFunction = await value(`appState.panels.left.ir.functions.find(fn => fn.id === exactRemoval.fromNodeIds[0].split('/')[0]).name`);
   await select('#function-select', removalFunction); await until('window.StudyWorkspace.ready'); await value(`selectNode('left', exactRemoval.fromNodeIds[0])`);
   await check('Exact removal and unresolved coverage remain distinct', `document.querySelector('#selection-status').textContent.includes('removed · exact confidence') && document.querySelector('#selection-status').textContent.includes('unresolved') && document.querySelector('#selection-status').textContent.includes('cannot be traced with the available evidence')`);
-  await value(`window.unresolvedRemoval = appState.summary.links.find(link => link.relation === 'removed' && link.confidence === 'none');`);
+  await value(`window.unresolvedRemoval = appState.summary.links.find(link => link.relation === 'removed' && link.confidence === 'unresolved');`);
   await check('Curated comparison includes unresolved correspondence coverage', `Boolean(unresolvedRemoval)`);
   const unresolvedFunction = await value(`appState.panels.left.ir.functions.find(fn => fn.id === unresolvedRemoval.fromNodeIds[0].split('/')[0]).name`);
   await select('#function-select', unresolvedFunction); await until('window.StudyWorkspace.ready'); await value(`selectNode('left', unresolvedRemoval.fromNodeIds[0])`);

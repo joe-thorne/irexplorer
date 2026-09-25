@@ -221,7 +221,7 @@ def _unique_node_ids(node_ids: Iterable[str]) -> tuple[str, ...]:
 
 
 def _minimum_confidence(links: Iterable[Link]) -> Confidence:
-    confidence_rank = {"none": 0, "plausible": 1, "approximate": 2, "exact": 3}
+    confidence_rank = {"unresolved": 0, "plausible": 1, "approximate": 2, "exact": 3}
     return min(links, key=lambda link: confidence_rank[link.confidence]).confidence
 
 

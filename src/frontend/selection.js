@@ -59,7 +59,7 @@ function buildSelectionTrace(panels, summary, selection) {
           if (!validIds[side].has(id)) continue;
           covered[side].add(id);
           // Unresolved records must not become asserted counterparts.
-          if (link.confidence !== 'none') members[side].add(id);
+          if (link.confidence !== 'unresolved') members[side].add(id);
         }
       }
     }
@@ -70,13 +70,13 @@ function buildSelectionTrace(panels, summary, selection) {
   }
   const missing = sides.reduce((count, side) =>
     count + [...seeds[side]].filter(id => !covered[side].has(id)).length, 0);
-  const unresolved = missing > 0 || links.some(link => link.confidence === 'none')
+  const unresolved = missing > 0 || links.some(link => link.confidence === 'unresolved')
     || !sides.some(side => seeds[side].size);
   return { seeds, members, sourceLocations, links, sameState, missing, unresolved };
 }
 
 function relationWording(link) {
-  if (link.confidence === 'none') return 'unresolved';
+  if (link.confidence === 'unresolved') return 'unresolved';
   if (link.confidence === 'plausible') return `${link.relation} · plausible but unconfirmed confidence`;
   return `${link.relation} · ${link.confidence} confidence`;
 }
@@ -148,7 +148,7 @@ function traceDescription(trace) {
   if (trace.sameState) return counts + ' Same recorded state; matching instructions are shown in both views.';
   const groups = new Map();
   for (const link of trace.links) {
-    const label = link.confidence === 'none' ? 'unresolved'
+    const label = link.confidence === 'unresolved' ? 'unresolved'
       : `${link.relation} (${link.confidence} confidence)`;
     groups.set(label, (groups.get(label) || 0) + 1);
   }

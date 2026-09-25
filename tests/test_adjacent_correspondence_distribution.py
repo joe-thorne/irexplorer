@@ -5,7 +5,7 @@ from pathlib import Path
 
 from src.backend.api import QueryService
 
-FIXTURE = Path(__file__).parent / "data" / "adjacent-correspondence-distribution.json"
+FIXTURE = Path(__file__).parent / "data" / "correspondence-distribution.json"
 RELATIONS = (
     "same",
     "removed",

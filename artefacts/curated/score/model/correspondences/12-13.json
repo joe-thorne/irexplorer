@@ -4,7 +4,7 @@
     "BasicBlock",
     "Instruction"
   ],
-  "formatVersion": 2,
+  "formatVersion": 3,
   "fromOrdinal": 12,
   "links": [
     {
@@ -20,7 +20,7 @@
     },
     {
       "confidence": "approximate",
-      "evidence": "conservative anchor match on unique basic-block label",
+      "evidence": "conservative match to the separately recompiled O3 state by unique basic-block label",
       "fromNodeIds": [
         "fn0/bb0"
       ],
@@ -31,7 +31,7 @@
     },
     {
       "confidence": "approximate",
-      "evidence": "conservative anchor match on unique debug source location and opcode",
+      "evidence": "conservative match to the separately recompiled O3 state by unique debug source location and opcode",
       "fromNodeIds": [
         "fn0/bb0/i4"
       ],
@@ -42,7 +42,7 @@
     },
     {
       "confidence": "approximate",
-      "evidence": "conservative anchor match on unique debug source location and opcode",
+      "evidence": "conservative match to the separately recompiled O3 state by unique debug source location and opcode",
       "fromNodeIds": [
         "fn0/bb0/i0"
       ],
@@ -53,7 +53,7 @@
     },
     {
       "confidence": "approximate",
-      "evidence": "conservative anchor match on unique debug source location and opcode",
+      "evidence": "conservative match to the separately recompiled O3 state by unique debug source location and opcode",
       "fromNodeIds": [
         "fn0/bb0/i1"
       ],
@@ -64,7 +64,7 @@
     },
     {
       "confidence": "approximate",
-      "evidence": "conservative anchor match on unique debug source location and opcode",
+      "evidence": "conservative match to the separately recompiled O3 state by unique debug source location and opcode",
       "fromNodeIds": [
         "fn0/bb0/i2"
       ],
@@ -74,7 +74,7 @@
       ]
     },
     {
-      "confidence": "none",
+      "confidence": "unresolved",
       "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [
         "fn0/bb0/i3"
@@ -83,7 +83,7 @@
       "toNodeIds": []
     },
     {
-      "confidence": "none",
+      "confidence": "unresolved",
       "evidence": "candidate counterparts were inspected but no unique hybrid match exists",
       "fromNodeIds": [],
       "relation": "added",
