@@ -237,6 +237,10 @@ try {
   await snap('workspace.png');
   await route('/study'); await screen('Information and consent');
   await check('Study navigation identifies its current sections', `document.querySelector('#study-progress').getAttribute('aria-label') === 'Study sections' && document.querySelector('#study-progress [aria-current="step"]') !== null`);
+  await check('Opening study explains tool-use purpose and highlights final-only submission', `(() => { const purpose = document.querySelector('.study-purpose')?.innerText || ''; const submission = document.querySelector('.submission-guidance')?.innerText || ''; return purpose.includes('This study evaluates how useful irexplorer is when students and non-expert developers use it to explore compiler changes.') && purpose.includes('not an unaided test') && submission.includes('submitted only from the final review page') && submission.includes('navigation does not send them'); })()`);
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
+  await check('Opening purpose and final-only submission guidance fit the narrow viewport', `document.documentElement.scrollWidth <= innerWidth && ['.study-purpose','.submission-guidance'].every(selector => { const rect = document.querySelector(selector)?.getBoundingClientRect(); return rect && rect.width > 0 && rect.left >= 0 && rect.right <= innerWidth; })`);
+  await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
   await check('Clean study interface and release label', `document.querySelector('#app-version').textContent === 'v${release.version}' && !/synthetic|preview|not.live|E7/i.test(document.body.innerText) && !location.search`);
   await value(`document.querySelector('#C1').focus()`); await key(' ', 'Space', 32);
   await check('Keyboard Space operates consent checkbox', `document.querySelector('#C1').checked`);
@@ -272,14 +276,15 @@ try {
   }
   await screen('Post-survey'); await choose('Q1', 'na'); await fill('Q14', 'Container test post answer'); await click('#survey-form button[type="submit"]'); await screen('Review answers');
   await check('Review provides an explicit final submission action', `!!document.querySelector('[data-action="submit-responses"]')`);
+  await check('Review says nothing has been submitted before the final action', `(() => { const notice = [...document.querySelectorAll('#study-screen p')].find(p => p.innerText.includes('Nothing has been submitted.')); const submit = document.querySelector('[data-action="submit-responses"]'); return Boolean(notice && submit && (notice.compareDocumentPosition(submit) & Node.DOCUMENT_POSITION_FOLLOWING)); })()`);
   await snap('study-review.png');
   await value(`window.testFetch = window.fetch; window.fetch = async (...args) => { const response = await window.testFetch(...args); if (args[0] === '/api/study/submissions') throw Error('Synthetic lost acknowledgement'); return response; };`);
   await click('[data-action="submit-responses"]'); await screen('Receipt not yet confirmed');
-  await check('Uncertain submit prevents further answer edits', `!document.querySelector('#survey-form') && document.querySelector('#study-screen').textContent.includes('may already exist')`);
+  await check('Uncertain attempt says a record may exist and directs the participant to retry the same submission', `!document.querySelector('#survey-form') && document.querySelector('#study-screen').textContent.includes('may already exist') && document.querySelector('#study-screen').textContent.includes('same submission ID and answers')`);
   if (captures) await writeFile(join(captures, 'pending.json'), await value(`sessionStorage.getItem('irexplorer.submission.v3')`));
   await send('Page.reload'); await screen('Receipt not yet confirmed');
   await click('[data-action="retry-submit"]'); await screen('Submission received');
-  await check('Retry produces a durable receipt and removes answer draft', `sessionStorage.getItem('irexplorer.study.v0.9') === null && JSON.parse(sessionStorage.getItem('irexplorer.submission.v3')).kind === 'receipt'`);
+  await check('Retry confirms receipt storage and removes answer draft', `document.querySelector('#study-screen').innerText.includes('Your submission has been saved.') && document.querySelector('#study-screen').innerText.includes('Receipt:') && sessionStorage.getItem('irexplorer.study.v0.9') === null && JSON.parse(sessionStorage.getItem('irexplorer.submission.v3')).kind === 'receipt'`);
 
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: false });
   await send('Emulation.setPageScaleFactor', { pageScaleFactor: 2 });

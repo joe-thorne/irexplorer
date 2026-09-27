@@ -101,6 +101,8 @@ a:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visi
 #study-progress [aria-current="step"] { border-color: var(--accent); color: var(--ink); font-weight: 800; }
 .study-screen { max-width: 48rem; margin: 0 auto; padding: 1.5rem; }
 .study-screen h2 { margin-bottom: .6rem; }
+.study-purpose, .submission-guidance { border: 1px solid var(--line); border-left: .3rem solid var(--accent); border-radius: .35rem; background: #f2f6fb; margin: .8rem 0; overflow-wrap: anywhere; padding: .85rem 1rem; }
+.submission-guidance strong { display: block; margin-bottom: .25rem; }
 .acknowledgement { display: flex; align-items: start; gap: .7rem; }
 .acknowledgement input { width: 1.2rem; height: 1.2rem; flex-shrink: 0; }
 .screen-actions, .study-utilities { align-items: center; display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1.2rem; }
