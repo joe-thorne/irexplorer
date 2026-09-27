@@ -1,7 +1,7 @@
 {
-  "instrumentVersion": "v0.5",
-  "contentVersion": "v0.5-preview-1",
-  "studyVersion": "v0.5-synthetic-1",
+  "instrumentVersion": "v0.6",
+  "contentVersion": "v0.6-preview-1",
+  "studyVersion": "v0.6-synthetic-1",
   "mode": "preview",
   "submissionEnabled": false,
   "scales": {
@@ -208,54 +208,171 @@
       }
     },
     {
-      "id": "P3",
-      "prompt": "Which of these UQ courses have you completed or are you currently enrolled in?",
-      "type": "multiple",
+      "id": "P3_CSSE1001_ENGG1001",
+      "prompt": "CSSE1001/ENGG1001",
+      "type": "single",
       "required": false,
       "options": [
         {
           "value": 1,
-          "label": "CSSE2010 — Introduction to Computer Systems"
+          "label": "Completed"
         },
         {
           "value": 2,
-          "label": "CSSE2310 — Computer Systems Principles and Programming"
+          "label": "Currently enrolled"
         },
         {
           "value": 3,
-          "label": "COMP3506 — Algorithms and Data Structures"
-        },
-        {
-          "value": 4,
-          "label": "CSSE3200 — Software Engineering Studio"
-        },
-        {
-          "value": 5,
-          "label": "COMP4403 — Compilers and Interpreters"
-        },
-        {
-          "value": 6,
-          "label": "None of these"
-        },
-        {
-          "value": 7,
-          "label": "Other relevant course — please name it:"
+          "label": "Neither"
         }
-      ],
-      "exclusiveValue": 6
+      ]
     },
     {
-      "id": "P3.other",
+      "id": "P3_CSSE2002",
+      "prompt": "CSSE2002",
+      "type": "single",
+      "required": false,
+      "options": [
+        {
+          "value": 1,
+          "label": "Completed"
+        },
+        {
+          "value": 2,
+          "label": "Currently enrolled"
+        },
+        {
+          "value": 3,
+          "label": "Neither"
+        }
+      ]
+    },
+    {
+      "id": "P3_CSSE2010",
+      "prompt": "CSSE2010",
+      "type": "single",
+      "required": false,
+      "options": [
+        {
+          "value": 1,
+          "label": "Completed"
+        },
+        {
+          "value": 2,
+          "label": "Currently enrolled"
+        },
+        {
+          "value": 3,
+          "label": "Neither"
+        }
+      ]
+    },
+    {
+      "id": "P3_CSSE2310",
+      "prompt": "CSSE2310",
+      "type": "single",
+      "required": false,
+      "options": [
+        {
+          "value": 1,
+          "label": "Completed"
+        },
+        {
+          "value": 2,
+          "label": "Currently enrolled"
+        },
+        {
+          "value": 3,
+          "label": "Neither"
+        }
+      ]
+    },
+    {
+      "id": "P3_COMP3506",
+      "prompt": "COMP3506",
+      "type": "single",
+      "required": false,
+      "options": [
+        {
+          "value": 1,
+          "label": "Completed"
+        },
+        {
+          "value": 2,
+          "label": "Currently enrolled"
+        },
+        {
+          "value": 3,
+          "label": "Neither"
+        }
+      ]
+    },
+    {
+      "id": "P3_COMP3301",
+      "prompt": "COMP3301",
+      "type": "single",
+      "required": false,
+      "options": [
+        {
+          "value": 1,
+          "label": "Completed"
+        },
+        {
+          "value": 2,
+          "label": "Currently enrolled"
+        },
+        {
+          "value": 3,
+          "label": "Neither"
+        }
+      ]
+    },
+    {
+      "id": "P3_COMP4403",
+      "prompt": "COMP4403",
+      "type": "single",
+      "required": false,
+      "options": [
+        {
+          "value": 1,
+          "label": "Completed"
+        },
+        {
+          "value": 2,
+          "label": "Currently enrolled"
+        },
+        {
+          "value": 3,
+          "label": "Neither"
+        }
+      ]
+    },
+    {
+      "id": "P3_other_name",
       "prompt": "Other relevant course — please name it:",
       "type": "text",
       "required": false,
-      "maxLength": 4000,
-      "condition": {
-        "field": "P3",
-        "values": [
-          7
-        ]
-      }
+      "maxLength": 4000
+    },
+    {
+      "id": "P3_other_status",
+      "prompt": "Other relevant course status",
+      "type": "single",
+      "required": false,
+      "options": [
+        {
+          "value": 1,
+          "label": "Completed"
+        },
+        {
+          "value": 2,
+          "label": "Currently enrolled"
+        },
+        {
+          "value": 3,
+          "label": "Neither"
+        }
+      ]
     },
     {
       "id": "P4",
@@ -823,12 +940,20 @@
   "preSections": [
     {
       "title": "Section A — Background",
+      "intro": "For each course, choose Completed, Currently enrolled, or Neither. Leave a course unanswered if you prefer not to say; an unanswered response is unknown, not Neither. The optional other course has the same status choices.",
       "fields": [
         "P1",
         "P1.other",
         "P2",
-        "P3",
-        "P3.other"
+        "P3_CSSE1001_ENGG1001",
+        "P3_CSSE2002",
+        "P3_CSSE2010",
+        "P3_CSSE2310",
+        "P3_COMP3506",
+        "P3_COMP3301",
+        "P3_COMP4403",
+        "P3_other_name",
+        "P3_other_status"
       ]
     },
     {

@@ -143,11 +143,11 @@ class SubmissionTests(unittest.TestCase):
     def test_export_fidelity_and_backup_restore(self):
         self.payload['post']['Q18']={'status':'answered','value':'  =SUM(1,2)\n"café", synthetic'}
         self.payload['post']['Q1']={'status':'not_applicable','value':None}
-        self.payload['pre']['P3']={'status':'answered','value':[2,1]}
+        self.payload['pre']['P3_COMP4403']={'status':'answered','value':1}
         self.payload['tasks'][3]['status']='skipped'
         self.service.submit(self.payload)
         reordered = deepcopy(self.payload)
-        reordered['pre']['P3']['value']=[1,2]
+        reordered['pre'] = dict(reversed(list(reordered['pre'].items())))
         self.assertFalse(self.service.submit(reordered)[1])
         self.service.submit(synthetic())
         destination=Path(self.tmp.name)/'export'
@@ -187,7 +187,7 @@ class SubmissionTests(unittest.TestCase):
         destination = Path(self.tmp.name) / 'early-export'
         export(self.config.path, destination)
         book = json.loads((destination / 'codebook.json').read_text())
-        self.assertEqual(book['versions']['instrumentVersion'], 'v0.5')
+        self.assertEqual(book['versions']['instrumentVersion'], 'v0.6')
         self.assertIn('Q3 only', book['analysis'])
         self.assertIn('section', book['csv'])
         with open(destination / 'submissions.csv', newline='') as handle:
@@ -221,9 +221,12 @@ class SubmissionTests(unittest.TestCase):
 
     def test_legacy_export_keeps_absent_setup_unknown(self):
         self.service.submit(self.payload)
-        # Model an already-stored v0.1 JSON record; the current submission API rejects it.
+        # Model an already-stored v0.5 JSON record; the current submission API rejects it.
         legacy = deepcopy(self.payload)
-        legacy.update(instrumentVersion='v0.1', contentVersion='e5-preview-1', studyVersion='e5-synthetic-1')
+        legacy.update(instrumentVersion='v0.5', contentVersion='v0.5-preview-1', studyVersion='v0.5-synthetic-1')
+        legacy['pre'] = {key: value for key, value in legacy['pre'].items() if not key.startswith('P3_')}
+        legacy['pre']['P3'] = {'status': 'answered', 'value': [2, 5]}
+        legacy['pre']['P3.other'] = {'status': 'unanswered', 'value': None}
         for task in legacy['tasks']:
             task.pop('setupReached')
         db = sqlite3.connect(self.config.path)
@@ -234,10 +237,16 @@ class SubmissionTests(unittest.TestCase):
             db.close()
         destination = Path(self.tmp.name) / 'legacy-export'
         export(self.config.path, destination)
+        codebook = json.loads((destination / 'codebook.json').read_text())
+        self.assertIn('P3 combines completed and current enrolment', codebook['coding'])
+        self.assertEqual(codebook['instrumentDefinitions']['v0.5']['P3']['values']['5'], 'COMP4403')
+        self.assertEqual(codebook['instrumentDefinitions']['v0.6']['courseStatusOptions']['3'], 'Neither')
+        exported = json.loads((destination / 'submissions.json').read_text())[0]['submission']
+        self.assertEqual(exported['pre']['P3'], {'status': 'answered', 'value': [2, 5]})
         with open(destination / 'submissions.csv', newline='') as handle:
             rows = list(csv.DictReader(handle))
         self.assertEqual(next(r for r in rows if r['itemId'] == 'T1')['setupReached'], '')
-        self.assertTrue(all(r['instrumentVersion'] == 'v0.1' for r in rows))
+        self.assertTrue(all(r['instrumentVersion'] == 'v0.5' for r in rows))
 
     def test_pilot_mode_and_private_http_boundary(self):
         for mode in ('pilot',):

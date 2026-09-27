@@ -16,7 +16,7 @@ const storage={getItem:k=>values.get(k)||null,setItem(k,v){if(fail)throw Error()
 let calls=[],lost=true;
 const send=async(url,options)=>{calls.push(options.body);const p=JSON.parse(options.body);if(lost)throw Error('Lost acknowledgement');return {ok:true,status:200,json:async()=>({receiptId:'synthetic-receipt',participantCode:p.participantCode,submissionId:p.submissionId,studyVersion:p.studyVersion})};};
 const checks=[];
-assert.equal(S.KEY, 'irexplorer.submission.v1');
+assert.equal(S.KEY, 'irexplorer.submission.v2');
 assert.notEqual(S.KEY, 'irexplorer.study.submission.e6');
 checks.push('Pending submissions use the versioned submission recovery key');
 let s=S.controller(()=>storage,send);
@@ -33,9 +33,9 @@ await s.submit(d,true);assert.equal(s.state.kind,'receipt');checks.push('Explici
 fail=false;values.clear();let release;const gate=new Promise(r=>release=r);let count=0;
 s=S.controller(()=>storage,async(...args)=>{count++;await gate;return send(...args);});const first=s.submit(d);await s.submit(d);assert.equal(count,1);release();await first;checks.push('Double click produces one in-flight request');
 values.clear();s=S.controller(()=>storage,send);d.tasks.T0.durationMs=86400001;await s.submit(d);assert.equal(s.state,null);checks.push('Oversized duration retained locally without an invalid network attempt');
-values.clear();values.set('irexplorer.study.submission.e6', JSON.stringify({kind:'pending',payload:{submissionId:'old'}}));
+values.clear();values.set('irexplorer.submission.v1', JSON.stringify({kind:'pending',submission:{submissionId:'old',participantCode:'old-participant',instrumentVersion:'v0.5'}}));
 s=S.controller(()=>storage,send);s.read();assert.equal(s.recoveryBlocked,true);assert.equal(s.legacyPending,true);
-assert.match(s.issue,/older saved submission/i);assert.equal(s.legacyParticipantCode, '');assert.equal(s.discardLegacy(),true);assert.equal(values.has('irexplorer.study.submission.e6'),false);
+assert.match(s.issue,/older saved submission/i);assert.equal(s.legacyParticipantCode, 'old-participant');assert.equal(s.discardLegacy(),true);assert.equal(values.has('irexplorer.submission.v1'),false);
 assert.match(studyView,/Discard incompatible saved draft/);assert.match(studyView,/submission\.discardLegacy\(\)/);
-checks.push('Old pending submission is offered an explicit incompatible-draft discard path');
+checks.push('v0.5 pending submission is offered an explicit incompatible-draft discard path');
 console.log(`${checks.length} submission checks pass`);

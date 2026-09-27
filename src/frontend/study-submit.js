@@ -1,34 +1,36 @@
 // Final-only transport. Freeze the submission before any network attempt.
 window.StudySubmit = (() => {
-  const KEY = 'irexplorer.submission.v1';
-  const LEGACY_KEY = 'irexplorer.study.submission.e6';
+  const KEY = 'irexplorer.submission.v2';
+  const LEGACY_KEYS = ['irexplorer.submission.v1', 'irexplorer.study.submission.e6'];
   function submissionFromDraft(draft) {
     return { submissionId: crypto.randomUUID(), ...Object.fromEntries(['participantCode', 'studyVersion', 'contentVersion', 'instrumentVersion', 'consent', 'pre', 'post'].map(k => [k, structuredClone(draft[k])])),
       tasks: Object.entries(draft.tasks).map(([id, t]) => ({ id, status: t.status, setupReached: t.started, durationMs: Math.round(t.durationMs), interrupted: t.interrupted, answers: structuredClone(t.answers) })) };
   }
   function controller(getStorage = () => sessionStorage, send = (...args) => fetch(...args)) {
     let state = null, busy = false, issue = '', recoveryBlocked = false, legacyPending = false,
-      legacyParticipantCode = '';
+      legacyKey = '', legacyParticipantCode = '';
     function persist(next) { getStorage().setItem(KEY, JSON.stringify(next)); state = next; }
     return {
       get state() { return state; }, get busy() { return busy; }, get issue() { return issue; }, get recoveryBlocked() { return recoveryBlocked; },
       read() {
-        issue = ''; recoveryBlocked = false; legacyPending = false; legacyParticipantCode = '';
+        issue = ''; recoveryBlocked = false; legacyPending = false; legacyKey = ''; legacyParticipantCode = '';
         try {
           const storage = getStorage();
-          const raw = storage.getItem(KEY);
+          let raw = storage.getItem(KEY);
           if (!raw) {
-            const old = storage.getItem(LEGACY_KEY);
+            const oldKey = LEGACY_KEYS.find(key => storage.getItem(key));
+            const old = oldKey ? storage.getItem(oldKey) : null;
             if (!old) return;
             const parsedOld = JSON.parse(old);
-            if (parsedOld?.kind === 'pending' && parsedOld.payload?.submissionId) {
-              legacyPending = true; recoveryBlocked = true;
-              legacyParticipantCode = parsedOld.payload.participantCode || '';
+            const legacySubmission = parsedOld?.submission || parsedOld?.payload;
+            if (parsedOld?.kind === 'pending' && legacySubmission?.submissionId) {
+              legacyPending = true; legacyKey = oldKey; recoveryBlocked = true;
+              legacyParticipantCode = legacySubmission.participantCode || '';
               issue = 'An older saved submission is incompatible with this version. Discard the incompatible saved draft to start again.';
               return;
             }
             if (parsedOld?.kind === 'receipt' && parsedOld.receipt?.receiptId) {
-              persist(parsedOld); storage.removeItem(LEGACY_KEY); return;
+              persist(parsedOld); storage.removeItem(oldKey); return;
             }
             throw Error();
           }
@@ -42,8 +44,8 @@ window.StudySubmit = (() => {
       discardLegacy() {
         if (!legacyPending) return false;
         try {
-          getStorage().removeItem(LEGACY_KEY);
-          legacyPending = false; legacyParticipantCode = ''; recoveryBlocked = false; issue = '';
+          getStorage().removeItem(legacyKey);
+          legacyPending = false; legacyKey = ''; legacyParticipantCode = ''; recoveryBlocked = false; issue = '';
           return true;
         } catch { issue = 'The incompatible saved draft could not be removed. Allow browser storage and retry discard.'; return false; }
       },

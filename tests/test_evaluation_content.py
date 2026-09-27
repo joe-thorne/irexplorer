@@ -97,7 +97,7 @@ class EvaluationContentTests(unittest.TestCase):
                                        'submissionEnabled': True})
             self.assertEqual(content['collectionMode'], 'preview')
             self.assertTrue(content['submissionEnabled'])
-            self.assertEqual(len(content['fields']), 60)
+            self.assertEqual(len(content['fields']), 67)
             allowed = {'id', 'prompt', 'type', 'required', 'options', 'scale', 'notApplicableLabel', 'maxLength',
                        'exclusiveValue', 'optionStatuses', 'condition', 'inabilityLabel'}
             for field in content['fields']:
@@ -127,12 +127,35 @@ class EvaluationContentTests(unittest.TestCase):
     def test_exclusive_choices_and_conditional_details(self):
         def a(value):
             return {'status': 'answered', 'value': value}
-        for values in [[6, 1], [1, 1], [], [True], ['1']]:
-            self.assertIn('P3', validate_answers('pre', {'P3': a(values)}))
-        self.assertEqual(validate_answers('pre', {'P3': a([1, 7]), 'P3.other': a('Synthetic course')}), {})
-        self.assertIn('P3.other', validate_answers('pre', {'P3': a([6]), 'P3.other': a('Synthetic course')}))
+        for value in [0, 4, True, '1']:
+            self.assertIn('P3_COMP4403', validate_answers('pre', {'P3_COMP4403': a(value)}))
+        self.assertEqual(validate_answers('pre', {'P3_COMP4403': a(1)}), {})
+        self.assertIn('P3_other_status', validate_answers('pre', {'P3_other_status': a(1)}))
         self.assertIn('P12.detail', validate_answers('pre', {'P12': a(1), 'P12.detail': a('Detail')}))
         self.assertEqual(validate_answers('pre', {'P12': a(2), 'P12.detail': a('Detail')}), {})
+
+    def test_v06_course_statuses_are_independent_and_other_status_needs_a_name(self):
+        content = participant_content()
+        self.assertEqual((content['instrumentVersion'], content['contentVersion'], content['studyVersion']),
+                         ('v0.6', 'v0.6-preview-1', 'v0.6-synthetic-1'))
+        courses = [field for field in content['fields']
+                   if field['id'].startswith('P3_') and field['id'] != 'P3_other_name']
+        self.assertEqual([field['id'] for field in courses], [
+            'P3_CSSE1001_ENGG1001', 'P3_CSSE2002', 'P3_CSSE2010', 'P3_CSSE2310',
+            'P3_COMP3506', 'P3_COMP3301', 'P3_COMP4403', 'P3_other_status',
+        ])
+        self.assertTrue(all([option['label'] for option in field['options']] ==
+                            ['Completed', 'Currently enrolled', 'Neither'] for field in courses))
+        def a(value):
+            return {'status': 'answered', 'value': value}
+        self.assertEqual(validate_answers('pre', {'P3_CSSE1001_ENGG1001': a(1),
+                                                  'P3_COMP4403': a(2)}), {})
+        self.assertEqual(validate_answers('pre', {'P3_COMP4403': {'status': 'unanswered', 'value': None}}), {})
+        self.assertIn('P3_other_status', validate_answers('pre', {'P3_other_status': a(1)}))
+        self.assertEqual(validate_answers('pre', {'P3_other_name': a('Synthetic course')}), {})
+        self.assertEqual(validate_answers('pre', {'P3_other_name': a('Synthetic course'),
+                                                  'P3_other_status': a(3)}), {})
+        self.assertIn('P3_other_name', validate_answers('pre', {'P3_other_name': a('')}))
 
     def test_text_bounds_raw_unicode_and_unknown_keys(self):
         text = '🙂' * 4000

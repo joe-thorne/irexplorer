@@ -214,8 +214,10 @@ try {
   for (let i = 2; i <= 6; i += 1) await click('#C' + i);
   await click('[data-action="start"]'); await screen('Pre-survey');
   await choose('P1', '1'); await fill('P13', 'Container test background response');
+  await choose('P3_COMP4403', '2'); await fill('P3_other_name', 'Synthetic course'); await choose('P3_other_status', '1');
+  await check('Pre-survey distinguishes course status and optional named course', `document.querySelector('[data-field="P3_COMP4403"]').innerText.includes('Currently enrolled') && document.querySelector('[data-field="P3_other_status"] input:checked')?.value === '1'`);
   await send('Page.reload'); await screen('Pre-survey');
-  await check('Ordinary refresh restores answers without a special URL', `document.querySelector('input[name="P1"][value="1"]').checked && document.querySelector('textarea[name="P13"]').value === 'Container test background response' && !location.search`);
+  await check('Ordinary refresh restores answers without a special URL', `document.querySelector('input[name="P1"][value="1"]').checked && document.querySelector('textarea[name="P13"]').value === 'Container test background response' && document.querySelector('input[name="P3_COMP4403"][value="2"]').checked && document.querySelector('textarea[name="P3_other_name"]').value === 'Synthetic course' && document.querySelector('input[name="P3_other_status"][value="1"]').checked && !location.search`);
   await click('#survey-form button[type="submit"]');
   await task('T0');
   await click('[data-action="pause-task"]');
@@ -239,10 +241,10 @@ try {
   await value(`window.testFetch = window.fetch; window.fetch = async (...args) => { const response = await window.testFetch(...args); if (args[0] === '/api/study/submissions') throw Error('Synthetic lost acknowledgement'); return response; };`);
   await click('[data-action="submit-responses"]'); await screen('Receipt not yet confirmed');
   await check('Uncertain submit prevents further answer edits', `!document.querySelector('#survey-form') && document.querySelector('#study-screen').textContent.includes('may already exist')`);
-  if (captures) await writeFile(join(captures, 'pending.json'), await value(`sessionStorage.getItem('irexplorer.submission.v1')`));
+  if (captures) await writeFile(join(captures, 'pending.json'), await value(`sessionStorage.getItem('irexplorer.submission.v2')`));
   await send('Page.reload'); await screen('Receipt not yet confirmed');
   await click('[data-action="retry-submit"]'); await screen('Submission received');
-  await check('Retry produces a durable receipt and removes answer draft', `sessionStorage.getItem('irexplorer.study.v0.5') === null && JSON.parse(sessionStorage.getItem('irexplorer.submission.v1')).kind === 'receipt'`);
+  await check('Retry produces a durable receipt and removes answer draft', `sessionStorage.getItem('irexplorer.study.v0.6') === null && JSON.parse(sessionStorage.getItem('irexplorer.submission.v2')).kind === 'receipt'`);
 
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: false });
   await send('Emulation.setPageScaleFactor', { pageScaleFactor: 2 });
@@ -257,7 +259,7 @@ try {
   const otherSend = (method, params = {}) => new Promise(resolve => { const id = ++otherId; otherPending.set(id, resolve); other.send(JSON.stringify({ id, method, params })); });
   await otherSend('Runtime.enable'); await otherSend('Page.enable'); await otherSend('Page.navigate', { url: `${base}/#/study` });
   for (let attempt = 0; attempt < 100; attempt += 1) { const result = await otherSend('Runtime.evaluate', { expression: `document.querySelector('#route-heading')?.textContent`, returnByValue: true }); if (result.result.value === 'Information and consent') break; await new Promise(resolve => setTimeout(resolve, 75)); }
-  const isolated = await otherSend('Runtime.evaluate', { expression: `!sessionStorage.getItem('irexplorer.study.v0.5') && !document.querySelector('[data-action="new-study"]')`, returnByValue: true });
+  const isolated = await otherSend('Runtime.evaluate', { expression: `!sessionStorage.getItem('irexplorer.study.v0.6') && !document.querySelector('[data-action="new-study"]')`, returnByValue: true });
   if (!isolated.result.value) throw Error('Failed: Independent browser tab does not start without the first tab’s draft.');
   checks.push('Independent browser tab has no first-session draft or receipt'); other.close(); await send('Target.closeTarget', { targetId: newTarget.targetId });
   await route('/explore'); await select('#example-select', 'score');

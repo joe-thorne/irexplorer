@@ -82,6 +82,29 @@ def export(source, directory):
     write('codebook.json', {
         'schemaVersion': 2, 'fields': content['fields'], 'scales': content['scales'],
         'versions': {k: content[k] for k in ('studyVersion', 'instrumentVersion', 'contentVersion')},
+        'instrumentDefinitions': {
+            'v0.5': {
+                'P3': {
+                    'meaning': ('Selected UQ courses completed or currently enrolled in; the response does not '
+                                'distinguish those statuses.'),
+                    'values': {'1': 'CSSE2010', '2': 'CSSE2310', '3': 'COMP3506', '4': 'CSSE3200',
+                               '5': 'COMP4403', '6': 'None of these', '7': 'Other relevant course'},
+                    'otherCourse': 'P3.other contains the optional course name when value 7 is selected.',
+                },
+            },
+            'v0.6': {
+                'courseStatusOptions': {'1': 'Completed', '2': 'Currently enrolled', '3': 'Neither'},
+                'courseItems': {
+                    'P3_CSSE1001_ENGG1001': 'CSSE1001/ENGG1001', 'P3_CSSE2002': 'CSSE2002',
+                    'P3_CSSE2010': 'CSSE2010', 'P3_CSSE2310': 'CSSE2310', 'P3_COMP3506': 'COMP3506',
+                    'P3_COMP3301': 'COMP3301', 'P3_COMP4403': 'COMP4403',
+                },
+                'otherCourse': (
+                    'P3_other_name is an optional name; P3_other_status uses courseStatusOptions. '
+                    'A named course without a status is unknown; unanswered is never Neither.'
+                ),
+            },
+        },
         'csv': (
             'Long format uses section to identify consent, survey, or task. Value is the raw numeric code, '
             'JSON array, or text. Empty value with status is '
@@ -117,10 +140,12 @@ def export(source, directory):
             'correctness coding. Incomplete/abandoned sessions are excluded.'
         ),
         'coding': (
-            'Keep researcher coding in a separate file joined on participantCode and item/task ID. P3 '
-            'measures completed/current course exposure together. Use non-exclusive '
-            'non-expert/compiler-exposed/out-of-audience flags; report overlap and unknown where missing '
-            'data do not establish a flag.'
+            'Keep researcher coding in a separate file joined on participantCode and item/task ID. '
+            'Separate records by instrumentVersion. v0.5 P3 combines completed and current enrolment; '
+            'v0.6 course items distinguish Completed (1), Currently enrolled (2), and Neither (3), with '
+            'unanswered unknown. Do not recode or pool v0.5 P3 as v0.6 statuses. Course exposure alone '
+            'does not establish expertise. Use non-exclusive non-expert/compiler-exposed/out-of-audience '
+            'flags; report overlap and unknown where missing data do not establish a flag.'
         ),
     })
     columns = ['participantCode', 'submissionId', 'receiptId', 'studyVersion', 'contentVersion', 'instrumentVersion',

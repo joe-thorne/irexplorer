@@ -118,11 +118,15 @@ check('Pre-setup skip and inability survive recovery without fabricated answers 
     const bad=JSON.parse(JSON.stringify(d));change(bad);assert.throws(()=>D.decode(JSON.stringify(bad),content));
   }
 });
-check('v0.5 representation selections and old draft identities stay distinct', () => {
-  assert.equal(D.KEY, 'irexplorer.study.v0.5');
+check('v0.6 representation selections and v0.5 draft identities stay distinct', () => {
+  assert.equal(D.KEY, 'irexplorer.study.v0.6');
   assert.equal(Object.keys(D.validate(content,'post',{Q8:answered([1,2,3])})).length,0);
   for (const value of [1,[1,4]]) assert.equal(Object.keys(D.validate(content,'post',{Q8:answered(value)})).join(),'Q8');
-  const d=D.create(content,consent);d.instrumentVersion='v0.1';assert.throws(()=>D.decode(JSON.stringify(d),content));
+  const d=D.create(content,consent);d.instrumentVersion='v0.5';d.contentVersion='v0.5-preview-1';d.studyVersion='v0.5-synthetic-1';assert.throws(()=>D.decode(JSON.stringify(d),content));
+  const course=content.fields.find(f=>f.id==='P3_COMP4403');
+  assert.deepEqual(course.options.map(option=>option.label),['Completed','Currently enrolled','Neither']);
+  assert.equal(Object.keys(D.validate(content,'pre',{P3_other_status:answered(1)})).join(),'P3_other_status');
+  assert.equal(Object.keys(D.validate(content,'pre',{P3_other_name:answered('Synthetic course'),P3_other_status:answered(2)})).length,0);
 });
 check('Timing starts only on resume, checkpoints accumulate once, repeated resume cannot double count', () => {
   let now=100;const r={durationMs:0,status:'pending',started:true,paused:false,interrupted:false};

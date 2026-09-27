@@ -1,6 +1,6 @@
 // Local study state only. No network or workspace dependencies.
 window.StudyDraft = (() => {
-  const KEY = 'irexplorer.study.v0.5'; // New key prevents an older instrument draft from being restored.
+  const KEY = 'irexplorer.study.v0.6'; // New key prevents v0.5 course answers from entering the revised instrument.
   const blank = () => ({ status: 'unanswered', value: null });
   const fieldsFor = (content, section) => content.fields.filter(f => f.id.startsWith(section === 'pre' ? 'P' : section === 'post' ? 'Q' : section));
   function visible(field, answers) {
@@ -31,6 +31,10 @@ window.StudyDraft = (() => {
         valid &&= Array.isArray(values) && values.length > 0 && values.every(v => Number.isInteger(v) && allowed.includes(v)) && new Set(values).size === values.length && !(values.includes(field.exclusiveValue) && values.length > 1);
       }
       valid &&= visible(field, answers);
+      if (valid && field.id === 'P3_other_status') {
+        const name = answers.P3_other_name;
+        valid = name?.status === 'answered' && typeof name.value === 'string' && !!name.value.trim();
+      }
       if (!valid) errors[field.id] = ['text', 'short_text'].includes(field.type) ? `Use no more than ${field.maxLength.toLocaleString()} characters. Your text has not been shortened.` : 'Choose one of this item’s options.';
     }
     return errors;

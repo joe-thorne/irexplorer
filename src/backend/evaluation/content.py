@@ -60,6 +60,10 @@ def validate_answers(section, answers, *, complete=False):
             selected = parent.get('value')
             selected = selected if isinstance(selected, list) else [selected]
             valid = parent.get('status') == 'answered' and any(v in condition['values'] for v in selected)
+        if valid and key == 'P3_other_status':
+            name = answers.get('P3_other_name', {})
+            valid = (name.get('status') == 'answered' and isinstance(name.get('value'), str)
+                     and bool(name['value'].strip()))
         if not valid:
             errors[key] = 'Answer does not match this item’s options or text limit.'
     return errors
