@@ -187,7 +187,7 @@ class SubmissionTests(unittest.TestCase):
         destination = Path(self.tmp.name) / 'early-export'
         export(self.config.path, destination)
         book = json.loads((destination / 'codebook.json').read_text())
-        self.assertEqual(book['versions']['instrumentVersion'], 'v0.9')
+        self.assertEqual(book['versions']['instrumentVersion'], 'v0.10')
         self.assertIn('Q3 only', book['analysis'])
         self.assertIn('section', book['csv'])
         self.assertIn('task presentation', book['durationMs'])

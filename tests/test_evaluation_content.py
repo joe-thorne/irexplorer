@@ -85,13 +85,22 @@ class EvaluationContentTests(unittest.TestCase):
         ])
         self.assertEqual(t2a['optionStatuses'], {'199': 'could_not_work_out'})
 
-    def test_v09_task_copy_and_identity_match_approved_runsheet(self):
+    def test_v010_task_copy_and_identity_match_approved_runsheet(self):
         content = participant_content()
         self.assertEqual((content['instrumentVersion'], content['contentVersion'], content['studyVersion']),
-                         ('v0.9', 'v0.9-preview-1', 'v0.9-synthetic-1'))
+                         ('v0.10', 'v0.10-preview-1', 'v0.10-synthetic-1'))
         tasks = {task['id']: task for task in content['tasks']}
         self.assertIn('State 0 is the unoptimised baseline compiled with -O0', content['taskIntroduction'][1])
-        self.assertIn('Brief, partial, or blank answers are useful', content['taskIntroduction'][2])
+        self.assertIn('not an unaided test', content['taskIntroduction'][2])
+        self.assertIn('Answer at your own level of detail', content['taskIntroduction'][2])
+        self.assertIn('navigation does not submit them', content['taskIntroduction'][3])
+        about = content['information'][0]['blocks']
+        self.assertIn('evaluates how useful irexplorer is', about[4]['text'])
+        self.assertIn('not an unaided test', about[4]['text'])
+        handling = next(section for section in content['information'] if section['title'] == 'What happens to it')
+        self.assertIn('navigation does not send them', handling['blocks'][0]['text'])
+        self.assertIn('starts a submission attempt', handling['blocks'][0]['text'])
+        self.assertIn('shows a receipt', handling['blocks'][0]['text'])
         self.assertIn('A brief or partial answer is fine', tasks['T1']['instructions'])
         t2a = next(field for field in content['fields'] if field['id'] == 'T2a')
         self.assertIn('Which State is the first in which this arithmetic is absent', t2a['prompt'])
@@ -154,7 +163,7 @@ class EvaluationContentTests(unittest.TestCase):
     def test_v06_course_statuses_are_independent_and_other_status_needs_a_name(self):
         content = participant_content()
         self.assertEqual((content['instrumentVersion'], content['contentVersion'], content['studyVersion']),
-                         ('v0.9', 'v0.9-preview-1', 'v0.9-synthetic-1'))
+                         ('v0.10', 'v0.10-preview-1', 'v0.10-synthetic-1'))
         courses = [field for field in content['fields']
                    if field['id'].startswith('P3_') and field['id'] != 'P3_other_name']
         self.assertEqual([field['id'] for field in courses], [

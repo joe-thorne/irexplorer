@@ -1,7 +1,7 @@
 {
-  "instrumentVersion": "v0.9",
-  "contentVersion": "v0.9-preview-1",
-  "studyVersion": "v0.9-synthetic-1",
+  "instrumentVersion": "v0.10",
+  "contentVersion": "v0.10-preview-1",
+  "studyVersion": "v0.10-synthetic-1",
   "mode": "preview",
   "submissionEnabled": false,
   "scales": {
@@ -109,7 +109,7 @@
     },
     {
       "id": "C3",
-      "prompt": "I understand that answers are sent only when I select Submit responses, and that I can request removal with my participant code before the stated withdrawal cutoff. [Joe/Joel to confirm: withdrawal cutoff and removal scope.]",
+      "prompt": "I understand that my answers remain a browser-tab draft until I select Submit answers, and that a receipt confirms submission. I can request removal with my participant code before the stated withdrawal cutoff. [Joe/Joel to confirm: withdrawal cutoff and removal scope.]",
       "type": "boolean",
       "required": true
     },
@@ -1215,7 +1215,7 @@
         },
         {
           "kind": "paragraph",
-          "text": "I am trying to find out whether that actually helps. Specifically: can someone who is not a compiler expert use it to work out what changed, and work out which pass was responsible?"
+          "text": "This study evaluates how useful irexplorer is when students and non-expert developers use it to explore compiler changes. The tasks give you questions to try with the tool; they are not an unaided test of what you already know or an assessment of you. You can use the tool's views and explanations, and answer at your own level of detail."
         },
         {
           "kind": "paragraph",
@@ -1274,7 +1274,11 @@
       "blocks": [
         {
           "kind": "paragraph",
-          "text": "Your final answers are sent only when you choose Submit responses. The response database, any exports, and backups are kept as private research data outside the source-code repositories. Short quotes from free-text answers may appear without attribution only after they are screened for identifying details. [Joe/Joel to confirm: storage location, access, backup handling, retention and deletion date, permitted sharing, and the final wording for thesis, poster, and demonstration use.]"
+          "text": "As you move between sections and tasks, your answers remain a draft in this browser tab; navigation does not send them. At the end, selecting Submit answers starts a submission attempt. The submission is confirmed only when the Submission received screen shows a receipt. If a receipt is not yet confirmed, keep this tab open and retry the same submission."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The response database, any exports, and backups are kept as private research data outside the source-code repositories. Short quotes from free-text answers may appear without attribution only after they are screened for identifying details. [Joe/Joel to confirm: storage location, access, backup handling, retention and deletion date, permitted sharing, and the final wording for thesis, poster, and demonstration use.]"
         },
         {
           "kind": "paragraph",
@@ -1308,7 +1312,7 @@
   "taskIntroduction": [
     "Three small C programs are already loaded. You do not need to write or compile code.",
     "Each program has fourteen recorded states: State 0 is the unoptimised baseline compiled with -O0; States 1–12 are produced by successive compiler passes applied to the preceding output; State 13 is compiled separately with -O3.",
-    "After the orientation are six tasks. T0–T5 open on the named example at State 0 with IR in both panels; set the states and views named in each task. T6 continues with T5’s example, states, function, and views, with the previous selection cleared; continue there or change them. You can use the C source, highlighting, explanations, and word help. This study evaluates the tool, not you. Brief, partial, or blank answers are useful; you may also skip or choose “I could not work this out”.",
-    "Continuing locks that task’s answers. Duration is recorded from task presentation and includes visible reading, setup, exploration, and answering. Paused time, hidden-tab time, and reload downtime are excluded. There is no time limit."
+    "After the orientation are six tasks. T0–T5 open on the named example at State 0 with IR in both panels; set the states and views named in each task. T6 continues with T5’s example, states, function, and views, with the previous selection cleared; continue there or change them. You can use the C source, highlighting, explanations, and word help. This study evaluates the tool, not you; the tasks are not an unaided test. Answer at your own level of detail: brief, partial, or blank answers are useful. You may also skip or choose “I could not work this out”.",
+    "As you move between sections and tasks, your answers remain a draft in this browser tab; navigation does not submit them. Continuing locks that task’s answers. Duration is recorded from task presentation and includes visible reading, setup, exploration, and answering. Paused time, hidden-tab time, and reload downtime are excluded. There is no time limit."
   ]
 }
