@@ -79,6 +79,18 @@ def export(source, directory):
             json.dump(value, f, ensure_ascii=False, indent=2)
     write('submissions.json', records)
     content = participant_content()
+    course_status_definition = {
+        'courseStatusOptions': {'1': 'Completed', '2': 'Currently enrolled', '3': 'Neither'},
+        'courseItems': {
+            'P3_CSSE1001_ENGG1001': 'CSSE1001/ENGG1001', 'P3_CSSE2002': 'CSSE2002',
+            'P3_CSSE2010': 'CSSE2010', 'P3_CSSE2310': 'CSSE2310', 'P3_COMP3506': 'COMP3506',
+            'P3_COMP3301': 'COMP3301', 'P3_COMP4403': 'COMP4403',
+        },
+        'otherCourse': (
+            'P3_other_name is an optional name; P3_other_status uses courseStatusOptions. '
+            'A named course without a status is unknown; unanswered is never Neither.'
+        ),
+    }
     write('codebook.json', {
         'schemaVersion': 2, 'fields': content['fields'], 'scales': content['scales'],
         'versions': {k: content[k] for k in ('studyVersion', 'instrumentVersion', 'contentVersion')},
@@ -92,42 +104,11 @@ def export(source, directory):
                     'otherCourse': 'P3.other contains the optional course name when value 7 is selected.',
                 },
             },
-            'v0.6': {
-                'courseStatusOptions': {'1': 'Completed', '2': 'Currently enrolled', '3': 'Neither'},
-                'courseItems': {
-                    'P3_CSSE1001_ENGG1001': 'CSSE1001/ENGG1001', 'P3_CSSE2002': 'CSSE2002',
-                    'P3_CSSE2010': 'CSSE2010', 'P3_CSSE2310': 'CSSE2310', 'P3_COMP3506': 'COMP3506',
-                    'P3_COMP3301': 'COMP3301', 'P3_COMP4403': 'COMP4403',
-                },
-                'otherCourse': (
-                    'P3_other_name is an optional name; P3_other_status uses courseStatusOptions. '
-                    'A named course without a status is unknown; unanswered is never Neither.'
-                ),
-            },
-            'v0.7': {
-                'courseStatusOptions': {'1': 'Completed', '2': 'Currently enrolled', '3': 'Neither'},
-                'courseItems': {
-                    'P3_CSSE1001_ENGG1001': 'CSSE1001/ENGG1001', 'P3_CSSE2002': 'CSSE2002',
-                    'P3_CSSE2010': 'CSSE2010', 'P3_CSSE2310': 'CSSE2310', 'P3_COMP3506': 'COMP3506',
-                    'P3_COMP3301': 'COMP3301', 'P3_COMP4403': 'COMP4403',
-                },
-                'otherCourse': (
-                    'P3_other_name is an optional name; P3_other_status uses courseStatusOptions. '
-                    'A named course without a status is unknown; unanswered is never Neither.'
-                ),
-            },
-            'v0.10': {
-                'courseStatusOptions': {'1': 'Completed', '2': 'Currently enrolled', '3': 'Neither'},
-                'courseItems': {
-                    'P3_CSSE1001_ENGG1001': 'CSSE1001/ENGG1001', 'P3_CSSE2002': 'CSSE2002',
-                    'P3_CSSE2010': 'CSSE2010', 'P3_CSSE2310': 'CSSE2310', 'P3_COMP3506': 'COMP3506',
-                    'P3_COMP3301': 'COMP3301', 'P3_COMP4403': 'COMP4403',
-                },
-                'otherCourse': (
-                    'P3_other_name is an optional name; P3_other_status uses courseStatusOptions. '
-                    'A named course without a status is unknown; unanswered is never Neither.'
-                ),
-            },
+            'v0.6': course_status_definition,
+            'v0.7': course_status_definition,
+            'v0.8': course_status_definition,
+            'v0.9': course_status_definition,
+            'v0.10': course_status_definition,
         },
         'csv': (
             'Long format uses section to identify consent, survey, or task. Value is the raw numeric code, '

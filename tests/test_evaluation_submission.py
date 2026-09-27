@@ -236,16 +236,46 @@ class SubmissionTests(unittest.TestCase):
         codebook = json.loads((destination / 'codebook.json').read_text())
         self.assertIn('P3 combines completed and current enrolment', codebook['coding'])
         self.assertEqual(codebook['instrumentDefinitions']['v0.5']['P3']['values']['5'], 'COMP4403')
-        self.assertEqual(codebook['instrumentDefinitions']['v0.6']['courseStatusOptions']['3'], 'Neither')
-        current_definition = codebook['instrumentDefinitions']['v0.10']
-        self.assertEqual(current_definition['courseStatusOptions']['3'], 'Neither')
-        self.assertEqual(current_definition['courseItems']['P3_COMP4403'], 'COMP4403')
+        definitions = codebook['instrumentDefinitions']
+        self.assertEqual(set(definitions), {'v0.5', 'v0.6', 'v0.7', 'v0.8', 'v0.9', 'v0.10'})
+        for version in ('v0.6', 'v0.7', 'v0.8', 'v0.9', 'v0.10'):
+            with self.subTest(version=version):
+                self.assertEqual(definitions[version]['courseStatusOptions']['3'], 'Neither')
+                self.assertEqual(definitions[version]['courseItems']['P3_COMP4403'], 'COMP4403')
+                self.assertEqual(definitions[version], definitions['v0.6'])
         exported = json.loads((destination / 'submissions.json').read_text())[0]['submission']
         self.assertEqual(exported['pre']['P3'], {'status': 'answered', 'value': [2, 5]})
         with open(destination / 'submissions.csv', newline='') as handle:
             rows = list(csv.DictReader(handle))
         self.assertEqual(next(r for r in rows if r['itemId'] == 'T1')['setupReached'], '')
         self.assertTrue(all(r['instrumentVersion'] == 'v0.5' for r in rows))
+
+    def test_v08_and_v09_course_responses_export_as_raw_historical_values(self):
+        current_record = synthetic()
+        self.service.submit(current_record)
+        db = sqlite3.connect(self.config.path)
+        try:
+            for version in ('v0.8', 'v0.9'):
+                stored_record = deepcopy(current_record)
+                stored_record.update(instrumentVersion=version,
+                                     contentVersion=f'{version}-preview-1', studyVersion=f'{version}-synthetic-1')
+                stored_record['pre']['P3_COMP4403'] = {'status': 'answered', 'value': 2}
+                with db:
+                    db.execute('UPDATE submissions SET submission_json=?', (json.dumps(stored_record),))
+                destination = Path(self.tmp.name) / f'legacy-{version}'
+                export(self.config.path, destination)
+                record = json.loads((destination / 'submissions.json').read_text())[0]['submission']
+                self.assertEqual(record['instrumentVersion'], version)
+                self.assertEqual(record['pre']['P3_COMP4403'], {'status': 'answered', 'value': 2})
+                codebook = json.loads((destination / 'codebook.json').read_text())
+                self.assertEqual(codebook['instrumentDefinitions'][version]['courseItems']['P3_COMP4403'], 'COMP4403')
+                with open(destination / 'submissions.csv', newline='') as handle:
+                    rows = list(csv.DictReader(handle))
+                course = next(row for row in rows if row['itemId'] == 'P3_COMP4403')
+                self.assertEqual((course['instrumentVersion'], course['value'], course['status']),
+                                 (version, '2', 'answered'))
+        finally:
+            db.close()
 
     def test_pilot_mode_and_private_http_boundary(self):
         for mode in ('pilot',):
