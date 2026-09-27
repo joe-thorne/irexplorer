@@ -56,19 +56,16 @@ async function select(selector, selected) {
 }
 async function task(id) {
   await until(`document.querySelector('#survey-form')?.dataset.section === '${id}'`);
-  await check(`${id} requires a fresh source choice`, `document.querySelector('#example-select').value === '' && !window.StudyWorkspace.ready`);
-  const setup = {
-    T0: ['score', '0', '1', 'ir', 'ir'], T1: ['score', '0', '12', 'ir', 'ir'],
-    T2: ['score', '0', '0', 'ir', 'ir'], T3: ['binary_search', '3', '3', 'ir', 'cfg'],
-    T4: ['binary_search', '6', '7', 'cfg', 'cfg'], T5: ['quick_sort', '8', '9', 'ir', 'ir'],
-    T6: ['score', '0', '1', 'ir', 'ir'],
-  }[id];
-  await select('#example-select', setup[0]);
-  await until(`!document.querySelector('#workspace').hidden && !document.querySelector('#example-select').disabled`);
-  await check(`${id} requires explicit states and views`, `['left', 'right'].every(side => document.querySelector('#' + side + '-state').value === '' && document.querySelector('#' + side + '-view').value === '')`);
-  for (const [selector, selected] of [['#left-state', setup[1]], ['#right-state', setup[2]], ['#left-view', setup[3]], ['#right-view', setup[4]]]) await select(selector, selected);
-  await until(`document.querySelector('#survey-form')?.dataset.section === '${id}' && !document.querySelector('.task-inputs').disabled`);
-  if (id === 'T5') await select('#function-select', 'partition');
+  const examples = { T0: 'score', T1: 'score', T2: 'score', T3: 'binary_search', T4: 'binary_search', T5: 'quick_sort' };
+  await until(`window.StudyWorkspace.ready && document.querySelector('#example-select').value === ${JSON.stringify(examples[id] || 'quick_sort')}`);
+  if (id !== 'T6') await check(`${id} starts ready at State 0 with IR in both panels and a clear selection`, `(() => { const saved = JSON.parse(sessionStorage.getItem('irexplorer.study.v0.7')); return ['left', 'right'].every(side => document.querySelector('#' + side + '-state').value === '0' && document.querySelector('#' + side + '-view').value === 'ir') && !appState.selection && !appState.selectionInput && saved.tasks.${id}.presented && !document.querySelector('.task-complete').disabled; })()`);
+  await check(`${id} timer starts at presentation and has no setup gate`, `document.querySelector('#task-timing').textContent.includes('presentation') && !document.querySelector('[data-action="pause-task"]').disabled && !document.querySelector('[data-action="skip-task"]')?.disabled`);
+  if (id === 'T5') {
+    await select('#left-state', '8'); await select('#right-state', '9');
+    await select('#function-select', 'partition'); await until(`window.StudyWorkspace.ready && appState.functionName === 'partition'`);
+    await click('.source-line[data-line="12"]'); await until('Boolean(appState.selection?.trace)');
+  }
+  if (id === 'T6') await check('T6 inherits T5 workspace and clears its selection', `document.querySelector('#example-select').value === 'quick_sort' && document.querySelector('#left-state').value === '8' && document.querySelector('#right-state').value === '9' && document.querySelector('#left-view').value === 'ir' && document.querySelector('#right-view').value === 'ir' && appState.functionName === 'partition' && !appState.selection && !appState.selectionInput`);
   await check(`${id} keeps task goal focused`, `location.hash === '#/study/tasks/${id}' && document.activeElement.id === 'route-heading'`);
 }
 
@@ -218,16 +215,22 @@ try {
   await check('Pre-survey distinguishes course status and optional named course', `document.querySelector('[data-field="P3_COMP4403"]').innerText.includes('Currently enrolled') && document.querySelector('[data-field="P3_other_status"] input:checked')?.value === '1'`);
   await send('Page.reload'); await screen('Pre-survey');
   await check('Ordinary refresh restores answers without a special URL', `document.querySelector('input[name="P1"][value="1"]').checked && document.querySelector('textarea[name="P13"]').value === 'Container test background response' && document.querySelector('input[name="P3_COMP4403"][value="2"]').checked && document.querySelector('textarea[name="P3_other_name"]').value === 'Synthetic course' && document.querySelector('input[name="P3_other_status"][value="1"]').checked && !location.search`);
+  await value(`window.taskTimingFetch = window.fetch; window.fetch = async (input, ...args) => { if (String(input) === '/api/examples/score/states') await new Promise(resolve => setTimeout(resolve, 1250)); return taskTimingFetch(input, ...args); };`);
   await click('#survey-form button[type="submit"]');
+  await until(`document.querySelector('#survey-form')?.dataset.section === 'T0'`);
+  await new Promise(resolve => setTimeout(resolve, 1100));
+  await check('Task-presentation duration accumulates before the example comparison is ready', `!window.StudyWorkspace.ready && JSON.parse(sessionStorage.getItem('irexplorer.study.v0.7')).tasks.T0.durationMs >= 500`);
+  await value('window.fetch = window.taskTimingFetch');
   await task('T0');
   await click('[data-action="pause-task"]');
   await check('Pause disables task completion', `document.querySelector('.task-inputs').disabled`);
   await click('[data-action="pause-task"]');
+  await check('T0 opens at its named C example and a ready comparison', `document.querySelector('#example-select').value === 'score' && document.querySelector('#left-state').value === '0' && document.querySelector('#right-state').value === '0' && !document.querySelector('.task-complete').disabled`);
   await click('#survey-form button[type="submit"]');
   for (const id of ['T1', 'T2', 'T3', 'T4', 'T5', 'T6']) {
     if (id === 'T1' || id === 'T2') {
-      await until(`document.querySelector('#survey-form')?.dataset.section === '${id}'`);
-      await check(`${id} permits an outcome before setup`, `!document.querySelector('[data-action="skip-task"]').disabled && document.querySelector('.task-complete').disabled && !window.StudyWorkspace.ready`);
+      await task(id);
+      await check(`${id} can finish or skip without matching the requested comparison`, `!document.querySelector('[data-action="skip-task"]').disabled && !document.querySelector('.task-complete').disabled`);
       await click(id === 'T1' ? '[data-action="skip-task"]' : '[data-action="unable-task"]');
       continue;
     }
@@ -241,10 +244,10 @@ try {
   await value(`window.testFetch = window.fetch; window.fetch = async (...args) => { const response = await window.testFetch(...args); if (args[0] === '/api/study/submissions') throw Error('Synthetic lost acknowledgement'); return response; };`);
   await click('[data-action="submit-responses"]'); await screen('Receipt not yet confirmed');
   await check('Uncertain submit prevents further answer edits', `!document.querySelector('#survey-form') && document.querySelector('#study-screen').textContent.includes('may already exist')`);
-  if (captures) await writeFile(join(captures, 'pending.json'), await value(`sessionStorage.getItem('irexplorer.submission.v2')`));
+  if (captures) await writeFile(join(captures, 'pending.json'), await value(`sessionStorage.getItem('irexplorer.submission.v3')`));
   await send('Page.reload'); await screen('Receipt not yet confirmed');
   await click('[data-action="retry-submit"]'); await screen('Submission received');
-  await check('Retry produces a durable receipt and removes answer draft', `sessionStorage.getItem('irexplorer.study.v0.6') === null && JSON.parse(sessionStorage.getItem('irexplorer.submission.v2')).kind === 'receipt'`);
+  await check('Retry produces a durable receipt and removes answer draft', `sessionStorage.getItem('irexplorer.study.v0.7') === null && JSON.parse(sessionStorage.getItem('irexplorer.submission.v3')).kind === 'receipt'`);
 
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: false });
   await send('Emulation.setPageScaleFactor', { pageScaleFactor: 2 });
@@ -259,7 +262,7 @@ try {
   const otherSend = (method, params = {}) => new Promise(resolve => { const id = ++otherId; otherPending.set(id, resolve); other.send(JSON.stringify({ id, method, params })); });
   await otherSend('Runtime.enable'); await otherSend('Page.enable'); await otherSend('Page.navigate', { url: `${base}/#/study` });
   for (let attempt = 0; attempt < 100; attempt += 1) { const result = await otherSend('Runtime.evaluate', { expression: `document.querySelector('#route-heading')?.textContent`, returnByValue: true }); if (result.result.value === 'Information and consent') break; await new Promise(resolve => setTimeout(resolve, 75)); }
-  const isolated = await otherSend('Runtime.evaluate', { expression: `!sessionStorage.getItem('irexplorer.study.v0.6') && !document.querySelector('[data-action="new-study"]')`, returnByValue: true });
+  const isolated = await otherSend('Runtime.evaluate', { expression: `!sessionStorage.getItem('irexplorer.study.v0.7') && !document.querySelector('[data-action="new-study"]')`, returnByValue: true });
   if (!isolated.result.value) throw Error('Failed: Independent browser tab does not start without the first tab’s draft.');
   checks.push('Independent browser tab has no first-session draft or receipt'); other.close(); await send('Target.closeTarget', { targetId: newTarget.targetId });
   await route('/explore'); await select('#example-select', 'score');

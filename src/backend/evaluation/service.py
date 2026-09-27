@@ -92,15 +92,11 @@ def validate(submission):
     require(isinstance(ts, list) and len(ts) == 7)
     for i, t in enumerate(ts):
         require(isinstance(t, dict)
-                and set(t) == {'id', 'status', 'setupReached', 'durationMs', 'interrupted', 'answers'})
+                and set(t) == {'id', 'status', 'durationMs', 'interrupted', 'answers'})
         require(t['id'] == f'T{i}'
                 and t['status'] in (['completed'] if i == 0 else ['completed', 'skipped', 'could_not_work_out']))
         require(type(t['durationMs']) is int and 0 <= t['durationMs'] <= 86400000 and type(t['interrupted']) is bool)
         answers(t['id'], t['answers'])
-        require(type(t['setupReached']) is bool)
-        if not t['setupReached']:
-            require(t['status'] in ('skipped', 'could_not_work_out') and t['durationMs'] == 0 and not t['interrupted'])
-            require(all(a['status'] == 'unanswered' for a in t['answers'].values()))
     # Multi-choice order has no research meaning; preserve raw codes as a set.
     result = json.loads(canonical(submission))
     for group in [result['pre'], result['post'], *[t['answers'] for t in result['tasks']]]:

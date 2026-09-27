@@ -33,7 +33,7 @@ check('Unicode limit counts code points; oversized draft can recover without tru
   draft.post.Q14 = D.blank();
 });
 check('Bad versions, consent, types, progress and unknown fields cannot unlock routes', () => {
-  for (const change of [d => d.studyVersion = 'live', d => d.consent.acknowledgements.C1 = false, d => d.preComplete = 'true', d => d.tasks.T1.started = true, d => d.pre.P1 = answered(true), d => d.extra = 'x']) {
+  for (const change of [d => d.studyVersion = 'live', d => d.consent.acknowledgements.C1 = false, d => d.preComplete = 'true', d => d.tasks.T1.presented = true, d => d.pre.P1 = answered(true), d => d.extra = 'x']) {
     const d = JSON.parse(JSON.stringify(draft)); change(d); assert.throws(() => D.decode(JSON.stringify(d), content));
   }
 });
@@ -84,9 +84,9 @@ check('Task inability and not-applicable preserve null independently from numeri
 });
 check('Skipped/inability tasks retain partial responses and optional missing confidence', () => {
   const d = fresh(); d.p13Locked = true; d.pre.P1 = answered(1); d.preComplete = true;
-  Object.assign(d.tasks.T0, {started:true,status:'completed'});
-  Object.assign(d.tasks.T1, {started:true,status:'skipped'}); d.tasks.T1.answers.T1a = answered('Synthetic partial response');
-  Object.assign(d.tasks.T2, {started:true,status:'could_not_work_out'});
+  Object.assign(d.tasks.T0, {presented:true,status:'completed'});
+  Object.assign(d.tasks.T1, {presented:true,status:'skipped'}); d.tasks.T1.answers.T1a = answered('Synthetic partial response');
+  Object.assign(d.tasks.T2, {presented:true,status:'could_not_work_out'});
   const restored = D.decode(JSON.stringify(d),content);
   assert.equal(restored.tasks.T1.answers.T1a.value, 'Synthetic partial response');
   assert.equal(restored.tasks.T1.answers.T1b.status, 'unanswered');
@@ -94,32 +94,34 @@ check('Skipped/inability tasks retain partial responses and optional missing con
   assert.equal(D.tasksComplete(restored), false);
 });
 check('Corrupt timing, unknown outcomes, skipped T0 and out-of-order progress fail closed', () => {
-  for (const change of [d=>d.tasks.T0.durationMs=-1, d=>d.tasks.T0.durationMs='3', d=>d.tasks.T0.status='skipped', d=>d.tasks.T0.started=true,
+  for (const change of [d=>d.tasks.T0.durationMs=-1, d=>d.tasks.T0.durationMs='3', d=>d.tasks.T0.status='skipped', d=>d.tasks.T0.presented=true,
     d=>d.tasks.T1.status='completed',d=>d.reviewReady=true,d=>d.tasks.T1.answers.T1a=answered('Premature'),d=>d.tasks.T0.extra=true]) {
     const d=fresh(); change(d); assert.throws(()=>D.decode(JSON.stringify(d),content));
   }
 });
 check('Task Unicode bounds retain oversized drafts; completion validates without truncation', () => {
   const d=fresh();d.p13Locked=true;
-  for (const id of ['T0','T1','T2']) Object.assign(d.tasks[id], {started:true,status:'completed'});
-  d.tasks.T3.started=true;d.tasks.T3.answers.T3a=answered('🙂'.repeat(257));
+  for (const id of ['T0','T1','T2']) Object.assign(d.tasks[id], {presented:true,status:'completed'});
+  d.tasks.T3.presented=true;d.tasks.T3.answers.T3a=answered('🙂'.repeat(257));
   assert.equal(Object.keys(D.validate(content,'T3',d.tasks.T3.answers)).join(),'T3a');
   assert.equal(D.decode(JSON.stringify(d),content).tasks.T3.answers.T3a.value,d.tasks.T3.answers.T3a.value);
 });
-check('Pre-setup skip and inability survive recovery without fabricated answers or time', () => {
+check('Tasks may complete, skip, or report inability without the requested comparison', () => {
   const d=D.create(content,consent);d.pre.P1=answered(1);d.preComplete=true;d.p13Locked=true;
-  Object.assign(d.tasks.T0,{started:true,status:'completed'});
-  d.tasks.T1.status='skipped';d.tasks.T2.status='could_not_work_out';
+  Object.assign(d.tasks.T0,{presented:true,status:'completed'});
+  d.tasks.T1.presented=true;d.tasks.T1.status='skipped';d.tasks.T2.presented=true;d.tasks.T2.status='could_not_work_out';
   const restored=D.decode(JSON.stringify(d),content);
-  assert.equal(D.currentTask(restored),'T3');assert.equal(restored.tasks.T1.started,false);
+  assert.equal(D.currentTask(restored),'T3');assert.equal(restored.tasks.T1.presented,true);
   assert.equal(restored.tasks.T2.durationMs,0);
-  for (const change of [x=>x.tasks.T1.status='completed', x=>x.tasks.T1.durationMs=1,
-    x=>x.tasks.T1.answers.T1a=answered('Not reached'), x=>x.p13Locked=false]) {
+  const completed = JSON.parse(JSON.stringify(d)); completed.tasks.T1.status='completed'; completed.tasks.T1.durationMs=1;
+  assert.equal(D.decode(JSON.stringify(completed),content).tasks.T1.status,'completed');
+  for (const change of [x=>{x.tasks.T1.presented=false;x.tasks.T1.status='completed'},
+    x=>{x.tasks.T1.presented=false;x.tasks.T1.answers.T1a=answered('Not presented')}, x=>x.p13Locked=false]) {
     const bad=JSON.parse(JSON.stringify(d));change(bad);assert.throws(()=>D.decode(JSON.stringify(bad),content));
   }
 });
 check('v0.6 representation selections and v0.5 draft identities stay distinct', () => {
-  assert.equal(D.KEY, 'irexplorer.study.v0.6');
+  assert.equal(D.KEY, 'irexplorer.study.v0.7');
   assert.equal(Object.keys(D.validate(content,'post',{Q8:answered([1,2,3])})).length,0);
   for (const value of [1,[1,4]]) assert.equal(Object.keys(D.validate(content,'post',{Q8:answered(value)})).join(),'Q8');
   const d=D.create(content,consent);d.instrumentVersion='v0.5';d.contentVersion='v0.5-preview-1';d.studyVersion='v0.5-synthetic-1';assert.throws(()=>D.decode(JSON.stringify(d),content));
@@ -129,20 +131,20 @@ check('v0.6 representation selections and v0.5 draft identities stay distinct', 
   assert.equal(Object.keys(D.validate(content,'pre',{P3_other_name:answered('Synthetic course'),P3_other_status:answered(2)})).length,0);
 });
 check('Timing starts only on resume, checkpoints accumulate once, repeated resume cannot double count', () => {
-  let now=100;const r={durationMs:0,status:'pending',started:true,paused:false,interrupted:false};
+  let now=100;const r={durationMs:0,status:'pending',presented:true,paused:false,interrupted:false};
   const c=context.window.TaskClock(r,()=>now);now=1000;c.checkpoint();assert.equal(r.durationMs,0);
   c.resume();now=1100;c.checkpoint();c.resume();now=1200;c.checkpoint();assert.equal(r.durationMs,200);
   c.stop();now=10000;c.checkpoint();assert.equal(r.durationMs,200);
 });
 check('Hide/pause and refresh downtime excluded; recovered accumulation counted once', () => {
-  let now=0;const r={durationMs:300,status:'pending',started:true,paused:false,interrupted:false};
+  let now=0;const r={durationMs:300,status:'pending',presented:true,paused:false,interrupted:false};
   const c=context.window.TaskClock(r,()=>now);c.resume();now=200;c.stop(true);assert.equal(r.durationMs,500);assert.equal(r.interrupted,true);
   now=50000;c.resume();now=50100;c.stop();assert.equal(r.durationMs,600);
   const recovered=JSON.parse(JSON.stringify(r));now=200000;const next=context.window.TaskClock(recovered,()=>now);next.resume();now+=50;next.stop();assert.equal(recovered.durationMs,650);
   recovered.paused=true;next.resume();now+=1000;next.checkpoint();assert.equal(recovered.durationMs,650);
 });
 check('Completion freezes time and cannot acquire an interruption on read-only navigation', () => {
-  let now=0;const r={durationMs:0,status:'pending',started:true,paused:false,interrupted:false};const c=context.window.TaskClock(r,()=>now);
+  let now=0;const r={durationMs:0,status:'pending',presented:true,paused:false,interrupted:false};const c=context.window.TaskClock(r,()=>now);
   c.resume();now=20;c.stop();r.status='completed';c.stop(true);c.resume();now=50;c.checkpoint();assert.equal(r.durationMs,20);assert.equal(r.interrupted,false);
 });
 check('Stop and discard requires a separate destructive confirmation', () => {

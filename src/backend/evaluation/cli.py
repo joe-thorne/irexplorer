@@ -104,6 +104,18 @@ def export(source, directory):
                     'A named course without a status is unknown; unanswered is never Neither.'
                 ),
             },
+            'v0.7': {
+                'courseStatusOptions': {'1': 'Completed', '2': 'Currently enrolled', '3': 'Neither'},
+                'courseItems': {
+                    'P3_CSSE1001_ENGG1001': 'CSSE1001/ENGG1001', 'P3_CSSE2002': 'CSSE2002',
+                    'P3_CSSE2010': 'CSSE2010', 'P3_CSSE2310': 'CSSE2310', 'P3_COMP3506': 'COMP3506',
+                    'P3_COMP3301': 'COMP3301', 'P3_COMP4403': 'COMP4403',
+                },
+                'otherCourse': (
+                    'P3_other_name is an optional name; P3_other_status uses courseStatusOptions. '
+                    'A named course without a status is unknown; unanswered is never Neither.'
+                ),
+            },
         },
         'csv': (
             'Long format uses section to identify consent, survey, or task. Value is the raw numeric code, '
@@ -112,15 +124,16 @@ def export(source, directory):
             'text.'
         ),
         'durationMs': (
-            'Rounded once to nearest integer millisecond at submission; 0–86400000. Active visible reading, '
-            'exploration, and answering after a usable comparison is ready; excludes initial reading/setup, '
-            'hidden tabs, explicit pause, and reload downtime. Neither total task nor pure comprehension '
+            'Rounded once to nearest integer millisecond at submission; 0–86400000. For v0.7, visible time '
+            'starts at task presentation and includes reading, exploration, and answering; hidden tabs, explicit '
+            'pause, and reload downtime are excluded. This task-presentation measure is distinct from the v0.5/v0.6 '
+            'post-setup duration and must not be pooled with it. Neither measure is total task or pure comprehension '
             'time. T1c is T1 durationMs.'
         ),
         'setupReached': (
-            'Whether a usable comparison was reached at least once. Does not verify the instructed '
-            'configuration. False means skipped/unable before setup, zero duration and unanswered fields. '
-            'Missing in legacy records means unknown, not false.'
+            'Legacy v0.5/v0.6 outcome field: whether a usable comparison was reached at least once; it did not '
+            'verify the instructed configuration. It is not collected in v0.7 and is not an analysed outcome. '
+            'Blank in a v0.7 CSV row means not collected. Missing in older legacy records means unknown, not false.'
         ),
         'definitionScope': (
             'Fields/scales describe only the versions named here. Separate records by instrumentVersion. '

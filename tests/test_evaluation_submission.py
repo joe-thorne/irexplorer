@@ -28,7 +28,7 @@ def synthetic():
              consent={'version': c['contentVersion'],
                       'acknowledgements': {f['id']: True for f in c['fields'] if f['id'].startswith('C')}},
              pre=answers('P'), post=answers('Q'),
-             tasks=[{'id': f'T{i}', 'status': 'completed', 'setupReached': True, 'durationMs': 1234,
+             tasks=[{'id': f'T{i}', 'status': 'completed', 'durationMs': 1234,
                      'interrupted': False, 'answers': answers(f'T{i}')} for i in range(7)])
     p['pre']['P1'] = {'status': 'answered', 'value': 5}
     return p
@@ -176,9 +176,9 @@ class SubmissionTests(unittest.TestCase):
         with self.assertRaises(FileExistsError):
             backup(copy,restored)
 
-    def test_pre_setup_outcomes_validate_and_export_without_invented_time(self):
+    def test_pre_comparison_outcomes_validate_and_export_without_setup_measure(self):
         for task, status in zip(self.payload['tasks'][1:3], ['skipped', 'could_not_work_out'], strict=True):
-            task.update(setupReached=False, status=status, durationMs=0)
+            task.update(status=status, durationMs=0)
         self.payload['post']['Q8'] = {'status': 'answered', 'value': [3, 1]}
         self.payload['tasks'][4]['answers']['T4c'] = {'status': 'answered', 'value': 3}
         self.payload['tasks'][5]['answers']['T5a'] = {'status': 'answered',
@@ -187,21 +187,23 @@ class SubmissionTests(unittest.TestCase):
         destination = Path(self.tmp.name) / 'early-export'
         export(self.config.path, destination)
         book = json.loads((destination / 'codebook.json').read_text())
-        self.assertEqual(book['versions']['instrumentVersion'], 'v0.6')
+        self.assertEqual(book['versions']['instrumentVersion'], 'v0.7')
         self.assertIn('Q3 only', book['analysis'])
         self.assertIn('section', book['csv'])
+        self.assertIn('task presentation', book['durationMs'])
+        self.assertIn('must not be pooled', book['durationMs'])
+        self.assertIn('not collected', book['setupReached'])
         with open(destination / 'submissions.csv', newline='') as handle:
             rows = list(csv.DictReader(handle))
         early = next(r for r in rows if r['itemId'] == 'T1')
-        self.assertEqual((early['setupReached'], early['durationMs'], early['status']), ('False', '0', 'skipped'))
+        self.assertEqual((early['setupReached'], early['durationMs'], early['status']), ('', '0', 'skipped'))
         self.assertEqual(next(r for r in rows if r['itemId'] == 'Q8')['value'], '[1,3]')
 
-    def test_impossible_pre_setup_records_and_old_versions_are_rejected(self):
+    def test_setup_field_and_old_versions_are_rejected(self):
         for mutate in [
-            lambda p: p['tasks'][0].update(setupReached=False),
+            lambda p: p['tasks'][0].update(status='skipped'),
             lambda p: p['tasks'][1].update(setupReached=False, status='skipped'),
-            lambda p: p['tasks'][1].update(setupReached='false'),
-            lambda p: p['tasks'][1].pop('setupReached'),
+            lambda p: p['tasks'][1].update(presented=False),
             lambda p: p.update(instrumentVersion='v0.1'),
         ]:
             payload = deepcopy(self.payload)
@@ -209,15 +211,11 @@ class SubmissionTests(unittest.TestCase):
             with self.assertRaises(StudyError):
                 self.service.submit(payload)
 
-        for invalid in ['answer', 'interruption']:
-            payload = deepcopy(self.payload)
-            payload['tasks'][1].update(setupReached=False, status='skipped', durationMs=0)
-            if invalid == 'answer':
-                payload['tasks'][1]['answers']['T1a'] = {'status': 'answered', 'value': 'No workspace yet'}
-            else:
-                payload['tasks'][1]['interrupted'] = True
-            with self.assertRaises(StudyError):
-                self.service.submit(payload)
+        submission = deepcopy(self.payload)
+        submission['tasks'][1].update(status='skipped', durationMs=950)
+        submission['tasks'][1]['answers']['T1a'] = {
+            'status': 'answered', 'value': 'Stopped before the requested comparison'}
+        self.assertEqual(self.post(submission).status_code, 201)
 
     def test_legacy_export_keeps_absent_setup_unknown(self):
         self.service.submit(self.payload)
@@ -227,8 +225,6 @@ class SubmissionTests(unittest.TestCase):
         legacy['pre'] = {key: value for key, value in legacy['pre'].items() if not key.startswith('P3_')}
         legacy['pre']['P3'] = {'status': 'answered', 'value': [2, 5]}
         legacy['pre']['P3.other'] = {'status': 'unanswered', 'value': None}
-        for task in legacy['tasks']:
-            task.pop('setupReached')
         db = sqlite3.connect(self.config.path)
         try:
             with db:

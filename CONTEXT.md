@@ -160,12 +160,16 @@ The server's confirmation that a submission has been durably stored; only after 
 _Avoid_: acknowledgement, confirmation code
 
 **Setup reached**:
-Whether a participant got the comparison a task asks for on screen; a task without it is recorded as skipped or unable, not as answered incorrectly.
+A historical v0.5/v0.6 outcome recording whether a usable comparison appeared; it did not confirm that the task's requested comparison was ready. v0.7 no longer collects or analyses this outcome.
 _Avoid_: task started, attempted
 
-**Active duration**:
-Time spent on a task after setup is reached, excluding hidden-tab time, explicit pauses, and reloads.
-_Avoid_: task time, completion time
+**Task-presentation duration**:
+The v0.7 visible time from task presentation through exploration and answering, excluding hidden-tab time, explicit pauses, and reload downtime. Keep it separate from v0.5/v0.6 post-setup active duration.
+_Avoid_: setup time, completion time
+
+**Post-setup active duration**:
+The historical v0.5/v0.6 visible time after a usable comparison appeared, excluding hidden-tab time, explicit pauses, and reload downtime. It is not comparable to the v0.7 task-presentation duration.
+_Avoid_: task-presentation duration
 
 **Collection mode**:
 Which body of responses a running application contributes to: local, preview, pilot, or live, each stored separately.

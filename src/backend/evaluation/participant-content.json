@@ -1,7 +1,7 @@
 {
-  "instrumentVersion": "v0.6",
-  "contentVersion": "v0.6-preview-1",
-  "studyVersion": "v0.6-synthetic-1",
+  "instrumentVersion": "v0.7",
+  "contentVersion": "v0.7-preview-1",
+  "studyVersion": "v0.7-synthetic-1",
   "mode": "preview",
   "submissionEnabled": false,
   "scales": {
@@ -1066,7 +1066,7 @@
       },
       "title": "Orientation",
       "goal": "get your bearings before anything is asked of you.",
-      "instructions": "Open score. Set the left pane to the unoptimised state and the right pane to the state after the first pass, mem2reg, with IR in both panes.\n\n- Scroll both panes.\n- Select the return statement in the C source and notice what is highlighted in the panes.\n- Select an IR instruction, switch the right pane to the control-flow graph, and select a block. Notice that a block can contain several instructions. Switch back to IR.\n- Hover over, or keyboard-focus, an IR keyword to read its explanation.\n- Find the area that describes the selected correspondence and any detected optimisation.\n\nThere is nothing to submit. Move on when the layout makes sense to you."
+      "instructions": "The workspace opens on score at State 0 with IR in both panels. Set the right panel to the state after the first pass, mem2reg.\n\n- Scroll both panes.\n- Select the return statement in the C source and notice what is highlighted in the panes.\n- Select an IR instruction, switch the right pane to the control-flow graph, and select a block. Notice that a block can contain several instructions. Switch back to IR.\n- Hover over, or keyboard-focus, an IR keyword to read its explanation.\n- Find the area that describes the selected correspondence and any detected optimisation.\n\nThere is nothing to submit. Move on when the layout makes sense to you."
     },
     {
       "id": "T1",
@@ -1187,6 +1187,7 @@
         "T6c"
       ],
       "setup": {},
+      "inheritWorkspace": true,
       "title": "Open exploration",
       "goal": "use the tool for whatever you actually find interesting.",
       "instructions": "Spend about five minutes investigating a question of your own. Choose any example, function, pair of states, and views. Continue whenever you are ready; there is no time limit."
@@ -1307,7 +1308,7 @@
   "taskIntroduction": [
     "You will be working with three small C programs that are already loaded into the tool. You do not need to write any code, and you do not need to compile anything yourself — that has been done for you.",
     "Each program has fourteen recorded states: an unoptimised baseline, twelve successive states produced by running the teaching passes on the preceding output, and a separately compiled -O3 state for comparison.",
-    "There is a short orientation followed by six tasks. Each task starts with an empty workspace: choose the example and set the states and views described in its instructions. You may use the C source, highlighting, explanations, and word help throughout. You can leave answers blank, skip a task, or choose “I could not work this out”. These are useful outcomes; the tool is being evaluated.",
-    "Continuing locks this task’s answers. Task time is recorded after a usable comparison is ready; initial reading and setup are excluded. There is no time limit."
+    "There is a short orientation followed by six tasks. T0–T5 open on the task’s named C example at State 0 with IR in both panels; adjust the states and views to explore the comparison in each task. T6 opens with the workspace from T5, and you may continue there or choose another example, states, function, and views. You may use the C source, highlighting, explanations, and word help throughout. You can leave answers blank, skip a task, or choose “I could not work this out”. These are useful outcomes; the tool is being evaluated.",
+    "Continuing locks this task’s answers. Task duration starts when the task is presented and includes visible reading, setup, exploration, and answering; hidden-tab time, explicit pauses, and reload downtime are excluded. This v0.7 measure is distinct from the v0.5/v0.6 post-setup duration and must not be pooled with it. There is no time limit."
   ]
 }

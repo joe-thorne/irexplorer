@@ -1,6 +1,6 @@
 // Local study state only. No network or workspace dependencies.
 window.StudyDraft = (() => {
-  const KEY = 'irexplorer.study.v0.6'; // New key prevents v0.5 course answers from entering the revised instrument.
+  const KEY = 'irexplorer.study.v0.7'; // New key separates task-presentation timing from prior post-setup durations.
   const blank = () => ({ status: 'unanswered', value: null });
   const fieldsFor = (content, section) => content.fields.filter(f => f.id.startsWith(section === 'pre' ? 'P' : section === 'post' ? 'Q' : section));
   function visible(field, answers) {
@@ -46,7 +46,7 @@ window.StudyDraft = (() => {
       consent: { version: content.contentVersion, acknowledgements }, pre: Object.fromEntries(fieldsFor(content, 'pre').map(f => [f.id, blank()])),
       post: Object.fromEntries(fieldsFor(content, 'post').map(f => [f.id, blank()])),
       preComplete: false, p13Locked: false, reviewReady: false,
-      tasks: Object.fromEntries(content.tasks.map(t => [t.id, { status: 'pending', started: false, paused: false, durationMs: 0, interrupted: false, answers: Object.fromEntries(fieldsFor(content, t.id).map(f => [f.id, blank()])) }])) };
+      tasks: Object.fromEntries(content.tasks.map(t => [t.id, { status: 'pending', presented: false, paused: false, durationMs: 0, interrupted: false, answers: Object.fromEntries(fieldsFor(content, t.id).map(f => [f.id, blank()])) }])) };
   }
   function decode(raw, content) {
     if (raw.length > 256 * 1024) throw new Error('Draft is too large.');
@@ -60,16 +60,16 @@ window.StudyDraft = (() => {
     let pending = false;
     for (const task of content.tasks) {
       const t = d.tasks[task.id];
-      if (!t || Object.keys(t).sort().join() !== 'answers,durationMs,interrupted,paused,started,status' ||
+      if (!t || Object.keys(t).sort().join() !== 'answers,durationMs,interrupted,paused,presented,status' ||
           !['pending', 'completed', ...(task.id === 'T0' ? [] : ['skipped', 'could_not_work_out'])].includes(t.status) ||
-          !['started', 'paused', 'interrupted'].every(k => typeof t[k] === 'boolean') ||
+          !['presented', 'paused', 'interrupted'].every(k => typeof t[k] === 'boolean') ||
           !Number.isFinite(t.durationMs) || t.durationMs < 0 || t.durationMs > Number.MAX_SAFE_INTEGER ||
-          (pending && (t.started || t.status !== 'pending')) ||
-          (!t.started && (t.durationMs !== 0 || t.paused || t.interrupted || t.status === 'completed')) ||
-          ((t.started || t.status !== 'pending') && !d.p13Locked) || (t.status !== 'pending' && t.paused) ||
+          (pending && (t.presented || t.status !== 'pending')) ||
+          (!t.presented && (t.durationMs !== 0 || t.paused || t.interrupted || t.status !== 'pending')) ||
+          ((t.presented || t.status !== 'pending') && !d.p13Locked) || (t.status !== 'pending' && t.paused) ||
           Object.keys(validate(content, task.id, t.answers, false, true)).length ||
           Object.keys(t.answers).join() !== fieldsFor(content, task.id).map(f => f.id).join() ||
-          (!t.started && Object.values(t.answers).some(a => a.status !== 'unanswered'))) throw new Error('Invalid task progress or responses.');
+          (!t.presented && Object.values(t.answers).some(a => a.status !== 'unanswered'))) throw new Error('Invalid task progress or responses.');
       if (t.status === 'pending') pending = true;
     }
     for (const section of ['pre', 'post']) {

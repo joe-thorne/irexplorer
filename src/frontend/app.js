@@ -21,6 +21,7 @@ const appState = {
   loadId: 0,
   ready: false,
   manualSetup: false,
+  studyStateDefault: false,
   comparisonReport: null,
   panels: {
     left: { ordinal: 0, viewType: "ir", ir: null, cfg: null, function: null, selectedNodeIds: new Set() },
@@ -134,7 +135,7 @@ async function loadExample() {
     appState.functionName = null;
     appState.panels.left.ordinal = 0;
     appState.panels.left.viewType = "ir";
-    appState.panels.right.ordinal = Math.min(1, appState.states.length - 1);
+    appState.panels.right.ordinal = appState.studyStateDefault ? 0 : Math.min(1, appState.states.length - 1);
     appState.panels.right.viewType = "ir";
     renderStateOptions();
     elements.left.view.value = appState.panels.left.viewType;
@@ -166,6 +167,7 @@ async function loadExample() {
       announce("Choose the states and views described in the task instructions.");
       return;
     }
+    appState.studyStateDefault = false;
     await refreshWorkspace();
     if (loadId !== appState.loadId || !appState.ready) return;
     elements.emptyState.hidden = true;
@@ -672,6 +674,20 @@ window.StudyWorkspace = {
   get ready() { return appState.ready && !elements.workspace.hidden; },
   clearManualSetup() {
     appState.manualSetup = false;
+  },
+  prepareTask(exampleId, inheritWorkspace = false) {
+    appState.manualSetup = false;
+    if (inheritWorkspace && appState.ready) {
+      clearSelection();
+      renderComparison();
+      renderPanel("left");
+      renderPanel("right");
+      return;
+    }
+    if (!exampleId) return;
+    appState.studyStateDefault = true;
+    elements.exampleSelect.value = exampleId;
+    loadExample();
   },
   reset() {
     ++appState.loadId;

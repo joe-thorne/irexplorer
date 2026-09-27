@@ -137,7 +137,7 @@ class EvaluationContentTests(unittest.TestCase):
     def test_v06_course_statuses_are_independent_and_other_status_needs_a_name(self):
         content = participant_content()
         self.assertEqual((content['instrumentVersion'], content['contentVersion'], content['studyVersion']),
-                         ('v0.6', 'v0.6-preview-1', 'v0.6-synthetic-1'))
+                         ('v0.7', 'v0.7-preview-1', 'v0.7-synthetic-1'))
         courses = [field for field in content['fields']
                    if field['id'].startswith('P3_') and field['id'] != 'P3_other_name']
         self.assertEqual([field['id'] for field in courses], [
@@ -170,6 +170,8 @@ class EvaluationContentTests(unittest.TestCase):
 
     def test_task_inventory_setups_and_revised_response_structure(self):
         content = participant_content()
+        self.assertTrue(content['tasks'][-1]['inheritWorkspace'])
+        self.assertTrue(all(not task.get('inheritWorkspace', False) for task in content['tasks'][:-1]))
         self.assertEqual([t['id'] for t in content['tasks']], [f'T{i}' for i in range(7)])
         tasks = {t['id']: t for t in content['tasks']}
         self.assertEqual(tasks['T0']['fields'], [])
@@ -190,7 +192,8 @@ class EvaluationContentTests(unittest.TestCase):
         self.assertEqual([f['id'] for f in content['fields'] if f.get('scale') == 'confidence'],
                          ['T1b', 'T2c', 'T3c', 'T4d'])
         for task in tasks.values():
-            self.assertEqual(set(task), {'id', 'title', 'goal', 'instructions', 'fields', 'setup'})
+            expected_keys = {'id', 'title', 'goal', 'instructions', 'fields', 'setup'}
+            self.assertIn(set(task), (expected_keys, expected_keys | {'inheritWorkspace'}))
             self.assertTrue(task['goal'])
             self.assertTrue(task['instructions'])
             self.assertLessEqual(set(task['setup']), {'example', 'function', 'left', 'right'})
