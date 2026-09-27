@@ -1,7 +1,7 @@
 {
-  "instrumentVersion": "v0.7",
-  "contentVersion": "v0.7-preview-1",
-  "studyVersion": "v0.7-synthetic-1",
+  "instrumentVersion": "v0.8",
+  "contentVersion": "v0.8-preview-1",
+  "studyVersion": "v0.8-synthetic-1",
   "mode": "preview",
   "submissionEnabled": false,
   "scales": {
@@ -1066,7 +1066,7 @@
       },
       "title": "Orientation",
       "goal": "get your bearings before anything is asked of you.",
-      "instructions": "The workspace opens on score at State 0 with IR in both panels. Set the right panel to the state after the first pass, mem2reg.\n\n- Scroll both panes.\n- Select the return statement in the C source and notice what is highlighted in the panes.\n- Select an IR instruction, switch the right pane to the control-flow graph, and select a block. Notice that a block can contain several instructions. Switch back to IR.\n- Hover over, or keyboard-focus, an IR keyword to read its explanation.\n- Find the area that describes the selected correspondence and any detected optimisation.\n\nThere is nothing to submit. Move on when the layout makes sense to you."
+      "instructions": "With score open at State 0, set the right panel to State 1 (`mem2reg`). Select `return weighted + wasted;` in the C source and follow its highlight into IR. Change the right panel to CFG and select a block; inspect its links back to IR instructions and C lines. There is nothing to submit."
     },
     {
       "id": "T1",
@@ -1087,7 +1087,7 @@
       },
       "title": "What changed?",
       "goal": "work out what the optimiser did to a program overall, before worrying about how it did it.",
-      "instructions": "Open score. Set the left pane to the unoptimised state and the right pane to state 12, final_cleanup, the end of the teaching chain. Use IR in both panes. The next state, -O3, was compiled separately. You may use the source and explanations to investigate the differences."
+      "instructions": "Compare score at State 0 (unoptimised) and State 12 (`final_cleanup`) in IR. State 13 (`-O3`) was compiled separately. Name two changes you can see. You may use the source and explanations. A brief or partial answer is fine."
     },
     {
       "id": "T2",
@@ -1109,7 +1109,7 @@
       },
       "title": "Which pass did it?",
       "goal": "trace a specific change back to the pass responsible for it.",
-      "instructions": "Open score and begin with the unoptimised state in both panes, using IR. The program contains this line:\n\nint wasted = scale * scale - scale * scale;\n\nThis expression subtracts the same product from itself. Find the first recorded pass after which the arithmetic for wasted is absent. Compare the states immediately before and after that step. You may start from the C line and use the tool’s explanations."
+      "instructions": "In score, compare IR at State 0 and successive states. A state is a snapshot; its listed pass is the step that produced it. Find the first state where this line’s arithmetic is absent, then name the pass that produced that state:\n\nint wasted = scale * scale - scale * scale;\n\nThis expression subtracts the same product from itself. Compare the states immediately before and after the change. You may follow the C line and use the explanations."
     },
     {
       "id": "T3",
@@ -1131,7 +1131,7 @@
       },
       "title": "Following source into the graph",
       "goal": "locate a C condition in IR and interpret its control-flow graph block.",
-      "instructions": "Open binary_search and set both panes to state 3, simplifycfg, with IR on the left and the control-flow graph on the right. Select the C line containing lo < hi. Use the highlighted IR to locate and select the comparison, then inspect its block in the graph."
+      "instructions": "In binary_search, set both panels to State 3 (`simplifycfg`), with IR left and CFG right. Select `while (lo < hi)` in C, follow the highlight to its IR comparison, then identify that instruction’s block and its outgoing arrows."
     },
     {
       "id": "T4",
@@ -1154,7 +1154,7 @@
       },
       "title": "A change in the shape of the program",
       "goal": "notice a structural change, not just a textual one.",
-      "instructions": "Open binary_search. Use the control-flow graph in both panes. Set the left pane to state 6, loop_canonical (after loop-simplify / lcssa), and the right pane to state 7, loop_rotate (after loop-rotate). You may also inspect the IR."
+      "instructions": "In binary_search, compare CFG at State 6 (`loop_canonical`) and State 7 (`loop_rotate`). Describe a branch or loop-path change, using a block or arrow, and say what you think it does. You may inspect IR too."
     },
     {
       "id": "T5",
@@ -1177,7 +1177,7 @@
       },
       "title": "What does this correspondence tell you?",
       "goal": "interpret a recorded correspondence and the confidence attached to it.",
-      "instructions": "Open quick_sort. Use IR in both panes, with state 8, licm, on the left and state 9, indvars, on the right. Then choose the partition function.\n\nFind the C line if (a[j] <= pivot). Select it, then select the highlighted getelementptr instruction for a[j] in the right pane. Inspect its linked instructions and the tool’s description. What does the tool say happened, and how certain is that correspondence?\n\nUse the confidence wording for the recorded link when answering. The optimisation explanation may have its own qualification."
+      "instructions": "In quick_sort, set the left panel to State 8 (`licm`) and the right to State 9 (`indvars`), with IR in both. Choose `partition`. Select `if (a[j] <= pivot)` in C, then select the highlighted right-panel getelementptr for `a[j]`. What relationship does the tool show, and what confidence wording appears beside the link? What does the optimisation explanation say happened? Keep the link’s confidence separate from the explanation’s qualification."
     },
     {
       "id": "T6",
@@ -1190,7 +1190,7 @@
       "inheritWorkspace": true,
       "title": "Open exploration",
       "goal": "use the tool for whatever you actually find interesting.",
-      "instructions": "Spend about five minutes investigating a question of your own. Choose any example, function, pair of states, and views. Continue whenever you are ready; there is no time limit."
+      "instructions": "Explore for about five minutes. Investigate something that interests you and describe what you found."
     }
   ],
   "information": [
@@ -1306,9 +1306,9 @@
     }
   ],
   "taskIntroduction": [
-    "You will be working with three small C programs that are already loaded into the tool. You do not need to write any code, and you do not need to compile anything yourself — that has been done for you.",
-    "Each program has fourteen recorded states: an unoptimised baseline, twelve successive states produced by running the teaching passes on the preceding output, and a separately compiled -O3 state for comparison.",
-    "There is a short orientation followed by six tasks. T0–T5 open on the task’s named C example at State 0 with IR in both panels; adjust the states and views to explore the comparison in each task. T6 opens with the workspace from T5, and you may continue there or choose another example, states, function, and views. You may use the C source, highlighting, explanations, and word help throughout. You can leave answers blank, skip a task, or choose “I could not work this out”. These are useful outcomes; the tool is being evaluated.",
-    "Continuing locks this task’s answers. Task duration starts when the task is presented and includes visible reading, setup, exploration, and answering; hidden-tab time, explicit pauses, and reload downtime are excluded. This v0.7 measure is distinct from the v0.5/v0.6 post-setup duration and must not be pooled with it. There is no time limit."
+    "Three small C programs are already loaded. You do not need to write or compile code.",
+    "Each program has fourteen recorded states: State 0 is the unoptimised baseline; States 1–12 follow successive compiler passes applied to the preceding output; State 13 is compiled separately with -O3.",
+    "After the orientation are six tasks. T0–T5 open on the named example at State 0 with IR in both panels; set the states and views named in each task. T6 continues with T5’s example, states, function, and views, with the previous selection cleared; continue there or change them. You can use the C source, highlighting, explanations, and word help. This study evaluates the tool, not you. Brief, partial, or blank answers are useful; you may also skip or choose “I could not work this out”.",
+    "Continuing locks that task’s answers. Duration is recorded from task presentation and includes visible reading, setup, exploration, and answering. Paused time, hidden-tab time, and reload downtime are excluded. There is no time limit."
   ]
 }

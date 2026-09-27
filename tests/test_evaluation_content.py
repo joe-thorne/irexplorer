@@ -137,7 +137,7 @@ class EvaluationContentTests(unittest.TestCase):
     def test_v06_course_statuses_are_independent_and_other_status_needs_a_name(self):
         content = participant_content()
         self.assertEqual((content['instrumentVersion'], content['contentVersion'], content['studyVersion']),
-                         ('v0.7', 'v0.7-preview-1', 'v0.7-synthetic-1'))
+                         ('v0.8', 'v0.8-preview-1', 'v0.8-synthetic-1'))
         courses = [field for field in content['fields']
                    if field['id'].startswith('P3_') and field['id'] != 'P3_other_name']
         self.assertEqual([field['id'] for field in courses], [

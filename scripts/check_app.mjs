@@ -58,7 +58,7 @@ async function task(id) {
   await until(`document.querySelector('#survey-form')?.dataset.section === '${id}'`);
   const examples = { T0: 'score', T1: 'score', T2: 'score', T3: 'binary_search', T4: 'binary_search', T5: 'quick_sort' };
   await until(`window.StudyWorkspace.ready && document.querySelector('#example-select').value === ${JSON.stringify(examples[id] || 'quick_sort')}`);
-  if (id !== 'T6') await check(`${id} starts ready at State 0 with IR in both panels and a clear selection`, `(() => { const saved = JSON.parse(sessionStorage.getItem('irexplorer.study.v0.7')); return ['left', 'right'].every(side => document.querySelector('#' + side + '-state').value === '0' && document.querySelector('#' + side + '-view').value === 'ir') && !appState.selection && !appState.selectionInput && saved.tasks.${id}.presented && !document.querySelector('.task-complete').disabled; })()`);
+  if (id !== 'T6') await check(`${id} starts ready at State 0 with IR in both panels and a clear selection`, `(() => { const saved = JSON.parse(sessionStorage.getItem('irexplorer.study.v0.8')); return ['left', 'right'].every(side => document.querySelector('#' + side + '-state').value === '0' && document.querySelector('#' + side + '-view').value === 'ir') && !appState.selection && !appState.selectionInput && saved.tasks.${id}.presented && !document.querySelector('.task-complete').disabled; })()`);
   await check(`${id} timer starts at presentation and has no setup gate`, `document.querySelector('#task-timing').textContent.includes('presentation') && !document.querySelector('[data-action="pause-task"]').disabled && !document.querySelector('[data-action="skip-task"]')?.disabled`);
   if (id === 'T5') {
     await select('#left-state', '8'); await select('#right-state', '9');
@@ -219,7 +219,7 @@ try {
   await click('#survey-form button[type="submit"]');
   await until(`document.querySelector('#survey-form')?.dataset.section === 'T0'`);
   await new Promise(resolve => setTimeout(resolve, 1100));
-  await check('Task-presentation duration accumulates before the example comparison is ready', `!window.StudyWorkspace.ready && JSON.parse(sessionStorage.getItem('irexplorer.study.v0.7')).tasks.T0.durationMs >= 500`);
+  await check('Task-presentation duration accumulates before the example comparison is ready', `!window.StudyWorkspace.ready && JSON.parse(sessionStorage.getItem('irexplorer.study.v0.8')).tasks.T0.durationMs >= 500`);
   await value('window.fetch = window.taskTimingFetch');
   await task('T0');
   await click('[data-action="pause-task"]');
@@ -247,7 +247,7 @@ try {
   if (captures) await writeFile(join(captures, 'pending.json'), await value(`sessionStorage.getItem('irexplorer.submission.v3')`));
   await send('Page.reload'); await screen('Receipt not yet confirmed');
   await click('[data-action="retry-submit"]'); await screen('Submission received');
-  await check('Retry produces a durable receipt and removes answer draft', `sessionStorage.getItem('irexplorer.study.v0.7') === null && JSON.parse(sessionStorage.getItem('irexplorer.submission.v3')).kind === 'receipt'`);
+  await check('Retry produces a durable receipt and removes answer draft', `sessionStorage.getItem('irexplorer.study.v0.8') === null && JSON.parse(sessionStorage.getItem('irexplorer.submission.v3')).kind === 'receipt'`);
 
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: false });
   await send('Emulation.setPageScaleFactor', { pageScaleFactor: 2 });
@@ -262,7 +262,7 @@ try {
   const otherSend = (method, params = {}) => new Promise(resolve => { const id = ++otherId; otherPending.set(id, resolve); other.send(JSON.stringify({ id, method, params })); });
   await otherSend('Runtime.enable'); await otherSend('Page.enable'); await otherSend('Page.navigate', { url: `${base}/#/study` });
   for (let attempt = 0; attempt < 100; attempt += 1) { const result = await otherSend('Runtime.evaluate', { expression: `document.querySelector('#route-heading')?.textContent`, returnByValue: true }); if (result.result.value === 'Information and consent') break; await new Promise(resolve => setTimeout(resolve, 75)); }
-  const isolated = await otherSend('Runtime.evaluate', { expression: `!sessionStorage.getItem('irexplorer.study.v0.7') && !document.querySelector('[data-action="new-study"]')`, returnByValue: true });
+  const isolated = await otherSend('Runtime.evaluate', { expression: `!sessionStorage.getItem('irexplorer.study.v0.8') && !document.querySelector('[data-action="new-study"]')`, returnByValue: true });
   if (!isolated.result.value) throw Error('Failed: Independent browser tab does not start without the first tab’s draft.');
   checks.push('Independent browser tab has no first-session draft or receipt'); other.close(); await send('Target.closeTarget', { targetId: newTarget.targetId });
   await route('/explore'); await select('#example-select', 'score');
