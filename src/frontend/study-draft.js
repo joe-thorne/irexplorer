@@ -1,6 +1,6 @@
 // Local study state only. No network or workspace dependencies.
 window.StudyDraft = (() => {
-  const KEY = 'irexplorer.study.v0.8'; // New key separates this instrument and its task wording from earlier drafts.
+  const KEY = 'irexplorer.study.v0.9'; // New key separates this instrument and its task wording from earlier drafts.
   const blank = () => ({ status: 'unanswered', value: null });
   const fieldsFor = (content, section) => content.fields.filter(f => f.id.startsWith(section === 'pre' ? 'P' : section === 'post' ? 'Q' : section));
   function visible(field, answers) {

@@ -196,11 +196,11 @@ function renderStateOptions() {
 }
 
 function stateOptionLabel(state) {
-  if (state.ordinal === 0) return `0 · Unoptimised baseline · ${state.stateId}`;
-  if (state.step?.kind === "recompiled") return `${state.ordinal} · Separately compiled ${state.step.level} · ${state.stateId}`;
+  if (state.ordinal === 0) return "State 0 · Unoptimised baseline (-O0)";
+  if (state.step?.kind === "recompiled") return `State ${state.ordinal} · Separately compiled with ${state.step.level}`;
   const noOp = state.step?.noOp ? " · no recorded change" : "";
   const end = state.stateId === "final_cleanup" ? " · End of teaching chain" : "";
-  return `After pass ${state.ordinal}: ${state.step?.passName || "recorded pass"} · ${state.stateId}${end}${noOp}`;
+  return `State ${state.ordinal} · produced by ${state.step?.passName || "recorded pass"}${end}${noOp}`;
 }
 
 async function refreshWorkspace() {
@@ -340,7 +340,7 @@ function renderPanel(side) {
   controls.stateLabel.textContent = stateOptionLabel(state);
   controls.previous.disabled = panel.ordinal === 0;
   controls.next.disabled = panel.ordinal === appState.states.length - 1;
-  controls.heading.textContent = `${side === "left" ? "Left" : "Right"}: ${state.stateId}`;
+  controls.heading.textContent = `${side === "left" ? "Left" : "Right"} · State ${state.ordinal}`;
   controls.state.value = String(panel.ordinal);
   controls.view.value = panel.viewType;
   controls.viewer.replaceChildren();
@@ -358,7 +358,7 @@ function renderIr(side) {
   const { viewer, description } = elements[side];
   const fn = panel.function;
   const instructionCount = fn.blocks.reduce((count, block) => count + block.instructions.length, 0);
-  description.textContent = `${panel.ir.stateId} · ${fn.name} · ${fn.blocks.length} basic blocks · ${instructionCount} instructions · Dotted underlines: hover or focus for help.`;
+  description.textContent = `${stateOptionLabel(panel.ir)} · ${fn.name} · ${fn.blocks.length} basic blocks · ${instructionCount} instructions · Dotted underlines: hover or focus for help.`;
   const signature = document.createElement("code");
   signature.className = "ir-signature";
   signature.innerHTML = highlightIr(stripDebug(fn.signature));
@@ -405,7 +405,7 @@ function renderCfg(side) {
     viewer.append(emptyViewer("No control-flow graph is available."));
     return;
   }
-  description.textContent = `${panel.ir.stateId} · ${panel.function.name} · ${cfg.blocks.length} basic blocks · ${cfg.edges.length} edges`;
+  description.textContent = `${stateOptionLabel(panel.ir)} · ${panel.function.name} · ${cfg.blocks.length} basic blocks · ${cfg.edges.length} edges`;
   // Layout depends on topology, never on panel width. Zoom scales the finished drawing.
   const graph = new dagre.graphlib.Graph({ multigraph: true });
   graph.setGraph({ rankdir: "TB", nodesep: 36, edgesep: 18, ranksep: 32, marginx: 24, marginy: 24 });
@@ -425,7 +425,7 @@ function renderCfg(side) {
   svg.style.width = `${width}px`;
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   svg.setAttribute("role", "group");
-  svg.setAttribute("aria-label", `Control-flow graph for ${panel.function.name} in ${panel.ir.stateId}`);
+  svg.setAttribute("aria-label", `Control-flow graph for ${panel.function.name} in State ${panel.ir.ordinal}`);
   const sizeLabel = document.createElement("label");
   sizeLabel.className = "cfg-size";
   sizeLabel.htmlFor = `${side}-cfg-size`;

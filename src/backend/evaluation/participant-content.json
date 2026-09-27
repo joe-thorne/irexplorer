@@ -1,7 +1,7 @@
 {
-  "instrumentVersion": "v0.8",
-  "contentVersion": "v0.8-preview-1",
-  "studyVersion": "v0.8-synthetic-1",
+  "instrumentVersion": "v0.9",
+  "contentVersion": "v0.9-preview-1",
+  "studyVersion": "v0.9-synthetic-1",
   "mode": "preview",
   "submissionEnabled": false,
   "scales": {
@@ -726,51 +726,51 @@
       "options": [
         {
           "value": 101,
-          "label": "1 · mem2reg · mem2reg"
+          "label": "State 1 · produced by mem2reg"
         },
         {
           "value": 102,
-          "label": "2 · instcombine · instcombine"
+          "label": "State 2 · produced by instcombine"
         },
         {
           "value": 103,
-          "label": "3 · simplifycfg · simplifycfg"
+          "label": "State 3 · produced by simplifycfg"
         },
         {
           "value": 104,
-          "label": "4 · gvn · gvn"
+          "label": "State 4 · produced by gvn"
         },
         {
           "value": 105,
-          "label": "5 · instcombine,simplifycfg · cleanup"
+          "label": "State 5 · produced by instcombine,simplifycfg"
         },
         {
           "value": 106,
-          "label": "6 · loop-simplify,lcssa · loop_canonical"
+          "label": "State 6 · produced by loop-simplify,lcssa"
         },
         {
           "value": 107,
-          "label": "7 · loop-rotate · loop_rotate"
+          "label": "State 7 · produced by loop-rotate"
         },
         {
           "value": 108,
-          "label": "8 · licm · licm"
+          "label": "State 8 · produced by licm"
         },
         {
           "value": 109,
-          "label": "9 · indvars · indvars"
+          "label": "State 9 · produced by indvars"
         },
         {
           "value": 110,
-          "label": "10 · instcombine,simplifycfg · loop_cleanup"
+          "label": "State 10 · produced by instcombine,simplifycfg"
         },
         {
           "value": 111,
-          "label": "11 · loop-vectorize · vectorize"
+          "label": "State 11 · produced by loop-vectorize"
         },
         {
           "value": 112,
-          "label": "12 · instcombine,simplifycfg · final_cleanup"
+          "label": "State 12 · produced by instcombine,simplifycfg"
         },
         {
           "value": 198,
@@ -784,7 +784,7 @@
       "optionStatuses": {
         "199": "could_not_work_out"
       },
-      "prompt": "After which recorded pass is the arithmetic for wasted first absent?"
+      "prompt": "Which state first shows the arithmetic for wasted absent, and which pass produced that state?"
     },
     {
       "id": "T2b",
@@ -878,14 +878,14 @@
       "required": false,
       "maxLength": 4000,
       "inabilityLabel": "I could not work this out",
-      "prompt": "What relationship does the tool show for this selection?"
+      "prompt": "What relationship does the tool show between the selected instructions, and what confidence wording appears beside the link?"
     },
     {
       "id": "T5b",
       "type": "text",
       "required": false,
       "maxLength": 4000,
-      "prompt": "What does its confidence wording tell you about what you can conclude?"
+      "prompt": "What does the link’s confidence wording tell you about what you can conclude? Keep it separate from the explanation’s “likely” wording."
     },
     {
       "id": "T5c",
@@ -1190,7 +1190,7 @@
       "inheritWorkspace": true,
       "title": "Open exploration",
       "goal": "use the tool for whatever you actually find interesting.",
-      "instructions": "Explore for about five minutes. Investigate something that interests you and describe what you found."
+      "instructions": "Explore for about five minutes. Investigate something that interests you and describe what you found.\nYour workspace continues from T5 with its selection cleared. Continue there, or choose another example, state pair, function, and view."
     }
   ],
   "information": [
@@ -1307,7 +1307,7 @@
   ],
   "taskIntroduction": [
     "Three small C programs are already loaded. You do not need to write or compile code.",
-    "Each program has fourteen recorded states: State 0 is the unoptimised baseline; States 1–12 follow successive compiler passes applied to the preceding output; State 13 is compiled separately with -O3.",
+    "Each program has fourteen recorded states: State 0 is the unoptimised baseline compiled with -O0; States 1–12 are produced by successive compiler passes applied to the preceding output; State 13 is compiled separately with -O3.",
     "After the orientation are six tasks. T0–T5 open on the named example at State 0 with IR in both panels; set the states and views named in each task. T6 continues with T5’s example, states, function, and views, with the previous selection cleared; continue there or change them. You can use the C source, highlighting, explanations, and word help. This study evaluates the tool, not you. Brief, partial, or blank answers are useful; you may also skip or choose “I could not work this out”.",
     "Continuing locks that task’s answers. Duration is recorded from task presentation and includes visible reading, setup, exploration, and answering. Paused time, hidden-tab time, and reload downtime are excluded. There is no time limit."
   ]

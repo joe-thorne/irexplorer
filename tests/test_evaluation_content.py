@@ -73,7 +73,7 @@ class EvaluationContentTests(unittest.TestCase):
         derived = [
             {
                 'value': 100 + state['ordinal'],
-                'label': f"{state['ordinal']} · {state['step']['passName']} · {state['stateId']}",
+                'label': f"State {state['ordinal']} · produced by {state['step']['passName']}",
             }
             for state in states
             if state['step'] and state['step']['kind'] == 'derived'
@@ -84,6 +84,22 @@ class EvaluationContentTests(unittest.TestCase):
             {'value': 199, 'label': 'I could not work this out'},
         ])
         self.assertEqual(t2a['optionStatuses'], {'199': 'could_not_work_out'})
+
+    def test_v09_task_copy_and_identity_match_approved_runsheet(self):
+        content = participant_content()
+        self.assertEqual((content['instrumentVersion'], content['contentVersion'], content['studyVersion']),
+                         ('v0.9', 'v0.9-preview-1', 'v0.9-synthetic-1'))
+        tasks = {task['id']: task for task in content['tasks']}
+        self.assertIn('State 0 is the unoptimised baseline compiled with -O0', content['taskIntroduction'][1])
+        self.assertIn('Brief, partial, or blank answers are useful', content['taskIntroduction'][2])
+        self.assertIn('A brief or partial answer is fine', tasks['T1']['instructions'])
+        t2a = next(field for field in content['fields'] if field['id'] == 'T2a')
+        self.assertIn('which pass produced that state', t2a['prompt'])
+        self.assertEqual(tasks['T2']['setup']['left']['ordinal'], 0)
+        self.assertEqual(tasks['T5']['setup']['right']['ordinal'], 9)
+        self.assertIn('confidence wording appears beside the link', tasks['T5']['instructions'])
+        self.assertIn('Keep the link’s confidence separate', tasks['T5']['instructions'])
+        self.assertTrue(tasks['T6']['inheritWorkspace'])
 
     def test_public_content_is_preview_only_and_participant_only(self):
         with tempfile.TemporaryDirectory() as directory, TestClient(create_app(
@@ -137,7 +153,7 @@ class EvaluationContentTests(unittest.TestCase):
     def test_v06_course_statuses_are_independent_and_other_status_needs_a_name(self):
         content = participant_content()
         self.assertEqual((content['instrumentVersion'], content['contentVersion'], content['studyVersion']),
-                         ('v0.8', 'v0.8-preview-1', 'v0.8-synthetic-1'))
+                         ('v0.9', 'v0.9-preview-1', 'v0.9-synthetic-1'))
         courses = [field for field in content['fields']
                    if field['id'].startswith('P3_') and field['id'] != 'P3_other_name']
         self.assertEqual([field['id'] for field in courses], [
@@ -205,7 +221,7 @@ class EvaluationContentTests(unittest.TestCase):
         def a(value):
             return {'status': 'answered', 'value': value}
         t2a = next(field for field in participant_content()['fields'] if field['id'] == 'T2a')
-        self.assertEqual(t2a['options'][4], {'value': 105, 'label': '5 · instcombine,simplifycfg · cleanup'})
+        self.assertEqual(t2a['options'][4], {'value': 105, 'label': 'State 5 · produced by instcombine,simplifycfg'})
         self.assertEqual(validate_answers('T2', {'T2a': a(102)}), {})
         for stage in [f'T{i}' for i in range(7)]:
             self.assertEqual(validate_answers(stage, {}, complete=True), {})

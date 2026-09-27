@@ -124,7 +124,7 @@ def export(source, directory):
             'text.'
         ),
         'durationMs': (
-            'Rounded once to nearest integer millisecond at submission; 0–86400000. For v0.7, visible time '
+            'Rounded once to nearest integer millisecond at submission; 0–86400000. For v0.8/v0.9, visible time '
             'starts at task presentation and includes reading, exploration, and answering; hidden tabs, explicit '
             'pause, and reload downtime are excluded. This task-presentation measure is distinct from the v0.5/v0.6 '
             'post-setup duration and must not be pooled with it. Neither measure is total task or pure comprehension '
@@ -132,8 +132,9 @@ def export(source, directory):
         ),
         'setupReached': (
             'Legacy v0.5/v0.6 outcome field: whether a usable comparison was reached at least once; it did not '
-            'verify the instructed configuration. It is not collected in v0.7 and is not an analysed outcome. '
-            'Blank in a v0.7 CSV row means not collected. Missing in older legacy records means unknown, not false.'
+            'verify the instructed configuration. It is not collected in v0.8/v0.9 and is not an analysed outcome. '
+            'Blank in a v0.8/v0.9 CSV row means not collected. Missing in older legacy records means unknown, '
+            'not false.'
         ),
         'definitionScope': (
             'Fields/scales describe only the versions named here. Separate records by instrumentVersion. '

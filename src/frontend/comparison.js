@@ -10,9 +10,7 @@ function renderComparisonReport() {
   for (const side of ["left", "right"]) {
     const state = stateFor(side);
     const view = appState.panels[side].viewType;
-    const name = !state ? "Choose a state" : state.ordinal === 0 ? "Unoptimised · -O0"
-      : state.step?.kind === "recompiled" ? "Separately compiled · " + state.step.level
-      : "After pass " + state.ordinal + " · " + state.step?.passName;
+    const name = state ? stateOptionLabel(state) : "Choose a State";
     document.querySelector("#" + side + "-selected-state").textContent = name + (view ? " · " + view.toUpperCase() : "");
     document.querySelector("#" + side + "-purpose").textContent = state ? statePurpose(state) : "";
   }
