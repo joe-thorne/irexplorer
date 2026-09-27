@@ -32,8 +32,15 @@ def validate_answers(section, answers, *, complete=False):
             continue
         status, value = answer['status'], answer['value']
         if status == 'unanswered' and value is None:
-            if complete and field['required']:
-                errors[key] = 'Choose an answer for P1.'
+            condition = field.get('condition')
+            visible = not condition
+            if condition:
+                parent = answers.get(condition['field'], {})
+                selected = parent.get('value')
+                selected = selected if isinstance(selected, list) else [selected]
+                visible = parent.get('status') == 'answered' and any(v in condition['values'] for v in selected)
+            if complete and field['required'] and visible:
+                errors[key] = 'Choose an answer for P1.' if key == 'P1' else 'Complete this required follow-up.'
             continue
         if value is None and (
             (status == 'not_applicable'
@@ -60,10 +67,6 @@ def validate_answers(section, answers, *, complete=False):
             selected = parent.get('value')
             selected = selected if isinstance(selected, list) else [selected]
             valid = parent.get('status') == 'answered' and any(v in condition['values'] for v in selected)
-        if valid and key == 'P3_other_status':
-            name = answers.get('P3_other_name', {})
-            valid = (name.get('status') == 'answered' and isinstance(name.get('value'), str)
-                     and bool(name['value'].strip()))
         if not valid:
             errors[key] = 'Answer does not match this item’s options or text limit.'
     return errors

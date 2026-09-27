@@ -35,7 +35,7 @@ async function until(expression) {
   for (let attempt = 0; attempt < 100; attempt += 1) { if (await value(expression)) return; await new Promise(resolve => setTimeout(resolve, 75)); }
   throw Error(`Timed out: ${expression}`);
 }
-async function check(name, expression) { if (!await value(expression)) throw Error(`Failed: ${name}`); checks.push(name); }
+async function check(name, expression) { const result = await value(expression); if (!result) throw Error(`Failed: ${name}; observed=${JSON.stringify(await value(`(() => { const e=document.activeElement,t=document.querySelector('#ir-help-tooltip'),panels=[document.querySelector('#source-panel'),document.querySelector('#left-viewer').closest('.viewer-panel'),document.querySelector('#right-viewer').closest('.viewer-panel')].map(p=>{const c=p.querySelector('.source-lines,.viewer-content'),l=p.querySelector('.source-line,.ir-line'),s=getComputedStyle(p);return {id:p.id,className:p.className,panel:p.getBoundingClientRect().height,computed:s.height,inline:p.style.height,content:c?.clientHeight,line:l?.getBoundingClientRect().height,scrollHeight:c?.scrollHeight,open:p.open};}); return { hash:location.hash, active:{tag:e.tagName,id:e.id,className:e.className,text:e.innerText?.slice(0,80)}, heading:document.querySelector('#route-heading')?.textContent, tooltip:{hidden:t?.hidden,text:t?.textContent,html:t?.innerHTML,children:t?.childElementCount},panels }; })()`))}`); checks.push(name); }
 async function click(selector) { await value(`document.querySelector(${JSON.stringify(selector)}).click()`); }
 async function hover(selector) {
   const point = await value(`(() => { const r = document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`);
@@ -63,10 +63,21 @@ async function checkSectionsScrollable(name, selectors) {
 async function choose(name, option) { await click(`input[name="${name}"][value="${option}"]`); }
 async function fill(name, text) { await value(`(() => { const e = document.querySelector('textarea[name="${name}"]'); e.value = ${JSON.stringify(text)}; e.dispatchEvent(new Event('input', { bubbles: true })); })()`); }
 async function route(path) { await value(`location.hash = ${JSON.stringify(path)}`); }
-async function screen(name) { await until(`document.querySelector('#route-heading')?.textContent === ${JSON.stringify(name)}`); await check(`Route focus: ${name}`, `document.activeElement.id === 'route-heading'`); }
+async function screen(name) {
+  try { await until(`document.querySelector('#route-heading')?.textContent === ${JSON.stringify(name)}`); }
+  catch (error) { throw Error(`${error.message}; hash=${JSON.stringify(await value('location.hash'))}; draft=${JSON.stringify(await value("sessionStorage.getItem('irexplorer.study.v0.11')"))}; visible=${JSON.stringify(await value("document.querySelector('#study-screen')?.innerText.slice(0, 600)"))}; consent=${JSON.stringify(await value("[...document.querySelectorAll('.acknowledgement input')].map(e=>[e.id,e.checked])"))}`); }
+  await check(`Route focus: ${name}`, `document.activeElement.id === 'route-heading'`);
+}
 async function snap(name) {
   if (!captures) return;
   await value('document.activeElement.blur(); window.scrollTo(0, 0)');
+  const { data } = await send('Page.captureScreenshot', { format: 'png' });
+  await writeFile(join(captures, name), Buffer.from(data, 'base64'));
+}
+async function snapAt(name, selector) {
+  if (!captures) return;
+  await value(`document.activeElement.blur(); document.querySelector(${JSON.stringify(selector)}).scrollIntoView({ block: 'start', behavior: 'instant' })`);
+  await new Promise(resolve => setTimeout(resolve, 250));
   const { data } = await send('Page.captureScreenshot', { format: 'png' });
   await writeFile(join(captures, name), Buffer.from(data, 'base64'));
 }
@@ -77,7 +88,7 @@ async function task(id) {
   await until(`document.querySelector('#survey-form')?.dataset.section === '${id}'`);
   const examples = { T0: 'score', T1: 'score', T2: 'score', T3: 'binary_search', T4: 'binary_search', T5: 'quick_sort' };
   await until(`window.StudyWorkspace.ready && document.querySelector('#example-select').value === ${JSON.stringify(examples[id] || 'quick_sort')}`);
-  if (id !== 'T6') await check(`${id} starts ready at State 0 with IR in both panels and a clear selection`, `(() => { const saved = JSON.parse(sessionStorage.getItem('irexplorer.study.v0.9')); return ['left', 'right'].every(side => document.querySelector('#' + side + '-state').value === '0' && document.querySelector('#' + side + '-view').value === 'ir') && !appState.selection && !appState.selectionInput && saved.tasks.${id}.presented && !document.querySelector('.task-complete').disabled; })()`);
+  if (id !== 'T6') await check(`${id} starts ready at State 0 with IR in both panels and a clear selection`, `(() => { const saved = JSON.parse(sessionStorage.getItem('irexplorer.study.v0.11')); return ['left', 'right'].every(side => document.querySelector('#' + side + '-state').value === '0' && document.querySelector('#' + side + '-view').value === 'ir') && !appState.selection && !appState.selectionInput && saved.tasks.${id}.presented && !document.querySelector('.task-complete').disabled; })()`);
   await check(`${id} timer starts at presentation and has no setup gate`, `document.querySelector('#task-timing').textContent.includes('presentation') && !document.querySelector('[data-action="pause-task"]').disabled && !document.querySelector('[data-action="skip-task"]')?.disabled`);
   if (id === 'T5') {
     await select('#left-state', '8'); await select('#right-state', '9');
@@ -90,6 +101,8 @@ async function task(id) {
     await check('T5 selection shows approximate correspondence confidence and its separate likely explanation', `document.querySelector('#selection-status').textContent.includes('merged · approximate confidence') && document.querySelector('#optimisation-explanations').textContent.includes('Induction-variable widening · likely')`);
     await check('T5 identifies the relationship, link confidence and qualified explanation separately', `document.querySelector('#task-instructions').innerText.includes('confidence wording appears beside the link') && document.querySelector('#task-instructions').innerText.includes('Keep the link’s confidence separate')`);
     await check('Study uses the selected three-panel workbench before full-width responses', `(() => { const box = selector => document.querySelector(selector).getBoundingClientRect(); const panels = [box('#source-panel'),document.querySelector('#left-viewer').closest('.viewer-panel').getBoundingClientRect(),document.querySelector('#right-viewer').closest('.viewer-panel').getBoundingClientRect()]; const response = box('#task-responses'); const comparison = box('.comparison-status'); const sameHeight = panels.every(panel => Math.abs(panel.height - panels[0].height) < 1); const toolbar = box('#workspace-shell > .toolbar'); return sameHeight && panels[0].left < panels[1].left && panels[1].left < panels[2].left && toolbar.width >= panels[0].width + panels[1].width + panels[2].width - 40 && comparison.width >= panels[0].width + panels[1].width + panels[2].width - 40 && response.top > panels[0].bottom && response.width >= panels[0].width + panels[1].width + panels[2].width - 40 && document.querySelector('#task-responses').compareDocumentPosition(document.querySelector('#left-state')) & Node.DOCUMENT_POSITION_PRECEDING; })()`);
+    await check('Study panels show ten code lines at equal desktop height', `(() => { const panels=[document.querySelector('#source-panel'),document.querySelector('#left-viewer').closest('.viewer-panel'),document.querySelector('#right-viewer').closest('.viewer-panel')]; const boxes=panels.map(p=>p.getBoundingClientRect()); return boxes.every(b=>Math.abs(b.height-boxes[0].height)<1) && panels.every(p=>p.querySelector('.source-lines,.viewer-content').clientHeight >= p.querySelector('.source-line,.ir-line').getBoundingClientRect().height*10); })()`);
+    await snapAt('study-T5-desktop-workspace.png', '#workspace-shell');
     await checkSectionsScrollable('Study desktop page scrolling reaches instructions, workspace, analysis and responses', ['#task-instructions','#workspace-shell','.comparison-status','#task-responses']);
     await value("document.querySelector('#route-heading').focus()");
     await key('Tab', 'Tab', 9);
@@ -107,6 +120,9 @@ async function task(id) {
     await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
     await check('Study State selectors and T5 instructions remain visible at narrow width', `document.querySelector('#workspace-shell').getBoundingClientRect().width <= innerWidth && document.querySelector('#left-state').getBoundingClientRect().width > 0 && document.querySelector('#task-instructions').getBoundingClientRect().width > 0`);
     await check('Study workbench stacks in reading order at narrow width with equal readable panels', `(() => { const panels = [document.querySelector('#source-panel').getBoundingClientRect(),document.querySelector('#left-viewer').closest('.viewer-panel').getBoundingClientRect(),document.querySelector('#right-viewer').closest('.viewer-panel').getBoundingClientRect()]; return document.documentElement.scrollWidth <= innerWidth && panels.every(panel => panel.width >= 300 && Math.abs(panel.height - panels[0].height) < 1) && panels[0].top < panels[1].top && panels[1].top < panels[2].top && document.querySelector('#task-responses').getBoundingClientRect().top > panels[2].bottom; })()`);
+    await check('Study panels show ten code lines at equal narrow-screen height', `(() => { const panels=[document.querySelector('#source-panel'),document.querySelector('#left-viewer').closest('.viewer-panel'),document.querySelector('#right-viewer').closest('.viewer-panel')]; const boxes=panels.map(p=>p.getBoundingClientRect()); return boxes.every(b=>b.width>=300 && Math.abs(b.height-boxes[0].height)<1) && panels.every(p=>p.querySelector('.source-lines,.viewer-content').clientHeight >= p.querySelector('.source-line,.ir-line').getBoundingClientRect().height*10); })()`);
+    await snapAt('study-T5-narrow-workspace.png', '#workspace-shell');
+    await snapAt('study-T5-narrow-ir.png', '#left-panel');
     await checkSectionsScrollable('Study narrow page scrolling reaches instructions, workspace, analysis and responses', ['#task-instructions','#workspace-shell','.comparison-status','#task-responses']);
     await value("document.querySelector('#route-heading').focus()");
     await key('Tab', 'Tab', 9);
@@ -136,7 +152,7 @@ async function task(id) {
     await until(`document.querySelector('#survey-form')?.dataset.section === 'T6' && window.StudyWorkspace.ready`);
     await check('T6 restores its inherited workspace after refresh and clears the selection', `document.querySelector('#example-select').value === 'quick_sort' && document.querySelector('#left-state').value === '8' && document.querySelector('#right-state').value === '9' && document.querySelector('#left-view').value === 'ir' && document.querySelector('#right-view').value === 'cfg' && appState.functionName === 'partition' && !appState.selection && !appState.selectionInput`);
   }
-  await check(`${id} keeps task goal focused`, `location.hash === '#/study/tasks/${id}' && document.activeElement.id === 'route-heading'`);
+  await check(`${id} keeps the task goal programmatically reachable`, `location.hash === '#/study/tasks/${id}' && document.querySelector('#route-heading')?.tabIndex === -1`);
 }
 
 try {
@@ -302,10 +318,16 @@ try {
   await check('Source mapping text only describes Left', `!document.querySelector('#source-status').textContent.includes('Right:')`);
   await snap('workspace.png');
   await route('/study'); await screen('Information and consent');
+  await check('Opening information page explains Continue is at the bottom', `document.querySelector('#study-screen').innerText.includes('Continue button is at the bottom of this page')`);
+  await check('Participant information shows no unresolved researcher annotations', `!document.querySelector('#study-screen').innerText.includes('[Joe/Joel to confirm')`);
+  await check('The final information section appears once and before consent', `(() => { const questions=[...document.querySelectorAll('.participant-information h3')].filter(h=>h.textContent==='Questions'); return questions.length===1 && questions[0].compareDocumentPosition(document.querySelector('#C1')) & Node.DOCUMENT_POSITION_FOLLOWING; })()`);
   await check('Study navigation identifies its current sections', `document.querySelector('#study-progress').getAttribute('aria-label') === 'Study sections' && document.querySelector('#study-progress [aria-current="step"]') !== null`);
   await check('Opening study explains tool-use purpose and highlights final-only submission', `(() => { const purposeNode = document.querySelector('.study-purpose'); const purpose = purposeNode?.innerText || ''; const submission = document.querySelector('.submission-guidance')?.innerText || ''; const information = document.querySelector('.participant-information'); return purpose.includes('This study evaluates how useful irexplorer is when students and non-expert developers use it to explore compiler changes.') && purpose.includes('not an unaided test') && submission.includes('submitted only from the final review page') && submission.includes('navigation does not send them') && Boolean(information && (purposeNode.compareDocumentPosition(information) & Node.DOCUMENT_POSITION_FOLLOWING)); })()`);
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
   await check('Opening purpose and final-only submission guidance fit the narrow viewport', `document.documentElement.scrollWidth <= innerWidth && ['.study-purpose','.submission-guidance'].every(selector => { const rect = document.querySelector(selector)?.getBoundingClientRect(); return rect && rect.width > 0 && rect.left >= 0 && rect.right <= innerWidth; })`);
+  await value("document.querySelector('#route-heading').focus()");
+  await tabUntil(`document.activeElement.matches('[data-action="start"]')`);
+  await check('Narrow keyboard journey reaches Continue after the information and consent copy', `document.activeElement.matches('[data-action="start"]') && document.activeElement.getBoundingClientRect().top < innerHeight && document.querySelectorAll('.participant-information')[1].getBoundingClientRect().bottom < document.activeElement.getBoundingClientRect().top`);
   await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
   await check('Clean study interface and release label', `document.querySelector('#app-version').textContent === 'v${release.version}' && !/synthetic|preview|not.live|E7/i.test(document.body.innerText) && !location.search`);
   await value(`document.querySelector('#C1').focus()`); await key(' ', 'Space', 32);
@@ -313,17 +335,32 @@ try {
   for (let i = 2; i <= 6; i += 1) await click('#C' + i);
   await click('[data-action="start"]'); await screen('Pre-survey');
   await choose('P1', '1'); await fill('P13', 'Container test background response');
-  await choose('P3_COMP4403', '2'); await fill('P3_other_name', 'Synthetic course'); await choose('P3_other_status', '1');
-  await check('Pre-survey distinguishes course status and optional named course', `document.querySelector('[data-field="P3_COMP4403"]').innerText.includes('Currently enrolled') && document.querySelector('[data-field="P3_other_status"] input:checked')?.value === '1'`);
+  await choose('P3', '7'); await choose('P3', '9'); await fill('P3_other_name', 'Synthetic course');
+  await check('Pre-survey records studied courses and optional named Other', `document.querySelector('[data-field="P3"] input[name="P3"][value="7"]:checked') !== null && document.querySelector('[data-field="P3"] input[name="P3"][value="9"]:checked') !== null && document.querySelector('[data-field="P3_other_name"] textarea').value === 'Synthetic course'`);
+  await check('Course exposure distinguishes explicit none from unanswered', `(() => { const field=document.querySelector('[data-field="P3"]'); return field.innerText.includes('None of these') && field.innerText.includes('studying or have you studied') && field.querySelector('input[name="P3"][value="8"]')?.type === 'checkbox'; })()`);
   await send('Page.reload'); await screen('Pre-survey');
-  await check('Ordinary refresh restores answers without a special URL', `document.querySelector('input[name="P1"][value="1"]').checked && document.querySelector('textarea[name="P13"]').value === 'Container test background response' && document.querySelector('input[name="P3_COMP4403"][value="2"]').checked && document.querySelector('textarea[name="P3_other_name"]').value === 'Synthetic course' && document.querySelector('input[name="P3_other_status"][value="1"]').checked && !location.search`);
+  await check('Ordinary refresh restores course selections without a special URL', `document.querySelector('input[name="P1"][value="1"]').checked && document.querySelector('textarea[name="P13"]').value === 'Container test background response' && document.querySelector('input[name="P3"][value="7"]').checked && document.querySelector('input[name="P3"][value="9"]').checked && document.querySelector('textarea[name="P3_other_name"]').value === 'Synthetic course' && !location.search`);
   await value(`window.taskTimingFetch = window.fetch; window.fetch = async (input, ...args) => { if (String(input) === '/api/examples/score/states') await new Promise(resolve => setTimeout(resolve, 1250)); return taskTimingFetch(input, ...args); };`);
   await click('#survey-form button[type="submit"]');
   await until(`document.querySelector('#survey-form')?.dataset.section === 'T0'`);
   await new Promise(resolve => setTimeout(resolve, 1100));
-  await check('Task-presentation duration accumulates before the example comparison is ready', `!window.StudyWorkspace.ready && JSON.parse(sessionStorage.getItem('irexplorer.study.v0.9')).tasks.T0.durationMs >= 500`);
+  await check('Task-presentation duration accumulates before the example comparison is ready', `!window.StudyWorkspace.ready && JSON.parse(sessionStorage.getItem('irexplorer.study.v0.11')).tasks.T0.durationMs >= 500`);
   await value('window.fetch = window.taskTimingFetch');
   await task('T0');
+  await check('T0 distinguishes its orientation from tasks T1–T6 and renders help terms safely', `document.querySelector('#task-instructions').innerText.includes('T0 is the orientation; the six tasks are T1–T6') && document.querySelector('#task-instructions').querySelector('img,script') === null && [...document.querySelectorAll('#task-instructions .study-term-help')].map(term=>term.textContent).includes('-O0') && [...document.querySelectorAll('#task-instructions .study-term-help')].map(term=>term.textContent).includes('-O3')`);
+  await value(`window.studyFlag = [...document.querySelectorAll('#task-instructions .study-term-help')].find(term=>term.textContent==='-O0'); studyFlag.focus()`);
+  await until(`!document.querySelector('#ir-help-tooltip').hidden`);
+  await check('T0 keyboard focus explains -O0 accessibly', `studyFlag.getAttribute('aria-describedby')==='ir-help-tooltip' && document.querySelector('#ir-help-tooltip').textContent.includes('disables optimisation')`);
+  await value(`studyFlag.blur()`);
+  await hover('#task-instructions .study-term-help[data-help*="disables optimisation"]');
+  await until(`!document.querySelector('#ir-help-tooltip').hidden`);
+  await check('T0 -O0 also exposes its explanation on hover using text content', `document.querySelector('#ir-help-tooltip').textContent.includes('disables optimisation') && document.querySelector('#ir-help-tooltip').childElementCount===0`);
+  await value(`window.studyFlag = [...document.querySelectorAll('#task-instructions .study-term-help')].find(term=>term.textContent==='-O3'); studyFlag.focus()`);
+  await until(`!document.querySelector('#ir-help-tooltip').hidden`);
+  await check('T0 keyboard focus explains -O3 as a separate high-optimisation build', `studyFlag.getAttribute('aria-describedby')==='ir-help-tooltip' && document.querySelector('#ir-help-tooltip').textContent.includes('separately compiled state')`);
+  await value(`window.studyFlag = [...document.querySelectorAll('#task-instructions .study-term-help')].find(term=>term.textContent==='CFG'); studyFlag.focus()`);
+  await until(`!document.querySelector('#ir-help-tooltip').hidden`);
+  await check('T0 keyboard focus explains CFG without raw markup', `studyFlag.getAttribute('aria-describedby')==='ir-help-tooltip' && document.querySelector('#ir-help-tooltip').textContent.includes('Control-flow graph') && !document.querySelector('#ir-help-tooltip').querySelector('img,script')`);
   await click('[data-action="pause-task"]');
   await check('Pause disables task completion', `document.querySelector('.task-inputs').disabled`);
   await click('[data-action="pause-task"]');
@@ -350,7 +387,7 @@ try {
   if (captures) await writeFile(join(captures, 'pending.json'), await value(`sessionStorage.getItem('irexplorer.submission.v3')`));
   await send('Page.reload'); await screen('Receipt not yet confirmed');
   await click('[data-action="retry-submit"]'); await screen('Submission received');
-  await check('Retry confirms receipt storage and removes answer draft', `document.querySelector('#study-screen').innerText.includes('Your submission has been saved.') && document.querySelector('#study-screen').innerText.includes('Receipt:') && sessionStorage.getItem('irexplorer.study.v0.9') === null && JSON.parse(sessionStorage.getItem('irexplorer.submission.v3')).kind === 'receipt'`);
+  await check('Retry confirms receipt storage and removes answer draft', `document.querySelector('#study-screen').innerText.includes('Your submission has been saved.') && document.querySelector('#study-screen').innerText.includes('Receipt:') && sessionStorage.getItem('irexplorer.study.v0.11') === null && JSON.parse(sessionStorage.getItem('irexplorer.submission.v3')).kind === 'receipt'`);
 
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: false });
   await send('Emulation.setPageScaleFactor', { pageScaleFactor: 2 });
@@ -365,7 +402,7 @@ try {
   const otherSend = (method, params = {}) => new Promise(resolve => { const id = ++otherId; otherPending.set(id, resolve); other.send(JSON.stringify({ id, method, params })); });
   await otherSend('Runtime.enable'); await otherSend('Page.enable'); await otherSend('Page.navigate', { url: `${base}/#/study` });
   for (let attempt = 0; attempt < 100; attempt += 1) { const result = await otherSend('Runtime.evaluate', { expression: `document.querySelector('#route-heading')?.textContent`, returnByValue: true }); if (result.result.value === 'Information and consent') break; await new Promise(resolve => setTimeout(resolve, 75)); }
-  const isolated = await otherSend('Runtime.evaluate', { expression: `!sessionStorage.getItem('irexplorer.study.v0.9') && !document.querySelector('[data-action="new-study"]')`, returnByValue: true });
+  const isolated = await otherSend('Runtime.evaluate', { expression: `!sessionStorage.getItem('irexplorer.study.v0.11') && !document.querySelector('[data-action="new-study"]')`, returnByValue: true });
   if (!isolated.result.value) throw Error('Failed: Independent browser tab does not start without the first tab’s draft.');
   checks.push('Independent browser tab has no first-session draft or receipt'); other.close(); await send('Target.closeTarget', { targetId: newTarget.targetId });
   await route('/explore'); await select('#example-select', 'score');

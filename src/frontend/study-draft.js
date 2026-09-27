@@ -1,6 +1,6 @@
 // Local study state only. No network or workspace dependencies.
 window.StudyDraft = (() => {
-  const KEY = 'irexplorer.study.v0.9'; // New key separates this instrument and its task wording from earlier drafts.
+  const KEY = 'irexplorer.study.v0.11'; // New key separates this instrument from every older local draft.
   const blank = () => ({ status: 'unanswered', value: null });
   const fieldsFor = (content, section) => content.fields.filter(f => f.id.startsWith(section === 'pre' ? 'P' : section === 'post' ? 'Q' : section));
   function visible(field, answers) {
@@ -18,7 +18,7 @@ window.StudyDraft = (() => {
       if (!answer || Object.keys(answer).sort().join(',') !== 'status,value') { errors[field.id] = 'Invalid answer.'; continue; }
       const { status, value } = answer;
       if (status === 'unanswered' && value === null) {
-        if (complete && field.required) errors[field.id] = 'Choose an answer for P1.';
+        if (complete && field.required && visible(field, answers)) errors[field.id] = field.id === 'P1' ? 'Choose an answer for P1.' : 'Complete this required follow-up.';
         continue;
       }
       if (value === null && ((status === 'not_applicable' && (field.notApplicableLabel || Object.values(field.optionStatuses || {}).includes(status))) || (status === 'could_not_work_out' && (field.inabilityLabel || Object.values(field.optionStatuses || {}).includes(status))))) continue;
@@ -31,10 +31,6 @@ window.StudyDraft = (() => {
         valid &&= Array.isArray(values) && values.length > 0 && values.every(v => Number.isInteger(v) && allowed.includes(v)) && new Set(values).size === values.length && !(values.includes(field.exclusiveValue) && values.length > 1);
       }
       valid &&= visible(field, answers);
-      if (valid && field.id === 'P3_other_status') {
-        const name = answers.P3_other_name;
-        valid = name?.status === 'answered' && typeof name.value === 'string' && !!name.value.trim();
-      }
       if (!valid) errors[field.id] = ['text', 'short_text'].includes(field.type) ? `Use no more than ${field.maxLength.toLocaleString()} characters. Your text has not been shortened.` : 'Choose one of this item’s options.';
     }
     return errors;

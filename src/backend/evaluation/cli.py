@@ -79,7 +79,7 @@ def export(source, directory):
             json.dump(value, f, ensure_ascii=False, indent=2)
     write('submissions.json', records)
     content = participant_content()
-    course_status_definition = {
+    historical_course_status_definition = {
         'courseStatusOptions': {'1': 'Completed', '2': 'Currently enrolled', '3': 'Neither'},
         'courseItems': {
             'P3_CSSE1001_ENGG1001': 'CSSE1001/ENGG1001', 'P3_CSSE2002': 'CSSE2002',
@@ -104,11 +104,30 @@ def export(source, directory):
                     'otherCourse': 'P3.other contains the optional course name when value 7 is selected.',
                 },
             },
-            'v0.6': course_status_definition,
-            'v0.7': course_status_definition,
-            'v0.8': course_status_definition,
-            'v0.9': course_status_definition,
-            'v0.10': course_status_definition,
+            'v0.6': historical_course_status_definition,
+            'v0.7': historical_course_status_definition,
+            'v0.8': historical_course_status_definition,
+            'v0.9': historical_course_status_definition,
+            'v0.10': historical_course_status_definition,
+            'v0.11': {
+                'meaning': (
+                    'Selected UQ courses are ones the participant is studying or has studied; '
+                    'current enrolment and completion are intentionally combined.'
+                ),
+                'courseOptions': {
+                    '1': 'CSSE1001 — Introduction to Software Engineering / ENGG1001 — Programming for Engineers',
+                    '2': 'CSSE2002 — Programming in the Large', '3': 'CSSE2010 — Introduction to Computer Systems',
+                    '4': 'CSSE2310 — Computer Systems Principles and Programming',
+                    '5': 'COMP3506 — Algorithms & Data Structures', '6': 'COMP3301 — Operating Systems Architecture',
+                    '7': 'COMP4403 — Compilers and Interpreters', '8': 'None of these',
+                    '9': 'Other relevant course',
+                },
+                'otherCourse': (
+                    'P3_other_name is the required name shown when P3 value 9 is selected. '
+                    'An unanswered P3 is unknown; answered value 8 explicitly means none '
+                    'of the listed courses.'
+                ),
+            },
         },
         'csv': (
             'Long format uses section to identify consent, survey, or task. Value is the raw numeric code, '
@@ -117,7 +136,7 @@ def export(source, directory):
             'text.'
         ),
         'durationMs': (
-            'Rounded once to nearest integer millisecond at submission; 0–86400000. For v0.8–v0.10, visible time '
+            'Rounded once to nearest integer millisecond at submission; 0–86400000. For v0.8–v0.11, visible time '
             'starts at task presentation and includes reading, exploration, and answering; hidden tabs, explicit '
             'pause, and reload downtime are excluded. This task-presentation measure is distinct from the v0.5/v0.6 '
             'post-setup duration and must not be pooled with it. Neither measure is total task or pure comprehension '
@@ -125,8 +144,8 @@ def export(source, directory):
         ),
         'setupReached': (
             'Legacy v0.5/v0.6 outcome field: whether a usable comparison was reached at least once; it did not '
-            'verify the instructed configuration. It is not collected in v0.8–v0.10 and is not an analysed outcome. '
-            'Blank in a v0.8–v0.10 CSV row means not collected. Missing in older legacy records means unknown, '
+            'verify the instructed configuration. It is not collected in v0.8–v0.11 and is not an analysed outcome. '
+            'Blank in a v0.8–v0.11 CSV row means not collected. Missing in older legacy records means unknown, '
             'not false.'
         ),
         'definitionScope': (
@@ -149,8 +168,10 @@ def export(source, directory):
         'coding': (
             'Keep researcher coding in a separate file joined on participantCode and item/task ID. '
             'Separate records by instrumentVersion. v0.5 P3 combines completed and current enrolment; '
-            'v0.6 course items distinguish Completed (1), Currently enrolled (2), and Neither (3), with '
-            'unanswered unknown. Do not recode or pool v0.5 P3 as v0.6 statuses. Course exposure alone '
+            'v0.6–v0.10 course items distinguish Completed (1), Currently enrolled (2), and Neither (3), with '
+            'unanswered unknown. v0.11 P3 combines courses currently or previously studied; value 8 explicitly '
+            'means none, while unanswered remains unknown. Do not recode or pool v0.5 P3 as later statuses, or '
+            'v0.6–v0.10 status rows as v0.11 selections. Course exposure alone '
             'does not establish expertise. Use non-exclusive non-expert/compiler-exposed/out-of-audience '
             'flags; report overlap and unknown where missing data do not establish a flag.'
         ),

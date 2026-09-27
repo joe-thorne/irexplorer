@@ -33,7 +33,8 @@ class EvaluationContentTests(unittest.TestCase):
                          expected_consent)
         self.assertEqual(content['information'], expected_information)
         self.assertEqual([field for field in content['fields'] if field['id'].startswith('C')], expected_fields)
-        self.assertIn('[Joe/Joel to confirm:', json.dumps(content))
+        self.assertNotIn('[Joe/Joel to confirm', json.dumps(content))
+        self.assertTrue(all(section['title'] for section in content['information']))
 
     def test_revised_response_types_reject_old_codes(self):
         def a(value):
@@ -85,12 +86,14 @@ class EvaluationContentTests(unittest.TestCase):
         ])
         self.assertEqual(t2a['optionStatuses'], {'199': 'could_not_work_out'})
 
-    def test_v010_task_copy_and_identity_match_approved_runsheet(self):
+    def test_v011_task_copy_and_identity_match_current_runsheet(self):
         content = participant_content()
         self.assertEqual((content['instrumentVersion'], content['contentVersion'], content['studyVersion']),
-                         ('v0.10', 'v0.10-preview-1', 'v0.10-synthetic-1'))
+                         ('v0.11', 'v0.11-preview-1', 'v0.11-synthetic-1'))
         tasks = {task['id']: task for task in content['tasks']}
         self.assertIn('State 0 is the unoptimised baseline compiled with -O0', content['taskIntroduction'][1])
+        self.assertIn('T0 is the orientation; the six tasks are T1–T6', content['taskIntroduction'][2])
+        self.assertIn('State 13 is compiled separately with -O3', content['taskIntroduction'][1])
         self.assertIn('not an unaided test', content['taskIntroduction'][2])
         self.assertIn('Answer at your own level of detail', content['taskIntroduction'][2])
         self.assertIn('navigation does not submit them', content['taskIntroduction'][3])
@@ -123,7 +126,7 @@ class EvaluationContentTests(unittest.TestCase):
                                        'submissionEnabled': True})
             self.assertEqual(content['collectionMode'], 'preview')
             self.assertTrue(content['submissionEnabled'])
-            self.assertEqual(len(content['fields']), 67)
+            self.assertEqual(len(content['fields']), 60)
             allowed = {'id', 'prompt', 'type', 'required', 'options', 'scale', 'notApplicableLabel', 'maxLength',
                        'exclusiveValue', 'optionStatuses', 'condition', 'inabilityLabel'}
             for field in content['fields']:
@@ -153,34 +156,42 @@ class EvaluationContentTests(unittest.TestCase):
     def test_exclusive_choices_and_conditional_details(self):
         def a(value):
             return {'status': 'answered', 'value': value}
-        for value in [0, 4, True, '1']:
-            self.assertIn('P3_COMP4403', validate_answers('pre', {'P3_COMP4403': a(value)}))
-        self.assertEqual(validate_answers('pre', {'P3_COMP4403': a(1)}), {})
-        self.assertIn('P3_other_status', validate_answers('pre', {'P3_other_status': a(1)}))
+        for value in [0, 10, True, '1', [], [1, 1], [1, 8]]:
+            self.assertIn('P3', validate_answers('pre', {'P3': a(value)}))
+        self.assertEqual(validate_answers('pre', {'P3': a([1])}), {})
+        self.assertIn('P3_other_name', validate_answers('pre', {'P3_other_name': a('Course')}))
         self.assertIn('P12.detail', validate_answers('pre', {'P12': a(1), 'P12.detail': a('Detail')}))
         self.assertEqual(validate_answers('pre', {'P12': a(2), 'P12.detail': a('Detail')}), {})
 
-    def test_v06_course_statuses_are_independent_and_other_status_needs_a_name(self):
+    def test_v011_course_selections_combine_status_and_distinguish_none_from_missing(self):
         content = participant_content()
         self.assertEqual((content['instrumentVersion'], content['contentVersion'], content['studyVersion']),
-                         ('v0.10', 'v0.10-preview-1', 'v0.10-synthetic-1'))
-        courses = [field for field in content['fields']
-                   if field['id'].startswith('P3_') and field['id'] != 'P3_other_name']
-        self.assertEqual([field['id'] for field in courses], [
-            'P3_CSSE1001_ENGG1001', 'P3_CSSE2002', 'P3_CSSE2010', 'P3_CSSE2310',
-            'P3_COMP3506', 'P3_COMP3301', 'P3_COMP4403', 'P3_other_status',
+                         ('v0.11', 'v0.11-preview-1', 'v0.11-synthetic-1'))
+        course = next(field for field in content['fields'] if field['id'] == 'P3')
+        self.assertEqual(course['type'], 'multiple')
+        self.assertEqual([option['value'] for option in course['options']], list(range(1, 10)))
+        self.assertEqual(course['exclusiveValue'], 8)
+        labels = [option['label'] for option in course['options'] if option['value'] <= 7]
+        self.assertEqual(labels, [
+            'CSSE1001 — Introduction to Software Engineering / ENGG1001 — Programming for Engineers',
+            'CSSE2002 — Programming in the Large', 'CSSE2010 — Introduction to Computer Systems',
+            'CSSE2310 — Computer Systems Principles and Programming', 'COMP3506 — Algorithms & Data Structures',
+            'COMP3301 — Operating Systems Architecture', 'COMP4403 — Compilers and Interpreters',
         ])
-        self.assertTrue(all([option['label'] for option in field['options']] ==
-                            ['Completed', 'Currently enrolled', 'Neither'] for field in courses))
+        source = (Path(__file__).resolve().parents[2] / 'Docs/evaluation/instruments/01-pre-survey.md').read_text()
+        for label in labels:
+            self.assertIn(label, source)
         def a(value):
             return {'status': 'answered', 'value': value}
-        self.assertEqual(validate_answers('pre', {'P3_CSSE1001_ENGG1001': a(1),
-                                                  'P3_COMP4403': a(2)}), {})
-        self.assertEqual(validate_answers('pre', {'P3_COMP4403': {'status': 'unanswered', 'value': None}}), {})
-        self.assertIn('P3_other_status', validate_answers('pre', {'P3_other_status': a(1)}))
-        self.assertEqual(validate_answers('pre', {'P3_other_name': a('Synthetic course')}), {})
-        self.assertEqual(validate_answers('pre', {'P3_other_name': a('Synthetic course'),
-                                                  'P3_other_status': a(3)}), {})
+        self.assertEqual(validate_answers('pre', {'P3': a([1, 7])}), {})
+        self.assertEqual(validate_answers('pre', {'P3': {'status': 'unanswered', 'value': None}}), {})
+        self.assertEqual(validate_answers('pre', {'P3': a([8])}), {})
+        self.assertIn('P3', validate_answers('pre', {'P3': a([1, 8])}))
+        self.assertIn('P3_other_name', validate_answers('pre', {'P3_other_name': a('Other course')}))
+        self.assertEqual(validate_answers('pre', {'P3': a([9]), 'P3_other_name': a('Other course')}), {})
+        self.assertIn('P3_other_name', validate_answers('pre', {'P1': a(1), 'P3': a([9])}, complete=True))
+        self.assertIn('P3_other_name', validate_answers('pre', {'P3_other_name': a('Synthetic course')}))
+        self.assertEqual(validate_answers('pre', {'P3': a([9]), 'P3_other_name': a('Synthetic course')}), {})
         self.assertIn('P3_other_name', validate_answers('pre', {'P3_other_name': a('')}))
 
     def test_text_bounds_raw_unicode_and_unknown_keys(self):

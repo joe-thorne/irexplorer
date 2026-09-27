@@ -1,7 +1,7 @@
 {
-  "instrumentVersion": "v0.10",
-  "contentVersion": "v0.10-preview-1",
-  "studyVersion": "v0.10-synthetic-1",
+  "instrumentVersion": "v0.11",
+  "contentVersion": "v0.11-preview-1",
+  "studyVersion": "v0.11-synthetic-1",
   "mode": "preview",
   "submissionEnabled": false,
   "scales": {
@@ -109,19 +109,19 @@
     },
     {
       "id": "C3",
-      "prompt": "I understand that my answers remain a browser-tab draft until I select Submit answers, and that a receipt confirms submission. I can request removal with my participant code before the stated withdrawal cutoff. [Joe/Joel to confirm: withdrawal cutoff and removal scope.]",
+      "prompt": "I understand that my answers remain a browser-tab draft until I select Submit answers, and that a receipt confirms submission.",
       "type": "boolean",
       "required": true
     },
     {
       "id": "C4",
-      "prompt": "I understand how the confirmed storage, retention, and use arrangements apply to de-identified results and screened short quotes from anything I write. [Joe/Joel to confirm: final arrangements and wording.]",
+      "prompt": "I have read the information above and have had the opportunity to review the confirmed study arrangements before deciding whether to take part.",
       "type": "boolean",
       "required": true
     },
     {
       "id": "C5",
-      "prompt": "I am 18 years of age or older. [Joe/Joel to confirm: whether this needs to be asked.]",
+      "prompt": "I can read basic C code, as described above.",
       "type": "boolean",
       "required": true
     },
@@ -208,171 +208,62 @@
       }
     },
     {
-      "id": "P3_CSSE1001_ENGG1001",
-      "prompt": "CSSE1001/ENGG1001",
-      "type": "single",
+      "id": "P3",
+      "prompt": "Which of these UQ courses are you studying or have you studied? Select all that apply.",
+      "type": "multiple",
       "required": false,
+      "exclusiveValue": 8,
       "options": [
         {
           "value": 1,
-          "label": "Completed"
+          "label": "CSSE1001 — Introduction to Software Engineering / ENGG1001 — Programming for Engineers"
         },
         {
           "value": 2,
-          "label": "Currently enrolled"
+          "label": "CSSE2002 — Programming in the Large"
         },
         {
           "value": 3,
-          "label": "Neither"
-        }
-      ]
-    },
-    {
-      "id": "P3_CSSE2002",
-      "prompt": "CSSE2002",
-      "type": "single",
-      "required": false,
-      "options": [
-        {
-          "value": 1,
-          "label": "Completed"
+          "label": "CSSE2010 — Introduction to Computer Systems"
         },
         {
-          "value": 2,
-          "label": "Currently enrolled"
+          "value": 4,
+          "label": "CSSE2310 — Computer Systems Principles and Programming"
         },
         {
-          "value": 3,
-          "label": "Neither"
-        }
-      ]
-    },
-    {
-      "id": "P3_CSSE2010",
-      "prompt": "CSSE2010",
-      "type": "single",
-      "required": false,
-      "options": [
-        {
-          "value": 1,
-          "label": "Completed"
+          "value": 5,
+          "label": "COMP3506 — Algorithms & Data Structures"
         },
         {
-          "value": 2,
-          "label": "Currently enrolled"
+          "value": 6,
+          "label": "COMP3301 — Operating Systems Architecture"
         },
         {
-          "value": 3,
-          "label": "Neither"
-        }
-      ]
-    },
-    {
-      "id": "P3_CSSE2310",
-      "prompt": "CSSE2310",
-      "type": "single",
-      "required": false,
-      "options": [
-        {
-          "value": 1,
-          "label": "Completed"
+          "value": 7,
+          "label": "COMP4403 — Compilers and Interpreters"
         },
         {
-          "value": 2,
-          "label": "Currently enrolled"
+          "value": 8,
+          "label": "None of these"
         },
         {
-          "value": 3,
-          "label": "Neither"
-        }
-      ]
-    },
-    {
-      "id": "P3_COMP3506",
-      "prompt": "COMP3506",
-      "type": "single",
-      "required": false,
-      "options": [
-        {
-          "value": 1,
-          "label": "Completed"
-        },
-        {
-          "value": 2,
-          "label": "Currently enrolled"
-        },
-        {
-          "value": 3,
-          "label": "Neither"
-        }
-      ]
-    },
-    {
-      "id": "P3_COMP3301",
-      "prompt": "COMP3301",
-      "type": "single",
-      "required": false,
-      "options": [
-        {
-          "value": 1,
-          "label": "Completed"
-        },
-        {
-          "value": 2,
-          "label": "Currently enrolled"
-        },
-        {
-          "value": 3,
-          "label": "Neither"
-        }
-      ]
-    },
-    {
-      "id": "P3_COMP4403",
-      "prompt": "COMP4403",
-      "type": "single",
-      "required": false,
-      "options": [
-        {
-          "value": 1,
-          "label": "Completed"
-        },
-        {
-          "value": 2,
-          "label": "Currently enrolled"
-        },
-        {
-          "value": 3,
-          "label": "Neither"
+          "value": 9,
+          "label": "Other relevant course"
         }
       ]
     },
     {
       "id": "P3_other_name",
-      "prompt": "Other relevant course — please name it:",
+      "prompt": "Name of other relevant course",
       "type": "text",
-      "required": false,
-      "maxLength": 4000
-    },
-    {
-      "id": "P3_other_status",
-      "prompt": "Other relevant course status",
-      "type": "single",
-      "required": false,
-      "options": [
-        {
-          "value": 1,
-          "label": "Completed"
-        },
-        {
-          "value": 2,
-          "label": "Currently enrolled"
-        },
-        {
-          "value": 3,
-          "label": "Neither"
-        }
-      ]
+      "required": true,
+      "maxLength": 4000,
+      "condition": {
+        "field": "P3",
+        "values": [
+          9
+        ]
+      }
     },
     {
       "id": "P4",
@@ -940,20 +831,13 @@
   "preSections": [
     {
       "title": "Section A — Background",
-      "intro": "For each course, choose Completed, Currently enrolled, or Neither. Leave a course unanswered if you prefer not to say; an unanswered response is unknown, not Neither. The optional other course has the same status choices.",
+      "intro": "Select the UQ courses you are studying or have studied. Select None of these if none apply. Leave all options unanswered if you prefer not to say; an unanswered response is unknown, not None.",
       "fields": [
         "P1",
         "P1.other",
         "P2",
-        "P3_CSSE1001_ENGG1001",
-        "P3_CSSE2002",
-        "P3_CSSE2010",
-        "P3_CSSE2310",
-        "P3_COMP3506",
-        "P3_COMP3301",
-        "P3_COMP4403",
-        "P3_other_name",
-        "P3_other_status"
+        "P3",
+        "P3_other_name"
       ]
     },
     {
@@ -1220,6 +1104,10 @@
         {
           "kind": "paragraph",
           "text": "You do not need to know anything about compilers to take part. Being able to read basic C is enough. If you have never seen LLVM intermediate representation before, you are exactly the person this study needs."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The Continue button is at the bottom of this page. Scroll down and select it when you are ready."
         }
       ]
     },
@@ -1240,7 +1128,7 @@
         },
         {
           "kind": "paragraph",
-          "text": "You can stop at any point without giving a reason. Before you submit, Stop and discard removes the draft in this tab and sends no answers. Closing a tab is not a supported way to save or erase a draft. [Joe/Joel to confirm: final wording after the browser recovery flow and ethics advice are approved.]"
+          "text": "You can stop before submission without giving a reason. Stop and discard removes the unsubmitted draft in this tab and sends no answers. Closing a tab is not a supported way to save or erase a draft."
         }
       ]
     },
@@ -1253,15 +1141,15 @@
         },
         {
           "kind": "paragraph",
-          "text": "The response form does not ask for your name, student number, or email address. Your answers are linked by a random participant code. Please keep that code: before the stated withdrawal cutoff, you can quote it to ask the researcher to remove your response. Without the code, the researcher may be unable to find it. [Joe/Joel to confirm: withdrawal cutoff, contact route, removal scope, and the wording for records already used in results.]"
+          "text": "The response form does not ask for your name, student number, or email address. Your answers are linked by a random participant code. The researcher will explain before recruitment whether, when, and how a submitted response can be withdrawn, including what happens if it has already contributed to reported results."
         },
         {
           "kind": "paragraph",
-          "text": "The study application is designed not to store IP addresses, answer text in logs, or participant codes in its study logs. The hosting, proxy, and upstream logging arrangements must be checked before this page can say what they record. [Joe/Joel to confirm: the final hosted infrastructure-log disclosure; do not publish an unqualified no-IP-address promise before that check.]"
+          "text": "The researcher will explain before recruitment what information the study application and its hosting services record. Those arrangements are still being checked."
         },
         {
           "kind": "paragraph",
-          "text": "The only background details collected are your degree programme, year of study, which relevant courses you have completed, and your own rating of how familiar you are with a handful of topics. Those are needed because the study's whole claim depends on showing that participants were not already compiler experts."
+          "text": "The background questions ask about your degree programme, year of study, which relevant UQ courses you are studying or have studied, and how familiar you are with a handful of topics. Course completion and current enrolment are combined in the course question."
         },
         {
           "kind": "paragraph",
@@ -1278,7 +1166,7 @@
         },
         {
           "kind": "paragraph",
-          "text": "The response database, any exports, and backups are kept as private research data outside the source-code repositories. Short quotes from free-text answers may appear without attribution only after they are screened for identifying details. [Joe/Joel to confirm: storage location, access, backup handling, retention and deletion date, permitted sharing, and the final wording for thesis, poster, and demonstration use.]"
+          "text": "Before recruitment, the researcher will explain where responses, exports, and backups are stored, who can access them, how long they are kept, and when they are deleted. The permitted use and sharing of results, including any short quotations, will also be stated before you decide whether to take part."
         },
         {
           "kind": "paragraph",
@@ -1291,7 +1179,7 @@
       "blocks": [
         {
           "kind": "paragraph",
-          "text": "Taking part is entirely voluntary. You can decline, or stop partway through, without giving a reason and without any consequence. [Joe/Joel to confirm: whether participation remains unpaid and, if not, the incentive and contact-data arrangement.]"
+          "text": "Taking part is voluntary. You can decline without giving a reason. The researcher will state before recruitment whether an incentive is offered and whether any contact details are needed to arrange it."
         }
       ]
     },
@@ -1304,7 +1192,7 @@
         },
         {
           "kind": "paragraph",
-          "text": "[Joe/Joel to confirm: whether an ethics contact point must be listed here, and its approved details.]"
+          "text": "The approved study contact details, including any required ethics contact, will be provided before recruitment."
         }
       ]
     }
@@ -1312,7 +1200,7 @@
   "taskIntroduction": [
     "Three small C programs are already loaded. You do not need to write or compile code.",
     "Each program has fourteen recorded states: State 0 is the unoptimised baseline compiled with -O0; States 1–12 are produced by successive compiler passes applied to the preceding output; State 13 is compiled separately with -O3.",
-    "After the orientation are six tasks. T0–T5 open on the named example at State 0 with IR in both panels; set the states and views named in each task. T6 continues with T5’s example, states, function, and views, with the previous selection cleared; continue there or change them. You can use the C source, highlighting, explanations, and word help. This study evaluates the tool, not you; the tasks are not an unaided test. Answer at your own level of detail: brief, partial, or blank answers are useful. You may also skip or choose “I could not work this out”.",
+    "T0 is the orientation; the six tasks are T1–T6. T1–T5 open on the named example at State 0 with IR in both panels; set the states and views named in each task. T6 continues with T5’s example, states, function, and views, with the previous selection cleared; continue there or change them. You can use the C source, highlighting, explanations, and word help. This study evaluates the tool, not you; the tasks are not an unaided test. Answer at your own level of detail: brief, partial, or blank answers are useful. You may also skip or choose “I could not work this out”.",
     "As you move between sections and tasks, your answers remain a draft in this browser tab; navigation does not submit them. Continuing locks that task’s answers. Duration is recorded from task presentation and includes visible reading, setup, exploration, and answering. Paused time, hidden-tab time, and reload downtime are excluded. There is no time limit."
   ]
 }

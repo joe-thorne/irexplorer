@@ -23,7 +23,7 @@ check('Unanswered and not applicable stay distinct from neutral', () => {
   assert.equal(Object.keys(D.validate(content, 'pre', { P2: answered(6) })).join(), 'P2');
 });
 check('Mutually exclusive and conditional values rejected when inconsistent', () => {
-  assert.equal(Object.keys(D.validate(content, 'pre', { P3: answered([6, 1]) })).join(), 'P3');
+  assert.equal(Object.keys(D.validate(content, 'pre', { P3: answered([8, 1]) })).join(), 'P3');
   assert.equal(Object.keys(D.validate(content, 'pre', { 'P1.other': answered('Synthetic') })).join(), 'P1.other');
 });
 check('Unicode limit counts code points; oversized draft can recover without truncation', () => {
@@ -120,15 +120,21 @@ check('Tasks may complete, skip, or report inability without the requested compa
     const bad=JSON.parse(JSON.stringify(d));change(bad);assert.throws(()=>D.decode(JSON.stringify(bad),content));
   }
 });
-check('v0.6 representation selections and v0.5 draft identities stay distinct', () => {
-  assert.equal(D.KEY, 'irexplorer.study.v0.9');
+check('v0.11 course exposure selections and historical draft identities stay distinct', () => {
+  assert.equal(D.KEY, 'irexplorer.study.v0.11');
   assert.equal(Object.keys(D.validate(content,'post',{Q8:answered([1,2,3])})).length,0);
   for (const value of [1,[1,4]]) assert.equal(Object.keys(D.validate(content,'post',{Q8:answered(value)})).join(),'Q8');
   const d=D.create(content,consent);d.instrumentVersion='v0.5';d.contentVersion='v0.5-preview-1';d.studyVersion='v0.5-synthetic-1';assert.throws(()=>D.decode(JSON.stringify(d),content));
-  const course=content.fields.find(f=>f.id==='P3_COMP4403');
-  assert.deepEqual(course.options.map(option=>option.label),['Completed','Currently enrolled','Neither']);
-  assert.equal(Object.keys(D.validate(content,'pre',{P3_other_status:answered(1)})).join(),'P3_other_status');
-  assert.equal(Object.keys(D.validate(content,'pre',{P3_other_name:answered('Synthetic course'),P3_other_status:answered(2)})).length,0);
+  const course=content.fields.find(f=>f.id==='P3');
+  assert.equal(course.type, 'multiple');
+  assert.deepEqual(course.options.map(option=>option.value), [1,2,3,4,5,6,7,8,9]);
+  assert.equal(course.exclusiveValue, 8);
+  assert.equal(Object.keys(D.validate(content,'pre',{P3:answered([8,1])})).join(),'P3');
+  assert.equal(Object.keys(D.validate(content,'pre',{P3_other_name:answered('Synthetic course')})).join(),'P3_other_name');
+  assert.equal(Object.keys(D.validate(content,'pre',{P3:answered([9]),P3_other_name:answered('Synthetic course')})).length,0);
+  assert.equal(Object.keys(D.validate(content,'pre',{P3:answered([1,9])},true)).includes('P3_other_name'),true);
+  assert.equal(Object.keys(D.validate(content,'pre',{P3:{status:'unanswered',value:null}})).length,0);
+  assert.equal(Object.keys(D.validate(content,'pre',{P3:answered([8])})).length,0);
 });
 check('Timing starts only on resume, checkpoints accumulate once, repeated resume cannot double count', () => {
   let now=100;const r={durationMs:0,status:'pending',presented:true,paused:false,interrupted:false};

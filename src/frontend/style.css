@@ -327,7 +327,7 @@ details p { margin: .8rem 0 0; }
 .source-panel, .viewer-panel {
   display: flex;
   flex-direction: column;
-  height: clamp(27rem, 52vh, 34rem);
+  height: clamp(38rem, 76vh, 46rem);
   min-height: 0;
   min-width: 0;
   overflow: hidden;
@@ -364,5 +364,7 @@ details p { margin: .8rem 0 0; }
       "empty"
       "comparison";
   }
-  .source-panel[open], .viewer-panel { height: clamp(22rem, 48vh, 30rem); }
+  .source-panel[open], .viewer-panel { height: clamp(40rem, 82vh, 44rem); }
 }
+.study-term-help { border-bottom: 1px dotted currentColor; cursor: help; }
+.study-term-help:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
