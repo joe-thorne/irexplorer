@@ -42,11 +42,20 @@ class SummaryQueriesTests(unittest.TestCase):
                             self.assertLess(ref['remarkIndex'], len(response['steps'][ref['stepIndex']]['remarks']))
                     for record, original in zip(response['steps'], timeline.steps[lower:higher], strict=True):
                         self.assertEqual(record['command'], original.origin.command)
-                        self.assertEqual([r['raw'] for r in record['remarks']], [r.raw for r in original.remarks])
+                        source_file = service.source(example)['file']
+                        old_file = f"examples/curated/{source_file}"
+                        expected_raw = [r.raw.replace(old_file, source_file) for r in original.remarks]
+                        self.assertEqual([r['raw'] for r in record['remarks']], expected_raw)
                         self.assertEqual([r['passName'] for r in record['remarks']],
                                          [r.pass_name for r in original.remarks])
-                        for remark in record['remarks']:
+                        for remark, source_remark in zip(record['remarks'], original.remarks, strict=True):
                             self.assertEqual(set(remark), {'passName', 'name', 'function', 'location', 'raw'})
+                            if source_remark.location is not None:
+                                self.assertEqual(remark['location'], {
+                                    'file': source_file,
+                                    'line': source_remark.location.line,
+                                    'column': source_remark.location.column,
+                                })
                     if higher == 13:
                         self.assertIn('not the effect of one optimisation pass', response['context'])
                     if higher > lower + 1:
@@ -63,8 +72,27 @@ class SummaryQueriesTests(unittest.TestCase):
             response = QueryService().comparison_report('quick_sort', 3, 5)
         self.assertEqual(response['steps'][-1]['remarks'], [])
         self.assertEqual(response['structuralClaims'][-1]['remarkReferences'], [{'stepIndex': 0, 'remarkIndex': 1}])
+        original = load_curated_timeline_record('quick_sort').steps[3].remarks[1]
         self.assertEqual(response['steps'][0]['remarks'][1]['raw'],
-                         load_curated_timeline_record('quick_sort').steps[3].remarks[1].raw)
+                         original.raw.replace('examples/curated/quick_sort.c', 'quick_sort.c'))
+
+    def test_public_remark_and_source_mapping_locations_use_the_same_file_name(self):
+        with TestClient(create_app()) as client:
+            report = client.get('/api/examples/quick_sort/comparison-report',
+                                params={'fromOrdinal': 3, 'toOrdinal': 4}).json()
+            mappings = client.get('/api/examples/quick_sort/states/3/source-mappings',
+                                  params={'functionId': 'fn0'}).json()['mappings']
+
+        remarks = report['steps'][0]['remarks']
+        remark = next(item for item in remarks if item['location'] is not None)
+        original = load_curated_timeline_record('quick_sort').steps[3].remarks[remarks.index(remark)]
+        self.assertEqual(remark['location']['file'], 'quick_sort.c')
+        self.assertEqual((remark['location']['line'], remark['location']['column']),
+                         (original.location.line, original.location.column))
+        self.assertIn("File: 'quick_sort.c'", remark['raw'])
+        self.assertNotIn('examples/curated/', remark['raw'])
+        self.assertTrue(mappings)
+        self.assertTrue(all(mapping['location']['file'] == 'quick_sort.c' for mapping in mappings))
 
     def test_same_state_no_op_and_whole_example_scope(self):
         for example in curated.list_examples():

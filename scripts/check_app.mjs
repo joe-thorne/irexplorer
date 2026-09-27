@@ -144,6 +144,13 @@ try {
   await check('Default page opens Explore without entering Study', `!location.hash && document.querySelector('#study-screen').hidden && !document.querySelector('#explore-heading').hidden`);
   await select('#example-select', 'score');
   await until('window.StudyWorkspace?.ready');
+  await select('#example-select', 'quick_sort'); await until('window.StudyWorkspace.ready');
+  await select('#left-state', '3'); await select('#right-state', '4'); await until('window.StudyWorkspace.ready');
+  await select('#function-select', 'quick_sort'); await until(`window.StudyWorkspace.ready && appState.functionName === 'quick_sort'`);
+  await click('.source-line[data-line="18"]'); await until('appState.selection?.evidence?.remarks?.length > 0');
+  await check('A curated quick_sort compiler remark displays its file name without the repository path',
+    `(() => { const remark = appState.selection.evidence.remarks.find(item => item.location?.line === 18); const raw = document.querySelector('#compiler-remarks .compiler-remark pre')?.textContent || ''; return Boolean(remark) && remark.location.file === 'quick_sort.c' && raw.includes("File: 'quick_sort.c'") && !raw.includes('examples/curated/'); })()`);
+  await select('#example-select', 'score'); await until('window.StudyWorkspace.ready');
   await check('Explore uses the selected equal-height, three-panel workbench with full-width evidence below', `(() => { const box = selector => document.querySelector(selector).getBoundingClientRect(); const panels = [box('#source-panel'),document.querySelector('#left-viewer').closest('.viewer-panel').getBoundingClientRect(),document.querySelector('#right-viewer').closest('.viewer-panel').getBoundingClientRect()]; const evidence = box('.comparison-status'); return panels.every(panel => Math.abs(panel.height - panels[0].height) < 1) && panels[0].left < panels[1].left && panels[1].left < panels[2].left && evidence.top > panels[0].bottom && evidence.width >= panels[0].width + panels[1].width + panels[2].width - 40 && document.documentElement.scrollHeight > innerHeight; })()`);
   await checkSectionsScrollable('Explore desktop page scrolling reaches workspace, panels and analysis', ['#workspace-shell','#source-panel','#left-panel','#right-panel','.comparison-status']);
   await value("document.querySelector('#example-select').focus()");

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import PurePosixPath
 from threading import RLock
@@ -260,6 +261,21 @@ def _remark_view(remark: Remark) -> dict[str, Any]:
         "name": remark.name,
         "function": remark.function,
         "location": None if location is None
-        else {"file": location.file, "line": location.line, "column": location.column},
-        "raw": remark.raw,
+        else {"file": PurePosixPath(location.file).name, "line": location.line, "column": location.column},
+        "raw": _participant_remark_raw(remark.raw),
     }
+
+
+def _participant_remark_raw(raw: str) -> str:
+    """Keep captured remark file fields consistent with public source mappings."""
+    def file_name(match: re.Match[str]) -> str:
+        path = match.group("path").strip()
+        if not path:
+            return match.group(0)
+        return f"{match.group('prefix')}{match.group('quote')}{PurePosixPath(path).name}{match.group('quote')}"
+
+    return re.sub(
+        r"(?m)(?P<prefix>\bFile:\s*)(?P<quote>['\"]?)(?P<path>[^,'\"\r\n]+)(?P=quote)",
+        file_name,
+        raw,
+    )
