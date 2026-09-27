@@ -56,6 +56,56 @@
       </section>
 
       <section id="workspace" class="workspace" hidden aria-label="Side-by-side optimisation comparison">
+        <div class="panel-grid">
+          <section id="left-panel" class="viewer-panel panel" aria-labelledby="left-heading">
+            <header class="viewer-heading">
+              <h2 id="left-heading">Left panel</h2>
+              <div class="viewer-controls">
+                <label class="state-control" for="left-state">Left panel · State
+                  <select id="left-state" aria-describedby="left-state-label" disabled></select>
+                </label>
+                <div class="state-steps" role="group" aria-label="Move left panel between States">
+                  <button id="left-previous" type="button" aria-label="Previous State in left panel" disabled>← Previous</button>
+                  <button id="left-next" type="button" aria-label="Next State in left panel" disabled>Next →</button>
+                </div>
+                <label for="left-view">View
+                  <select id="left-view" disabled>
+                    <option value="ir">LLVM IR</option>
+                    <option value="cfg">CFG</option>
+                  </select>
+                </label>
+              </div>
+            </header>
+            <p id="left-state-label" class="state-label"></p>
+            <p id="left-description" class="viewer-description"></p>
+            <div id="left-viewer" class="viewer-content"></div>
+          </section>
+
+          <section id="right-panel" class="viewer-panel panel" aria-labelledby="right-heading">
+            <header class="viewer-heading">
+              <h2 id="right-heading">Right panel</h2>
+              <div class="viewer-controls">
+                <label class="state-control" for="right-state">Right panel · State
+                  <select id="right-state" aria-describedby="right-state-label" disabled></select>
+                </label>
+                <div class="state-steps" role="group" aria-label="Move right panel between States">
+                  <button id="right-previous" type="button" aria-label="Previous State in right panel" disabled>← Previous</button>
+                  <button id="right-next" type="button" aria-label="Next State in right panel" disabled>Next →</button>
+                </div>
+                <label for="right-view">View
+                  <select id="right-view" disabled>
+                    <option value="ir">LLVM IR</option>
+                    <option value="cfg">CFG</option>
+                  </select>
+                </label>
+              </div>
+            </header>
+            <p id="right-state-label" class="state-label"></p>
+            <p id="right-description" class="viewer-description"></p>
+            <div id="right-viewer" class="viewer-content"></div>
+          </section>
+        </div>
+
         <section class="comparison-status panel" aria-label="Comparison explanation">
           <h2 class="comparison-section-title">State-to-State comparison</h2>
           <div class="comparison-states">
@@ -96,56 +146,6 @@
             </section>
           </div>
         </section>
-
-        <div class="panel-grid">
-          <section class="viewer-panel panel" aria-labelledby="left-heading">
-            <header class="viewer-heading">
-              <h2 id="left-heading">Left panel</h2>
-              <div class="viewer-controls">
-                <label class="state-control" for="left-state">Left panel · State
-                  <select id="left-state" aria-describedby="left-state-label" disabled></select>
-                </label>
-                <div class="state-steps" role="group" aria-label="Move left panel between States">
-                  <button id="left-previous" type="button" aria-label="Previous State in left panel" disabled>← Previous</button>
-                  <button id="left-next" type="button" aria-label="Next State in left panel" disabled>Next →</button>
-                </div>
-                <label for="left-view">View
-                  <select id="left-view" disabled>
-                    <option value="ir">LLVM IR</option>
-                    <option value="cfg">CFG</option>
-                  </select>
-                </label>
-              </div>
-            </header>
-            <p id="left-state-label" class="state-label"></p>
-            <p id="left-description" class="viewer-description"></p>
-            <div id="left-viewer" class="viewer-content"></div>
-          </section>
-
-          <section class="viewer-panel panel" aria-labelledby="right-heading">
-            <header class="viewer-heading">
-              <h2 id="right-heading">Right panel</h2>
-              <div class="viewer-controls">
-                <label class="state-control" for="right-state">Right panel · State
-                  <select id="right-state" aria-describedby="right-state-label" disabled></select>
-                </label>
-                <div class="state-steps" role="group" aria-label="Move right panel between States">
-                  <button id="right-previous" type="button" aria-label="Previous State in right panel" disabled>← Previous</button>
-                  <button id="right-next" type="button" aria-label="Next State in right panel" disabled>Next →</button>
-                </div>
-                <label for="right-view">View
-                  <select id="right-view" disabled>
-                    <option value="ir">LLVM IR</option>
-                    <option value="cfg">CFG</option>
-                  </select>
-                </label>
-              </div>
-            </header>
-            <p id="right-state-label" class="state-label"></p>
-            <p id="right-description" class="viewer-description"></p>
-            <div id="right-viewer" class="viewer-content"></div>
-          </section>
-        </div>
       </section>
         </section>
       </div>

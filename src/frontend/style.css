@@ -301,3 +301,68 @@ details p { margin: .8rem 0 0; }
   .comparison-states, .comparison-rows { grid-template-columns: 1fr; }
   .comparison-row + .comparison-row { border-left: 0; border-top: 1px solid var(--line); padding: 1rem 0 0; }
 }
+
+/* Shared linear workbench for Explore and Study task views. */
+#workspace-shell {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-areas:
+    "heading heading heading"
+    "toolbar toolbar toolbar"
+    "source left right"
+    "notice notice notice"
+    "empty empty empty"
+    "comparison comparison comparison";
+}
+#explore-heading { grid-area: heading; }
+#workspace-shell > .toolbar { grid-area: toolbar; }
+#source-panel { grid-area: source; margin-top: 0; }
+#left-panel { grid-area: left; }
+#right-panel { grid-area: right; }
+#workspace-shell > .notice { grid-area: notice; }
+#empty-state { grid-area: empty; max-width: none; }
+#workspace:not([hidden]), #workspace:not([hidden]) .panel-grid { display: contents; }
+.comparison-status { grid-area: comparison; min-width: 0; }
+.source-panel, .viewer-panel {
+  display: flex;
+  flex-direction: column;
+  height: clamp(27rem, 52vh, 34rem);
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+.source-lines, .viewer-content {
+  flex: 1 1 auto;
+  max-height: none;
+  min-height: 0;
+}
+.viewer-content { width: 100%; }
+.source-lines { overflow: auto; }
+.with-task { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr); }
+.with-task #study-screen {
+  margin: 0;
+  max-height: none;
+  max-width: none;
+  overflow: visible;
+  position: static;
+  width: auto;
+}
+.with-task #workspace-shell, .with-task #task-responses { width: 100%; }
+.task-responses { min-width: 0; }
+.task-responses-details { margin: 0; }
+@media (max-width: 1100px) {
+  #workspace-shell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "heading"
+      "toolbar"
+      "source"
+      "left"
+      "right"
+      "notice"
+      "empty"
+      "comparison";
+  }
+  .source-panel[open], .viewer-panel { height: clamp(22rem, 48vh, 30rem); }
+}

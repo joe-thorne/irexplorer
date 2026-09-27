@@ -39,11 +39,26 @@ async function check(name, expression) { if (!await value(expression)) throw Err
 async function click(selector) { await value(`document.querySelector(${JSON.stringify(selector)}).click()`); }
 async function hover(selector) {
   const point = await value(`(() => { const r = document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`);
+  await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 0, y: 0 });
   await send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...point });
 }
 async function key(key, code, codePoint) {
   await send('Input.dispatchKeyEvent', { type: 'keyDown', key, code, windowsVirtualKeyCode: codePoint, ...(key.length === 1 ? { text: key } : {}) });
   await send('Input.dispatchKeyEvent', { type: 'keyUp', key, code, windowsVirtualKeyCode: codePoint });
+}
+async function tabUntil(expression, limit = 400) {
+  for (let i = 0; i < limit; i += 1) {
+    if (await value(expression)) return;
+    await key('Tab', 'Tab', 9);
+    if (await value(expression)) return;
+  }
+  throw Error(`Tab navigation did not reach: ${expression}; active=${JSON.stringify(await value(`(() => { const e = document.activeElement; return { tag: e.tagName, id: e.id, className: e.className, text: e.innerText?.slice(0, 80) }; })()`))}`);
+}
+async function checkSectionsScrollable(name, selectors) {
+  const expression = `(() => { const enough = document.documentElement.scrollHeight > innerHeight; const height = innerHeight; const sections = ${JSON.stringify(selectors)}.map(selector => { const element = document.querySelector(selector); if (!element) return { selector, missing: true }; element.scrollIntoView({ block: 'start', behavior: 'instant' }); const rect = element.getBoundingClientRect(); return { selector, top: rect.top, bottom: rect.bottom }; }); window.scrollTo(0, 0); return { enough, height, sections }; })()`;
+  const result = await value(expression);
+  if (!result.enough || result.sections.some(section => section.missing || section.bottom <= 0 || section.top >= result.height)) throw Error(`Failed: ${name} ${JSON.stringify(result)}`);
+  checks.push(name);
 }
 async function choose(name, option) { await click(`input[name="${name}"][value="${option}"]`); }
 async function fill(name, text) { await value(`(() => { const e = document.querySelector('textarea[name="${name}"]'); e.value = ${JSON.stringify(text)}; e.dispatchEvent(new Event('input', { bubbles: true })); })()`); }
@@ -74,9 +89,34 @@ async function task(id) {
     await click(targetSelector); await until(`appState.selectionInput?.side === 'right'`);
     await check('T5 selection shows approximate correspondence confidence and its separate likely explanation', `document.querySelector('#selection-status').textContent.includes('merged · approximate confidence') && document.querySelector('#optimisation-explanations').textContent.includes('Induction-variable widening · likely')`);
     await check('T5 identifies the relationship, link confidence and qualified explanation separately', `document.querySelector('#task-instructions').innerText.includes('confidence wording appears beside the link') && document.querySelector('#task-instructions').innerText.includes('Keep the link’s confidence separate')`);
+    await check('Study uses the selected three-panel workbench before full-width responses', `(() => { const box = selector => document.querySelector(selector).getBoundingClientRect(); const panels = [box('#source-panel'),document.querySelector('#left-viewer').closest('.viewer-panel').getBoundingClientRect(),document.querySelector('#right-viewer').closest('.viewer-panel').getBoundingClientRect()]; const response = box('#task-responses'); const comparison = box('.comparison-status'); const sameHeight = panels.every(panel => Math.abs(panel.height - panels[0].height) < 1); const toolbar = box('#workspace-shell > .toolbar'); return sameHeight && panels[0].left < panels[1].left && panels[1].left < panels[2].left && toolbar.width >= panels[0].width + panels[1].width + panels[2].width - 40 && comparison.width >= panels[0].width + panels[1].width + panels[2].width - 40 && response.top > panels[0].bottom && response.width >= panels[0].width + panels[1].width + panels[2].width - 40 && document.querySelector('#task-responses').compareDocumentPosition(document.querySelector('#left-state')) & Node.DOCUMENT_POSITION_PRECEDING; })()`);
+    await checkSectionsScrollable('Study desktop page scrolling reaches instructions, workspace, analysis and responses', ['#task-instructions','#workspace-shell','.comparison-status','#task-responses']);
+    await value("document.querySelector('#route-heading').focus()");
+    await key('Tab', 'Tab', 9);
+    await check('Study Tab begins with the instruction jump', `document.activeElement.matches('.task-jumps a[href="#task-instructions"]')`);
+    await key('Tab', 'Tab', 9);
+    await check('Study Tab order reaches the workspace jump second', `document.activeElement.matches('.task-jumps a[href="#workspace-shell"]')`);
+    await key('Tab', 'Tab', 9);
+    await check('Study Tab order reaches the responses jump third', `document.activeElement.matches('.task-jumps a[href="#task-responses"]')`);
+    await value("document.querySelector('#left-state').focus()");
+    await tabUntil(`document.activeElement.id === 'right-state'`);
+    await check('Study Tab advances from left State controls through its IR content to the right State', `document.activeElement.id === 'right-state'`);
+    await tabUntil(`document.activeElement.matches('.task-responses-details summary')`);
+    await check('Study Tab reaches responses after the comparison evidence', `document.activeElement.matches('.task-responses-details summary')`);
     await snap('study-T5-desktop.png');
     await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
     await check('Study State selectors and T5 instructions remain visible at narrow width', `document.querySelector('#workspace-shell').getBoundingClientRect().width <= innerWidth && document.querySelector('#left-state').getBoundingClientRect().width > 0 && document.querySelector('#task-instructions').getBoundingClientRect().width > 0`);
+    await check('Study workbench stacks in reading order at narrow width with equal readable panels', `(() => { const panels = [document.querySelector('#source-panel').getBoundingClientRect(),document.querySelector('#left-viewer').closest('.viewer-panel').getBoundingClientRect(),document.querySelector('#right-viewer').closest('.viewer-panel').getBoundingClientRect()]; return document.documentElement.scrollWidth <= innerWidth && panels.every(panel => panel.width >= 300 && Math.abs(panel.height - panels[0].height) < 1) && panels[0].top < panels[1].top && panels[1].top < panels[2].top && document.querySelector('#task-responses').getBoundingClientRect().top > panels[2].bottom; })()`);
+    await checkSectionsScrollable('Study narrow page scrolling reaches instructions, workspace, analysis and responses', ['#task-instructions','#workspace-shell','.comparison-status','#task-responses']);
+    await value("document.querySelector('#route-heading').focus()");
+    await key('Tab', 'Tab', 9);
+    await key('Tab', 'Tab', 9);
+    await key('Tab', 'Tab', 9);
+    await check('Study narrow Tab order reaches instructions, workspace and response jumps in order', `document.activeElement.matches('.task-jumps a[href="#task-responses"]')`);
+    await value("document.querySelector('#left-state').focus()");
+    await tabUntil(`document.activeElement.id === 'right-state'`);
+    await tabUntil(`document.activeElement.matches('.task-responses-details summary')`);
+    await check('Study narrow Tab advances through the stacked workspace before responses', `document.activeElement.matches('.task-responses-details summary')`);
     await snap('study-T5-narrow.png');
     await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
     await value("document.querySelector('#route-heading').focus()");
@@ -104,6 +144,11 @@ try {
   await check('Default page opens Explore without entering Study', `!location.hash && document.querySelector('#study-screen').hidden && !document.querySelector('#explore-heading').hidden`);
   await select('#example-select', 'score');
   await until('window.StudyWorkspace?.ready');
+  await check('Explore uses the selected equal-height, three-panel workbench with full-width evidence below', `(() => { const box = selector => document.querySelector(selector).getBoundingClientRect(); const panels = [box('#source-panel'),document.querySelector('#left-viewer').closest('.viewer-panel').getBoundingClientRect(),document.querySelector('#right-viewer').closest('.viewer-panel').getBoundingClientRect()]; const evidence = box('.comparison-status'); return panels.every(panel => Math.abs(panel.height - panels[0].height) < 1) && panels[0].left < panels[1].left && panels[1].left < panels[2].left && evidence.top > panels[0].bottom && evidence.width >= panels[0].width + panels[1].width + panels[2].width - 40 && document.documentElement.scrollHeight > innerHeight; })()`);
+  await checkSectionsScrollable('Explore desktop page scrolling reaches workspace, panels and analysis', ['#workspace-shell','#source-panel','#left-panel','#right-panel','.comparison-status']);
+  await value("document.querySelector('#example-select').focus()");
+  await key('Tab', 'Tab', 9);
+  await check('Explore Tab order moves from file selection to the source panel', `document.activeElement === document.querySelector('#source-panel summary')`);
   await check('Explore names the comparison, trace and trace evidence', `document.body.innerText.includes('State-to-State comparison') && document.querySelector('.current-selection .comparison-label').textContent === 'Trace' && [...document.querySelectorAll('.comparison-section-title')][1].textContent === 'Trace evidence'`);
   await check('Steps label only the State-to-State comparison', `document.querySelector('#ir-step-heading').textContent === 'Steps' && document.querySelector('#source-mapping-heading').parentElement.querySelector('.comparison-caption').textContent === 'Source mapping'`);
   await check('State comparison names the curated pass sequence', `document.querySelector('#comparison-action').textContent.includes('curated pass sequence')`);
@@ -126,13 +171,21 @@ try {
   await until(`!document.querySelector('#ir-help-tooltip').hidden`);
   await check('Keyboard focus exposes accessible help', `document.activeElement.getAttribute('aria-describedby') === 'ir-help-tooltip'`);
   await value('helpToken.blur()');
+  await value("document.querySelector('#left-state').focus()");
+  await tabUntil(`document.activeElement.id === 'right-state'`);
+  await check('Explore Tab advances through the left panel to the right State', `document.activeElement.id === 'right-state'`);
   await snap('explore-desktop.png');
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
   await check('Explore State controls fit the narrow viewport', `document.querySelector('#workspace-shell').getBoundingClientRect().width <= innerWidth && document.querySelector('#left-state').getBoundingClientRect().width > 0 && document.documentElement.scrollWidth <= innerWidth`);
+  await check('Explore workbench panels stack in reading order and remain readable at narrow width', `(() => { const panels = [document.querySelector('#source-panel').getBoundingClientRect(),document.querySelector('#left-viewer').closest('.viewer-panel').getBoundingClientRect(),document.querySelector('#right-viewer').closest('.viewer-panel').getBoundingClientRect()]; return panels.every(panel => panel.width >= 300 && Math.abs(panel.height - panels[0].height) < 1) && panels[0].top < panels[1].top && panels[1].top < panels[2].top && document.querySelector('.comparison-status').getBoundingClientRect().top > panels[2].bottom; })()`);
+  await checkSectionsScrollable('Explore narrow page scrolling reaches all stacked panels and analysis', ['#source-panel','#left-panel','#right-panel','.comparison-status']);
+  await value("document.querySelector('#example-select').focus()");
+  await key('Tab', 'Tab', 9);
+  await check('Explore narrow Tab reaches the source panel from file selection', `document.activeElement === document.querySelector('#source-panel summary')`);
   await snap('explore-narrow.png');
   await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
   await click('.source-line[data-line="3"]');
-  await check('Source line highlights mapped IR in both panes', `document.querySelectorAll('.source-line.is-source').length === 1 && document.querySelectorAll('#left-viewer .is-source, #right-viewer .is-source').length > 0`);
+  await check('Source line highlights mapped IR in both panels', `document.querySelectorAll('.source-line.is-source').length === 1 && document.querySelectorAll('#left-viewer .is-source, #right-viewer .is-source').length > 0`);
 
   await check('C selection follows recorded cross-state links', `appState.selection?.trace.links.length > 0 && document.querySelector('#selection-status').textContent.includes('recorded link')`);
   await check('Trace labels its readable relations', `document.querySelector('#selection-status').textContent.includes('relation:')`);
@@ -170,7 +223,7 @@ try {
   await check('Multiple intermediate transformations can explain one source selection', `document.querySelector('#optimisation-explanations').textContent.includes('Local-variable promotion')`);
   await value(`window.explanationText = document.querySelector('#optimisation-explanations').textContent`);
   await select('#left-state', '2'); await select('#right-state', '0'); await until('window.StudyWorkspace.ready');
-  await check('Reversing panes preserves chronological optimisation explanations', `document.querySelector('#optimisation-explanations').textContent === window.explanationText`);
+  await check('Reversing panels preserves chronological optimisation explanations', `document.querySelector('#optimisation-explanations').textContent === window.explanationText`);
   await select('#left-state', '0'); await select('#right-state', '12'); await until('window.StudyWorkspace.ready');
   await check('Long comparisons identify the intermediate step', `(() => { const event = appState.comparisonReport.optimisations.find(e => e.name === 'Strength reduction'); return event.fromOrdinal === 1 && event.toOrdinal === 2 && document.querySelector('#optimisation-explanations').textContent.includes(event.fromStateId + ' → ' + event.toStateId); })()`);
   await click('.source-line[data-line="4"]');

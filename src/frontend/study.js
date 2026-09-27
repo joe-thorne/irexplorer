@@ -30,27 +30,27 @@
       <details id="task-instructions" class="task-details"${matchMedia('(max-width: 1100px)').matches ? '' : ' open'}><summary>Setup and instructions</summary>
       ${id === 'T0' ? content.taskIntroduction.map(p => `<p>${esc(p)}</p>`).join('') : ''}<p class="task-prose">${esc(task.instructions)}</p>
       ${task.inheritWorkspace ? '<p>Your workspace continues from T5 with its selection cleared. Continue there, or choose another example, State pair, function, and view. Five minutes is guidance; continue whenever you are ready.</p>' : `<p>The workspace opens on ${esc(task.setup.example)} at State 0 with IR in both panels. Adjust it to explore the comparison in the task goal.</p>`}</details>
-      <p id="task-timing" class="form-note" role="status"></p>${!locked ? button('pause-task', record.paused ? 'Resume task' : 'Pause task') : ''}
-      <details class="task-details task-responses"${matchMedia('(max-width: 1100px)').matches ? '' : ' open'}><summary id="task-responses">${locked ? 'Saved responses (read-only)' : 'Responses and continue'}</summary>
+      <p id="task-timing" class="form-note" role="status"></p>${!locked ? button('pause-task', record.paused ? 'Resume task' : 'Pause task') : ''}<div id="task-responses" class="task-responses panel">
+      <details class="task-details task-responses-details"${matchMedia('(max-width: 1100px)').matches ? '' : ' open'}><summary>${locked ? 'Saved responses (read-only)' : 'Responses and continue'}</summary>
       <a href="#route-heading">Back to goal</a><p>${locked ? `Recorded outcome: ${esc(outcomeLabel(record.status))}. Responses are locked.` : 'You may leave fields unanswered. Choosing inability or skipping is a valid outcome. Continuing locks this task’s responses.'}</p>
       <form id="survey-form" data-section="${id}" novalidate><p id="form-errors" role="alert" tabindex="-1"></p><fieldset class="task-inputs"${locked ? ' disabled' : ''}>
       ${task.fields.map(fid => fieldHtml(content.fields.find(f => f.id === fid), id)).join('')}
       </fieldset>${!locked ? `<div class="screen-actions"><button type="submit" class="primary task-complete">${id === 'T0' ? 'Finish orientation and start T1' : id === 'T6' ? 'Continue to post-survey' : 'Save and continue'}</button>${id !== 'T0' ? button('unable-task', 'I could not work this out — continue') + button('skip-task', 'Skip task') : ''}</div>` : ''}</form></details>
       <nav class="task-history" aria-label="Task progress">${content.tasks.map(t => draft.tasks[t.id].status !== 'pending' ? `<a href="#/study/tasks/${t.id}">${t.id} saved</a>` : t.id === D.currentTask(draft) ? `<a href="#${taskRoute()}">${t.id} current</a>` : `<span>${t.id}</span>`).join(' ')}</nav>
-      ${locked ? `<a href="#${D.tasksComplete(draft) ? '/study/post' : taskRoute()}">Return to current section</a>` : ''}`;
+      ${locked ? `<a href="#${D.tasksComplete(draft) ? '/study/post' : taskRoute()}">Return to current section</a>` : ''}</div>`;
   }
   function updateTaskStatus() {
     if (!activeTask || !draft) return;
-    const t = draft.tasks[activeTask], status = screen.querySelector('#task-timing');
+    const t = draft.tasks[activeTask], status = layout.querySelector('#task-timing');
     if (!status) return;
     status.textContent = t.status !== 'pending' ? `Saved task-presentation duration: ${(t.durationMs / 1000).toFixed(1)} seconds${t.interrupted ? ' · interrupted' : ''}.` : t.paused ? 'Paused. Resume when ready; paused time is excluded.' : 'Task-presentation timing active · visible task time is counted; hidden-tab and pause time are excluded · no time limit.';
-    const pause = screen.querySelector('[data-action="pause-task"]');
+    const pause = layout.querySelector('[data-action="pause-task"]');
     if (pause) { pause.textContent = t.paused ? 'Resume task' : 'Pause task'; pause.disabled = !t.presented; }
-    const inputs = screen.querySelector('.task-inputs');
+    const inputs = layout.querySelector('.task-inputs');
     if (inputs) inputs.disabled = t.status !== 'pending' || !t.presented || t.paused;
-    const complete = screen.querySelector('.task-complete');
+    const complete = layout.querySelector('.task-complete');
     if (complete) complete.disabled = t.status !== 'pending' || !t.presented || t.paused;
-    for (const action of screen.querySelectorAll('[data-action="skip-task"], [data-action="unable-task"]')) action.disabled = t.status !== 'pending' || t.paused;
+    for (const action of layout.querySelectorAll('[data-action="skip-task"], [data-action="unable-task"]')) action.disabled = t.status !== 'pending' || t.paused;
   }
   function startClock() {
     if (!activeTask || !draft) return;
@@ -76,7 +76,7 @@
     const t = draft.tasks[id];
     if (t.status !== 'pending' || t.paused || !t.presented || (id === 'T0' && status !== 'completed')) return;
     errors = D.validate(content, id, t.answers, true);
-    if (Object.keys(errors).length) { showErrors(); screen.querySelector('[aria-invalid="true"]')?.focus(); return; }
+    if (Object.keys(errors).length) { showErrors(); layout.querySelector('[aria-invalid="true"]')?.focus(); return; }
     clock?.stop(); t.status = status; t.paused = false; save();
     if (available()) go(D.tasksComplete(draft) ? '/study/post' : taskRoute()); else updateTaskStatus();
   }
@@ -155,6 +155,8 @@
     return heading(submission.busy ? 'Submitting…' : 'Receipt not yet confirmed') + `<p role="status">${submission.busy ? 'Wait for the server receipt. Answers are frozen for this attempt.' : 'A submission record may already exist. Retry with the same submission ID and answers.'}</p><p>Participant code: <code>${esc(state.submission.participantCode)}</code></p>${submission.issue ? `<p role="alert">${esc(submission.issue)}</p>` : ''}${submission.busy ? '' : button('retry-submit', 'Retry submission', true)}<p>Keep this tab open. Stop/discard is unavailable after an attempt because it cannot erase a stored submission.</p>`;
   }
   function render() {
+    const oldResponses = layout.querySelector('#task-responses');
+    if (oldResponses?.parentNode) oldResponses.parentNode.removeChild(oldResponses);
     const route = location.hash.slice(1) || '/explore', explore = route === '/explore';
     if (loaded && submission.state && !explore && route !== '/study/complete') return go('/study/complete', true);
     leaveTask(route);
@@ -184,6 +186,8 @@
       else if (index === 3) html = heading('Post-survey') + `<p>Approximately 8 minutes. All items may be left unanswered. Answers stay local until you submit them.</p>` + survey('post');
       else html = review();
       screen.innerHTML = (!exited ? html.replace('</h2>', '</h2><div id="draft-status" class="draft-status" tabindex="-1"></div>') : html) + (draft && !exited && !submission.state ? `<p class="participant-code">Participant code: ${esc(draft.participantCode)}</p><div class="study-utilities"><a href="#/study">Information</a>${stopControls()}</div>` : '');
+      const taskResponses = screen.querySelector('#task-responses');
+      if (taskResponses?.id === 'task-responses') layout.append(taskResponses);
       updateStorage(); showErrors();
       if (index === 2) enterTask(requestedTask);
     }
@@ -198,12 +202,12 @@
     window.scrollTo(0, 0);
   }
   function showErrors() {
-    for (const fieldset of screen.querySelectorAll('[data-field]')) {
+    for (const fieldset of layout.querySelectorAll('[data-field]')) {
       const message = errors[fieldset.dataset.field] || '';
       fieldset.querySelector('.field-error').textContent = message;
       fieldset.querySelectorAll('input, textarea').forEach(e => e.setAttribute('aria-invalid', message ? 'true' : 'false'));
     }
-    const summary = screen.querySelector('#form-errors');
+    const summary = layout.querySelector('#form-errors');
     if (summary) summary.textContent = Object.keys(errors).length ? 'Please correct the marked answers before continuing.' : '';
   }
   function updateAnswer(event) {
@@ -224,7 +228,7 @@
     if (field.inabilityLabel && !input.dataset.inability) input.closest('fieldset').querySelector('[data-inability]').checked = false;
     for (const dependent of D.fieldsFor(content, section).filter(f => f.condition)) {
       const shown = D.visible(dependent, draft[section]);
-      const group = screen.querySelector(`[data-field="${dependent.id}"]`);
+      const group = layout.querySelector(`[data-field="${dependent.id}"]`);
       group.hidden = !shown;
       if (!shown) { draft[section][dependent.id] = D.blank(); group.querySelector('textarea').value = ''; }
     }
@@ -234,14 +238,14 @@
     errors = Object.fromEntries(Object.entries(current).filter(([id]) => id === field.id || errors[id]));
     showErrors(); save();
   }
-  screen.addEventListener('input', updateAnswer); screen.addEventListener('change', updateAnswer);
-  screen.addEventListener('submit', event => {
+  layout.addEventListener('input', updateAnswer); layout.addEventListener('change', updateAnswer);
+  layout.addEventListener('submit', event => {
     event.preventDefault();
     if (!draft || !available()) return;
     const section = event.target.dataset.section;
     if (section.startsWith('T')) { finishTask(section, 'completed'); return; }
     errors = D.validate(content, section, draft[section], true);
-    if (Object.keys(errors).length) { showErrors(); screen.querySelector('[aria-invalid="true"]')?.focus(); return; }
+    if (Object.keys(errors).length) { showErrors(); layout.querySelector('[aria-invalid="true"]')?.focus(); return; }
     if (section === 'pre') { draft.preComplete = true; editingPre = false; }
     else draft.reviewReady = true;
     save(); if (available()) go(section === 'pre' ? D.tasksComplete(draft) ? '/study/post' : taskRoute() : '/study/complete');
@@ -270,7 +274,7 @@
     clock = null; activeTask = null;
     draft = null; errors = {}; editingPre = false; go(route, true);
   }
-  screen.addEventListener('click', event => {
+  layout.addEventListener('click', event => {
     const clear = event.target.closest('[data-clear]')?.dataset.clear;
     if (clear && draft) {
       const group = event.target.closest('fieldset');
@@ -282,7 +286,7 @@
       const field = content.fields.find(f => f.id === clear);
       for (const dependent of content.fields.filter(f => f.condition?.field === field.id)) {
         draft[section][dependent.id] = D.blank();
-        const g = screen.querySelector(`[data-field="${dependent.id}"]`); g.hidden = true; g.querySelector('textarea').value = '';
+        const g = layout.querySelector(`[data-field="${dependent.id}"]`); g.hidden = true; g.querySelector('textarea').value = '';
       }
       if (section === 'pre' && editingPre) draft.preComplete = !Object.keys(D.validate(content, section, draft.pre, true)).length;
       if (section === 'post') draft.reviewReady = false;
