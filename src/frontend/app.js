@@ -109,7 +109,7 @@ async function loadExamples() {
   }
 }
 
-async function loadExample() {
+async function loadExample(inheritedWorkspace = null) {
   const exampleId = elements.exampleSelect.value;
   if (!exampleId) return;
   const loadId = ++appState.loadId;
@@ -137,6 +137,17 @@ async function loadExample() {
     appState.panels.left.viewType = "ir";
     appState.panels.right.ordinal = appState.studyStateDefault ? 0 : Math.min(1, appState.states.length - 1);
     appState.panels.right.viewType = "ir";
+    if (inheritedWorkspace?.exampleId === exampleId) {
+      for (const side of ["left", "right"]) {
+        const panel = inheritedWorkspace.panels?.[side];
+        if (Number.isInteger(panel?.ordinal) && panel.ordinal >= 0 && panel.ordinal < appState.states.length &&
+            ["ir", "cfg"].includes(panel.viewType)) {
+          appState.panels[side].ordinal = panel.ordinal;
+          appState.panels[side].viewType = panel.viewType;
+        }
+      }
+      appState.functionName = typeof inheritedWorkspace.functionName === "string" ? inheritedWorkspace.functionName : null;
+    }
     renderStateOptions();
     elements.left.view.value = appState.panels.left.viewType;
     elements.right.view.value = appState.panels.right.viewType;
@@ -675,7 +686,7 @@ window.StudyWorkspace = {
   clearManualSetup() {
     appState.manualSetup = false;
   },
-  prepareTask(exampleId, inheritWorkspace = false) {
+  prepareTask(exampleId, inheritWorkspace = false, workspaceSnapshot = null) {
     appState.manualSetup = false;
     if (inheritWorkspace && appState.ready) {
       clearSelection();
@@ -684,10 +695,31 @@ window.StudyWorkspace = {
       renderPanel("right");
       return;
     }
+    if (inheritWorkspace) {
+      const inheritedWorkspace = workspaceSnapshot;
+      const inheritedExample = inheritedWorkspace?.exampleId || exampleId;
+      if (inheritedExample) {
+        appState.studyStateDefault = !inheritedWorkspace;
+        elements.exampleSelect.value = inheritedExample;
+        loadExample(inheritedWorkspace);
+        return;
+      }
+    }
     if (!exampleId) return;
     appState.studyStateDefault = true;
     elements.exampleSelect.value = exampleId;
     loadExample();
+  },
+  snapshot() {
+    if (!appState.ready || !appState.exampleId) return null;
+    return {
+      exampleId: appState.exampleId,
+      functionName: appState.functionName,
+      panels: Object.fromEntries(["left", "right"].map((side) => [side, {
+        ordinal: appState.panels[side].ordinal,
+        viewType: appState.panels[side].viewType,
+      }])),
+    };
   },
   reset() {
     ++appState.loadId;

@@ -237,6 +237,9 @@ class SubmissionTests(unittest.TestCase):
         self.assertIn('P3 combines completed and current enrolment', codebook['coding'])
         self.assertEqual(codebook['instrumentDefinitions']['v0.5']['P3']['values']['5'], 'COMP4403')
         self.assertEqual(codebook['instrumentDefinitions']['v0.6']['courseStatusOptions']['3'], 'Neither')
+        current_definition = codebook['instrumentDefinitions']['v0.10']
+        self.assertEqual(current_definition['courseStatusOptions']['3'], 'Neither')
+        self.assertEqual(current_definition['courseItems']['P3_COMP4403'], 'COMP4403')
         exported = json.loads((destination / 'submissions.json').read_text())[0]['submission']
         self.assertEqual(exported['pre']['P3'], {'status': 'answered', 'value': [2, 5]})
         with open(destination / 'submissions.csv', newline='') as handle:

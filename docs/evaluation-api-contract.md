@@ -12,10 +12,10 @@ The browser freezes the submission before sending and retries that same submissi
 
 See [study operations](evaluation-operations.md) for modes, data paths, and private researcher commands, and the runtime `/docs` endpoint for HTTP schemas.
 
-## Instrument v0.7
+## Instrument v0.10
 
-The current preview collection uses instrument `v0.7`, content `v0.7-preview-1`, and study `v0.7-synthetic-1`. Old drafts are incompatible and require explicit discard/restart. Historical stored responses are not rewritten.
+The current preview collection uses instrument `v0.10`, content `v0.10-preview-1`, and study `v0.10-synthetic-1`. Old drafts are incompatible and require explicit discard/restart. Historical stored responses are not rewritten.
 
-Each submitted task includes `id`, `status`, `durationMs`, `interrupted`, and `answers`; `setupReached` is not collected in v0.7. Completing, skipping, or reporting inability does not depend on reaching the requested comparison, and partial answers and elapsed duration can be retained. The v0.7 `durationMs` starts at task presentation and counts visible time, excluding hidden-tab time, explicit pauses, and reload downtime. Keep it separate from v0.5/v0.6 post-setup duration. Release metadata uses submitted JSON schema version 2; the SQLite submission-store schema is version 2.
+Each submitted task includes `id`, `status`, `durationMs`, `interrupted`, and `answers`; `setupReached` is not collected in v0.10. Completing, skipping, or reporting inability does not depend on reaching the requested comparison, and partial answers and elapsed duration can be retained. The v0.10 `durationMs` starts at task presentation and counts visible time, excluding hidden-tab time, explicit pauses, and reload downtime. Keep it separate from v0.5/v0.6 post-setup duration. Release metadata uses submitted JSON schema version 2; the SQLite submission-store schema is version 2.
 
 T4c is single choice (CFG, IR, Both, Neither, Unsure); T5a is free text with an inability status; Q8 is multiple choice with exclusive Not sure. Field definitions returned by the content endpoint are authoritative. Exported codebook definitions are labelled with their instrument version; do not apply them to older records.
