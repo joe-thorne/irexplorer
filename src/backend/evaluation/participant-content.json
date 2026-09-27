@@ -774,7 +774,7 @@
         },
         {
           "value": 198,
-          "label": "It was already gone in the unoptimised version"
+          "label": "It was already gone at State 0 (the unoptimised version)"
         },
         {
           "value": 199,
@@ -784,7 +784,7 @@
       "optionStatuses": {
         "199": "could_not_work_out"
       },
-      "prompt": "Which state first shows the arithmetic for wasted absent, and which pass produced that state?"
+      "prompt": "Which State is the first in which this arithmetic is absent, and which pass produced that State?"
     },
     {
       "id": "T2b",
@@ -1190,7 +1190,7 @@
       "inheritWorkspace": true,
       "title": "Open exploration",
       "goal": "use the tool for whatever you actually find interesting.",
-      "instructions": "Explore for about five minutes. Investigate something that interests you and describe what you found.\nYour workspace continues from T5 with its selection cleared. Continue there, or choose another example, state pair, function, and view."
+      "instructions": "Explore for about five minutes. Investigate something that interests you and describe what you found."
     }
   ],
   "information": [

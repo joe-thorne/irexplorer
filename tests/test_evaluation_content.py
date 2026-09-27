@@ -80,7 +80,7 @@ class EvaluationContentTests(unittest.TestCase):
         ]
         t2a = next(field for field in participant_content()['fields'] if field['id'] == 'T2a')
         self.assertEqual(t2a['options'], derived + [
-            {'value': 198, 'label': 'It was already gone in the unoptimised version'},
+            {'value': 198, 'label': 'It was already gone at State 0 (the unoptimised version)'},
             {'value': 199, 'label': 'I could not work this out'},
         ])
         self.assertEqual(t2a['optionStatuses'], {'199': 'could_not_work_out'})
@@ -94,7 +94,8 @@ class EvaluationContentTests(unittest.TestCase):
         self.assertIn('Brief, partial, or blank answers are useful', content['taskIntroduction'][2])
         self.assertIn('A brief or partial answer is fine', tasks['T1']['instructions'])
         t2a = next(field for field in content['fields'] if field['id'] == 'T2a')
-        self.assertIn('which pass produced that state', t2a['prompt'])
+        self.assertIn('Which State is the first in which this arithmetic is absent', t2a['prompt'])
+        self.assertIn('which pass produced that State', t2a['prompt'])
         self.assertEqual(tasks['T2']['setup']['left']['ordinal'], 0)
         self.assertEqual(tasks['T5']['setup']['right']['ordinal'], 9)
         self.assertIn('confidence wording appears beside the link', tasks['T5']['instructions'])
