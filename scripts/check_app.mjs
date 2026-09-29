@@ -81,6 +81,16 @@ async function snapAt(name, selector) {
   const { data } = await send('Page.captureScreenshot', { format: 'png' });
   await writeFile(join(captures, name), Buffer.from(data, 'base64'));
 }
+async function checkCompactWorkspace(routeName) {
+  await check(`${routeName} hides the empty status row`, `(() => { const notice = document.querySelector('#notice'), original = notice.textContent; notice.textContent = ''; const hidden = getComputedStyle(notice).display === 'none' && notice.getBoundingClientRect().height === 0; notice.textContent = original; return hidden; })()`);
+  await check(`${routeName} keeps State identity visible and help available to assistive technology`, `['left','right'].every(side => { const label = document.querySelector('#' + side + '-state-label'), help = document.querySelector('#' + side + '-description'); return label.getBoundingClientRect().height > 0 && help.classList.contains('sr-only') && help.textContent.includes('hover or focus for help'); })`);
+  await check(`${routeName} shortens the panels`, `[document.querySelector('#source-panel'), document.querySelector('#left-panel'), document.querySelector('#right-panel')].every(e => e.getBoundingClientRect().height < 36 * 16)`);
+  await check(`${routeName} compacts the file picker`, `(() => { const style = getComputedStyle(document.querySelector('#workspace-shell > .toolbar')); return parseFloat(style.paddingTop) + parseFloat(style.paddingBottom) <= 24 && parseFloat(style.rowGap) <= 12; })()`);
+  await check(`${routeName} keeps the file picker close to the panels`, `document.querySelector('#source-panel').getBoundingClientRect().top - document.querySelector('#workspace-shell > .toolbar').getBoundingClientRect().bottom < 16`);
+  await check(`${routeName} keeps the comparison close when status is empty`, `(() => { const notice = document.querySelector('#notice'), original = notice.textContent; notice.textContent = ''; const panels = [document.querySelector('#source-panel'), document.querySelector('#left-panel'), document.querySelector('#right-panel')].map(e => e.getBoundingClientRect()); const comparison = document.querySelector('.comparison-status').getBoundingClientRect(); const compact = comparison.top - Math.max(...panels.map(p => p.bottom)) < 16; notice.textContent = original; return compact; })()`);
+  await check(`${routeName} tightens code rows and line-number gutters`, `(() => { const source = document.querySelector('.source-line'), ir = document.querySelector('.ir-line'), signature = document.querySelector('.ir-signature'), firstBlock = document.querySelector('.ir-block'); const compact = line => { const row = getComputedStyle(line), number = getComputedStyle(line.querySelector('.line-number')); return parseFloat(row.lineHeight) / parseFloat(getComputedStyle(line).fontSize) <= 1.35 && parseFloat(number.width) <= 36 && parseFloat(row.columnGap || row.gap) <= 8; }; return compact(source) && compact(ir) && signature && firstBlock && firstBlock.getBoundingClientRect().top - signature.getBoundingClientRect().bottom < 20; })()`);
+  await check(`${routeName} keeps panel controls close to their code view`, `['left','right'].every(side => { const label = document.querySelector('#' + side + '-state-label').getBoundingClientRect(), view = document.querySelector('#' + side + '-viewer').getBoundingClientRect(); return view.top - label.bottom < 16; })`);
+}
 async function select(selector, selected) {
   await value(`(() => { const e = document.querySelector(${JSON.stringify(selector)}); e.value = ${JSON.stringify(selected)}; e.dispatchEvent(new Event('change', { bubbles: true })); })()`);
 }
@@ -101,6 +111,8 @@ async function task(id) {
     await check('T5 selection shows approximate correspondence confidence and its separate likely explanation', `document.querySelector('#selection-status').textContent.includes('merged · approximate confidence') && document.querySelector('#optimisation-explanations').textContent.includes('Induction-variable widening · likely')`);
     await check('T5 identifies the relationship, link confidence and qualified explanation separately', `document.querySelector('#task-instructions').innerText.includes('confidence wording appears beside the link') && document.querySelector('#task-instructions').innerText.includes('Keep the link’s confidence separate')`);
     await check('Study uses the selected three-panel workbench before full-width responses', `(() => { const box = selector => document.querySelector(selector).getBoundingClientRect(); const panels = [box('#source-panel'),document.querySelector('#left-viewer').closest('.viewer-panel').getBoundingClientRect(),document.querySelector('#right-viewer').closest('.viewer-panel').getBoundingClientRect()]; const response = box('#task-responses'); const comparison = box('.comparison-status'); const sameHeight = panels.every(panel => Math.abs(panel.height - panels[0].height) < 1); const toolbar = box('#workspace-shell > .toolbar'); return sameHeight && panels[0].left < panels[1].left && panels[1].left < panels[2].left && toolbar.width >= panels[0].width + panels[1].width + panels[2].width - 40 && comparison.width >= panels[0].width + panels[1].width + panels[2].width - 40 && response.top > panels[0].bottom && response.width >= panels[0].width + panels[1].width + panels[2].width - 40 && document.querySelector('#task-responses').compareDocumentPosition(document.querySelector('#left-state')) & Node.DOCUMENT_POSITION_PRECEDING; })()`);
+    await checkCompactWorkspace('Study desktop');
+    await check('Study places the file picker close to the instructions', `document.querySelector('#workspace-shell > .toolbar').getBoundingClientRect().top - document.querySelector('#study-screen').getBoundingClientRect().bottom <= 24`);
     await check('Study panels show ten code lines at equal desktop height', `(() => { const panels=[document.querySelector('#source-panel'),document.querySelector('#left-viewer').closest('.viewer-panel'),document.querySelector('#right-viewer').closest('.viewer-panel')]; const boxes=panels.map(p=>p.getBoundingClientRect()); return boxes.every(b=>Math.abs(b.height-boxes[0].height)<1) && panels.every(p=>p.querySelector('.source-lines,.viewer-content').clientHeight >= p.querySelector('.source-line,.ir-line').getBoundingClientRect().height*10); })()`);
     await snapAt('study-T5-desktop-workspace.png', '#workspace-shell');
     await checkSectionsScrollable('Study desktop page scrolling reaches instructions, workspace, analysis and responses', ['#task-instructions','#workspace-shell','.comparison-status','#task-responses']);
@@ -117,13 +129,23 @@ async function task(id) {
     await tabUntil(`document.activeElement.matches('.task-responses-details summary')`);
     await check('Study Tab reaches responses after the comparison evidence', `document.activeElement.matches('.task-responses-details summary')`);
     await snap('study-T5-desktop.png');
+    await select('#right-view', 'cfg'); await until('window.StudyWorkspace.ready && document.querySelector("#right-view").value === "cfg"');
+    await check('Study desktop presents the CFG beside C source and LLVM IR', `document.querySelector('#source-lines .source-line') && document.querySelector('#left-viewer .ir-line') && document.querySelector('#right-viewer .cfg-svg')`);
+    await snapAt('study-T5-desktop-cfg.png', '#workspace-shell');
+    await select('#right-view', 'ir'); await until('window.StudyWorkspace.ready && document.querySelector("#right-view").value === "ir"');
     await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
     await check('Study State selectors and T5 instructions remain visible at narrow width', `document.querySelector('#workspace-shell').getBoundingClientRect().width <= innerWidth && document.querySelector('#left-state').getBoundingClientRect().width > 0 && document.querySelector('#task-instructions').getBoundingClientRect().width > 0`);
+    await checkCompactWorkspace('Study narrow');
+    await check('Study narrow keeps the file picker close to the instructions', `document.querySelector('#workspace-shell > .toolbar').getBoundingClientRect().top - document.querySelector('#study-screen').getBoundingClientRect().bottom <= 24`);
     await check('Study workbench stacks in reading order at narrow width with equal readable panels', `(() => { const panels = [document.querySelector('#source-panel').getBoundingClientRect(),document.querySelector('#left-viewer').closest('.viewer-panel').getBoundingClientRect(),document.querySelector('#right-viewer').closest('.viewer-panel').getBoundingClientRect()]; return document.documentElement.scrollWidth <= innerWidth && panels.every(panel => panel.width >= 300 && Math.abs(panel.height - panels[0].height) < 1) && panels[0].top < panels[1].top && panels[1].top < panels[2].top && document.querySelector('#task-responses').getBoundingClientRect().top > panels[2].bottom; })()`);
     await check('Study panels show ten code lines at equal narrow-screen height', `(() => { const panels=[document.querySelector('#source-panel'),document.querySelector('#left-viewer').closest('.viewer-panel'),document.querySelector('#right-viewer').closest('.viewer-panel')]; const boxes=panels.map(p=>p.getBoundingClientRect()); return boxes.every(b=>b.width>=300 && Math.abs(b.height-boxes[0].height)<1) && panels.every(p=>p.querySelector('.source-lines,.viewer-content').clientHeight >= p.querySelector('.source-line,.ir-line').getBoundingClientRect().height*10); })()`);
     await snapAt('study-T5-narrow-workspace.png', '#workspace-shell');
     await snapAt('study-T5-narrow-ir.png', '#left-panel');
     await checkSectionsScrollable('Study narrow page scrolling reaches instructions, workspace, analysis and responses', ['#task-instructions','#workspace-shell','.comparison-status','#task-responses']);
+    await select('#right-view', 'cfg'); await until('window.StudyWorkspace.ready && document.querySelector("#right-view").value === "cfg"');
+    await check('Study narrow presents a readable CFG beside C source and LLVM IR without page overflow', `document.querySelector('#source-lines .source-line') && document.querySelector('#left-viewer .ir-line') && document.querySelector('#right-viewer .cfg-svg') && document.documentElement.scrollWidth <= innerWidth`);
+    await snapAt('study-T5-narrow-cfg.png', '#right-panel');
+    await select('#right-view', 'ir'); await until('window.StudyWorkspace.ready && document.querySelector("#right-view").value === "ir"');
     await value("document.querySelector('#route-heading').focus()");
     await key('Tab', 'Tab', 9);
     await key('Tab', 'Tab', 9);
@@ -137,6 +159,12 @@ async function task(id) {
     await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
     await select('#right-view', 'cfg'); await until('window.StudyWorkspace.ready && document.querySelector("#right-view").value === "cfg"');
     await value("document.querySelector('#route-heading').focus()");
+  }
+  if (id === 'T3') {
+    await check('Study keeps the short response compact and long response wide when space permits', `(() => { const responses = document.querySelector('#task-responses'), short = responses.querySelector('[data-field="T3a"]')?.getBoundingClientRect(), long = responses.querySelector('[data-field="T3b"]')?.getBoundingClientRect(), width = responses.getBoundingClientRect().width; return short && long && short.width < width * .65 && long.width > width * .85 && short.top < long.top; })()`);
+  }
+  if (id === 'T4') {
+    await check('Study keeps long answers wide and places compact response fields side by side', `(() => { const responses = document.querySelector('#task-responses'), width = responses.getBoundingClientRect().width, first = responses.querySelector('[data-field="T4a"]')?.getBoundingClientRect(), second = responses.querySelector('[data-field="T4b"]')?.getBoundingClientRect(), choice = responses.querySelector('[data-field="T4c"]')?.getBoundingClientRect(), rating = responses.querySelector('[data-field="T4d"]')?.getBoundingClientRect(); return first && second && choice && rating && first.width > width * .85 && second.width > width * .85 && choice.width < width * .65 && Math.abs(choice.top - rating.top) < 1; })()`);
   }
   if (id === 'T0') {
     await check('T0 presents the C to IR to CFG and back-link exercise', `document.querySelector('#task-instructions').innerText.includes('follow its highlight into IR') && document.querySelector('#task-instructions').innerText.includes('links back to IR instructions and C lines')`);
@@ -174,6 +202,11 @@ try {
     `(() => { const remark = appState.selection.evidence.remarks.find(item => item.location?.line === 18); const raw = document.querySelector('#compiler-remarks .compiler-remark pre')?.textContent || ''; return Boolean(remark) && remark.location.file === 'quick_sort.c' && raw.includes("File: 'quick_sort.c'") && !raw.includes('examples/curated/'); })()`);
   await select('#example-select', 'score'); await until('window.StudyWorkspace.ready');
   await check('Explore uses the selected equal-height, three-panel workbench with full-width evidence below', `(() => { const box = selector => document.querySelector(selector).getBoundingClientRect(); const panels = [box('#source-panel'),document.querySelector('#left-viewer').closest('.viewer-panel').getBoundingClientRect(),document.querySelector('#right-viewer').closest('.viewer-panel').getBoundingClientRect()]; const evidence = box('.comparison-status'); return panels.every(panel => Math.abs(panel.height - panels[0].height) < 1) && panels[0].left < panels[1].left && panels[1].left < panels[2].left && evidence.top > panels[0].bottom && evidence.width >= panels[0].width + panels[1].width + panels[2].width - 40 && document.documentElement.scrollHeight > innerHeight; })()`);
+  await checkCompactWorkspace('Explore desktop');
+  await select('#right-view', 'cfg'); await until('window.StudyWorkspace.ready && document.querySelector("#right-view").value === "cfg"');
+  await check('Explore desktop presents the CFG beside C source and LLVM IR', `document.querySelector('#source-lines .source-line') && document.querySelector('#left-viewer .ir-line') && document.querySelector('#right-viewer .cfg-svg')`);
+  await snapAt('explore-desktop-cfg.png', '#workspace-shell');
+  await select('#right-view', 'ir'); await until('window.StudyWorkspace.ready && document.querySelector("#right-view").value === "ir"');
   await checkSectionsScrollable('Explore desktop page scrolling reaches workspace, panels and analysis', ['#workspace-shell','#source-panel','#left-panel','#right-panel','.comparison-status']);
   await value("document.querySelector('#example-select').focus()");
   await key('Tab', 'Tab', 9);
@@ -206,6 +239,11 @@ try {
   await snap('explore-desktop.png');
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
   await check('Explore State controls fit the narrow viewport', `document.querySelector('#workspace-shell').getBoundingClientRect().width <= innerWidth && document.querySelector('#left-state').getBoundingClientRect().width > 0 && document.documentElement.scrollWidth <= innerWidth`);
+  await checkCompactWorkspace('Explore narrow');
+  await select('#right-view', 'cfg'); await until('window.StudyWorkspace.ready && document.querySelector("#right-view").value === "cfg"');
+  await check('Explore narrow presents a readable CFG beside C source and LLVM IR without page overflow', `document.querySelector('#source-lines .source-line') && document.querySelector('#left-viewer .ir-line') && document.querySelector('#right-viewer .cfg-svg') && document.documentElement.scrollWidth <= innerWidth`);
+  await snapAt('explore-narrow-cfg.png', '#right-panel');
+  await select('#right-view', 'ir'); await until('window.StudyWorkspace.ready && document.querySelector("#right-view").value === "ir"');
   await check('Explore workbench panels stack in reading order and remain readable at narrow width', `(() => { const panels = [document.querySelector('#source-panel').getBoundingClientRect(),document.querySelector('#left-viewer').closest('.viewer-panel').getBoundingClientRect(),document.querySelector('#right-viewer').closest('.viewer-panel').getBoundingClientRect()]; return panels.every(panel => panel.width >= 300 && Math.abs(panel.height - panels[0].height) < 1) && panels[0].top < panels[1].top && panels[1].top < panels[2].top && document.querySelector('.comparison-status').getBoundingClientRect().top > panels[2].bottom; })()`);
   await checkSectionsScrollable('Explore narrow page scrolling reaches all stacked panels and analysis', ['#source-panel','#left-panel','#right-panel','.comparison-status']);
   await value("document.querySelector('#example-select').focus()");
