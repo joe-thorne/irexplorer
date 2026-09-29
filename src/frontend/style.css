@@ -222,7 +222,6 @@ details p { margin: .8rem 0 0; }
 .task-jumps, .task-history { display: flex; flex-wrap: wrap; gap: .6rem; margin: .8rem 0; }
 .task-inputs { border: 0; padding: 0; margin: 0; min-width: 0; }
 .task-inputs .survey-item { min-width: 0; padding: .7rem 0; }
-.task-inputs .rating-options { display: flex; flex-direction: column; }
 .task-inputs textarea { width: 100%; box-sizing: border-box; }
 .task-responses { margin: 1rem 0; }
 .with-task .draft-status.storage-ok { background: none; border: 0; padding: 0; color: var(--muted); font-size: .85rem; }
@@ -384,7 +383,20 @@ details p { margin: .8rem 0 0; }
     "source left right"
     "comparison comparison comparison";
 }
-#workspace-shell:has(> .notice:not(:empty)) {
+#explore-heading { margin-bottom: 0; }
+.viewer-heading, .state-label { flex-shrink: 0; }
+.viewer-content { flex: 1 1 0; }
+.notice:not([data-kind="error"]) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+#workspace-shell:has(> .notice[data-kind="error"]) {
   grid-template-areas:
     "heading heading heading"
     "toolbar toolbar toolbar"
@@ -396,13 +408,11 @@ details p { margin: .8rem 0 0; }
   grid-template-areas:
     "heading heading heading"
     "toolbar toolbar toolbar"
-    "source left right"
-    "notice notice notice"
-    "empty empty empty"
-    "comparison comparison comparison";
+    "source empty empty";
 }
 .panel-grid { gap: .75rem; }
-.source-panel, .viewer-panel { height: clamp(32rem, 62vh, 35rem); }
+.source-panel { height: clamp(32rem, 62vh, 35rem); }
+.viewer-panel { height: clamp(48rem, 90vh, 58rem); }
 .source-panel, .viewer-panel { padding: .75rem; }
 .viewer-heading { gap: .4rem; padding-bottom: .45rem; }
 .viewer-controls { gap: .4rem; }
@@ -412,7 +422,8 @@ details p { margin: .8rem 0 0; }
 .ir-block { margin: .16rem 0; padding: .08rem .12rem; }
 .ir-block-heading { line-height: 1.2; padding: .04rem .12rem; }
 .ir-line { gap: .4rem; line-height: 1.2; padding: .04rem .12rem; }
-.source-line { gap: .4rem; line-height: 1.2; padding: .04rem .25rem; }
+.source-line { gap: 1.25rem; line-height: 1.2; padding: .04rem .25rem .04rem 0; }
+.source-line .line-number { flex: 0 0 1.4rem; min-width: 0; }
 .line-number { width: 2rem; }
 .with-task { gap: .5rem; }
 .with-task #study-screen { padding: .65rem .8rem; }
@@ -420,8 +431,10 @@ details p { margin: .8rem 0 0; }
 .with-task .task-details p { margin-top: .45rem; }
 .task-responses { margin-block: .5rem; }
 .task-inputs { display: grid; gap: .5rem 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.task-inputs .survey-item { grid-column: auto; margin: 0; }
-.task-inputs .survey-item[data-field-type="text"] { grid-column: 1 / -1; }
+.task-inputs .survey-item { grid-column: 1; margin: 0; padding: .55rem .75rem .75rem; }
+.task-inputs .survey-item legend { max-width: 100%; }
+.task-inputs .form-note { margin: .25rem 0 .45rem; }
+.task-inputs .survey-item[data-field-type="rating"] { grid-column: 1 / -1; }
 @media (max-width: 1100px) {
   #workspace-shell {
     grid-template-areas:
@@ -432,7 +445,7 @@ details p { margin: .8rem 0 0; }
       "right"
       "comparison";
   }
-  #workspace-shell:has(> .notice:not(:empty)) {
+  #workspace-shell:has(> .notice[data-kind="error"]) {
     grid-template-areas:
       "heading"
       "toolbar"
@@ -447,16 +460,14 @@ details p { margin: .8rem 0 0; }
       "heading"
       "toolbar"
       "source"
-      "left"
-      "right"
-      "notice"
-      "empty"
-      "comparison";
+      "empty";
   }
-  .source-panel[open], .viewer-panel { height: clamp(32rem, 64vh, 34rem); }
+  .source-panel[open] { height: clamp(32rem, 64vh, 34rem); }
+  .viewer-panel { height: clamp(48rem, 90vh, 58rem); }
 }
 @media (max-width: 700px) {
   .site-header { padding-block: .75rem; }
-  .source-panel[open], .viewer-panel { height: 30rem; }
+  .source-panel[open] { height: 30rem; }
+  .viewer-panel { height: clamp(40rem, 85vh, 52rem); }
   .task-inputs { grid-template-columns: minmax(0, 1fr); }
 }

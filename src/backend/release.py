@@ -6,6 +6,8 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def metadata():
+    if (ROOT / '.git').exists():
+        return {'version': 'development', 'revision': 'development'}
     path = ROOT / 'release.json'
     if path.exists():
         return {k: v for k, v in json.loads(path.read_text()).items() if k != 'files'}
