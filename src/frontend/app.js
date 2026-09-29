@@ -54,6 +54,26 @@ function panelElements(side) {
   };
 }
 
+// Match the three code-frame tops to the tallest natural header at this width.
+const workbenchHeadings = [...document.querySelectorAll(".source-heading, .viewer-heading")];
+function syncWorkbenchHeadingHeight() {
+  const height = Math.max(...workbenchHeadings.map(heading => {
+    const title = heading.querySelector("h2").getBoundingClientRect().height;
+    const controls = heading.querySelector(".source-controls, .viewer-controls").getBoundingClientRect().height;
+    if (!title || !controls) return 0;
+    const style = getComputedStyle(heading);
+    return title + controls + parseFloat(style.rowGap) + parseFloat(style.paddingTop)
+      + parseFloat(style.paddingBottom) + parseFloat(style.borderTopWidth) + parseFloat(style.borderBottomWidth);
+  }));
+  document.querySelector("#workspace-shell").style.setProperty("--workbench-heading-height", `${height}px`);
+}
+const workbenchHeadingObserver = new ResizeObserver(syncWorkbenchHeadingHeight);
+for (const heading of workbenchHeadings) {
+  workbenchHeadingObserver.observe(heading.querySelector("h2"));
+  workbenchHeadingObserver.observe(heading.querySelector(".source-controls, .viewer-controls"));
+}
+syncWorkbenchHeadingHeight();
+
 async function request(path, options = {}) {
   const response = await fetch(path, {
     headers: { "Content-Type": "application/json", ...(options.headers || {}) },

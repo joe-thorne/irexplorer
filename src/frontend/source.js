@@ -1,5 +1,48 @@
 // Source rendering and source-location context for the shared instruction trace.
 const sourceState = { data: null, sourceLocations: [], rangeStart: null };
+const cTypes = new Set(['_Bool', 'bool', 'char', 'double', 'float', 'int', 'long', 'short', 'signed', 'size_t', 'unsigned', 'void']);
+const cKeywords = new Set(['auto', 'break', 'case', 'const', 'continue', 'default', 'do', 'else', 'enum', 'extern', 'for', 'goto', 'if', 'inline', 'register', 'restrict', 'return', 'static', 'struct', 'switch', 'typedef', 'union', 'volatile', 'while']);
+
+function highlightCSource(code, text, state) {
+  const token = (kind, value) => {
+    const span = document.createElement('span');
+    span.className = `c-token-${kind}`;
+    span.textContent = value;
+    code.append(span);
+  };
+  if (!state.inBlockComment && /^\s*#/.test(text)) { token('directive', text); return; }
+  let plain = '', index = 0;
+  const flush = () => { if (plain) code.append(document.createTextNode(plain)); plain = ''; };
+  while (index < text.length) {
+    if (state.inBlockComment || text.startsWith('/*', index)) {
+      flush();
+      const end = text.indexOf('*/', index + (state.inBlockComment ? 0 : 2));
+      token('comment', text.slice(index, end < 0 ? text.length : end + 2));
+      state.inBlockComment = end < 0;
+      index = end < 0 ? text.length : end + 2;
+    } else if (text.startsWith('//', index)) {
+      flush(); token('comment', text.slice(index)); break;
+    } else if (text[index] === '"' || text[index] === "'") {
+      flush();
+      const quote = text[index], start = index++;
+      while (index < text.length) {
+        if (text[index] === '\\') { index += 2; continue; }
+        if (text[index++] === quote) break;
+      }
+      token('string', text.slice(start, index));
+    } else {
+      const word = /^[A-Za-z_]\w*/.exec(text.slice(index));
+      const number = !word && /^(?:0[xX][\da-fA-F]+|\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)[uUlLfF]*/.exec(text.slice(index));
+      if (word || number) {
+        const value = (word || number)[0];
+        const kind = number ? 'number' : cTypes.has(value) ? 'type' : cKeywords.has(value) ? 'keyword' : /^\s*\(/.test(text.slice(index + value.length)) ? 'function' : null;
+        if (kind) { flush(); token(kind, value); } else plain += value;
+        index += value.length;
+      } else plain += text[index++];
+    }
+  }
+  flush();
+}
 
 function renderSource() {
   const viewer = document.querySelector('#source-lines');
@@ -9,6 +52,7 @@ function renderSource() {
   document.querySelector("#source-prompt").hidden = Boolean(data);
   if (!data) return;
   const lines = data.text.split('\n');
+  const highlightState = { inBlockComment: false };
   lines.forEach((text, index) => {
     if (index === lines.length - 1 && !text) return;
     const line = document.createElement('button');
@@ -20,7 +64,7 @@ function renderSource() {
     number.className = 'line-number';
     number.textContent = String(index + 1);
     const code = document.createElement('code');
-    code.textContent = text || ' ';
+    highlightCSource(code, text || ' ', highlightState);
     line.append(number, code);
     line.title = 'Select this source line. Shift-click another line to select a range.';
     line.addEventListener('click', event => selectSourceLine(index + 1, event.shiftKey));

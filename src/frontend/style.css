@@ -140,6 +140,12 @@ details p { margin: .8rem 0 0; }
 .source-lines { max-height: 240px; overflow: auto; }
 .source-line { display: flex; width: 100%; min-width: max-content; gap: .75rem; border: 0; border-radius: 0; padding: .15rem .4rem; text-align: left; background: transparent; color: inherit; }
 .source-line code { white-space: pre; }
+.c-token-directive { color: #6d28d9; }
+.c-token-type { color: #1d4ed8; }
+.c-token-keyword { color: var(--instruction); font-weight: 700; }
+.c-token-number { color: #b45309; }
+.c-token-string, .c-token-function { color: var(--value); }
+.c-token-comment { color: #526477; font-style: italic; }
 .source-line .line-number { min-width: 2ch; }
 .source-line.is-source, .ir-line.is-source:not(.is-selected):not(.is-linked) { background: #fff0c2; outline: 2px dashed #846000; outline-offset: -2px; }
 .ir-block.is-source > .ir-block-heading { text-decoration: underline dotted 2px; }
@@ -375,7 +381,7 @@ details p { margin: .8rem 0 0; }
     "comparison comparison comparison";
 }
 #explore-heading { margin-bottom: 0; }
-.source-heading, .viewer-heading { flex-shrink: 0; min-height: 10.2rem; }
+.source-heading, .viewer-heading { flex-shrink: 0; min-height: var(--workbench-heading-height, 0px); }
 .source-heading { border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: .4rem; padding-bottom: .45rem; }
 .source-heading h2 { font-size: 1.1rem; margin-bottom: 0; }
 .source-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr)); gap: .4rem; }
@@ -407,7 +413,7 @@ details p { margin: .8rem 0 0; }
 .panel-grid { gap: .75rem; }
 .source-panel, .viewer-panel { height: clamp(48rem, 90vh, 58rem); }
 .source-panel, .viewer-panel { padding: .75rem; }
-.viewer-heading { gap: .4rem; padding-bottom: .45rem; }
+.viewer-heading { gap: .4rem; justify-content: flex-start; padding-bottom: .45rem; }
 .viewer-controls { gap: .4rem; }
 .viewer-content { padding: .3rem; }
 .ir-signature { line-height: 1.2; margin: .05rem .1rem .22rem; }
@@ -426,6 +432,7 @@ details p { margin: .8rem 0 0; }
 .task-inputs .survey-item { grid-column: 1; margin: 0; padding: .55rem .75rem .75rem; }
 .task-inputs .survey-item legend { max-width: 100%; }
 .task-inputs .form-note { margin: .25rem 0 .45rem; }
+.task-inputs select { width: 100%; }
 .task-inputs .survey-item[data-field-type="rating"] { grid-column: 1 / -1; }
 @media (max-width: 1100px) {
   #workspace-shell {

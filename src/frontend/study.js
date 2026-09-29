@@ -149,6 +149,10 @@
     const label = `${field.id}. ${field.prompt}`;
     let control;
     if (['text', 'short_text'].includes(field.type)) control = `<label class="sr-only" for="answer-${id}">${esc(label)}</label><textarea id="answer-${id}" name="${field.id}" rows="3" aria-describedby="note-${id} error-${id}"${locked ? ' readonly' : ''}>${esc(answer.status === 'answered' ? answer.value : '')}</textarea>`;
+    else if (field.id === 'T2a') {
+      const options = field.options.map(o => ({ ...o, status: field.optionStatuses?.[o.value] || 'answered' }));
+      control = `<label class="sr-only" for="answer-${id}">${esc(label)}</label><select id="answer-${id}" name="${field.id}" aria-describedby="note-${id} error-${id}"${locked ? ' disabled' : ''}><option value="">Choose an answer…</option>${options.map(o => `<option value="${o.value}" data-status="${o.status}"${answer.status === o.status && (o.status !== 'answered' || answer.value === o.value) ? ' selected' : ''}>${esc(o.label)}</option>`).join('')}</select>`;
+    }
     else {
       const options = (field.options || content.scales[field.scale]).map(o => ({ ...o, status: field.optionStatuses?.[o.value] || 'answered' }));
       if (field.notApplicableLabel) options.push({ value: 'na', status: 'not_applicable', label: field.notApplicableLabel });
@@ -234,7 +238,7 @@
     for (const fieldset of layout.querySelectorAll('[data-field]')) {
       const message = errors[fieldset.dataset.field] || '';
       fieldset.querySelector('.field-error').textContent = message;
-      fieldset.querySelectorAll('input, textarea').forEach(e => e.setAttribute('aria-invalid', message ? 'true' : 'false'));
+      fieldset.querySelectorAll('input, textarea, select').forEach(e => e.setAttribute('aria-invalid', message ? 'true' : 'false'));
     }
     const summary = layout.querySelector('#form-errors');
     if (summary) summary.textContent = Object.keys(errors).length ? 'Please correct the marked answers before continuing.' : '';
@@ -246,6 +250,11 @@
     if (!field || (section.startsWith('T') && (draft.tasks[section].status !== 'pending' || !draft.tasks[section].presented || draft.tasks[section].paused)) || (section === 'pre' && ((draft.preComplete && !editingPre) || (field.id === 'P13' && draft.p13Locked)))) return;
     if (input.dataset.inability) { answersFor(section)[field.id] = input.checked ? { status: 'could_not_work_out', value: null } : D.blank(); input.closest('fieldset').querySelector('textarea').value = ''; }
     else if (['text', 'short_text'].includes(field.type)) answersFor(section)[field.id] = input.value.trim() ? { status: 'answered', value: input.value } : D.blank();
+    else if (field.id === 'T2a') {
+      if (event.type !== 'change') return;
+      const status = input.selectedOptions[0].dataset.status;
+      answersFor(section)[field.id] = status ? { status, value: status === 'answered' ? Number(input.value) : null } : D.blank();
+    }
     else if (event.type === 'change') {
       if (field.type === 'multiple') {
         const inputs = [...input.closest('fieldset').querySelectorAll('input')];
@@ -308,6 +317,7 @@
     if (clear && draft) {
       const group = event.target.closest('fieldset');
       group.querySelectorAll('input').forEach(e => { e.checked = false; });
+      group.querySelectorAll('select').forEach(e => { e.value = ''; });
       const section = event.target.closest('form').dataset.section;
       if (section.startsWith('T') && (draft.tasks[section].status !== 'pending' || draft.tasks[section].paused || !draft.tasks[section].presented)) return;
       answersFor(section)[clear] = D.blank();
