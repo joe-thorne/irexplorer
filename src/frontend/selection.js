@@ -219,7 +219,6 @@ function selectWorkspace(input, { scroll = true } = {}) {
     const focused = elements[input.side].viewer.querySelector(`[data-node-id="${CSS.escape(focusId || input.nodeId)}"]`);
     (focused?.querySelector('.ir-block-heading') || focused)?.focus({ preventScroll: true });
     if (trace.sourceLocations.length) {
-      document.querySelector('#source-panel').open = true;
       scrollWithin(document.querySelector('#source-lines'), document.querySelector('.source-line.is-source'));
     }
   }

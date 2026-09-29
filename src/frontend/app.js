@@ -46,7 +46,6 @@ function panelElements(side) {
   return {
     previous: document.querySelector(`#${side}-previous`),
     next: document.querySelector(`#${side}-next`),
-    stateLabel: document.querySelector(`#${side}-state-label`),
     heading: document.querySelector(`#${side}-heading`),
     state: document.querySelector(`#${side}-state`),
     view: document.querySelector(`#${side}-view`),
@@ -167,8 +166,7 @@ async function loadExample(inheritedWorkspace = null) {
         elements[side].view.value = "";
         elements[side].viewer.replaceChildren();
         elements[side].description.textContent = "";
-        elements[side].stateLabel.textContent = "";
-        elements[side].heading.textContent = side === "left" ? "Left panel" : "Right panel";
+        elements[side].heading.textContent = side === "left" ? "Left" : "Right";
         elements[side].previous.disabled = elements[side].next.disabled = true;
       }
       appState.comparisonReport = null;
@@ -348,10 +346,9 @@ function renderPanel(side) {
   const panel = appState.panels[side];
   const controls = elements[side];
   const state = stateFor(side);
-  controls.stateLabel.textContent = stateOptionLabel(state);
   controls.previous.disabled = panel.ordinal === 0;
   controls.next.disabled = panel.ordinal === appState.states.length - 1;
-  controls.heading.textContent = `${side === "left" ? "Left" : "Right"} · State ${state.ordinal}`;
+  controls.heading.textContent = side === "left" ? "Left" : "Right";
   controls.state.value = String(panel.ordinal);
   controls.view.value = panel.viewType;
   controls.viewer.replaceChildren();
