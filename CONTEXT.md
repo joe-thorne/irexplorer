@@ -175,6 +175,10 @@ _Avoid_: setup, starting state
 The comparison a task's instructions ask the participant to construct from the entry workspace; never applied automatically.
 _Avoid_: setup, requested state
 
+**Journey message**:
+One keyed sentence of participant journey guidance from the compiled catalogue, such as a lock, timing, storage, submission, receipt, or cleanup notice. The application chooses which key to show and supplies its declared placeholders; the catalogue supplies only the wording.
+_Avoid_: string, label, copy
+
 **Task-presentation duration**:
 The v0.7 visible time from task presentation through exploration and answering, excluding hidden-tab time, explicit pauses, and reload downtime. Keep it separate from v0.5/v0.6 post-setup active duration.
 _Avoid_: setup time, completion time

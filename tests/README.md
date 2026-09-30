@@ -88,6 +88,16 @@ With the same application and browser, check the task procedure:
 node scripts/check_study_tasks.mjs
 ```
 
-It runs T0–T6 from the packaged task declarations: each task's entry workspace against its target comparison, T6 inheritance and refresh, pause, hidden-tab and reload exclusions, P13 locking, read-only task responses, partial, skipped and inability answers, and background/post corrections. It then serves a synthetic content variant with different declared entry workspaces, inheritance and membership through the DevTools protocol. It sends no submission and discards each draft. It uses the same `IREXPLORER_ORIGIN` and writes results only to stdout. Both scripts connect to the browser on port 9239 unless `IREXPLORER_CDP_PORT` names another. Close the temporary Chrome process after testing.
+It runs T0–T6 from the packaged task declarations: each task's entry workspace against its target comparison, T6 inheritance and refresh, pause, hidden-tab and reload exclusions, P13 locking, read-only task responses, partial, skipped and inability answers, and background/post corrections. It then serves a synthetic content variant with different declared entry workspaces, inheritance and membership through the DevTools protocol. It sends no submission and discards each draft. It uses the same `IREXPLORER_ORIGIN` and writes results only to stdout.
+
+Then check the journey guidance:
+
+```sh
+node scripts/check_study_guidance.mjs
+```
+
+It reads every expected sentence from the served message catalogue, glossary and introductions, and runs the journey at desktop and narrow widths. It covers normal guidance, T0 glossary help by keyboard focus, validation, a failed local save, discard confirmation (including Escape and a failed discard), and review. It then covers uncertain delivery: an offline attempt, a reload, a 503, and a stored attempt whose response is lost. These must send identical content under one submission ID. The receipt appears only after the server confirms storage; cleanup failures are checked, as are incompatible and corrupt recovery. The journey runs again with every message marked, then with markup in the prose, then with catalogues that break the key or placeholder contract. Each full journey submits one synthetic record, so use a disposable local or preview store.
+
+All three scripts connect to the browser on port 9239 unless `IREXPLORER_CDP_PORT` names another. Close the temporary Chrome process after testing.
 
 Automated checks do not establish complete accessibility conformance or replace physical keyboard and spoken screen-reader testing.

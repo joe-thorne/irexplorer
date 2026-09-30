@@ -1,19 +1,23 @@
 // Final-only transport. Freeze the submission before any network attempt.
+// Issues are compiled message references ({ key, params }); the view supplies their wording.
 window.StudySubmit = (() => {
   const KEY = 'irexplorer.submission.v3';
   const LEGACY_KEYS = ['irexplorer.submission.v2', 'irexplorer.submission.v1', 'irexplorer.study.submission.e6'];
+  const message = key => ({ key });
+  // A failed attempt whose cause is a compiled message rather than a server or network error text.
+  const failure = key => Object.assign(Error(key), { reference: message(key) });
   function submissionFromDraft(draft) {
     return { submissionId: crypto.randomUUID(), ...Object.fromEntries(['participantCode', 'studyVersion', 'contentVersion', 'instrumentVersion', 'consent', 'pre', 'post'].map(k => [k, structuredClone(draft[k])])),
       tasks: Object.entries(draft.tasks).map(([id, t]) => ({ id, status: t.status, durationMs: Math.round(t.durationMs), interrupted: t.interrupted, answers: structuredClone(t.answers) })) };
   }
   function controller(getStorage = () => sessionStorage, send = (...args) => fetch(...args)) {
-    let state = null, busy = false, issue = '', recoveryBlocked = false, legacyPending = false,
+    let state = null, busy = false, issue = null, recoveryBlocked = false, legacyPending = false,
       legacyKey = '', legacyParticipantCode = '';
     function persist(next) { getStorage().setItem(KEY, JSON.stringify(next)); state = next; }
     return {
       get state() { return state; }, get busy() { return busy; }, get issue() { return issue; }, get recoveryBlocked() { return recoveryBlocked; },
       read() {
-        issue = ''; recoveryBlocked = false; legacyPending = false; legacyKey = ''; legacyParticipantCode = '';
+        issue = null; recoveryBlocked = false; legacyPending = false; legacyKey = ''; legacyParticipantCode = '';
         try {
           const storage = getStorage();
           let raw = storage.getItem(KEY);
@@ -26,7 +30,7 @@ window.StudySubmit = (() => {
             if (parsedOld?.kind === 'pending' && legacySubmission?.submissionId) {
               legacyPending = true; legacyKey = oldKey; recoveryBlocked = true;
               legacyParticipantCode = legacySubmission.participantCode || '';
-              issue = 'An older saved submission is incompatible with this version. Discard the incompatible saved draft to start again.';
+              issue = message('recovery.incompatible');
               return;
             }
             if (parsedOld?.kind === 'receipt' && parsedOld.receipt?.receiptId) {
@@ -37,7 +41,7 @@ window.StudySubmit = (() => {
           const parsed = JSON.parse(raw);
           if (!['pending', 'receipt'].includes(parsed?.kind) || (parsed.kind === 'pending' ? !parsed.submission?.submissionId : !parsed.receipt?.receiptId)) throw Error();
           state = parsed;
-        } catch { recoveryBlocked = true; issue = 'Submission recovery could not be read. Restore browser storage before starting or retrying.'; }
+        } catch { recoveryBlocked = true; issue = message('recovery.unreadable'); }
       },
       get legacyPending() { return legacyPending; },
       get legacyParticipantCode() { return legacyParticipantCode; },
@@ -45,19 +49,19 @@ window.StudySubmit = (() => {
         if (!legacyPending) return false;
         try {
           getStorage().removeItem(legacyKey);
-          legacyPending = false; legacyKey = ''; legacyParticipantCode = ''; recoveryBlocked = false; issue = '';
+          legacyPending = false; legacyKey = ''; legacyParticipantCode = ''; recoveryBlocked = false; issue = null;
           return true;
-        } catch { issue = 'The incompatible saved draft could not be removed. Allow browser storage and retry discard.'; return false; }
+        } catch { issue = message('recovery.discard-failed'); return false; }
       },
       async submit(draft, memory = false) {
         if (recoveryBlocked || busy || state?.kind === 'receipt') return;
-        issue = '';
+        issue = null;
         if (!state) {
           const next = { kind: 'pending', submission: submissionFromDraft(draft) };
-          if (next.submission.tasks.some(t => t.durationMs > 86400000) || new TextEncoder().encode(JSON.stringify(next.submission)).length > 128 * 1024) { issue = 'Submission exceeds the 24-hour per-task or 128 KiB request limit. Nothing was sent. Shorten free text or contact the researcher about the task duration.'; return; }
+          if (next.submission.tasks.some(t => t.durationMs > 86400000) || new TextEncoder().encode(JSON.stringify(next.submission)).length > 128 * 1024) { issue = message('submission.limit'); return; }
           try { persist(next); }
           catch {
-            if (!memory) { issue = 'The retry copy could not be saved. Restore browser storage and try again. Nothing was sent.'; return; }
+            if (!memory) { issue = message('submission.retry-save-failed'); return; }
             state = next;
           }
         }
@@ -65,25 +69,25 @@ window.StudySubmit = (() => {
         try {
           const response = await send('/api/study/submissions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(state.submission), signal: AbortSignal.timeout(15000) });
           const body = await response.json();
-          if (!response.ok) throw Error(body.error?.message || 'No receipt available.');
-          if (![200, 201].includes(response.status) || body.submissionId !== state.submission.submissionId || body.participantCode !== state.submission.participantCode || body.studyVersion !== state.submission.studyVersion || typeof body.receiptId !== 'string') throw Error('Unrecognised receipt.');
+          if (!response.ok) throw body.error?.message ? Error(body.error.message) : failure('submission.no-receipt');
+          if (![200, 201].includes(response.status) || body.submissionId !== state.submission.submissionId || body.participantCode !== state.submission.participantCode || body.studyVersion !== state.submission.studyVersion || typeof body.receiptId !== 'string') throw failure('submission.invalid-receipt');
           const next = { kind: 'receipt', receipt: body };
           state = next; // Never resume editing acknowledged responses.
-          try { persist(next); } catch { issue = 'Receipt confirmed, but local cleanup needs retry. Keep this receipt code.'; }
+          try { persist(next); } catch { issue = message('cleanup.persist-failed'); }
         } catch (error) {
-          issue = `${error.message} A submission may already be stored. Keep this tab and retry; the same ID and answers will be sent.`;
+          issue = { key: 'submission.uncertain', params: { error: error.reference || error.message } };
         } finally { busy = false; }
       },
       cleanup(removeDraft) {
         if (state?.kind !== 'receipt') return false;
-        try { persist(state); } catch { issue = 'Receipt confirmed. Allow browser storage and retry cleanup; a saved answer copy may remain.'; return false; }
-        if (!removeDraft()) { issue = 'Receipt confirmed. Retry cleanup to remove the local answer draft.'; return false; }
-        issue = ''; return true;
+        try { persist(state); } catch { issue = message('cleanup.retry-save'); return false; }
+        if (!removeDraft()) { issue = message('cleanup.retry-draft'); return false; }
+        issue = null; return true;
       },
-      memory() { if (!state) { issue = ''; recoveryBlocked = false; } },
+      memory() { if (!state) { issue = null; recoveryBlocked = false; } },
       clearReceipt() {
         if (state?.kind === 'pending' || busy) return false;
-        try { getStorage().removeItem(KEY); state = null; issue = ''; return true; } catch { issue = 'Allow browser storage and retry.'; return false; }
+        try { getStorage().removeItem(KEY); state = null; issue = null; return true; } catch { issue = message('cleanup.retry'); return false; }
       },
     };
   }

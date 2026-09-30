@@ -7,6 +7,7 @@ const participantPackage = JSON.parse(await readFile(new URL('../src/backend/eva
 const content = {packageSchemaVersion: participantPackage.packageSchemaVersion,
   packageIdentity: participantPackage.identity, ...participantPackage.content};
 const source = await readFile(new URL('../src/frontend/study.js', import.meta.url), 'utf8');
+const messagesSource = await readFile(new URL('../src/frontend/study-messages.js', import.meta.url), 'utf8');
 async function load(definition, ok = true) {
   let reads = 0;
   const element = () => ({ hidden: false, innerHTML: '', dataset: {}, textContent: '',
@@ -26,7 +27,9 @@ async function load(definition, ok = true) {
     location: { hash: definition.testDraft ? '#/study/pre' : '#/study' }, history: { replaceState() {} }, setInterval() {},
     fetch: async url => ({ ok: url === '/api/study/content' && ok, json: async () => definition }),
   };
-  await vm.runInNewContext(source, context);
+  vm.createContext(context);
+  vm.runInContext(messagesSource, context);
+  await vm.runInContext(source, context);
   return { html: elements.get('#study-screen').innerHTML, reads };
 }
 for (const mode of ['local', 'preview', 'pilot', 'live']) {
@@ -34,7 +37,10 @@ for (const mode of ['local', 'preview', 'pilot', 'live']) {
   assert.match(result.html, /Information and consent/);
   assert.equal(result.reads, 1, 'Compatible content reaches local draft recovery');
 }
-for (const definition of [{ ...content, contentVersion: 'unsupported' }, { ...content, collectionMode: 'unsupported' }]) {
+const withoutReceiptTitle = structuredClone(content.messages);
+delete withoutReceiptTitle['receipt.title'];
+for (const definition of [{ ...content, contentVersion: 'unsupported' }, { ...content, collectionMode: 'unsupported' },
+  { ...content, messages: withoutReceiptTitle }, { ...content, glossary: 'unsupported' }]) {
   const result = await load(definition);
   assert.match(result.html, /Study content unavailable/);
   assert.equal(result.reads, 0, 'Unsupported content must not read or overwrite drafts');
@@ -52,4 +58,4 @@ assert.match(renderedHints.html, /<select id="answer-P1"/);
 assert.match(renderedHints.html, /<input id="answer-P13" type="text"/);
 assert.doesNotMatch(renderedHints.html, /<input id="answer-P13"[^>]*maxlength=/);
 assert.equal(renderedHints.reads, 1);
-console.log('Study loading checks passed: current content in all modes, incompatible content, and failed requests.');
+console.log('Study loading checks passed: current content in all modes, incompatible content and journey messages, and failed requests.');

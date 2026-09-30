@@ -1,7 +1,9 @@
 // Local study state only. No network or workspace dependencies.
+// Validation errors and storage issues are compiled message references ({ key, params }).
 window.StudyDraft = (() => {
   const KEY = 'irexplorer.study.v0.11'; // New key separates this instrument from every older local draft.
   const blank = () => ({ status: 'unanswered', value: null });
+  const message = (key, params) => params ? { key, params } : { key };
   const fieldsFor = (content, section) => (content.membership?.[section] || [])
     .map(id => content.fields.find(field => field.id === id)).filter(Boolean);
   function visible(field, answers) {
@@ -12,19 +14,19 @@ window.StudyDraft = (() => {
   }
   function validate(content, section, answers, complete = false, recovering = false) {
     const fields = fieldsFor(content, section), errors = {};
-    if (!answers || typeof answers !== 'object' || Array.isArray(answers)) return { stage: 'Invalid survey.' };
-    for (const id of Object.keys(answers)) if (!fields.some(f => f.id === id)) errors[id] = 'Unknown item.';
+    if (!answers || typeof answers !== 'object' || Array.isArray(answers)) return { answers: message('validation.invalid') };
+    for (const id of Object.keys(answers)) if (!fields.some(f => f.id === id)) errors[id] = message('validation.unknown');
     for (const field of fields) {
       const answer = answers[field.id] ?? blank();
-      if (!answer || Object.keys(answer).sort().join(',') !== 'status,value') { errors[field.id] = 'Invalid answer.'; continue; }
+      if (!answer || Object.keys(answer).sort().join(',') !== 'status,value') { errors[field.id] = message('validation.invalid'); continue; }
       const { status, value } = answer;
       const isVisible = visible(field, answers);
       if (!isVisible && (status !== 'unanswered' || value !== null)) {
-        errors[field.id] = 'Choose one of this item’s options.';
+        errors[field.id] = message('validation.options');
         continue;
       }
       if (status === 'unanswered' && value === null) {
-        if (complete && field.required && isVisible) errors[field.id] = field.id === 'P1' ? 'Choose an answer for P1.' : 'Complete this required follow-up.';
+        if (complete && field.required && isVisible) errors[field.id] = message(field.id === 'P1' ? 'validation.required-p1' : 'validation.required-followup');
         continue;
       }
       if (value === null && ((status === 'not_applicable' && (field.notApplicableLabel || Object.values(field.optionStatuses || {}).includes(status))) || (status === 'could_not_work_out' && (field.inabilityLabel || Object.values(field.optionStatuses || {}).includes(status))))) continue;
@@ -37,7 +39,7 @@ window.StudyDraft = (() => {
         valid &&= Array.isArray(values) && values.length > 0 && values.every(v => Number.isInteger(v) && allowed.includes(v)) && new Set(values).size === values.length && !(values.includes(field.exclusiveValue) && values.length > 1);
       }
       valid &&= isVisible;
-      if (!valid) errors[field.id] = ['text', 'short_text'].includes(field.type) ? `Use no more than ${field.maxLength.toLocaleString()} characters. Your text has not been shortened.` : 'Choose one of this item’s options.';
+      if (!valid) errors[field.id] = ['text', 'short_text'].includes(field.type) ? message('validation.text-limit', { maxLength: field.maxLength.toLocaleString() }) : message('validation.options');
     }
     return errors;
   }
@@ -83,21 +85,21 @@ window.StudyDraft = (() => {
   function tasksComplete(d) { return !!d?.tasks && Object.values(d.tasks).every(t => t.status !== 'pending'); }
   function currentTask(d) { return Object.keys(d.tasks).find(id => d.tasks[id].status === 'pending') || 'T6'; }
   function storage(content, getStorage = () => sessionStorage) {
-    let mode = 'local', issue = '', stale = false, unreadable = false;
+    let mode = 'local', issue = null, stale = false, unreadable = false;
     return {
       get mode() { return mode; }, get issue() { return issue; }, get stale() { return stale; }, get unreadable() { return unreadable; },
       read() {
         let raw;
-        try { raw = getStorage().getItem(KEY); } catch { mode = 'blocked'; unreadable = true; issue = 'Browser storage is unavailable. Any older saved copy could not be checked.'; return null; }
+        try { raw = getStorage().getItem(KEY); } catch { mode = 'blocked'; unreadable = true; issue = message('storage.unavailable'); return null; }
         if (!raw) return null;
-        try { return decode(raw, content); } catch { mode = 'invalid'; issue = 'A damaged or incompatible draft could not be restored. Discard it to start a new session.'; stale = true; return null; }
+        try { return decode(raw, content); } catch { mode = 'invalid'; issue = message('storage.incompatible'); stale = true; return null; }
       },
       save(draft) {
         if (mode === 'memory') return true;
         if (mode !== 'local') return false;
-        try { getStorage().setItem(KEY, JSON.stringify(draft)); issue = ''; stale = false; unreadable = false; return true; }
+        try { getStorage().setItem(KEY, JSON.stringify(draft)); issue = null; stale = false; unreadable = false; return true; }
         catch {
-          mode = 'blocked'; issue = 'The latest answers could not be saved in this tab.';
+          mode = 'blocked'; issue = message('storage.save-failed');
           try { getStorage().removeItem(KEY); stale = false; } catch { stale = true; }
           return false;
         }
@@ -105,16 +107,16 @@ window.StudyDraft = (() => {
       memory() {
         // Remove any old snapshot before promising a fresh memory-only session.
         if (stale) return false;
-        mode = 'memory'; issue = ''; return true;
+        mode = 'memory'; issue = null; return true;
       },
       retry(draft) { mode = 'local'; return this.save(draft); },
       discard() {
-        try { getStorage().removeItem(KEY); stale = false; unreadable = false; issue = ''; mode = 'local'; return true; }
+        try { getStorage().removeItem(KEY); stale = false; unreadable = false; issue = null; mode = 'local'; return true; }
         catch {
           // If reads/writes have always failed and there was no prior snapshot,
           // there is no saved study data to remove.
           if (!stale && !unreadable && mode !== 'local') { mode = 'blocked'; return true; }
-          stale = true; mode = 'blocked'; issue = 'The saved draft could not be removed. Allow browser storage and retry discard; it may return on refresh.'; return false;
+          stale = true; mode = 'blocked'; issue = message('storage.discard-failed'); return false;
         }
       },
     };

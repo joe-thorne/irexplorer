@@ -179,4 +179,58 @@ check('Stop and discard requires a separate destructive confirmation', () => {
   assert.match(study, /action === 'stop'\) \{ stopConfirming = true; render\(\); return; \}/);
   assert.match(study, /action === 'confirm-stop'.*?discard\('/s);
 });
+// Journey messages: the compiled catalogue supplies the wording; keys and placeholders are validated.
+vm.runInContext(await readFile(new URL('../src/frontend/study-messages.js', import.meta.url), 'utf8'), context);
+const Messages = context.window.StudyMessages, messages = Messages.catalogue(content.messages);
+const say = reference => messages.text(reference);
+check('Every compiled journey message is displayed by the journey or its loading state', () => {
+  assert.deepEqual(Object.keys(content.messages).filter(key => !Object.hasOwn(Messages.USED, key) && !Object.hasOwn(Messages.BOOTSTRAP, key)), []);
+  for (const [key, text] of Object.entries(Messages.BOOTSTRAP)) assert.equal(text, content.messages[key], key);
+});
+check('A catalogue missing a key or breaking a placeholder contract is rejected', () => {
+  for (const change of [m => delete m['receipt.title'], m => { m['task.entry'] = 'Opens at State 0.'; }, m => { m['receipt.saved'] = 'Saved {receiptId}.'; },
+    m => { m['timing.paused'] = 'Paused {'; }, m => { m['timing.paused'] = 'Paused }'; }, m => { m['task.title'] = '{taskId} {title} {0}'; }, m => { m['actions.skip'] = ''; }, m => { m['actions.skip'] = 3; }]) {
+    const changed = structuredClone(content.messages); change(changed);
+    assert.throws(() => Messages.catalogue(changed));
+  }
+  assert.throws(() => Messages.catalogue(null));
+});
+check('Messages interpolate declared placeholders and display prose as text', () => {
+  assert.equal(messages.text('task.entry', { example: 'score' }), content.messages['task.entry'].replace('{example}', 'score'));
+  assert.throws(() => messages.text('task.entry', {}));
+  assert.throws(() => messages.text('no.such-key'));
+  const unsafe = structuredClone(content.messages);
+  unsafe['receipt.code'] = '<b>Receipt</b> {{literal}}: {receiptId}';
+  const rendered = Messages.catalogue(unsafe);
+  assert.equal(rendered.text('receipt.code', { receiptId: 'r<1>' }), '<b>Receipt</b> {literal}: r<1>');
+  assert.equal(rendered.html('receipt.code', { receiptId: 'r<1>' }, ['receiptId']), '&lt;b&gt;Receipt&lt;/b&gt; {literal}: <code>r&lt;1&gt;</code>');
+  assert.equal(messages.text('submission.uncertain', { error: { key: 'submission.no-receipt' } }),
+    content.messages['submission.uncertain'].replace('{error}', content.messages['submission.no-receipt']));
+});
+check('Browser validation feedback uses compiled validation messages', () => {
+  const errors = D.validate(content, 'pre', { P1: D.blank(), P2: answered(99), 'P1.other': answered('Synthetic'), Unknown: answered(1) }, true);
+  assert.equal(say(errors.P1), content.messages['validation.required-p1']);
+  assert.equal(say(errors.P2), content.messages['validation.options']);
+  assert.equal(say(errors.Unknown), content.messages['validation.unknown']);
+  const limit = D.validate(content, 'post', { Q14: answered('🙂'.repeat(4001)) }).Q14;
+  assert.equal(say(limit), content.messages['validation.text-limit'].replace('{maxLength}', (4000).toLocaleString()));
+  assert.equal(say(D.validate(content, 'pre', { P1: 'invalid' }).P1), content.messages['validation.invalid']);
+  const followUp = content.fields.find(f => f.condition && f.required && content.membership.pre.includes(f.id));
+  if (followUp) {
+    const parent = content.fields.find(f => f.id === followUp.condition.field);
+    const value = parent.type === 'multiple' ? [followUp.condition.values[0]] : followUp.condition.values[0];
+    assert.equal(say(D.validate(content, 'pre', { P1: answered(1), [parent.id]: answered(value) }, true)[followUp.id]), content.messages['validation.required-followup']);
+  }
+});
+check('Local storage failures report compiled storage messages', () => {
+  let s = D.storage(content, () => { throw Error('Blocked'); }); s.read();
+  assert.equal(say(s.issue), content.messages['storage.unavailable']);
+  s = D.storage(content, () => ({ getItem: () => '{broken', setItem() {}, removeItem() {} })); s.read();
+  assert.equal(say(s.issue), content.messages['storage.incompatible']);
+  s = D.storage(content, () => ({ getItem: () => null, setItem() { throw Error('Quota'); }, removeItem() {} }));
+  s.save(fresh()); assert.equal(say(s.issue), content.messages['storage.save-failed']);
+  s = D.storage(content, () => ({ getItem: () => null, setItem() {}, removeItem() { throw Error('Blocked'); } }));
+  s.save(fresh()); s.discard(); assert.equal(say(s.issue), content.messages['storage.discard-failed']);
+  assert.equal(s.retry(fresh()), true); assert.equal(s.issue, null);
+});
 console.log(`${checks.length} draft/validation/timing checks passed.`);
