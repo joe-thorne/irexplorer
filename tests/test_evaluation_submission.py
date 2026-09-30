@@ -3,6 +3,8 @@ import csv
 import hashlib
 import json
 import sqlite3
+import subprocess
+import sys
 import tempfile
 import unittest
 import uuid
@@ -34,6 +36,28 @@ def synthetic():
     return p
 
 
+def legacy_store(path, submissions, *, version=2):
+    """Write a pre-snapshot `submissions` table as schema version 2 held it, returning the stored rows."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    db = sqlite3.connect(path)
+    db.execute('CREATE TABLE submissions (submission_id TEXT PRIMARY KEY, digest TEXT NOT NULL, '
+               'submission_json TEXT NOT NULL, receipt TEXT NOT NULL, release TEXT NOT NULL)')
+    rows = []
+    for submission in submissions:
+        raw = json.dumps(submission, ensure_ascii=False, separators=(',', ':'))
+        receipt = json.dumps({'receiptId': str(uuid.uuid4()), 'participantCode': submission['participantCode'],
+                              'submissionId': submission['submissionId'], 'studyVersion': submission['studyVersion']})
+        release = json.dumps({'schemaVersion': 2, 'canonicalVersion': 1, 'mode': 'preview',
+                              'appRevision': 'legacy', 'artefactSha256': 'fixture'})
+        rows.append((submission['submissionId'], hashlib.sha256(canonical(submission).encode()).hexdigest(),
+                     raw, receipt, release))
+    db.executemany('INSERT INTO submissions VALUES (?, ?, ?, ?, ?)', rows)
+    db.execute(f'PRAGMA user_version={version}')
+    db.commit()
+    db.close()
+    return rows
+
+
 class SubmissionTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -63,16 +87,17 @@ class SubmissionTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 Config(alias / 'data')
 
-    def test_submission_store_uses_v2_name_and_submission_json_schema(self):
+    def test_submission_store_uses_v3_name_and_submission_json_schema(self):
         self.assertEqual(self.config.path.name, 'submissions.sqlite3')
         self.assertEqual(self.post().status_code, 201)
         db = sqlite3.connect(self.config.path)
         try:
-            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], 2)
-            self.assertEqual(db.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchone()[0],
-                             'submissions')
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], 3)
+            self.assertEqual({row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")},
+                             {'submissions', 'participant_content'})
             self.assertEqual({row[1] for row in db.execute('PRAGMA table_info(submissions)')},
-                             {'submission_id', 'digest', 'submission_json', 'receipt', 'release'})
+                             {'submission_id', 'digest', 'submission_json', 'receipt', 'release',
+                              'content_digest', 'content_provenance'})
             serialized = json.loads(db.execute('SELECT submission_json FROM submissions').fetchone()[0])
         finally:
             db.close()
@@ -238,19 +263,13 @@ class SubmissionTests(unittest.TestCase):
         self.assertEqual(self.post(submission).status_code, 201)
 
     def test_legacy_export_keeps_absent_setup_unknown(self):
-        self.service.submit(self.payload)
         # Model an already-stored v0.5 JSON record; the current submission API rejects it.
         legacy = deepcopy(self.payload)
         legacy.update(instrumentVersion='v0.5', contentVersion='v0.5-preview-1', studyVersion='v0.5-synthetic-1')
         legacy['pre'] = {key: value for key, value in legacy['pre'].items() if not key.startswith('P3_')}
         legacy['pre']['P3'] = {'status': 'answered', 'value': [2, 5]}
         legacy['pre']['P3.other'] = {'status': 'unanswered', 'value': None}
-        db = sqlite3.connect(self.config.path)
-        try:
-            with db:
-                db.execute('UPDATE submissions SET submission_json=?', (json.dumps(legacy),))
-        finally:
-            db.close()
+        legacy_store(self.config.path, [legacy])
         destination = Path(self.tmp.name) / 'legacy-export'
         export(self.config.path, destination)
         codebook = json.loads((destination / 'codebook.json').read_text())
@@ -277,30 +296,28 @@ class SubmissionTests(unittest.TestCase):
 
     def test_v08_through_v010_course_responses_export_as_raw_historical_values(self):
         current_record = synthetic()
-        self.service.submit(current_record)
-        db = sqlite3.connect(self.config.path)
-        try:
-            for version in ('v0.8', 'v0.9', 'v0.10'):
-                stored_record = deepcopy(current_record)
-                stored_record.update(instrumentVersion=version,
-                                     contentVersion=f'{version}-preview-1', studyVersion=f'{version}-synthetic-1')
-                stored_record['pre']['P3_COMP4403'] = {'status': 'answered', 'value': 2}
-                with db:
-                    db.execute('UPDATE submissions SET submission_json=?', (json.dumps(stored_record),))
-                destination = Path(self.tmp.name) / f'legacy-{version}'
-                export(self.config.path, destination)
-                record = json.loads((destination / 'submissions.json').read_text())[0]['submission']
-                self.assertEqual(record['instrumentVersion'], version)
-                self.assertEqual(record['pre']['P3_COMP4403'], {'status': 'answered', 'value': 2})
-                codebook = json.loads((destination / 'codebook.json').read_text())
-                self.assertEqual(codebook['instrumentDefinitions'][version]['courseItems']['P3_COMP4403'], 'COMP4403')
-                with open(destination / 'submissions.csv', newline='') as handle:
-                    rows = list(csv.DictReader(handle))
-                course = next(row for row in rows if row['itemId'] == 'P3_COMP4403')
-                self.assertEqual((course['instrumentVersion'], course['value'], course['status']),
-                                 (version, '2', 'answered'))
-        finally:
-            db.close()
+        for version in ('v0.8', 'v0.9', 'v0.10'):
+            stored_record = deepcopy(current_record)
+            stored_record.update(instrumentVersion=version,
+                                 contentVersion=f'{version}-preview-1', studyVersion=f'{version}-synthetic-1')
+            stored_record['pre']['P3_COMP4403'] = {'status': 'answered', 'value': 2}
+            store = Path(self.tmp.name) / f'legacy-{version}.sqlite3'
+            legacy_store(store, [stored_record])
+            destination = Path(self.tmp.name) / f'legacy-{version}'
+            export(store, destination)
+            exported = json.loads((destination / 'submissions.json').read_text())[0]
+            record = exported['submission']
+            self.assertEqual(record['instrumentVersion'], version)
+            self.assertEqual(record['pre']['P3_COMP4403'], {'status': 'answered', 'value': 2})
+            self.assertEqual(exported['contentProvenance']['status'], 'unavailable')
+            codebook = json.loads((destination / 'codebook.json').read_text())
+            self.assertEqual(codebook['instrumentDefinitions'][version]['courseItems']['P3_COMP4403'], 'COMP4403')
+            with open(destination / 'submissions.csv', newline='') as handle:
+                rows = list(csv.DictReader(handle))
+            course = next(row for row in rows if row['itemId'] == 'P3_COMP4403')
+            self.assertEqual((course['instrumentVersion'], course['value'], course['status'],
+                              course['contentProvenance'], course['contentDigest']),
+                             (version, '2', 'answered', 'unavailable', ''))
 
     def test_pilot_mode_and_private_http_boundary(self):
         for mode in ('pilot',):
@@ -380,9 +397,10 @@ class SubmissionTests(unittest.TestCase):
 
         db = self.service.connect()
         try:
-            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], 2)
-            self.assertEqual(db.execute('SELECT submission_json, receipt, release FROM submissions').fetchone(),
-                             (original_payload, receipt_json, release_json))
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], 3)
+            self.assertEqual(db.execute('SELECT submission_json, receipt, release, content_digest, '
+                                        'content_provenance FROM submissions').fetchone(),
+                             (original_payload, receipt_json, release_json, None, 'legacy_unavailable'))
             self.assertNotIn('payload', {row[1] for row in db.execute('PRAGMA table_info(submissions)')})
             self.assertEqual(self.service.submit(self.payload), (receipt, False))
         finally:
@@ -422,6 +440,215 @@ class SubmissionTests(unittest.TestCase):
         self.assertEqual(restored_db.execute('PRAGMA user_version').fetchone()[0], 1)
         self.assertEqual(restored_db.execute('SELECT payload FROM responses').fetchone()[0], raw_submission)
         restored_db.close()
+
+    def stored(self, sql, *args, path=None):
+        db = sqlite3.connect(path or self.config.path)
+        try:
+            return db.execute(sql, args).fetchall()
+        finally:
+            db.close()
+
+    def test_submission_links_exact_served_participant_content_snapshot(self):
+        served = self.client.get('/api/study/content').json()
+        submission = synthetic()
+        self.assertEqual(self.post(submission).status_code, 201)
+        self.assertEqual(self.stored('PRAGMA user_version'), [(3,)])
+        [(provenance, linked)] = self.stored('SELECT content_provenance, content_digest FROM submissions')
+        self.assertEqual((provenance, linked), ('snapshot', served['packageIdentity']['digest']))
+        [snapshot] = self.stored(
+            'SELECT digest, digest_algorithm, identity_version, canonicalisation, canonicalisation_version, '
+            'package_schema_version, instrument_version, content_version, study_version, canonical_content '
+            'FROM participant_content')
+        # Reconstruct the public definition from the HTTP response alone: every served key except
+        # the package identity and the deployment-dependent collection flags.
+        definition = {key: value for key, value in served.items() if key not in {
+            'packageSchemaVersion', 'packageIdentity', 'collectionMode', 'submissionEnabled'}}
+        expected = json.dumps({'packageSchemaVersion': served['packageSchemaVersion'], 'content': definition},
+                              sort_keys=True, ensure_ascii=False, separators=(',', ':')).encode()
+        self.assertEqual(snapshot[9], expected)
+        self.assertEqual(hashlib.sha256(snapshot[9]).hexdigest(), linked)
+        self.assertEqual(snapshot[:9], (linked, 'sha256', 1, 'sorted-json-utf8-v1', 1, 2,
+                                        'v0.11', 'v0.11-preview-2', 'v0.11-synthetic-1'))
+        for secret in (submission['participantCode'], submission['submissionId'], b'collectionMode',
+                       b'submissionEnabled'):
+            self.assertNotIn(secret.encode() if isinstance(secret, str) else secret, snapshot[9])
+        self.assertEqual(self.config.path.stat().st_mode & 0o777, 0o600)
+        self.assertEqual(self.config.path.parent.stat().st_mode & 0o777, 0o700)
+        # Collection mode and enabled status do not enter public identity.
+        local = Config(Path(self.tmp.name), collection_mode='local', origin='http://testserver')
+        StudyService(local).submit(synthetic())
+        self.assertEqual(self.stored('SELECT digest, canonical_content FROM participant_content', path=local.path),
+                         [(linked, expected)])
+
+    def test_client_supplied_definitions_cannot_register_snapshots(self):
+        served = self.client.get('/api/study/content').json()
+        forged = deepcopy(served)
+        forged['fields'][0]['prompt'] = 'Forged wording'
+        for extra in ({'participantContent': forged}, {'packageIdentity': served['packageIdentity']},
+                      {'contentDigest': hashlib.sha256(b'forged').hexdigest()}):
+            with self.subTest(extra=set(extra)):
+                self.assertEqual(self.post({**synthetic(), **extra}).status_code, 422)
+        self.assertFalse(self.config.path.exists())
+        self.assertEqual(self.post().status_code, 201)
+        self.assertEqual(self.stored('SELECT digest FROM participant_content'),
+                         [(served['packageIdentity']['digest'],)])
+
+    def test_storage_failure_rolls_back_snapshot_registration_and_withholds_receipt(self):
+        self.service.connect().close()
+        db = sqlite3.connect(self.config.path)
+        db.execute('CREATE TRIGGER synthetic_disk_failure BEFORE INSERT ON submissions '
+                   "BEGIN SELECT RAISE(ABORT, 'synthetic storage failure'); END")
+        db.commit()
+        db.close()
+        frozen = synthetic()
+        failed = self.post(frozen)
+        self.assertEqual((failed.status_code, failed.json()['error']['code']), (503, 'storage_unavailable'))
+        self.assertNotIn('receiptId', failed.text)
+        self.assertNotIn('synthetic storage failure', failed.text)
+        self.assertEqual(self.stored('SELECT COUNT(*) FROM participant_content'), [(0,)])
+        self.assertEqual(self.stored('SELECT COUNT(*) FROM submissions'), [(0,)])
+        db = sqlite3.connect(self.config.path)
+        db.execute('DROP TRIGGER synthetic_disk_failure')
+        db.commit()
+        db.close()
+        # The retained frozen submission then commits with its snapshot, and a restart finds both.
+        first = self.post(frozen)
+        self.assertEqual(first.status_code, 201)
+        self.assertEqual(StudyService(self.config).submit(frozen), (first.json(), False))
+        self.assertEqual(self.stored('SELECT COUNT(*) FROM participant_content'), [(1,)])
+
+    def test_same_digest_with_different_definition_bytes_fails_without_replacement(self):
+        self.service.connect().close()
+        digest = self.service.snapshot.digest
+        altered = self.service.snapshot.canonical_content.replace(b'v0.11-preview-2', b'v0.11-preview-X', 1)
+        self.assertNotEqual(altered, self.service.snapshot.canonical_content)
+        db = sqlite3.connect(self.config.path)
+        db.execute('INSERT INTO participant_content VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                   (digest, 'sha256', 1, 'sorted-json-utf8-v1', 1, 2, 'v0.11', 'v0.11-preview-2',
+                    'v0.11-synthetic-1', altered))
+        db.commit()
+        db.close()
+        failed = self.post()
+        self.assertEqual((failed.status_code, failed.json()['error']['code']), (503, 'storage_unavailable'))
+        self.assertEqual(self.stored('SELECT canonical_content FROM participant_content'), [(altered,)])
+        self.assertEqual(self.stored('SELECT COUNT(*) FROM submissions'), [(0,)])
+        with self.assertRaises(ValueError):
+            open_db(self.config.path)
+        with self.assertRaises(ValueError):
+            backup(self.config.path, Path(self.tmp.name) / 'damaged-copy.sqlite3')
+        self.assertFalse((Path(self.tmp.name) / 'damaged-copy.sqlite3').exists())
+
+    def test_store_rejects_unlinked_rows_and_snapshot_replacement(self):
+        self.assertEqual(self.post().status_code, 201)
+        db = sqlite3.connect(self.config.path)
+        try:
+            other = synthetic()
+            for digest, provenance in ((None, 'snapshot'), ('0' * 64, 'snapshot'),
+                                       (None, 'legacy_unavailable')):
+                with self.subTest(provenance=provenance, digest=digest), self.assertRaises(sqlite3.DatabaseError):
+                    db.execute('INSERT INTO submissions VALUES (?, ?, ?, ?, ?, ?, ?)',
+                               (other['submissionId'], 'x', canonical(other), '{}', '{}', digest, provenance))
+            for statement in ("UPDATE participant_content SET canonical_content = x'00'",
+                              'DELETE FROM participant_content',
+                              "UPDATE submissions SET content_provenance = 'legacy_unavailable', "
+                              'content_digest = NULL'):
+                with self.subTest(statement=statement), self.assertRaises(sqlite3.DatabaseError):
+                    db.execute(statement)
+        finally:
+            db.rollback()
+            db.close()
+        self.assertEqual(self.post().status_code, 200)
+
+    def test_v2_store_migrates_with_explicit_unavailable_provenance(self):
+        legacy = synthetic()
+        [row] = legacy_store(self.config.path, [legacy])
+        for _ in range(2):  # Repeated initialisation is a no-op after the first migration.
+            StudyService(self.config).connect().close()
+        self.assertEqual(self.stored('PRAGMA user_version'), [(3,)])
+        self.assertEqual(self.stored('SELECT submission_id, digest, submission_json, receipt, release, '
+                                     'content_digest, content_provenance FROM submissions'),
+                         [(*row, None, 'legacy_unavailable')])
+        retry = self.post(legacy)
+        self.assertEqual((retry.status_code, retry.json()), (200, json.loads(row[3])))
+        changed = deepcopy(legacy)
+        changed['tasks'][1]['durationMs'] += 1
+        conflict = self.post(changed)
+        self.assertEqual(conflict.status_code, 409)
+        self.assertNotIn(legacy['participantCode'], conflict.text)
+        current = synthetic()
+        self.assertEqual(self.post(current).status_code, 201)
+        destination = Path(self.tmp.name) / 'mixed-export'
+        self.assertEqual(export(self.config.path, destination), 2)
+        records = {record['submission']['submissionId']: record
+                   for record in json.loads((destination / 'submissions.json').read_text())}
+        self.assertEqual(records[legacy['submissionId']]['submission'], json.loads(row[2]))
+        self.assertEqual(records[legacy['submissionId']]['contentProvenance']['status'], 'unavailable')
+        self.assertEqual(records[current['submissionId']]['contentProvenance'], {
+            'status': 'snapshot', 'digest': self.service.snapshot.digest, 'instrumentVersion': 'v0.11',
+            'contentVersion': 'v0.11-preview-2', 'studyVersion': 'v0.11-synthetic-1'})
+        codebook = json.loads((destination / 'codebook.json').read_text())
+        self.assertEqual(codebook['contentDigest'], self.service.snapshot.digest)
+        self.assertIn('must not be applied', codebook['contentProvenance'])
+        with open(destination / 'submissions.csv', newline='') as handle:
+            rows = list(csv.DictReader(handle))
+        self.assertEqual({(r['submissionId'], r['contentProvenance'], r['contentDigest']) for r in rows}, {
+            (legacy['submissionId'], 'unavailable', ''),
+            (current['submissionId'], 'snapshot', self.service.snapshot.digest)})
+
+    def test_unsupported_schemas_fail_clearly_without_change(self):
+        for version in (4, 99):
+            with self.subTest(version=version):
+                store = Path(self.tmp.name) / f'schema-{version}.sqlite3'
+                legacy_store(store, [synthetic()], version=version)
+                with patch.object(Config, 'path', store):
+                    self.assertEqual(self.post().status_code, 503)
+                with self.assertRaises(ValueError):
+                    open_db(store)
+                self.assertEqual(self.stored('PRAGMA user_version', path=store), [(version,)])
+                self.assertEqual(self.stored('SELECT COUNT(*) FROM submissions', path=store), [(1,)])
+
+    def test_concurrent_first_deliveries_register_one_snapshot(self):
+        retried = synthetic()
+        submissions = [retried] * 4 + [synthetic() for _ in range(4)]
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            results = list(pool.map(lambda item: StudyService(self.config).submit(item), submissions))
+        self.assertEqual(sum(created for _, created in results), 5)
+        self.assertEqual(len({r['receiptId'] for r, _ in results[:4]}), 1)
+        self.assertEqual(self.stored('SELECT COUNT(*) FROM participant_content'), [(1,)])
+        self.assertEqual(self.stored("SELECT COUNT(*) FROM submissions WHERE content_provenance='snapshot' "
+                                     'AND content_digest=?', self.service.snapshot.digest), [(5,)])
+
+    def test_private_operations_on_snapshot_store(self):
+        kept, withdrawn = synthetic(), synthetic()
+        withdrawn['post']['Q18'] = {'status': 'answered', 'value': 'Withdrawn synthetic observation ζ'}
+        for submission in (kept, withdrawn):
+            self.assertEqual(self.post(submission).status_code, 201)
+        snapshot = self.stored('SELECT canonical_content FROM participant_content')[0][0]
+        for respondent_value in (kept['participantCode'], withdrawn['participantCode'], 'Withdrawn synthetic'):
+            self.assertNotIn(respondent_value.encode(), snapshot)
+
+        def cli(*args):
+            return subprocess.run([sys.executable, '-m', 'src.backend.evaluation.cli', *map(str, args)],
+                                  cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True,
+                                  check=False)
+        tmp = Path(self.tmp.name)
+        self.assertEqual(cli('backup', self.config.path, tmp / 'backup.sqlite3').returncode, 0)
+        self.assertEqual(cli('restore', tmp / 'backup.sqlite3', tmp / 'restored.sqlite3').returncode, 0)
+        restored = tmp / 'restored.sqlite3'
+        self.assertEqual(self.stored('SELECT digest, canonical_content FROM participant_content', path=restored),
+                         self.stored('SELECT digest, canonical_content FROM participant_content'))
+        self.assertEqual(cli('delete-participant', restored, withdrawn['participantCode'], '--confirm').returncode, 0)
+        self.assertEqual(self.stored('SELECT submission_id FROM submissions', path=restored),
+                         [(kept['submissionId'],)])
+        self.assertEqual(self.stored('SELECT canonical_content FROM participant_content', path=restored),
+                         [(snapshot,)])
+        self.assertNotIn(b'Withdrawn synthetic', restored.read_bytes())
+        self.assertEqual(cli('export', restored, tmp / 'restored-export').returncode, 0)
+        [record] = json.loads((tmp / 'restored-export/submissions.json').read_text())
+        self.assertEqual(record['contentProvenance']['digest'], self.service.snapshot.digest)
+        self.assertEqual(record['submission'], json.loads(canonical(kept)))
+        self.assertEqual(cli('purge', restored, tmp / 'restored-export/submissions.csv', '--confirm').returncode, 0)
+        self.assertFalse(restored.exists())
 
     def test_retired_study_mode_environment_name_fails_clearly(self):
         with (patch.dict('os.environ', {'IREXPLORER_STUDY_MODE': 'preview'}, clear=True),

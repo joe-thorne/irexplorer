@@ -1,13 +1,20 @@
 """Private researcher export, SQLite backup/restore, and retention operations."""
 import argparse
 import csv
+import hashlib
 import json
 import os
 import sqlite3
 from pathlib import Path
 
-from .content import participant_content
-from .service import Config, canonical
+from .content import participant_content, participant_snapshot
+from .service import SCHEMA_VERSION, Config, canonical
+
+UNAVAILABLE_DEFINITION = {
+    'status': 'unavailable',
+    'reason': ('Stored before participant-content snapshots were recorded; the exact participant content for '
+               'this record is not available and current content must not be substituted.'),
+}
 
 
 def private_path(path):
@@ -19,13 +26,40 @@ def private_path(path):
 
 def open_db(path):
     db = sqlite3.connect(f'{Path(path).resolve().as_uri()}?mode=ro', uri=True)
-    version = db.execute('PRAGMA user_version').fetchone()[0]
-    table = 'responses' if version == 1 else 'submissions' if version == 2 else None
-    tables = {row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-    if (table not in tables or db.execute('PRAGMA integrity_check').fetchone()[0] != 'ok'):
+    try:
+        version = db.execute('PRAGMA user_version').fetchone()[0]
+        table = {1: 'responses', 2: 'submissions', SCHEMA_VERSION: 'submissions'}.get(version)
+        tables = {row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        if (table not in tables or db.execute('PRAGMA integrity_check').fetchone()[0] != 'ok'
+                or (version == SCHEMA_VERSION and not snapshots_verified(db))):
+            raise ValueError('Unsupported or damaged study database')
+    except (ValueError, sqlite3.Error):
         db.close()
-        raise ValueError('Unsupported or damaged study database')
+        raise
     return db
+
+
+def snapshots_verified(db):
+    """Check every snapshot's bytes against its digest and identity, and every submission link."""
+    if 'participant_content' not in {row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}:
+        return False
+    for digest, algorithm, package_schema, instrument, content, study, data in db.execute(
+            'SELECT digest, digest_algorithm, package_schema_version, instrument_version, content_version, '
+            'study_version, canonical_content FROM participant_content'):
+        if algorithm != 'sha256' or not isinstance(data, bytes) or hashlib.sha256(data).hexdigest() != digest:
+            return False
+        try:
+            public = json.loads(data)
+            definition = public['content']
+            if (public['packageSchemaVersion'], definition['instrumentVersion'], definition['contentVersion'],
+                    definition['studyVersion']) != (package_schema, instrument, content, study):
+                return False
+        except (ValueError, TypeError, KeyError):
+            return False
+    return not db.execute(
+        'SELECT 1 FROM submissions s LEFT JOIN participant_content c ON c.digest = s.content_digest '
+        "WHERE NOT ((s.content_provenance = 'snapshot' AND c.digest IS NOT NULL) "
+        "OR (s.content_provenance = 'legacy_unavailable' AND s.content_digest IS NULL)) LIMIT 1").fetchone()
 
 
 def submission_storage_columns(db):
@@ -67,11 +101,21 @@ def export(source, directory):
     db = open_db(source)
     try:
         table, submission_json = submission_storage_columns(db)
-        records = [{'submission': json.loads(p), 'receipt': json.loads(r), 'release': json.loads(v)}
-                   for p, r, v in db.execute(
-                       f'SELECT {submission_json}, receipt, release FROM {table} ORDER BY submission_id')]
+        if db.execute('PRAGMA user_version').fetchone()[0] == SCHEMA_VERSION:
+            rows = db.execute(
+                f'SELECT s.{submission_json}, s.receipt, s.release, c.digest, c.instrument_version, '
+                f'c.content_version, c.study_version FROM {table} s '
+                'LEFT JOIN participant_content c ON c.digest = s.content_digest ORDER BY s.submission_id').fetchall()
+        else:
+            rows = [(*row, None, None, None, None) for row in db.execute(
+                f'SELECT {submission_json}, receipt, release FROM {table} ORDER BY submission_id')]
     finally:
         db.close()
+    records = [{'submission': json.loads(p), 'receipt': json.loads(r), 'release': json.loads(v),
+                'contentProvenance': UNAVAILABLE_DEFINITION if digest is None else {
+                    'status': 'snapshot', 'digest': digest, 'instrumentVersion': instrument,
+                    'contentVersion': content_version, 'studyVersion': study}}
+               for p, r, v, digest, instrument, content_version, study in rows]
     def write(name, value):
         path = directory / name
         with open(path, 'x', encoding='utf-8') as f:
@@ -92,8 +136,15 @@ def export(source, directory):
         ),
     }
     write('codebook.json', {
-        'schemaVersion': 2, 'fields': content['fields'], 'scales': content['scales'],
+        'schemaVersion': 3, 'fields': content['fields'], 'scales': content['scales'],
         'versions': {k: content[k] for k in ('studyVersion', 'instrumentVersion', 'contentVersion')},
+        'contentDigest': participant_snapshot().digest,
+        'contentProvenance': (
+            'fields and scales are the currently packaged participant content identified by contentDigest. '
+            'They describe only records whose contentDigest matches. A record with contentProvenance '
+            'unavailable was stored before snapshots were recorded: its exact definition is not available '
+            'here, and these current definitions must not be applied to it.'
+        ),
         'instrumentDefinitions': {
             'v0.5': {
                 'P3': {
@@ -178,7 +229,8 @@ def export(source, directory):
     })
     columns = ['participantCode', 'submissionId', 'receiptId', 'studyVersion', 'contentVersion', 'instrumentVersion',
                'consentVersion', 'schemaVersion', 'canonicalVersion', 'mode', 'appRevision', 'artefactSha256',
-               'section', 'itemId', 'status', 'value', 'durationMs', 'interrupted', 'setupReached']
+               'section', 'itemId', 'status', 'value', 'durationMs', 'interrupted', 'setupReached',
+               'contentProvenance', 'contentDigest']
     path = directory / 'submissions.csv'
     with open(path, 'x', encoding='utf-8', newline='') as f:
         os.chmod(path, 0o600)
@@ -191,6 +243,8 @@ def export(source, directory):
             base['consentVersion'] = p['consent']['version']
             base.update(record['release'])
             base['receiptId'] = record['receipt']['receiptId']
+            base['contentProvenance'] = record['contentProvenance']['status']
+            base['contentDigest'] = record['contentProvenance'].get('digest')
             def row(**values):
                 writer.writerow({k: safe_cell(v) for k, v in {**base, **values}.items()})  # noqa: B023 - called only within this iteration
             for key, value in p['consent']['acknowledgements'].items():

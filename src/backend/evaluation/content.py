@@ -2,6 +2,7 @@
 import hashlib
 import json
 from copy import deepcopy
+from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
 
@@ -319,17 +320,53 @@ def load_participant_package(package_path=PACKAGE_PATH, manifest_path=MANIFEST_P
     if manifest['identity'] != identity:
         raise ValueError('Public manifest identity does not match the package')
     _validate_content(package['content'], identity)
-    digest = hashlib.sha256(canonical_bytes({
-        'packageSchemaVersion': package['packageSchemaVersion'], 'content': package['content'],
-    })).hexdigest()
-    if identity['digest'] != digest:
+    if identity['digest'] != hashlib.sha256(_public_bytes(package)).hexdigest():
         raise ValueError('Participant package canonical identity is invalid')
     return package
+
+
+def _public_bytes(package):
+    # Public identity covers only the package schema and participant content; deployment
+    # collection flags are added later at the HTTP boundary and never enter these bytes.
+    return canonical_bytes({'packageSchemaVersion': package['packageSchemaVersion'], 'content': package['content']})
+
+
+@dataclass(frozen=True)
+class ContentSnapshot:
+    """Immutable canonical public participant content and the identity that names it."""
+    digest: str
+    algorithm: str
+    identity_version: int
+    canonicalisation: str
+    canonicalisation_version: int
+    package_schema_version: int
+    instrument_version: str
+    content_version: str
+    study_version: str
+    canonical_content: bytes
+
+
+def content_snapshot(package):
+    """Return the canonical public snapshot of a verified package, rechecking its digest."""
+    identity = package['identity']
+    data = _public_bytes(package)
+    if hashlib.sha256(data).hexdigest() != identity['digest']:
+        raise ValueError('Participant package canonical identity is invalid')
+    return ContentSnapshot(
+        identity['digest'], identity['algorithm'], identity['identityVersion'], identity['canonicalisation'],
+        identity['canonicalisationVersion'], package['packageSchemaVersion'], identity['instrumentVersion'],
+        identity['contentVersion'], identity['studyVersion'], data)
 
 
 @cache
 def _installed_package():
     return load_participant_package()
+
+
+@cache
+def participant_snapshot():
+    """The installed package's snapshot, computed before any collection configuration applies."""
+    return content_snapshot(_installed_package())
 
 
 def participant_content():

@@ -6,16 +6,48 @@ import re
 import sqlite3
 import tempfile
 import uuid
-from dataclasses import dataclass
+from dataclasses import astuple, dataclass
 from pathlib import Path
 
 from src.backend.release import metadata
 
-from .content import participant_content, validate_answers
+from .content import participant_content, participant_snapshot, validate_answers
 
 ROOT = Path(__file__).resolve().parents[3]
 UUID = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$', re.I)
 MAX_BODY = 128 * 1024
+SCHEMA_VERSION = 3
+SNAPSHOT_COLUMNS = ('digest', 'digest_algorithm', 'identity_version', 'canonicalisation',
+                    'canonicalisation_version', 'package_schema_version', 'instrument_version',
+                    'content_version', 'study_version', 'canonical_content')
+# Version 3 adds the immutable participant-content registry. Submission columns and raw
+# submission_json are unchanged; earlier rows keep an explicit unavailable-definition marker.
+_SNAPSHOT_REGISTRY = (
+    'CREATE TABLE participant_content (digest TEXT PRIMARY KEY NOT NULL, digest_algorithm TEXT NOT NULL, '
+    'identity_version INTEGER NOT NULL, canonicalisation TEXT NOT NULL, canonicalisation_version INTEGER NOT NULL, '
+    'package_schema_version INTEGER NOT NULL, instrument_version TEXT NOT NULL, content_version TEXT NOT NULL, '
+    'study_version TEXT NOT NULL, canonical_content BLOB NOT NULL)',
+    'ALTER TABLE submissions ADD COLUMN content_digest TEXT REFERENCES participant_content(digest)',
+    "ALTER TABLE submissions ADD COLUMN content_provenance TEXT NOT NULL DEFAULT 'legacy_unavailable'",
+    # Triggers hold regardless of a connection's foreign-key setting, including private CLI connections.
+    'CREATE TRIGGER participant_content_immutable BEFORE UPDATE ON participant_content '
+    "BEGIN SELECT RAISE(ABORT, 'Participant content snapshots are immutable'); END",
+    'CREATE TRIGGER participant_content_referenced BEFORE DELETE ON participant_content '
+    'WHEN EXISTS (SELECT 1 FROM submissions WHERE content_digest = OLD.digest) '
+    "BEGIN SELECT RAISE(ABORT, 'Participant content snapshot is referenced'); END",
+    'CREATE TRIGGER submissions_require_snapshot BEFORE INSERT ON submissions '
+    "WHEN NEW.content_provenance IS NOT 'snapshot' OR NOT EXISTS "
+    '(SELECT 1 FROM participant_content WHERE digest = NEW.content_digest) '
+    "BEGIN SELECT RAISE(ABORT, 'New submissions require a registered participant-content snapshot'); END",
+    'CREATE TRIGGER submissions_provenance_fixed BEFORE UPDATE OF content_digest, content_provenance ON submissions '
+    "WHEN (OLD.content_provenance = 'snapshot' AND (NEW.content_provenance IS NOT 'snapshot' "
+    'OR NEW.content_digest IS NOT OLD.content_digest)) '
+    "OR (NEW.content_provenance = 'snapshot' AND NOT EXISTS "
+    '(SELECT 1 FROM participant_content WHERE digest = NEW.content_digest)) '
+    "OR (NEW.content_provenance IS NOT 'snapshot' AND (NEW.content_provenance IS NOT 'legacy_unavailable' "
+    'OR NEW.content_digest IS NOT NULL)) '
+    "BEGIN SELECT RAISE(ABORT, 'Submission content provenance cannot be replaced'); END",
+)
 
 
 class StudyError(Exception):
@@ -109,9 +141,11 @@ def validate(submission):
 class StudyService:
     def __init__(self, config):
         self.config = config
-        # Fail application startup if the packaged public instrument is missing
-        # or its immutable manifest/identity does not verify.
+        # Fail application startup if the packaged public instrument is missing or its
+        # manifest/identity does not verify. The snapshot is computed from the package
+        # alone, before collection mode or enabled status can be attached to content.
         participant_content()
+        self.snapshot = participant_snapshot()
 
     def content(self):
         return {**participant_content(), 'collectionMode': self.config.collection_mode,
@@ -145,23 +179,36 @@ class StudyService:
             db.execute('PRAGMA synchronous=FULL')
             db.execute('BEGIN IMMEDIATE')
             version = db.execute('PRAGMA user_version').fetchone()[0]
-            if version not in (0, 1, 2):
+            if version not in (0, 1, 2, SCHEMA_VERSION):
                 raise sqlite3.DatabaseError('Unsupported schema')
             if version == 0:
-                db.execute('CREATE TABLE IF NOT EXISTS submissions (submission_id TEXT PRIMARY KEY, '
+                db.execute('CREATE TABLE submissions (submission_id TEXT PRIMARY KEY, '
                            'digest TEXT NOT NULL, submission_json TEXT NOT NULL, receipt TEXT NOT NULL, '
                            'release TEXT NOT NULL)')
-                db.execute('PRAGMA user_version=2')
             elif version == 1:
                 db.execute('ALTER TABLE responses RENAME TO submissions')
                 db.execute('ALTER TABLE submissions RENAME COLUMN payload TO submission_json')
-                db.execute('PRAGMA user_version=2')
+            if version != SCHEMA_VERSION:
+                for statement in _SNAPSHOT_REGISTRY:
+                    db.execute(statement)
+                db.execute(f'PRAGMA user_version={SCHEMA_VERSION}')
             db.commit()
             return db
         except Exception:
             db.rollback()
             db.close()
             raise
+
+    def register_snapshot(self, db):
+        """Register this process's snapshot in the caller's open transaction, never replacing one."""
+        expected = astuple(self.snapshot)  # Field order matches SNAPSHOT_COLUMNS.
+        stored = db.execute(f"SELECT {', '.join(SNAPSHOT_COLUMNS)} FROM participant_content WHERE digest=?",
+                            (self.snapshot.digest,)).fetchone()
+        if stored is None:
+            db.execute(f"INSERT INTO participant_content ({', '.join(SNAPSHOT_COLUMNS)}) "
+                       f"VALUES ({', '.join('?' * len(SNAPSHOT_COLUMNS))})", expected)
+        elif tuple(stored) != expected:
+            raise sqlite3.IntegrityError('A registered snapshot differs from the packaged content with its digest')
 
     def submit(self, submission):
         if not self.config.enabled:
@@ -189,8 +236,12 @@ class StudyService:
                                          'This submission ID was used with different answers. '
                                          'Keep the code and contact the researcher.')
                     return json.loads(row[1]), False
-                db.execute('INSERT INTO submissions VALUES (?, ?, ?, ?, ?)',
-                           (submission['submissionId'], digest, body, canonical(receipt), canonical(release)))
+                self.register_snapshot(db)
+                db.execute('INSERT INTO submissions (submission_id, digest, submission_json, receipt, release, '
+                           "content_digest, content_provenance) VALUES (?, ?, ?, ?, ?, ?, 'snapshot')",
+                           (submission['submissionId'], digest, body, canonical(receipt), canonical(release),
+                            self.snapshot.digest))
+            # Leaving the transaction committed both rows; only now is a receipt returned.
             return receipt, True
         except (sqlite3.Error, OSError):
             raise StudyError(503, 'storage_unavailable',

@@ -159,6 +159,10 @@ _Avoid_: envelope, payload, response upload
 The server's confirmation that a submission has been durably stored; only after it is the draft discarded.
 _Avoid_: acknowledgement, confirmation code
 
+**Participant-content snapshot**:
+The exact canonical public participant content a submission was validated against, stored once by its digest and linked to each submission that used it. Records stored before snapshots existed have unavailable provenance, never the current content.
+_Avoid_: definition copy, instrument cache
+
 **Setup reached**:
 A historical v0.5/v0.6 outcome recording whether a usable comparison appeared; it did not confirm that the task's requested comparison was ready. v0.7 no longer collects or analyses this outcome.
 _Avoid_: task started, attempted
