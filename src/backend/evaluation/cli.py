@@ -49,7 +49,7 @@ class StoreLayout:
 
     @property
     def backfill_column(self):
-        """The backfill-evidence column to select, or NULL for a layout without one."""
+        """The column holding each row's backfill record, or NULL for a layout without one."""
         return 'provenance_backfill' if self.has_backfill else 'NULL'
 
 

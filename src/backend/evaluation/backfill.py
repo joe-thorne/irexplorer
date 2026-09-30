@@ -6,7 +6,6 @@ supplies the frozen public package with that digest. A version label alone never
 content, and current packaged content is never consulted. Records nobody links, or whose link
 does not verify, keep their unavailable provenance.
 """
-import hashlib
 import json
 import sqlite3
 from dataclasses import dataclass
@@ -19,7 +18,7 @@ from .service import (
     StudyError,
     StudyService,
     canonical,
-    canonical_submission,
+    submission_digest,
     validate,
 )
 
@@ -107,8 +106,8 @@ def _link(db, link, releases):
                      'WHERE submission_id=?', (link['submissionId'],)).fetchone()
     if row is None:
         raise BackfillError('the submission is not in the store')
-    submission_digest, submission_json, provenance, content_digest = row
-    if submission_digest != link['submissionDigest']:
+    stored_digest, submission_json, provenance, content_digest = row
+    if stored_digest != link['submissionDigest']:
         raise BackfillError('the submission digest does not match the stored record')
     if provenance == PROVENANCE_SNAPSHOT:
         if content_digest == link['contentDigest']:
@@ -122,7 +121,7 @@ def _link(db, link, releases):
     except ValueError:
         raise BackfillError('the stored record is not readable') from None
     # The stored JSON itself must still be the record its digest names (canonicalisation version 1).
-    if hashlib.sha256(canonical(canonical_submission(submission)).encode()).hexdigest() != submission_digest:
+    if submission_digest(submission) != stored_digest:
         raise BackfillError('the stored record does not match its stored submission digest')
     identities = tuple(submission.get(key) for key in SUBMISSION_IDENTITY_KEYS) if isinstance(submission, dict) else ()
     if identities != release.identities:

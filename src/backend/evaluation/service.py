@@ -176,6 +176,11 @@ def canonical_submission(submission):
     return result
 
 
+def submission_digest(submission):
+    """The SHA-256 digest a stored record carries for `submission` under canonicalisation version 1."""
+    return hashlib.sha256(canonical(canonical_submission(submission)).encode()).hexdigest()
+
+
 def receipt_for_retry(stored, submission):
     """Return the stored receipt for an identical retry, or raise a conflict that discloses nothing.
 
@@ -191,7 +196,7 @@ def receipt_for_retry(stored, submission):
     if (canonical_version == CANONICAL_VERSION
             and isinstance(stored_submission, dict)
             and all(submission.get(key) == stored_submission.get(key) for key in SUBMISSION_IDENTITY_KEYS)
-            and hashlib.sha256(canonical(canonical_submission(submission)).encode()).hexdigest() == stored.digest):
+            and submission_digest(submission) == stored.digest):
         return json.loads(stored.receipt)
     raise StudyError(409, 'submission_conflict',
                      'This submission ID was used with different answers. Keep the code and contact the researcher.')
