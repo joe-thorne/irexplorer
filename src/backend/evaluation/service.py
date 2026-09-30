@@ -6,6 +6,7 @@ import re
 import sqlite3
 import tempfile
 import uuid
+from contextlib import suppress
 from dataclasses import astuple, dataclass
 from pathlib import Path
 
@@ -16,6 +17,10 @@ from .content import participant_content, participant_snapshot, validate_answers
 ROOT = Path(__file__).resolve().parents[3]
 UUID = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$', re.I)
 MAX_BODY = 128 * 1024
+# Submission canonicalisation contract recorded in each row's release metadata. Receipt recovery
+# applies a stored row's own version, so a change here needs a new version, never an edit.
+CANONICAL_VERSION = 1
+SUBMISSION_IDENTITY_KEYS = ('studyVersion', 'contentVersion', 'instrumentVersion')
 SCHEMA_VERSION = 3
 SNAPSHOT_TABLE = 'participant_content_snapshots'
 SNAPSHOT_COLUMNS = ('digest', 'digest_algorithm', 'identity_version', 'canonicalisation',
@@ -94,6 +99,49 @@ def canonical(value):
     return json.dumps(value, sort_keys=True, ensure_ascii=False, separators=(',', ':'), allow_nan=False)
 
 
+def canonical_submission(submission):
+    """Apply canonicalisation version 1 without consulting any instrument.
+
+    Multi-choice order has no research meaning, so answer values that are lists are stored as
+    sorted sets; `canonical` then fixes key order and encoding. Structure the contract does not
+    recognise is left as sent, so it can only match a stored record that is identical.
+    """
+    result = json.loads(canonical(submission))
+    if not isinstance(result, dict):
+        return result
+    tasks = result.get('tasks') if isinstance(result.get('tasks'), list) else []
+    groups = [result.get('pre'), result.get('post'), *[t.get('answers') for t in tasks if isinstance(t, dict)]]
+    for group in groups:
+        for answer in group.values() if isinstance(group, dict) else ():
+            if isinstance(answer, dict) and isinstance(answer.get('value'), list):
+                with suppress(TypeError):  # Mixed values cannot be a stored multi-choice answer.
+                    answer['value'] = sorted(answer['value'])
+    return result
+
+
+def committed_receipt(row, submission):
+    """Return the stored receipt for an identical retry, or raise a conflict that discloses nothing.
+
+    `row` is (digest, submission_json, receipt, release) for the submission ID. The retry must name
+    the stored instrument identities and match the stored digest under the row's own
+    canonicalisation contract; current-instrument rules are not consulted.
+    """
+    digest, stored_json, receipt, release = row
+    try:
+        stored, contract = json.loads(stored_json), json.loads(release).get('canonicalVersion', CANONICAL_VERSION)
+    except (ValueError, AttributeError):
+        # An unreadable stored record is a storage fault, not a statement about this retry.
+        raise StudyError(503, 'storage_unavailable',
+                         'Receipt unavailable. Retain this tab and retry the same submission.') from None
+    if (contract == CANONICAL_VERSION
+            and isinstance(stored, dict)
+            and all(submission.get(key) == stored.get(key) for key in SUBMISSION_IDENTITY_KEYS)
+            and hashlib.sha256(canonical(canonical_submission(submission)).encode()).hexdigest() == digest):
+        return json.loads(receipt)
+    raise StudyError(409, 'submission_conflict',
+                     'This submission ID was used with different answers. Keep the code and contact the researcher.')
+
+
 def validate(submission):
     c = participant_content()
     keys = {'submissionId', 'participantCode', 'studyVersion', 'contentVersion', 'instrumentVersion', 'consent',
@@ -129,13 +177,7 @@ def validate(submission):
                                     else ['completed', 'skipped', 'could_not_work_out']))
         require(type(t['durationMs']) is int and 0 <= t['durationMs'] <= 86400000 and type(t['interrupted']) is bool)
         answers(t['id'], t['answers'])
-    # Multi-choice order has no research meaning; preserve raw codes as a set.
-    result = json.loads(canonical(submission))
-    for group in [result['pre'], result['post'], *[t['answers'] for t in result['tasks']]]:
-        for answer in group.values():
-            if isinstance(answer['value'], list):
-                answer['value'].sort()
-    return result
+    return canonical_submission(submission)
 
 
 class StudyService:
@@ -151,11 +193,14 @@ class StudyService:
         return {**participant_content(), 'collectionMode': self.config.collection_mode,
                 'submissionEnabled': self.config.enabled}
 
+    def _retired_path(self):
+        return self.config.path.with_name('responses.sqlite3')
+
     def connect(self):
         path = self.config.path
         path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         os.chmod(path.parent, 0o700)
-        legacy_path = path.with_name('responses.sqlite3')
+        legacy_path = self._retired_path()
         if legacy_path.exists():
             if path.exists():
                 raise sqlite3.DatabaseError('Both the retired response store and submission store exist')
@@ -210,9 +255,35 @@ class StudyService:
         elif tuple(stored) != expected:
             raise sqlite3.IntegrityError('A registered snapshot differs from the packaged content with its digest')
 
+    def recover(self, submission):
+        """Look up an already-committed submission ID before any current-instrument validation.
+
+        A committed submission keeps its receipt across application and package upgrades. Returns
+        None when nothing is committed under the ID, so the submission is a first delivery.
+        """
+        submission_id = submission.get('submissionId') if isinstance(submission, dict) else None
+        # Without an existing store nothing can be committed; do not create one for a lookup.
+        if not isinstance(submission_id, str) or not (self.config.path.exists() or self._retired_path().exists()):
+            return None
+        db = None
+        try:
+            db = self.connect()
+            row = db.execute('SELECT digest, submission_json, receipt, release FROM submissions WHERE submission_id=?',
+                             (submission_id,)).fetchone()
+        except (sqlite3.Error, OSError):
+            raise StudyError(503, 'storage_unavailable',
+                             'Receipt unavailable. Retain this tab and retry the same submission.') from None
+        finally:
+            if db is not None:
+                db.close()
+        return None if row is None else committed_receipt(row, submission)
+
     def submit(self, submission):
         if not self.config.enabled:
             raise StudyError(503, 'collection_disabled', 'Participant collection is not enabled.')
+        receipt = self.recover(submission)
+        if receipt is not None:
+            return receipt, False
         submission = validate(submission)
         body = canonical(submission)
         digest = hashlib.sha256(body.encode()).hexdigest()
@@ -221,21 +292,18 @@ class StudyService:
         checksum = next(line.split('=', 1)[1]
                         for line in (ROOT / 'docs/curated-artefacts.sha256').read_text().splitlines()
                         if line.startswith('sha256='))
-        release = {'schemaVersion': 2, 'canonicalVersion': 1, 'mode': self.config.collection_mode,
+        release = {'schemaVersion': 2, 'canonicalVersion': CANONICAL_VERSION, 'mode': self.config.collection_mode,
                    'appRevision': self.config.app_revision, 'artefactSha256': checksum}
         db = None
         try:
             db = self.connect()
             with db:
                 db.execute('BEGIN IMMEDIATE')
-                row = db.execute('SELECT digest, receipt FROM submissions WHERE submission_id=?',
-                                 (submission['submissionId'],)).fetchone()
+                # A concurrent first delivery of the same ID may have committed since recover().
+                row = db.execute('SELECT digest, submission_json, receipt, release FROM submissions '
+                                 'WHERE submission_id=?', (submission['submissionId'],)).fetchone()
                 if row:
-                    if row[0] != digest:
-                        raise StudyError(409, 'submission_conflict',
-                                         'This submission ID was used with different answers. '
-                                         'Keep the code and contact the researcher.')
-                    return json.loads(row[1]), False
+                    return committed_receipt(row, submission), False
                 self.register_snapshot(db)
                 db.execute('INSERT INTO submissions (submission_id, digest, submission_json, receipt, release, '
                            'content_digest, content_provenance) VALUES (?, ?, ?, ?, ?, ?, ?)',

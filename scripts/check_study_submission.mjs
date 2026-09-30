@@ -40,4 +40,17 @@ s=S.controller(()=>storage,send);s.read();assert.equal(s.recoveryBlocked,true);a
 assert.match(s.issue,/older saved submission/i);assert.equal(s.legacyParticipantCode, 'old-participant');assert.equal(s.discardLegacy(),true);assert.equal(values.has('irexplorer.submission.v2'),false);
 assert.match(studyView,/Discard incompatible saved draft/);assert.match(studyView,/submission\.discardLegacy\(\)/);
 checks.push('v0.6 pending submission is offered an explicit incompatible-draft discard path');
+values.clear();const frozen={...JSON.parse(calls[0]),submissionId:webcrypto.randomUUID(),instrumentVersion:'v0.10',contentVersion:'v0.10-preview-1',studyVersion:'v0.10-synthetic-1'};
+frozen.consent={...frozen.consent,version:frozen.contentVersion};values.set(S.KEY,JSON.stringify({kind:'pending',submission:frozen}));
+let committed=false;const upgradeCalls=[];
+const upgraded=async(url,options)=>{upgradeCalls.push(options.body);const p=JSON.parse(options.body);return committed
+  ?{ok:true,status:200,json:async()=>({receiptId:'original-receipt',participantCode:p.participantCode,submissionId:p.submissionId,studyVersion:p.studyVersion})}
+  :{ok:false,status:422,json:async()=>({error:{code:'invalid_submission',message:'Check consent, P1, versions, task outcomes, and answer limits. No answers were changed.'}})};};
+s=S.controller(()=>storage,upgraded);s.read();assert.equal(s.recoveryBlocked,false);await s.submit(null);
+assert.equal(s.state.kind,'pending');assert.deepEqual(JSON.parse(values.get(S.KEY)).submission,frozen);assert.match(s.issue,/retry/);
+checks.push('Rejected uncommitted older-release submission stays frozen without a receipt');
+committed=true;s=S.controller(()=>storage,upgraded);s.read();await s.submit(null);
+assert.equal(s.state.kind,'receipt');assert.equal(s.state.receipt.receiptId,'original-receipt');
+assert.equal(new Set(upgradeCalls).size,1);assert.deepEqual(JSON.parse(upgradeCalls[0]),frozen);
+checks.push('Committed older-release submission recovers its receipt with the same frozen submission and ID after an upgrade');
 console.log(`${checks.length} submission checks pass`);

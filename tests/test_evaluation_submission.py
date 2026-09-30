@@ -9,6 +9,7 @@ import tempfile
 import unittest
 import uuid
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
 from unittest.mock import patch
@@ -16,6 +17,7 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 from src.backend.api.app import create_app
+from src.backend.evaluation import content as study_content
 from src.backend.evaluation.cli import backup, export, open_db
 from src.backend.evaluation.content import content_snapshot, load_participant_package, participant_content
 from src.backend.evaluation.service import (
@@ -68,6 +70,30 @@ def pre_snapshot_store(path, submissions, *, version=2):
     db.commit()
     db.close()
     return rows
+
+
+UPGRADED = {'instrumentVersion': 'v0.12', 'contentVersion': 'v0.12-preview-1', 'studyVersion': 'v0.12-synthetic-1'}
+
+
+@contextmanager
+def upgraded_release():
+    """Install a synthetic later participant package, as a deployed application upgrade would.
+
+    Only the package changes: its identities and one prompt are revised and its canonical digest
+    recomputed, so the running code is the same while current-instrument validation now names
+    the upgraded release. Services created inside the block model the restarted application.
+    """
+    package = deepcopy(load_participant_package())
+    package['content'].update(UPGRADED)
+    package['content']['fields'][0]['prompt'] += ' (upgraded synthetic wording)'
+    package['identity'].update(UPGRADED)
+    package['identity']['digest'] = hashlib.sha256(json.dumps(
+        {'packageSchemaVersion': package['packageSchemaVersion'], 'content': package['content']},
+        sort_keys=True, ensure_ascii=False, separators=(',', ':')).encode()).hexdigest()
+    snapshot = content_snapshot(package)
+    with (patch.object(study_content, '_installed_package', lambda: package),
+          patch('src.backend.evaluation.service.participant_snapshot', lambda: snapshot)):
+        yield snapshot
 
 
 class SubmissionTests(unittest.TestCase):
@@ -708,6 +734,145 @@ class SubmissionTests(unittest.TestCase):
             sort_keys=True, ensure_ascii=False, separators=(',', ':')).encode()).hexdigest()
         self.assertNotEqual(content_snapshot(revised).digest, original.digest)
         self.assertIn(b'(revised wording)', content_snapshot(revised).canonical_content)
+
+    def test_committed_receipt_recovers_after_package_upgrade_and_restart(self):
+        committed = synthetic()
+        committed['post']['Q8'] = {'status': 'answered', 'value': [3, 1]}
+        first = self.post(committed)
+        self.assertEqual(first.status_code, 201)
+        uncommitted_old_draft = synthetic()
+        columns = 'SELECT submission_id, digest, submission_json, receipt, release, content_digest FROM submissions'
+        before = self.stored(columns)
+        with upgraded_release() as upgraded, TestClient(create_app(study_config=self.config)) as restarted:
+            def post(submission):
+                return restarted.post('/api/study/submissions', json=submission,
+                                      headers={'Origin': 'http://testserver'})
+            self.assertEqual(restarted.get('/api/study/content').json()['contentVersion'], 'v0.12-preview-1')
+            # The lost response is retried after the upgrade: the original receipt, shape and status return.
+            retry = post(committed)
+            self.assertEqual((retry.status_code, retry.json()), (200, first.json()))
+            reordered = deepcopy(committed)
+            reordered['post']['Q8']['value'] = [1, 3]
+            self.assertEqual((post(reordered).status_code, post(reordered).json()), (200, first.json()))
+            with ThreadPoolExecutor(max_workers=6) as pool:
+                results = list(pool.map(lambda item: StudyService(self.config).submit(item), [committed] * 6))
+            self.assertEqual(results, [(first.json(), False)] * 6)
+            # An uncommitted draft from the previous release is still a first delivery under current rules.
+            rejected = post(uncommitted_old_draft)
+            self.assertEqual((rejected.status_code, rejected.json()['error']['code']), (422, 'invalid_submission'))
+            # Changed content or identities under the committed ID conflict without disclosing answers.
+            changed_answer = deepcopy(committed)
+            changed_answer['tasks'][1]['durationMs'] += 1
+            changed_identity = deepcopy(committed)
+            changed_identity.update(UPGRADED)
+            changed_identity['consent']['version'] = UPGRADED['contentVersion']
+            not_canonical = deepcopy(committed)
+            not_canonical['tasks'] = 'not a task list'
+            for conflicting in (changed_answer, changed_identity, not_canonical):
+                conflict = post(conflicting)
+                self.assertEqual((conflict.status_code, conflict.json()['error']['code']),
+                                 (409, 'submission_conflict'))
+                for stored_value in (committed['participantCode'], first.json()['receiptId'], '1234'):
+                    self.assertNotIn(stored_value, conflict.text)
+            self.assertEqual(self.stored(columns), before)
+            # A first delivery under the upgraded release is linked to the upgraded snapshot.
+            current = synthetic()
+            self.assertEqual(post(current).status_code, 201)
+            self.assertEqual(self.stored('SELECT content_digest FROM submissions WHERE submission_id=?',
+                                         current['submissionId']), [(upgraded.digest,)])
+        self.assertEqual(self.stored('SELECT COUNT(*) FROM submissions'), [(2,)])
+
+    def test_committed_lookup_keeps_request_safeguards(self):
+        committed = synthetic()
+        first = self.post(committed)
+        self.assertEqual(first.status_code, 201)
+        url, body = '/api/study/submissions', json.dumps(committed)
+        with upgraded_release(), TestClient(create_app(study_config=self.config)) as client:
+            json_headers = {'Origin': 'http://testserver', 'Content-Type': 'application/json'}
+            for status, kwargs in (
+                (403, {'content': body, 'headers': {'Content-Type': 'application/json'}}),
+                (403, {'content': body, 'headers': {**json_headers, 'Origin': 'https://evil.test'}}),
+                (403, {'content': body, 'headers': {**json_headers, 'Sec-Fetch-Site': 'cross-site'}}),
+                (415, {'content': body, 'headers': {'Origin': 'http://testserver'}}),
+                (413, {'content': body[:-1] + ',"padding":"' + 'x' * MAX_BODY + '"}', 'headers': json_headers}),
+                (422, {'content': body[:-1] + ',"submissionId":"' + committed['submissionId'] + '"}',
+                       'headers': json_headers}),
+            ):
+                with self.subTest(status=status, headers=kwargs['headers']):
+                    response = client.post(url, **kwargs)
+                    self.assertEqual(response.status_code, status)
+                    self.assertNotIn(first.json()['receiptId'], response.text)
+            for mode in ('pilot', 'live'):
+                disabled = StudyService(Config(self.config.directory, collection_mode=mode))
+                with self.assertRaises(StudyError) as caught:
+                    disabled.submit(committed)
+                self.assertEqual(caught.exception.code, 'collection_disabled')
+                self.assertFalse(disabled.config.path.exists())
+
+    def test_legacy_receipts_recover_under_original_canonicalisation(self):
+        def historical(version):
+            record = synthetic()
+            record.update(instrumentVersion=version, contentVersion=f'{version}-preview-1',
+                          studyVersion=f'{version}-synthetic-1')
+            record['consent']['version'] = record['contentVersion']
+            record['pre']['P3_COMP4403'] = {'status': 'answered', 'value': 2}
+            record['post']['Q8'] = {'status': 'answered', 'value': [1, 3]}  # Stored under canonical version 1.
+            return record
+        recoverable, unknown_contract = historical('v0.10'), historical('v0.9')
+        rows = pre_snapshot_store(self.config.path, [recoverable, unknown_contract])
+        unknown_release = json.dumps({**json.loads(rows[1][4]), 'canonicalVersion': 2})
+        db = sqlite3.connect(self.config.path)
+        db.execute('UPDATE submissions SET release = ? WHERE submission_id = ?',
+                   (unknown_release, unknown_contract['submissionId']))
+        db.commit()
+        db.close()
+        legacy_v1 = historical('v0.8')
+        local = Config(self.config.directory, collection_mode='local', origin='http://testserver')
+        legacy_path = local.path.with_name('responses.sqlite3')
+        legacy_path.parent.mkdir(parents=True)
+        v1_receipt = {'receiptId': str(uuid.uuid4()), 'participantCode': legacy_v1['participantCode'],
+                      'submissionId': legacy_v1['submissionId'], 'studyVersion': legacy_v1['studyVersion']}
+        db = sqlite3.connect(legacy_path)
+        db.execute('CREATE TABLE responses (submission_id TEXT PRIMARY KEY, digest TEXT NOT NULL, '
+                   'payload TEXT NOT NULL, receipt TEXT NOT NULL, release TEXT NOT NULL)')
+        db.execute('INSERT INTO responses VALUES (?, ?, ?, ?, ?)', (
+            legacy_v1['submissionId'], hashlib.sha256(canonical(legacy_v1).encode()).hexdigest(),
+            canonical(legacy_v1), canonical(v1_receipt),
+            canonical({'schemaVersion': 2, 'canonicalVersion': 1, 'mode': 'local', 'appRevision': 'legacy',
+                       'artefactSha256': 'fixture'})))
+        db.execute('PRAGMA user_version=1')
+        db.commit()
+        db.close()
+
+        retried = deepcopy(recoverable)
+        retried['post']['Q8']['value'] = [3, 1]  # Multi-choice order carries no meaning under version 1.
+        retry = self.post(retried)
+        self.assertEqual((retry.status_code, retry.json()), (200, json.loads(rows[0][3])))
+        self.assertEqual(StudyService(local).submit(legacy_v1), (v1_receipt, False))
+        self.assertFalse(legacy_path.exists())
+        # Without the original canonicalisation contract, identity cannot be established.
+        unknown = self.post(unknown_contract)
+        self.assertEqual((unknown.status_code, unknown.json()['error']['code']), (409, 'submission_conflict'))
+        changed = deepcopy(recoverable)
+        changed['pre']['P3_COMP4403']['value'] = 1
+        conflict = self.post(changed)
+        self.assertEqual(conflict.status_code, 409)
+        self.assertNotIn(recoverable['participantCode'], conflict.text)
+        self.assertEqual(self.stored('SELECT submission_id, digest, submission_json, receipt, release '
+                                     'FROM submissions ORDER BY rowid'),
+                         [rows[0], (*rows[1][:4], unknown_release)])
+
+    def test_unreadable_committed_record_is_a_storage_fault_without_receipt(self):
+        committed = synthetic()
+        self.assertEqual(self.post(committed).status_code, 201)
+        db = sqlite3.connect(self.config.path)
+        db.execute("UPDATE submissions SET release = '[]'")
+        db.commit()
+        db.close()
+        failed = self.post(committed)
+        self.assertEqual((failed.status_code, failed.json()['error']['code']), (503, 'storage_unavailable'))
+        self.assertNotIn(committed['participantCode'], failed.text)
+        self.assertEqual(self.stored('SELECT release FROM submissions'), [('[]',)])
 
     def test_retired_study_mode_environment_name_fails_clearly(self):
         with (patch.dict('os.environ', {'IREXPLORER_STUDY_MODE': 'preview'}, clear=True),
