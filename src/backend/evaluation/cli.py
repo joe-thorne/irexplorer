@@ -315,7 +315,7 @@ def main():
             if not snapshots_ok:
                 print('Warning: snapshot verification failed for this store. The deletion above completed; do not '
                       'export or back up this store until it is restored from a verified backup.', file=sys.stderr)
-                sys.exit(2)
+                sys.exit(3)  # distinct from argparse usage errors (2): deletion did complete
         else:
             for path in args.paths:
                 path = private_path(path)

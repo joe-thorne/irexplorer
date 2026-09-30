@@ -690,7 +690,7 @@ class SubmissionTests(unittest.TestCase):
              withdrawn['participantCode'], '--confirm'],
             cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, check=False)
         # Withdrawal completes; the unrelated snapshot failure is reported separately and without responses.
-        self.assertEqual(result.returncode, 2)
+        self.assertEqual(result.returncode, 3)
         self.assertIn('Deleted 1 records', result.stdout)
         self.assertIn('snapshot verification failed', result.stderr.lower())
         self.assertNotIn(withdrawn['participantCode'], result.stdout + result.stderr)
