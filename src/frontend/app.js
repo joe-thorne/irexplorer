@@ -19,6 +19,7 @@ const appState = {
   selectionInput: null,
   refreshId: 0,
   loadId: 0,
+  taskRequestId: 0,
   ready: false,
   manualSetup: false,
   comparisonReport: null,
@@ -695,7 +696,6 @@ for (const side of ["left", "right"]) {
 }
 
 const examplesReady = loadExamples();
-let taskWorkspaceRequest = 0;
 
 // Study setup seam: presentation configuration only. No answers, node selection,
 // persistence, compiler parsing, or task-specific matching belongs in the workspace.
@@ -709,7 +709,7 @@ window.StudyWorkspace = {
   // Either way the task starts with no selection.
   async prepareTask(workspace, { inherit = false } = {}) {
     appState.manualSetup = false;
-    const request = ++taskWorkspaceRequest;
+    const request = ++appState.taskRequestId;
     if (inherit && appState.ready) {
       renderWithoutSelection();
       return;
@@ -717,7 +717,7 @@ window.StudyWorkspace = {
     if (!workspace?.exampleId) return;
     // After a reload, study content can arrive before the curated example list.
     await examplesReady;
-    if (request !== taskWorkspaceRequest) return;
+    if (request !== appState.taskRequestId) return;
     elements.exampleSelect.value = workspace.exampleId;
     loadExample(workspace);
   },

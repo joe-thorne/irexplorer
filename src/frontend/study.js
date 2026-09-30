@@ -40,8 +40,8 @@
     panels: { left: { ordinal: left.ordinal, viewType: left.view }, right: { ordinal: right.ordinal, viewType: right.view } } });
   // A task's workspace is kept for recovery when it, or the task after it, inherits.
   function carriesWorkspace(id) {
-    const order = content.journey.taskOrder;
-    return inherits(taskFor(id)) || inherits(taskFor(order[order.indexOf(id) + 1]));
+    const index = content.tasks.findIndex(task => task.id === id);
+    return inherits(content.tasks[index]) || inherits(content.tasks[index + 1]);
   }
   function leaveTask(route) {
     if (!activeTask || route === '/study/tasks/' + activeTask) return;
@@ -309,8 +309,7 @@
       if (content.packageSchemaVersion !== 2 || !identity ||
           !/^[0-9a-f]{64}$/.test(identity.digest) ||
           ['instrumentVersion', 'contentVersion', 'studyVersion'].some(key => identity[key] !== content[key]) ||
-          !['local', 'preview', 'pilot', 'live'].includes(content.collectionMode) || content.contentVersion !== CONTENT_VERSION ||
-          content.journey?.taskOrder?.join() !== content.tasks.map(task => task.id).join()) throw new Error('Unsupported content');
+          !['local', 'preview', 'pilot', 'live'].includes(content.collectionMode) || content.contentVersion !== CONTENT_VERSION) throw new Error('Unsupported content');
       store = D.storage(content); submission.read(); draft = store.read();
       if (submission.state?.kind === 'receipt' && submission.cleanup(() => store.discard())) draft = null;
       if (draft) { const t = draft.tasks[D.currentTask(draft)]; if (t.presented && t.status === 'pending') { t.interrupted = true; store.save(draft); } }

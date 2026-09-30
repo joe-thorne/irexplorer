@@ -167,6 +167,14 @@ _Avoid_: definition copy, instrument cache
 A historical v0.5/v0.6 outcome recording whether a usable comparison appeared; it did not confirm that the task's requested comparison was ready. v0.7 no longer collects or analyses this outcome.
 _Avoid_: task started, attempted
 
+**Entry workspace**:
+The workspace a task opens on: a named curated example at declared states and views with no selection, or, for a task that inherits, the preceding task's workspace with its selection cleared.
+_Avoid_: setup, starting state
+
+**Target comparison**:
+The comparison a task's instructions ask the participant to construct from the entry workspace; never applied automatically.
+_Avoid_: setup, requested state
+
 **Task-presentation duration**:
 The v0.7 visible time from task presentation through exploration and answering, excluding hidden-tab time, explicit pauses, and reload downtime. Keep it separate from v0.5/v0.6 post-setup active duration.
 _Avoid_: setup time, completion time

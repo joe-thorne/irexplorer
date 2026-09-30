@@ -49,7 +49,7 @@ async function until(expression, attempts = 200) {
 }
 async function check(name, expression) {
   if (await value(expression)) { checks.push(name); return; }
-  const observed = await value(`({ hash: location.hash, workspace: window.StudyWorkspace?.snapshot(), selection: [!!appState.selection, !!appState.selectionInput, document.querySelectorAll('.is-selected, .is-source').length], draft: sessionStorage.getItem('${DRAFT}') })`);
+  const observed = await value(`({ hash: location.hash, workspace: window.StudyWorkspace?.snapshot(), highlighted: document.querySelectorAll(${JSON.stringify(highlighted)}).length, draft: sessionStorage.getItem('${DRAFT}') })`);
   throw Error(`Failed: ${name}; observed=${JSON.stringify(observed)}`);
 }
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -58,7 +58,16 @@ const fill = (name, text) => value(`(() => { const e = document.querySelector('t
 const select = (selector, selected) => value(`(() => { const e = document.querySelector(${JSON.stringify(selector)}); e.value = ${JSON.stringify(selected)}; e.dispatchEvent(new Event('change', { bubbles: true })); })()`);
 const saved = () => value(`JSON.parse(sessionStorage.getItem('${DRAFT}'))`);
 const workspaceIs = (example, left, right, fn = null) => `(() => { const s = window.StudyWorkspace.snapshot(); return window.StudyWorkspace.ready && s.exampleId === ${JSON.stringify(example)} && s.panels.left.ordinal === ${left[0]} && s.panels.left.viewType === '${left[1]}' && s.panels.right.ordinal === ${right[0]} && s.panels.right.viewType === '${right[1]}'${fn ? ` && s.functionName === '${fn}'` : ''} && document.querySelector('#left-state').value === '${left[0]}' && document.querySelector('#right-view').value === '${right[1]}'; })()`;
-const selectionClear = '!appState.selection && !appState.selectionInput && !document.querySelector(".is-selected, .is-source")';
+// Selection is observed as the participant sees it: selected or traced C lines, IR lines and CFG blocks.
+const highlighted = '.is-selected, .is-source, .is-linked';
+const selectionClear = `!document.querySelector(${JSON.stringify(highlighted)})`;
+const selectionShown = `Boolean(document.querySelector(${JSON.stringify(highlighted)}))`;
+// The task's target comparison (packaged `setup`) stays named in its open instructions.
+function targetVisible(id) {
+  const { example, function: fn, left, right } = packaged.tasks.find(task => task.id === id).setup;
+  const named = [example, fn, `State ${left.ordinal}`, `State ${right.ordinal}`].filter(Boolean);
+  return `document.querySelector('#task-instructions').open && ${JSON.stringify(named)}.every(text => document.querySelector('#task-instructions').innerText.includes(text))`;
+}
 const onTask = id => until(`document.querySelector('#survey-form')?.dataset.section === '${id}' && window.StudyWorkspace.ready`);
 
 async function beginJourney() {
@@ -91,7 +100,7 @@ try {
   await onTask('T0');
   await check('P13 locks when T0 starts', `(() => { const d = JSON.parse(sessionStorage.getItem('${DRAFT}')); return d.p13Locked && d.tasks.T0.presented; })()`);
   await check('T0 enters score at State 0 with IR in both panels and no selection', `${workspaceIs('score', [0, 'ir'], [0, 'ir'])} && ${selectionClear}`);
-  await check('T0 keeps its distinct target comparison visible in open instructions', `document.querySelector('#task-instructions').open && document.querySelector('#task-instructions').innerText.includes('set the right panel to State 1')`);
+  await check('T0 keeps its distinct target comparison visible in open instructions', targetVisible('T0'));
 
   // Task-presentation duration: counts visible time, excludes pause, hidden-tab time and reload downtime.
   await pause(1300);
@@ -118,12 +127,11 @@ try {
   await click('#survey-form button[type="submit"]');
 
   // T1–T5 entry versus target; partial, skipped, inability and completed responses.
-  const targets = { T1: 'State 12', T2: 'first state where this line', T3: 'State 3 (`simplifycfg`)', T4: 'State 7 (`loop_rotate`)', T5: 'State 9 (`indvars`)' };
   const examples = { T1: 'score', T2: 'score', T3: 'binary_search', T4: 'binary_search', T5: 'quick_sort' };
   for (const id of ['T1', 'T2', 'T3', 'T4', 'T5']) {
     await onTask(id);
     await check(`${id} enters ${examples[id]} at State 0 with IR in both panels and no selection`, `${workspaceIs(examples[id], [0, 'ir'], [0, 'ir'])} && ${selectionClear}`);
-    await check(`${id} keeps its distinct target comparison visible in instructions`, `document.querySelector('#task-instructions').open && document.querySelector('#task-instructions').innerText.includes(${JSON.stringify(targets[id])})`);
+    await check(`${id} keeps its distinct target comparison visible in instructions`, targetVisible(id));
     await check(`${id} renders exactly its declared response membership in order`, `[...document.querySelectorAll('#task-responses [data-field]')].map(e => e.dataset.field).join() === ${JSON.stringify(packaged.membership[id].join())}`);
     if (id === 'T1') { await fill('T1a', 'Synthetic brief T1 note'); await click('[data-action="skip-task"]'); }
     if (id === 'T2') { await fill('T2b', 'Synthetic partial T2 reason'); await click('[data-action="unable-task"]'); }
@@ -131,9 +139,9 @@ try {
     if (id === 'T4') await click('[data-action="skip-task"]');
     if (id === 'T5') {
       await select('#left-state', '8'); await select('#right-state', '9'); await until('window.StudyWorkspace.ready');
-      await select('#function-select', 'partition'); await until(`window.StudyWorkspace.ready && appState.functionName === 'partition'`);
+      await select('#function-select', 'partition'); await until(`window.StudyWorkspace.ready && window.StudyWorkspace.snapshot().functionName === 'partition'`);
       await select('#right-view', 'cfg'); await until(`window.StudyWorkspace.ready && document.querySelector('#right-view').value === 'cfg'`);
-      await click('.source-line[data-line="8"]'); await until('Boolean(appState.selection)');
+      await click('.source-line[data-line="8"]'); await until(selectionShown);
       await click('#survey-form button[type="submit"]');
     }
   }
@@ -190,7 +198,7 @@ try {
     task('T1').entryWorkspace = { example: 'binary_search', left: { ordinal: 2, view: 'cfg' }, right: { ordinal: 3, view: 'ir' }, selection: 'clear' };
     task('T4').entryWorkspace = { inherit: 'previous', selection: 'clear' };
     delete task('T6').inheritWorkspace;
-    task('T3').fields = content.membership.T3 = [...content.membership.T3].reverse();
+    content.membership.T3 = [...content.membership.T3].reverse(); // task('T3').fields keeps the old order.
   };
   await beginJourney();
   await onTask('T0'); await click('#survey-form button[type="submit"]');
@@ -202,7 +210,7 @@ try {
   await check('Task responses follow declared membership order', `[...document.querySelectorAll('#task-responses [data-field]')].map(e => e.dataset.field).join() === 'T3c,T3b,T3a'`);
   await select('#left-state', '5'); await select('#right-state', '6'); await until('window.StudyWorkspace.ready');
   await select('#right-view', 'cfg'); await until(`window.StudyWorkspace.ready && document.querySelector('#right-view').value === 'cfg'`);
-  await click('.source-line[data-line="6"]'); await until('Boolean(appState.selectionInput)');
+  await click('.source-line[data-line="6"]'); await until(selectionShown);
   await click('[data-action="skip-task"]');
   await onTask('T4');
   await check('A declared inheriting task continues the preceding workspace with no selection', `${workspaceIs('binary_search', [5, 'ir'], [6, 'cfg'])} && ${selectionClear}`);
