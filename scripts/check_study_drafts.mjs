@@ -77,6 +77,15 @@ check('Fixed task inventory: T0 has no fields; T5/T6 have no invented confidence
   assert.equal(D.fieldsFor(content, 'T5').map(f => f.id).join(), 'T5a,T5b,T5c');
   assert.equal(D.fieldsFor(content, 'T6').some(f => f.scale === 'confidence'), false);
 });
+check('Short text input enforces supplementary-character limits in code points', () => {
+  const inputContent = structuredClone(content);
+  const field = inputContent.fields.find(item => item.id === 'P13');
+  field.type = 'short_text'; field.presentation.control = 'input'; field.maxLength = 4;
+  const atLimit = {P13: {status: 'answered', value: '🙂'.repeat(4)}};
+  const overLimit = {P13: {status: 'answered', value: '🙂'.repeat(5)}};
+  assert.deepEqual(Object.keys(D.validate(inputContent, 'pre', atLimit)), []);
+  assert.deepEqual(Object.keys(D.validate(inputContent, 'pre', overLimit)), ['P13']);
+});
 check('Browser validation matches the common browser/server response examples', () => {
   for (const example of examples) {
     const answers = JSON.parse(JSON.stringify(example.answers));

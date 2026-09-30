@@ -151,7 +151,7 @@
       field.type === 'multiple' ? 'checkboxes' : field.type === 'boolean' ? 'checkbox' : 'radio');
     let control;
     if (controlHint === 'textarea') control = `<label class="sr-only" for="answer-${id}">${esc(label)}</label><textarea id="answer-${id}" name="${field.id}" rows="3" aria-describedby="note-${id} error-${id}"${locked ? ' readonly' : ''}>${esc(answer.status === 'answered' ? answer.value : '')}</textarea>`;
-    else if (controlHint === 'input') control = `<label class="sr-only" for="answer-${id}">${esc(label)}</label><input id="answer-${id}" type="text" name="${field.id}" maxlength="${field.maxLength}" value="${esc(answer.status === 'answered' ? answer.value : '')}" aria-describedby="note-${id} error-${id}"${locked ? ' readonly' : ''}>`;
+    else if (controlHint === 'input') control = `<label class="sr-only" for="answer-${id}">${esc(label)}</label><input id="answer-${id}" type="text" name="${field.id}" value="${esc(answer.status === 'answered' ? answer.value : '')}" aria-describedby="note-${id} error-${id}"${locked ? ' readonly' : ''}>`;
     else if (controlHint === 'select') {
       const options = field.options.map(o => ({ ...o, status: field.optionStatuses?.[o.value] || 'answered' }));
       control = `<label class="sr-only" for="answer-${id}">${esc(label)}</label><select id="answer-${id}" name="${field.id}" aria-describedby="note-${id} error-${id}"${locked ? ' disabled' : ''}><option value="">Choose an answer…</option>${options.map(o => `<option value="${o.value}" data-status="${o.status}"${answer.status === o.status && (o.status !== 'answered' || answer.value === o.value) ? ' selected' : ''}>${esc(o.label)}</option>`).join('')}</select>`;
