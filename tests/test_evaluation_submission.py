@@ -115,18 +115,18 @@ class SubmissionTests(unittest.TestCase):
         examples = json.loads((Path(__file__).parent / 'data/study-validation-examples.json').read_text())
         for example in examples:
             with self.subTest(example=example['name']):
-                payload = synthetic()
+                submission = synthetic()
                 answers = json.loads(json.dumps(example['answers']))
                 for answer in answers.values():
                     if 'repeat' in answer:
                         answer['value'] = answer.pop('repeat') * answer.pop('times')
                 section = example['section']
                 if section in ('pre', 'post'):
-                    payload[section].update(answers)
+                    submission[section].update(answers)
                 else:
-                    task = next(item for item in payload['tasks'] if item['id'] == section)
+                    task = next(item for item in submission['tasks'] if item['id'] == section)
                     task['answers'].update(answers)
-                response = self.post(payload)
+                response = self.post(submission)
                 expected_status = 422 if example['errorFields'] else 201
                 self.assertEqual(response.status_code, expected_status)
 
@@ -226,10 +226,10 @@ class SubmissionTests(unittest.TestCase):
             lambda p: p['tasks'][1].update(presented=False),
             lambda p: p.update(instrumentVersion='v0.1'),
         ]:
-            payload = deepcopy(self.payload)
-            mutate(payload)
+            submission = synthetic()
+            mutate(submission)
             with self.assertRaises(StudyError):
-                self.service.submit(payload)
+                self.service.submit(submission)
 
         submission = deepcopy(self.payload)
         submission['tasks'][1].update(status='skipped', durationMs=950)

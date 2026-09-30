@@ -1,4 +1,4 @@
-"""Verified participant package and shared answer validation, separate from compiler queries."""
+"""Shared participant content and answer validation, independent of compiler queries."""
 import hashlib
 import json
 from copy import deepcopy
@@ -312,7 +312,7 @@ def load_participant_package(package_path=PACKAGE_PATH, manifest_path=MANIFEST_P
         raise ValueError('Public manifest does not match the participant package bytes')
     package = _read_json(package_bytes)
     if not isinstance(package, dict) or set(package) != {'packageSchemaVersion', 'identity', 'content'}:
-        raise ValueError('Unsupported participant package envelope')
+        raise ValueError('Unsupported participant package structure')
     if (type(package['packageSchemaVersion']) is not int or package['packageSchemaVersion'] != 2
             or manifest['packageSchemaVersion'] != package['packageSchemaVersion']):
         raise ValueError('Unsupported participant package version')

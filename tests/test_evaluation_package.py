@@ -44,28 +44,28 @@ def package_fixture():
     identity = {'identityVersion': 1, 'algorithm': 'sha256', 'canonicalisation': 'sorted-json-utf8-v1',
                 'canonicalisationVersion': 1, 'digest': '', 'instrumentVersion': 'v1',
                 'contentVersion': 'v1-preview-1', 'studyVersion': 'v1-synthetic-1'}
-    envelope = {'packageSchemaVersion': 2, 'identity': identity, 'content': content}
+    package = {'packageSchemaVersion': 2, 'identity': identity, 'content': content}
     identity['digest'] = hashlib.sha256(canonical_bytes({
-        'packageSchemaVersion': envelope['packageSchemaVersion'], 'content': content,
+        'packageSchemaVersion': package['packageSchemaVersion'], 'content': content,
     })).hexdigest()
-    return envelope
+    return package
 
 
-def rehash(envelope):
-    envelope['identity']['digest'] = hashlib.sha256(canonical_bytes({
-        'packageSchemaVersion': envelope['packageSchemaVersion'], 'content': envelope['content'],
+def rehash(package):
+    package['identity']['digest'] = hashlib.sha256(canonical_bytes({
+        'packageSchemaVersion': package['packageSchemaVersion'], 'content': package['content'],
     })).hexdigest()
-    return envelope
+    return package
 
 
 class PublicPackageTests(unittest.TestCase):
-    def write_pair(self, directory, envelope):
+    def write_pair(self, directory, package):
         package_path = Path(directory) / 'participant-package-v2.json'
         manifest_path = Path(directory) / 'public-manifest.json'
-        package_bytes = json.dumps(envelope, ensure_ascii=False, indent=2).encode('utf-8') + b'\n'
+        package_bytes = json.dumps(package, ensure_ascii=False, indent=2).encode('utf-8') + b'\n'
         package_path.write_bytes(package_bytes)
         manifest = {'manifestSchemaVersion': 1, 'packageSchemaVersion': 2,
-                    'identity': envelope['identity'],
+                    'identity': package['identity'],
                     'artifact': {'file': package_path.name,
                                  'sha256': hashlib.sha256(package_bytes).hexdigest()}}
         manifest_path.write_text(json.dumps(manifest, ensure_ascii=False) + '\n')
@@ -105,30 +105,30 @@ class PublicPackageTests(unittest.TestCase):
                 load_participant_package(package_path, manifest_path)
 
         with tempfile.TemporaryDirectory() as directory:
-            envelope = package_fixture()
-            envelope['content']['privateMapping'] = {'expected': 1}
-            rehash(envelope)
-            package_path, manifest_path = self.write_pair(directory, envelope)
+            package = package_fixture()
+            package['content']['privateMapping'] = {'expected': 1}
+            rehash(package)
+            package_path, manifest_path = self.write_pair(directory, package)
             with self.assertRaisesRegex(ValueError, 'content schema'):
                 load_participant_package(package_path, manifest_path)
 
     def test_rejects_nested_private_field_metadata_after_recomputing_all_hashes(self):
         with tempfile.TemporaryDirectory() as directory:
-            envelope = package_fixture()
-            envelope['content']['fields'][1]['rubric'] = 'PRIVATE_SENTINEL'
-            rehash(envelope)
-            package_path, manifest_path = self.write_pair(directory, envelope)
+            package = package_fixture()
+            package['content']['fields'][1]['rubric'] = 'PRIVATE_SENTINEL'
+            rehash(package)
+            package_path, manifest_path = self.write_pair(directory, package)
             with self.assertRaisesRegex(ValueError, 'field P1'):
                 load_participant_package(package_path, manifest_path)
 
     def test_accepts_declared_short_text_input_control(self):
         with tempfile.TemporaryDirectory() as directory:
-            envelope = package_fixture()
-            field = envelope['content']['fields'][1]
+            package = package_fixture()
+            field = package['content']['fields'][1]
             field.pop('options')
             field.update(type='short_text', presentation={'control': 'input'}, maxLength=20)
-            rehash(envelope)
-            package_path, manifest_path = self.write_pair(directory, envelope)
+            rehash(package)
+            package_path, manifest_path = self.write_pair(directory, package)
             self.assertEqual(load_participant_package(package_path, manifest_path)['content']['fields'][1]
                              ['presentation']['control'], 'input')
 
@@ -145,16 +145,16 @@ class PublicPackageTests(unittest.TestCase):
         for target, key in [('manifest', 'manifestSchemaVersion'), ('identity', 'identityVersion'),
                             ('identity', 'canonicalisationVersion')]:
             with self.subTest(target=target, key=key), tempfile.TemporaryDirectory() as directory:
-                envelope = package_fixture()
-                package_path, manifest_path = self.write_pair(directory, envelope)
+                package = package_fixture()
+                package_path, manifest_path = self.write_pair(directory, package)
                 if target == 'manifest':
                     manifest = json.loads(manifest_path.read_text())
                     manifest[key] = True
                     manifest_path.write_text(json.dumps(manifest))
                 else:
-                    envelope['identity'][key] = True
-                    rehash(envelope)
-                    package_path, manifest_path = self.write_pair(directory, envelope)
+                    package['identity'][key] = True
+                    rehash(package)
+                    package_path, manifest_path = self.write_pair(directory, package)
                 with self.assertRaises(ValueError):
                     load_participant_package(package_path, manifest_path)
 
