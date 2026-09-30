@@ -753,7 +753,8 @@ class SubmissionTests(unittest.TestCase):
             self.assertEqual((retry.status_code, retry.json()), (200, first.json()))
             reordered = deepcopy(committed)
             reordered['post']['Q8']['value'] = [1, 3]
-            self.assertEqual((post(reordered).status_code, post(reordered).json()), (200, first.json()))
+            reordered_retry = post(reordered)
+            self.assertEqual((reordered_retry.status_code, reordered_retry.json()), (200, first.json()))
             with ThreadPoolExecutor(max_workers=6) as pool:
                 results = list(pool.map(lambda item: StudyService(self.config).submit(item), [committed] * 6))
             self.assertEqual(results, [(first.json(), False)] * 6)

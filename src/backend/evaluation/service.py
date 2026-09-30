@@ -9,6 +9,7 @@ import uuid
 from contextlib import suppress
 from dataclasses import astuple, dataclass
 from pathlib import Path
+from typing import NamedTuple
 
 from src.backend.release import metadata
 
@@ -58,6 +59,24 @@ _SNAPSHOT_SCHEMA = (
 class StudyError(Exception):
     def __init__(self, status, code, message):
         self.status, self.code, self.message = status, code, message
+
+
+def storage_unavailable():
+    return StudyError(503, 'storage_unavailable', 'Receipt unavailable. Retain this tab and retry the same submission.')
+
+
+class StoredSubmission(NamedTuple):
+    """The stored columns a retry is compared with; field names are the column names."""
+    digest: str
+    submission_json: str
+    receipt: str
+    release: str
+
+    @classmethod
+    def find(cls, db, submission_id):
+        row = db.execute(f"SELECT {', '.join(cls._fields)} FROM submissions WHERE submission_id=?",
+                         (submission_id,)).fetchone()
+        return None if row is None else cls(*row)
 
 
 @dataclass(frozen=True)
@@ -119,25 +138,23 @@ def canonical_submission(submission):
     return result
 
 
-def committed_receipt(row, submission):
+def receipt_for_retry(stored, submission):
     """Return the stored receipt for an identical retry, or raise a conflict that discloses nothing.
 
-    `row` is (digest, submission_json, receipt, release) for the submission ID. The retry must name
-    the stored instrument identities and match the stored digest under the row's own
-    canonicalisation contract; current-instrument rules are not consulted.
+    The retry must name the stored instrument identities and match the stored digest under the
+    row's own canonicalisation version; current-instrument rules are not consulted.
     """
-    digest, stored_json, receipt, release = row
     try:
-        stored, contract = json.loads(stored_json), json.loads(release).get('canonicalVersion', CANONICAL_VERSION)
+        stored_submission = json.loads(stored.submission_json)
+        canonical_version = json.loads(stored.release).get('canonicalVersion', CANONICAL_VERSION)
     except (ValueError, AttributeError):
         # An unreadable stored record is a storage fault, not a statement about this retry.
-        raise StudyError(503, 'storage_unavailable',
-                         'Receipt unavailable. Retain this tab and retry the same submission.') from None
-    if (contract == CANONICAL_VERSION
-            and isinstance(stored, dict)
-            and all(submission.get(key) == stored.get(key) for key in SUBMISSION_IDENTITY_KEYS)
-            and hashlib.sha256(canonical(canonical_submission(submission)).encode()).hexdigest() == digest):
-        return json.loads(receipt)
+        raise storage_unavailable() from None
+    if (canonical_version == CANONICAL_VERSION
+            and isinstance(stored_submission, dict)
+            and all(submission.get(key) == stored_submission.get(key) for key in SUBMISSION_IDENTITY_KEYS)
+            and hashlib.sha256(canonical(canonical_submission(submission)).encode()).hexdigest() == stored.digest):
+        return json.loads(stored.receipt)
     raise StudyError(409, 'submission_conflict',
                      'This submission ID was used with different answers. Keep the code and contact the researcher.')
 
@@ -255,33 +272,32 @@ class StudyService:
         elif tuple(stored) != expected:
             raise sqlite3.IntegrityError('A registered snapshot differs from the packaged content with its digest')
 
-    def recover(self, submission):
+    def stored_receipt(self, submission):
         """Look up an already-committed submission ID before any current-instrument validation.
 
         A committed submission keeps its receipt across application and package upgrades. Returns
         None when nothing is committed under the ID, so the submission is a first delivery.
         """
         submission_id = submission.get('submissionId') if isinstance(submission, dict) else None
-        # Without an existing store nothing can be committed; do not create one for a lookup.
+        # Without an existing store nothing can be committed, so a lookup never creates one. An
+        # existing older store is moved and migrated here, as on any first use.
         if not isinstance(submission_id, str) or not (self.config.path.exists() or self._retired_path().exists()):
             return None
         db = None
         try:
             db = self.connect()
-            row = db.execute('SELECT digest, submission_json, receipt, release FROM submissions WHERE submission_id=?',
-                             (submission_id,)).fetchone()
+            stored = StoredSubmission.find(db, submission_id)
         except (sqlite3.Error, OSError):
-            raise StudyError(503, 'storage_unavailable',
-                             'Receipt unavailable. Retain this tab and retry the same submission.') from None
+            raise storage_unavailable() from None
         finally:
             if db is not None:
                 db.close()
-        return None if row is None else committed_receipt(row, submission)
+        return None if stored is None else receipt_for_retry(stored, submission)
 
     def submit(self, submission):
         if not self.config.enabled:
             raise StudyError(503, 'collection_disabled', 'Participant collection is not enabled.')
-        receipt = self.recover(submission)
+        receipt = self.stored_receipt(submission)
         if receipt is not None:
             return receipt, False
         submission = validate(submission)
@@ -299,11 +315,10 @@ class StudyService:
             db = self.connect()
             with db:
                 db.execute('BEGIN IMMEDIATE')
-                # A concurrent first delivery of the same ID may have committed since recover().
-                row = db.execute('SELECT digest, submission_json, receipt, release FROM submissions '
-                                 'WHERE submission_id=?', (submission['submissionId'],)).fetchone()
-                if row:
-                    return committed_receipt(row, submission), False
+                # A concurrent first delivery of the same ID may have committed since stored_receipt().
+                stored = StoredSubmission.find(db, submission['submissionId'])
+                if stored:
+                    return receipt_for_retry(stored, submission), False
                 self.register_snapshot(db)
                 db.execute('INSERT INTO submissions (submission_id, digest, submission_json, receipt, release, '
                            'content_digest, content_provenance) VALUES (?, ?, ?, ?, ?, ?, ?)',
@@ -312,8 +327,7 @@ class StudyService:
             # Leaving the transaction committed both rows; only now is a receipt returned.
             return receipt, True
         except (sqlite3.Error, OSError):
-            raise StudyError(503, 'storage_unavailable',
-                             'Receipt unavailable. Retain this tab and retry the same submission.') from None
+            raise storage_unavailable() from None
         finally:
             if db is not None:
                 db.close()
