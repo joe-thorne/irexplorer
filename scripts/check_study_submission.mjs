@@ -65,4 +65,16 @@ assert.equal(say(s.issue),content.messages['submission.uncertain'].replace('{err
 s=S.controller(()=>storage,foreign);s.read();await s.submit(null);assert.equal(s.state.kind,'pending');
 assert.equal(say(s.issue),content.messages['submission.uncertain'].replace('{error}',content.messages['submission.invalid-receipt']));
 checks.push('No receipt is shown without a matching durable server receipt');
+values.clear();const unsupportedFrozen={...frozen,submissionId:webcrypto.randomUUID()};values.set(S.KEY,JSON.stringify({kind:'pending',submission:unsupportedFrozen}));
+const unsupportedCalls=[];
+const unsupported=async(url,options)=>{unsupportedCalls.push(options.body);return {ok:false,status:422,json:async()=>({error:{code:'unsupported_instrument',message:'Check consent, P1, versions, task outcomes, and answer limits. No answers were changed.'}})};};
+s=S.controller(()=>storage,unsupported);s.read();await s.submit(null);
+assert.equal(s.state.kind,'pending');assert.deepEqual(JSON.parse(values.get(S.KEY)).submission,unsupportedFrozen);
+assert.equal(s.recoveryBlocked,true);assert.equal(s.legacyPending,true);assert.equal(s.legacyParticipantCode,unsupportedFrozen.participantCode);
+assert.equal(say(s.issue),content.messages['recovery.incompatible']);
+await s.submit(null);assert.equal(unsupportedCalls.length,1);
+assert.match(studyView,/submission\.state && !submission\.recoveryBlocked\) html = submissionHtml\(\)/);
+checks.push('Unsupported-instrument rejection keeps the frozen submission and reports incompatibility with compiled guidance, without a receipt or retry claim');
+assert.equal(s.discardLegacy(),true);assert.equal(values.has(S.KEY),false);assert.equal(s.state,null);assert.equal(s.recoveryBlocked,false);
+checks.push('Incompatible frozen submission is removed only by the explicit discard');
 console.log(`${checks.length} submission checks pass`);

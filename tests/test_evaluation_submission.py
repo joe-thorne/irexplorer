@@ -2,6 +2,7 @@
 import csv
 import hashlib
 import json
+import os
 import sqlite3
 import subprocess
 import sys
@@ -35,8 +36,9 @@ RETIRED_V1_SCHEMA = ('CREATE TABLE responses (submission_id TEXT PRIMARY KEY, di
                      'payload TEXT NOT NULL, receipt TEXT NOT NULL, release TEXT NOT NULL)')
 
 
-def synthetic():
-    c = participant_content()
+def synthetic(c=None):
+    """A valid all-optional submission for `c`, the installed participant content by default."""
+    c = c or participant_content()
     def answers(section):
         return {field_id: {'status': 'unanswered', 'value': None} for field_id in c['membership'][section]}
     p = {k: c[k] for k in ('studyVersion', 'contentVersion', 'instrumentVersion')}
@@ -98,6 +100,45 @@ def upgraded_release():
     with (patch.object(study_content, '_installed_package', lambda: package),
           patch('src.backend.evaluation.service.participant_snapshot', lambda: snapshot)):
         yield snapshot
+
+
+HISTORICAL = {'instrumentVersion': 'v0.10', 'contentVersion': 'v0.10-preview-9', 'studyVersion': 'v0.10-synthetic-9'}
+HISTORICAL_OPTION = {'value': 6, 'label': 'Synthetic historical role'}
+
+
+def historical_package():
+    """A synthetic earlier participant package whose own rules differ from the installed one.
+
+    Its identities differ, Q20 is not a member, and P1 offers an extra option, so admissibility
+    under its rules is observably different from the current package's.
+    """
+    package = deepcopy(load_participant_package())
+    content = package['content']
+    content.update(HISTORICAL)
+    content['fields'] = [field for field in content['fields'] if field['id'] != 'Q20']
+    for section in content['postSections']:
+        if 'fields' in section:
+            section['fields'] = [field_id for field_id in section['fields'] if field_id != 'Q20']
+    for owner in ('post', 'post.section3'):
+        content['membership'][owner].remove('Q20')
+    next(field for field in content['fields'] if field['id'] == 'P1')['options'].append(HISTORICAL_OPTION)
+    package['identity'].update(HISTORICAL)
+    package['identity']['digest'] = hashlib.sha256(json.dumps(
+        {'packageSchemaVersion': package['packageSchemaVersion'], 'content': content},
+        sort_keys=True, ensure_ascii=False, separators=(',', ':')).encode()).hexdigest()
+    return package
+
+
+def frozen_public_pair(directory, package):
+    """Write `package` as the two-file public pair the thesis `--package-public` export produces."""
+    directory.mkdir(parents=True)
+    data = (json.dumps(package, ensure_ascii=False, indent=2) + '\n').encode()
+    (directory / 'participant-package-v2.json').write_bytes(data)
+    (directory / 'public-manifest.json').write_text(json.dumps({
+        'manifestSchemaVersion': 1, 'packageSchemaVersion': package['packageSchemaVersion'],
+        'identity': package['identity'],
+        'artifact': {'file': 'participant-package-v2.json', 'sha256': hashlib.sha256(data).hexdigest()}}))
+    return directory
 
 
 class SubmissionTests(unittest.TestCase):
@@ -764,9 +805,9 @@ class SubmissionTests(unittest.TestCase):
             with ThreadPoolExecutor(max_workers=6) as pool:
                 results = list(pool.map(lambda item: StudyService(self.config).submit(item), [committed] * 6))
             self.assertEqual(results, [(first.json(), False)] * 6)
-            # An uncommitted draft from the previous release is still a first delivery under current rules.
+            # An uncommitted draft from the previous release is a first delivery the upgrade no longer accepts.
             rejected = post(uncommitted_old_draft)
-            self.assertEqual((rejected.status_code, rejected.json()['error']['code']), (422, 'invalid_submission'))
+            self.assertEqual((rejected.status_code, rejected.json()['error']['code']), (422, 'unsupported_instrument'))
             # Changed content or identities under the committed ID conflict without disclosing answers.
             changed_answer = deepcopy(committed)
             changed_answer['tasks'][1]['durationMs'] += 1
@@ -879,6 +920,97 @@ class SubmissionTests(unittest.TestCase):
         self.assertEqual((failed.status_code, failed.json()['error']['code']), (503, 'storage_unavailable'))
         self.assertNotIn(committed['participantCode'], failed.text)
         self.assertEqual(self.stored('SELECT release FROM submissions'), [('[]',)])
+
+    def test_unconfigured_older_first_delivery_is_unsupported_and_stores_nothing(self):
+        older = synthetic(historical_package()['content'])
+        sent = deepcopy(older)
+        rejected = self.post(older)
+        self.assertEqual((rejected.status_code, rejected.json()['error']['code']), (422, 'unsupported_instrument'))
+        self.assertNotIn(older['participantCode'], rejected.text)
+        self.assertEqual(older, sent)
+        self.assertFalse(self.config.path.exists())  # Nothing was stored, so no store exists.
+        current = synthetic()
+        self.assertEqual(self.post(current).status_code, 201)
+        # The same ID is still unsupported once a store exists; no row is written under it.
+        again = self.post(older)
+        self.assertEqual((again.status_code, again.json()['error']['code']), (422, 'unsupported_instrument'))
+        self.assertEqual(self.stored('SELECT submission_id FROM submissions'), [(current['submissionId'],)])
+        # A submission that names the current identities is judged by current rules, not reported unsupported.
+        malformed = synthetic()
+        malformed['pre']['P1'] = {'status': 'answered', 'value': HISTORICAL_OPTION['value']}
+        invalid = self.post(malformed)
+        self.assertEqual((invalid.status_code, invalid.json()['error']['code']), (422, 'invalid_submission'))
+
+    def test_enabled_older_instrument_is_accepted_under_its_own_rules(self):
+        package = historical_package()
+        historical = content_snapshot(package)
+        config = Config(Path(self.tmp.name), origin='http://testserver',
+                        accepted_instruments=(frozen_public_pair(Path(self.tmp.name) / 'v0.10', package),))
+        older = synthetic(package['content'])
+        older['pre']['P1'] = {'status': 'answered', 'value': HISTORICAL_OPTION['value']}
+        with TestClient(create_app(study_config=config)) as client:
+            def post(submission):
+                return client.post('/api/study/submissions', json=submission, headers={'Origin': 'http://testserver'})
+            # The content served to new participants is still only the installed package.
+            self.assertEqual(client.get('/api/study/content').json()['contentVersion'],
+                             participant_content()['contentVersion'])
+            self.assertEqual(post(synthetic()).status_code, 201)
+            first = post(older)
+            self.assertEqual(first.status_code, 201)
+            self.assertEqual(first.json()['studyVersion'], HISTORICAL['studyVersion'])
+            # The older release's own membership and options decide admissibility, not the current ones.
+            with_current_member = synthetic(package['content'])
+            with_current_member['post']['Q20'] = {'status': 'unanswered', 'value': None}
+            without_own_option = synthetic(package['content'])
+            without_own_option['pre']['P1'] = {'status': 'answered', 'value': 7}
+            current_without_member = synthetic()
+            del current_without_member['post']['Q20']
+            for invalid in (with_current_member, without_own_option, current_without_member):
+                rejected = post(invalid)
+                self.assertEqual((rejected.status_code, rejected.json()['error']['code']), (422, 'invalid_submission'))
+        # The accepted older submission is linked to its own snapshot and keeps its own identities.
+        self.assertEqual(self.stored('SELECT content_digest, content_provenance FROM submissions WHERE submission_id=?',
+                                     older['submissionId']), [(historical.digest, PROVENANCE_SNAPSHOT)])
+        self.assertEqual(self.stored('SELECT canonical_content, instrument_version FROM participant_content_snapshots '
+                                     'WHERE digest=?', historical.digest),
+                         [(historical.canonical_content, HISTORICAL['instrumentVersion'])])
+        stored = json.loads(self.stored('SELECT submission_json FROM submissions WHERE submission_id=?',
+                                        older['submissionId'])[0][0])
+        self.assertEqual({key: stored[key] for key in HISTORICAL}, HISTORICAL)
+        self.assertNotIn('Q20', stored['post'])
+        self.assertEqual(self.stored('SELECT COUNT(*) FROM submissions'), [(2,)])
+        # After the older release is disabled again, its committed submission still recovers its receipt,
+        # while a new first delivery from it is unsupported.
+        retry = self.post(older)
+        self.assertEqual((retry.status_code, retry.json()), (200, first.json()))
+        another = synthetic(package['content'])
+        disabled = self.post(another)
+        self.assertEqual((disabled.status_code, disabled.json()['error']['code']), (422, 'unsupported_instrument'))
+
+    def test_accepted_instruments_are_verified_server_configuration(self):
+        root = Path(self.tmp.name)
+        with patch.dict('os.environ', {}, clear=True):
+            self.assertEqual(Config.environment().accepted_instruments, ())
+        first, second = root / 'first', root / 'second'
+        with patch.dict('os.environ', {'IREXPLORER_ACCEPTED_INSTRUMENTS': f'{first}{os.pathsep}{second}'},
+                        clear=True):
+            self.assertEqual(Config.environment().accepted_instruments, (first, second))
+        with self.assertRaises(ValueError):
+            Config(root, accepted_instruments=(Path('relative/release'),))
+        with self.assertRaises(FileNotFoundError):
+            StudyService(Config(root, accepted_instruments=(root / 'missing',)))
+        tampered = frozen_public_pair(root / 'tampered', historical_package())
+        package_file = tampered / 'participant-package-v2.json'
+        package_file.write_bytes(package_file.read_bytes().replace(b'Synthetic historical role', b'Altered role'))
+        with self.assertRaises(ValueError):
+            StudyService(Config(root, accepted_instruments=(tampered,)))
+        # A configured package with the installed identities, or two with one identity, is ambiguous.
+        with self.assertRaises(ValueError):
+            StudyService(Config(root, accepted_instruments=(
+                frozen_public_pair(root / 'installed-again', load_participant_package()),)))
+        duplicate = [frozen_public_pair(root / name, historical_package()) for name in ('one', 'two')]
+        with self.assertRaises(ValueError):
+            StudyService(Config(root, accepted_instruments=tuple(duplicate)))
 
     def test_retired_study_mode_environment_name_fails_clearly(self):
         with (patch.dict('os.environ', {'IREXPLORER_STUDY_MODE': 'preview'}, clear=True),

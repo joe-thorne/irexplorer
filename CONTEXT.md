@@ -171,6 +171,10 @@ _Avoid_: current codebook, version codebook
 The private researcher interpretation frozen with one instrument release and linked to that release's public identity. It is supplied only to the private export, verified against its declared provenance, and never packaged or served by the application.
 _Avoid_: researcher mapping file, marking key
 
+**Accepted instrument release**:
+A verified frozen public participant package that the server accepts first deliveries for. This is the installed package, plus any earlier package deliberately configured on the server. Each accepted submission is validated under, and linked to, its own release. A first delivery naming any other identities is unsupported and is not stored.
+_Avoid_: supported version, grace period, release (alone; see Release identity)
+
 **Setup reached**:
 A historical v0.5/v0.6 outcome recording whether a usable comparison appeared; it did not confirm that the task's requested comparison was ready. v0.7 no longer collects or analyses this outcome.
 _Avoid_: task started, attempted

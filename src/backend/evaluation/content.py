@@ -404,17 +404,50 @@ def participant_snapshot():
     return content_snapshot(_installed_package())
 
 
-def participant_content():
-    # StudyService loads this once during construction; cached immutable package
-    # data is copied at the boundary so deployment flags cannot mutate it.
-    package = _installed_package()
+def _package_content(package):
+    # Package data is copied at the boundary so deployment flags cannot mutate it.
     return {'packageSchemaVersion': package['packageSchemaVersion'],
             'packageIdentity': deepcopy(package['identity']), **deepcopy(package['content'])}
 
 
-def validate_answers(section, answers, *, complete=False):
-    """Validate answers against explicit package membership and response rules."""
-    content = participant_content()
+def participant_content():
+    # StudyService loads this once during construction from the cached installed package.
+    return _package_content(_installed_package())
+
+
+SUBMISSION_IDENTITY_KEYS = ('studyVersion', 'contentVersion', 'instrumentVersion')
+
+
+@dataclass(frozen=True)
+class InstrumentRelease:
+    """A verified participant package a first delivery may be validated against, with its snapshot."""
+    content: dict
+    snapshot: ContentSnapshot
+
+    @property
+    def identities(self):
+        """The study/content/instrument identities a submission names to select this release."""
+        return tuple(self.content[key] for key in SUBMISSION_IDENTITY_KEYS)
+
+
+def packaged_release(directory):
+    """Verify a frozen public pair exported for the application and return it as a release.
+
+    `directory` holds exactly the two files the thesis `--package-public` export writes; the
+    same byte, manifest, and canonical-identity checks as the installed package apply.
+    """
+    directory = Path(directory)
+    package = load_participant_package(directory / PACKAGE_PATH.name, directory / MANIFEST_PATH.name)
+    return InstrumentRelease(_package_content(package), content_snapshot(package))
+
+
+def validate_answers(section, answers, *, complete=False, content=None):
+    """Validate answers against explicit package membership and response rules.
+
+    `content` is the release's participant content; the installed package's by default.
+    """
+    if content is None:
+        content = participant_content()
     if (not isinstance(section, str) or section not in content['membership']
             or section == 'consent' or not isinstance(answers, dict)):
         return {'stage': 'Invalid survey.'}

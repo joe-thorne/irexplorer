@@ -13,7 +13,14 @@ from typing import NamedTuple
 
 from src.backend.release import metadata
 
-from .content import participant_content, participant_snapshot, validate_answers
+from .content import (
+    SUBMISSION_IDENTITY_KEYS,
+    InstrumentRelease,
+    packaged_release,
+    participant_content,
+    participant_snapshot,
+    validate_answers,
+)
 
 ROOT = Path(__file__).resolve().parents[3]
 UUID = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$', re.I)
@@ -21,7 +28,6 @@ MAX_BODY = 128 * 1024
 # Submission canonicalisation contract recorded in each row's release metadata. Receipt recovery
 # applies a stored row's own version, so a change here needs a new version, never an edit.
 CANONICAL_VERSION = 1
-SUBMISSION_IDENTITY_KEYS = ('studyVersion', 'contentVersion', 'instrumentVersion')
 SCHEMA_VERSION = 3
 SNAPSHOT_TABLE = 'participant_content_snapshots'
 SNAPSHOT_COLUMNS = ('digest', 'digest_algorithm', 'identity_version', 'canonicalisation',
@@ -86,10 +92,15 @@ class Config:
     collection_mode: str = 'preview'
     origin: str = 'http://127.0.0.1:8000'
     app_revision: str = metadata()['revision']
+    # Directories of frozen public packages accepted for first deliveries besides the installed one.
+    # Empty by default: only the installed package is accepted, with no grace period.
+    accepted_instruments: tuple[Path, ...] = ()
 
     def __post_init__(self):
         if self.collection_mode not in ('local', 'preview', 'pilot', 'live'):
             raise ValueError('Unsupported collection mode')
+        if not all(isinstance(path, Path) and path.is_absolute() for path in self.accepted_instruments):
+            raise ValueError('Configure each accepted instrument package as an absolute directory')
         if self.directory.resolve().is_relative_to(ROOT):
             raise ValueError('Study storage must be outside the application repository')
         if not re.fullmatch(r'https?://[^/]+', self.origin):
@@ -112,7 +123,9 @@ class Config:
         return cls(Path(os.environ.get('IREXPLORER_STUDY_DIR', default)),
                    os.environ.get('IREXPLORER_COLLECTION_MODE', 'preview'),
                    os.environ.get('IREXPLORER_STUDY_ORIGIN', 'http://127.0.0.1:8000'),
-                   os.environ.get('IREXPLORER_APP_REVISION', metadata()['revision']))
+                   os.environ.get('IREXPLORER_APP_REVISION', metadata()['revision']),
+                   tuple(Path(directory) for directory
+                         in os.environ.get('IREXPLORER_ACCEPTED_INSTRUMENTS', '').split(os.pathsep) if directory))
 
 
 def canonical(value):
@@ -160,19 +173,39 @@ def receipt_for_retry(stored, submission):
                      'This submission ID was used with different answers. Keep the code and contact the researcher.')
 
 
-def validate(submission):
-    c = participant_content()
+def accepted_releases(installed, directories):
+    """The instrument releases first deliveries may name, keyed by their identities.
+
+    The installed release is always accepted; any other only when its frozen public pair is one of
+    the server-configured `directories`. Every configured pair is verified before collection starts.
+    """
+    releases = {}
+    for release in (installed, *map(packaged_release, directories)):
+        if release.identities in releases:
+            raise ValueError('Accepted instrument packages must have distinct study/content/instrument identities')
+        releases[release.identities] = release
+    return releases
+
+
+INVALID_MESSAGE = 'Check consent, P1, versions, task outcomes, and answer limits. No answers were changed.'
+
+
+def validate(submission, releases):
+    """Validate a first delivery under the accepted release it names; return it canonicalised and that release."""
     keys = {'submissionId', 'participantCode', 'studyVersion', 'contentVersion', 'instrumentVersion', 'consent',
             'pre', 'post', 'tasks'}
     def require(ok):
         if not ok:
-            raise StudyError(422, 'invalid_submission',
-                             'Check consent, P1, versions, task outcomes, and answer limits. No answers were changed.')
+            raise StudyError(422, 'invalid_submission', INVALID_MESSAGE)
     require(isinstance(submission, dict) and set(submission) == keys)
     require(all(isinstance(submission[k], str) and UUID.fullmatch(submission[k])
                 for k in ('submissionId', 'participantCode')))
     require(submission['submissionId'] != submission['participantCode'])
-    require(all(submission[k] == c[k] for k in ('studyVersion', 'contentVersion', 'instrumentVersion')))
+    release = releases.get(tuple(submission[key] for key in SUBMISSION_IDENTITY_KEYS))
+    if release is None:
+        # Nothing is stored and nothing is rewritten; the same message, with a code the browser can act on.
+        raise StudyError(422, 'unsupported_instrument', INVALID_MESSAGE)
+    c = release.content
     consent = submission['consent']
     require(isinstance(consent, dict) and set(consent) == {'version', 'acknowledgements'})
     require(consent['version'] == c['contentVersion'])
@@ -182,7 +215,7 @@ def validate(submission):
     def answers(section, values):
         require(isinstance(values, dict)
                 and set(values) == set(c['membership'][section]))
-        require(not validate_answers(section, values, complete=True))
+        require(not validate_answers(section, values, complete=True, content=c))
     answers('pre', submission['pre'])
     answers('post', submission['post'])
     ts = submission['tasks']
@@ -195,7 +228,7 @@ def validate(submission):
                                     else ['completed', 'skipped', 'could_not_work_out']))
         require(type(t['durationMs']) is int and 0 <= t['durationMs'] <= 86400000 and type(t['interrupted']) is bool)
         answers(t['id'], t['answers'])
-    return canonical_submission(submission)
+    return canonical_submission(submission), release
 
 
 class StudyService:
@@ -206,6 +239,8 @@ class StudyService:
         # alone, before collection mode or enabled status can be attached to content.
         participant_content()
         self.snapshot = participant_snapshot()
+        self.releases = accepted_releases(InstrumentRelease(participant_content(), self.snapshot),
+                                          config.accepted_instruments)
 
     def content(self):
         return {**participant_content(), 'collectionMode': self.config.collection_mode,
@@ -262,11 +297,12 @@ class StudyService:
             db.close()
             raise
 
-    def register_snapshot(self, db):
-        """Register this process's snapshot in the caller's open transaction, never replacing one."""
-        expected = astuple(self.snapshot)  # Field order matches SNAPSHOT_COLUMNS.
+    @staticmethod
+    def register_snapshot(db, snapshot):
+        """Register a verified release's snapshot in the caller's open transaction, never replacing one."""
+        expected = astuple(snapshot)  # Field order matches SNAPSHOT_COLUMNS.
         stored = db.execute(f"SELECT {', '.join(SNAPSHOT_COLUMNS)} FROM {SNAPSHOT_TABLE} WHERE digest=?",
-                            (self.snapshot.digest,)).fetchone()
+                            (snapshot.digest,)).fetchone()
         if stored is None:
             db.execute(f"INSERT INTO {SNAPSHOT_TABLE} ({', '.join(SNAPSHOT_COLUMNS)}) "
                        f"VALUES ({', '.join('?' * len(SNAPSHOT_COLUMNS))})", expected)
@@ -301,7 +337,7 @@ class StudyService:
         receipt = self.stored_receipt(submission)
         if receipt is not None:
             return receipt, False
-        submission = validate(submission)
+        submission, instrument = validate(submission, self.releases)
         body = canonical(submission)
         digest = hashlib.sha256(body.encode()).hexdigest()
         receipt = {k: submission[k] for k in ('submissionId', 'participantCode', 'studyVersion')}
@@ -320,11 +356,11 @@ class StudyService:
                 stored = StoredSubmission.find(db, submission['submissionId'])
                 if stored:
                     return receipt_for_retry(stored, submission), False
-                self.register_snapshot(db)
+                self.register_snapshot(db, instrument.snapshot)
                 db.execute('INSERT INTO submissions (submission_id, digest, submission_json, receipt, release, '
                            'content_digest, content_provenance) VALUES (?, ?, ?, ?, ?, ?, ?)',
                            (submission['submissionId'], digest, body, canonical(receipt), canonical(release),
-                            self.snapshot.digest, PROVENANCE_SNAPSHOT))
+                            instrument.snapshot.digest, PROVENANCE_SNAPSHOT))
             # Leaving the transaction committed both rows; only now is a receipt returned.
             return receipt, True
         except (sqlite3.Error, OSError):

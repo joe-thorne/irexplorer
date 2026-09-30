@@ -237,7 +237,7 @@
       progress.setAttribute('aria-label', messageText('progress.sections'));
       progress.innerHTML = `<ol>${sectionNames.map((name, n) => `<li${n === index ? ' aria-current="step"' : ''}>${n + 1}. ${n <= maximum() ? `<a href="#${n === 2 && draft ? taskRoute() : routes[n]}">${messageHtml(name)}</a>` : messageHtml(name)}</li>`).join('')}</ol>`;
       let html;
-      if (submission.state) html = submissionHtml();
+      if (submission.state && !submission.recoveryBlocked) html = submissionHtml();
       else if (submission.recoveryBlocked) html = heading(messageHtml('recovery.title')) + `<p role="alert">${messageHtml(submission.issue)}</p>${submission.legacyPending ? `<p>${messageHtml('recovery.server-copy')}</p>${submission.legacyParticipantCode ? `<p>${messageHtml('submission.participant-code', { participantCode: submission.legacyParticipantCode }, ['participantCode'])}</p>` : ''}${button('discard-incompatible-submission', 'actions.discard-incompatible')}` : `${button('retry-content', 'actions.retry-recovery')}<p>${messageHtml('recovery.memory')}</p>${button('memory', 'actions.memory')}`}`;
       else if (exited) html = heading(messageHtml(route.endsWith('declined') ? 'discard.declined' : 'discard.stopped')) + `<p>${messageHtml('discard.done')}</p>${button('restart', 'actions.restart', true)} <a href="#/explore">${messageHtml('actions.explore')}</a>`;
       else if (index === 0) html = heading(messageHtml('information.title')) + info();

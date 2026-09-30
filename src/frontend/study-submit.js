@@ -14,6 +14,11 @@ window.StudySubmit = (() => {
     let state = null, busy = false, issue = null, recoveryBlocked = false, legacyPending = false,
       legacyKey = '', legacyParticipantCode = '';
     function persist(next) { getStorage().setItem(KEY, JSON.stringify(next)); state = next; }
+    // A pending submission that this version cannot accept: an older recovery record, or a frozen
+    // submission whose instrument the server does not accept. It stays stored until explicitly discarded.
+    function blockIncompatible(key, participantCode) {
+      legacyPending = true; legacyKey = key; recoveryBlocked = true; legacyParticipantCode = participantCode || ''; issue = message('recovery.incompatible');
+    }
     return {
       get state() { return state; }, get busy() { return busy; }, get issue() { return issue; }, get recoveryBlocked() { return recoveryBlocked; },
       read() {
@@ -28,9 +33,7 @@ window.StudySubmit = (() => {
             const parsedOld = JSON.parse(old);
             const legacySubmission = parsedOld?.submission || parsedOld?.payload;
             if (parsedOld?.kind === 'pending' && legacySubmission?.submissionId) {
-              legacyPending = true; legacyKey = oldKey; recoveryBlocked = true;
-              legacyParticipantCode = legacySubmission.participantCode || '';
-              issue = message('recovery.incompatible');
+              blockIncompatible(oldKey, legacySubmission.participantCode);
               return;
             }
             if (parsedOld?.kind === 'receipt' && parsedOld.receipt?.receiptId) {
@@ -49,6 +52,7 @@ window.StudySubmit = (() => {
         if (!legacyPending) return false;
         try {
           getStorage().removeItem(legacyKey);
+          if (legacyKey === KEY) state = null;
           legacyPending = false; legacyKey = ''; legacyParticipantCode = ''; recoveryBlocked = false; issue = null;
           return true;
         } catch { issue = message('recovery.discard-failed'); return false; }
@@ -69,6 +73,8 @@ window.StudySubmit = (() => {
         try {
           const response = await send('/api/study/submissions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(state.submission), signal: AbortSignal.timeout(15000) });
           const body = await response.json();
+          // Nothing was stored: keep the frozen submission unchanged and report it as incompatible, not as uncertain.
+          if (response.status === 422 && body.error?.code === 'unsupported_instrument') { blockIncompatible(KEY, state.submission.participantCode); return; }
           if (!response.ok) throw body.error?.message ? Error(body.error.message) : failure('submission.no-receipt');
           if (![200, 201].includes(response.status) || body.submissionId !== state.submission.submissionId || body.participantCode !== state.submission.participantCode || body.studyVersion !== state.submission.studyVersion || typeof body.receiptId !== 'string') throw failure('submission.invalid-receipt');
           const next = { kind: 'receipt', receipt: body };
