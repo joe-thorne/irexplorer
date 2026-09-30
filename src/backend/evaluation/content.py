@@ -86,7 +86,6 @@ def _membership(content):
     for task in content['tasks']:
         owners[task['id']] = list(task.get('fields', []))
     pre = [field for section in content['preSections'] for field in section.get('fields', [])]
-    post = [field for section in content['postSections'] for field in section.get('fields', [])]
     post = [field_id for item in content['postSections'] for field_id in (
         [field_id for group in item.get('groups', []) for field_id in group.get('fields', [])]
         or item.get('fields', []))]
