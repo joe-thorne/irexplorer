@@ -188,12 +188,12 @@ class SubmissionTests(unittest.TestCase):
         self.assertEqual(self.post().status_code, 201)
         db = sqlite3.connect(self.config.path)
         try:
-            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], 3)
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], 4)
             self.assertEqual({row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")},
                              {'submissions', 'participant_content_snapshots'})
             self.assertEqual({row[1] for row in db.execute('PRAGMA table_info(submissions)')},
                              {'submission_id', 'digest', 'submission_json', 'receipt', 'release',
-                              'content_digest', 'content_provenance'})
+                              'content_digest', 'content_provenance', 'provenance_backfill'})
             serialized = json.loads(db.execute('SELECT submission_json FROM submissions').fetchone()[0])
         finally:
             db.close()
@@ -493,7 +493,7 @@ class SubmissionTests(unittest.TestCase):
 
         db = self.service.connect()
         try:
-            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], 3)
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], 4)
             self.assertEqual(db.execute('SELECT submission_json, receipt, release, content_digest, '
                                         'content_provenance FROM submissions').fetchone(),
                              (original_payload, receipt_json, release_json, None, PROVENANCE_LEGACY_UNAVAILABLE))
@@ -540,7 +540,7 @@ class SubmissionTests(unittest.TestCase):
         served = self.client.get('/api/study/content').json()
         submission = synthetic()
         self.assertEqual(self.post(submission).status_code, 201)
-        self.assertEqual(self.stored('PRAGMA user_version'), [(3,)])
+        self.assertEqual(self.stored('PRAGMA user_version'), [(4,)])
         [(provenance, linked)] = self.stored('SELECT content_provenance, content_digest FROM submissions')
         self.assertEqual((provenance, linked), (PROVENANCE_SNAPSHOT, served['packageIdentity']['digest']))
         [(*identity, canonical_content)] = self.stored(
@@ -654,7 +654,7 @@ class SubmissionTests(unittest.TestCase):
         [row] = pre_snapshot_store(self.config.path, [legacy])
         for _ in range(2):  # Repeated initialisation is a no-op after the first migration.
             StudyService(self.config).connect().close()
-        self.assertEqual(self.stored('PRAGMA user_version'), [(3,)])
+        self.assertEqual(self.stored('PRAGMA user_version'), [(4,)])
         self.assertEqual(self.stored('SELECT submission_id, digest, submission_json, receipt, release, '
                                      'content_digest, content_provenance FROM submissions'),
                          [(*row, None, PROVENANCE_LEGACY_UNAVAILABLE)])
@@ -698,7 +698,7 @@ class SubmissionTests(unittest.TestCase):
             (current['submissionId'], 'snapshot', self.service.snapshot.digest)})
 
     def test_unsupported_schemas_fail_clearly_without_change(self):
-        for version in (4, 99):
+        for version in (5, 99):
             with self.subTest(version=version):
                 store = Path(self.tmp.name) / f'schema-{version}.sqlite3'
                 pre_snapshot_store(store, [synthetic()], version=version)
@@ -918,6 +918,7 @@ class SubmissionTests(unittest.TestCase):
         committed = synthetic()
         self.assertEqual(self.post(committed).status_code, 201)
         db = sqlite3.connect(self.config.path)
+        db.execute('DROP TRIGGER submissions_record_immutable')  # Model damage outside the application.
         db.execute("UPDATE submissions SET release = '[]'")
         db.commit()
         db.close()

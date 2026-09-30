@@ -160,12 +160,16 @@ The server's confirmation that a submission has been durably stored; only after 
 _Avoid_: acknowledgement, confirmation code
 
 **Participant-content snapshot**:
-The exact canonical public participant content a submission was validated against, stored once by its digest and linked to each submission that used it. Records stored before snapshots existed have unavailable provenance, never the current content.
+The exact canonical public participant content a submission was validated against, stored once by its digest and linked to each submission that used it. Records stored before snapshots existed have unavailable provenance, never the current content, unless a provenance backfill verifies their exact content.
 _Avoid_: definition copy, instrument cache
 
 **Snapshot codebook**:
 The participant definitions an export reads from one participant-content snapshot, keyed by its digest; each exported record names the snapshot codebook that describes it, or none when its provenance is unavailable.
 _Avoid_: current codebook, version codebook
+
+**Provenance backfill**:
+The private, verified operation that links a record stored before participant-content snapshots to the exact snapshot of a supplied frozen public package, when the researcher names that record and content explicitly and every check passes. It never changes the submitted record, and it never infers content from a version label.
+_Avoid_: provenance repair, relabelling, migration (for this operation)
 
 **Researcher pack**:
 The private researcher interpretation frozen with one instrument release and linked to that release's public identity. It is supplied only to the private export, verified against its declared provenance, and never packaged or served by the application.

@@ -17,7 +17,7 @@ docker build --target test -t irexplorer-test .
 docker run --rm --read-only --tmpfs /tmp --network none irexplorer-test
 ```
 
-The suite covers compiler fixtures and invariants, ingestion, correspondence, source and summary queries, API boundaries, study validation, transactional submission retries, mixed-release export with snapshot codebooks and researcher-pack joins, and backup/restore. Compiler generation tests inspect the generation contract without regenerating the shipped fixtures.
+The suite covers compiler fixtures and invariants, ingestion, correspondence, source and summary queries, API boundaries, study validation, transactional submission retries, mixed-release export with snapshot codebooks and researcher-pack joins, verified legacy provenance backfill, and backup/restore. Compiler generation tests inspect the generation contract without regenerating the shipped fixtures.
 
 [Artefact-reviewed expected-correspondence tables](data/expected_correspondences/README.md) additionally
 check ten complete `score`/`binary_search` comparisons across mem2reg,

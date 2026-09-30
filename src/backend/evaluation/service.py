@@ -28,13 +28,13 @@ MAX_BODY = 128 * 1024
 # Submission canonicalisation contract recorded in each row's release metadata. Receipt recovery
 # applies a stored row's own version, so a change here needs a new version, never an edit.
 CANONICAL_VERSION = 1
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 SNAPSHOT_TABLE = 'participant_content_snapshots'
 SNAPSHOT_COLUMNS = ('digest', 'digest_algorithm', 'identity_version', 'canonicalisation',
                     'canonicalisation_version', 'package_schema_version', 'instrument_version',
                     'content_version', 'study_version', 'canonical_content')
 # content_provenance values: a new row names its snapshot; a row stored before schema 3
-# has unavailable participant-content provenance and no digest.
+# has unavailable participant-content provenance and no digest until a verified backfill links it.
 PROVENANCE_SNAPSHOT = 'snapshot'
 PROVENANCE_LEGACY_UNAVAILABLE = 'legacy_unavailable'
 # Version 3 adds the immutable participant-content snapshot registry. Existing submission
@@ -60,6 +60,30 @@ _SNAPSHOT_SCHEMA = (
     'CREATE TRIGGER submissions_provenance_immutable BEFORE UPDATE OF content_digest, content_provenance '
     "ON submissions BEGIN SELECT RAISE(ABORT, 'Submission content provenance is immutable'); END",
 )
+# Version 4 replaces version 3's unconditional provenance immutability with exactly one permitted
+# change, made only by the private provenance backfill: a legacy_unavailable row without a
+# digest may become a snapshot link to a registered snapshot, recording its backfill evidence.
+# Every other provenance change, any change to a linked or backfilled row, and any update of the
+# submitted record's own columns is rejected. New rows cannot claim a backfill.
+_BACKFILL_SCHEMA = (
+    'DROP TRIGGER submissions_provenance_immutable',
+    'ALTER TABLE submissions ADD COLUMN provenance_backfill TEXT',
+    'CREATE TRIGGER submissions_provenance_immutable '
+    'BEFORE UPDATE OF content_digest, content_provenance, provenance_backfill ON submissions '
+    f"WHEN NOT (OLD.content_provenance = '{PROVENANCE_LEGACY_UNAVAILABLE}' AND OLD.content_digest IS NULL "
+    f"AND OLD.provenance_backfill IS NULL AND NEW.content_provenance = '{PROVENANCE_SNAPSHOT}' "
+    'AND NEW.provenance_backfill IS NOT NULL '
+    f'AND EXISTS (SELECT 1 FROM {SNAPSHOT_TABLE} WHERE digest = NEW.content_digest)) '
+    "BEGIN SELECT RAISE(ABORT, 'Submission content provenance is immutable except for a verified backfill'); END",
+    'CREATE TRIGGER submissions_record_immutable '
+    'BEFORE UPDATE OF submission_id, digest, submission_json, receipt, release ON submissions '
+    "BEGIN SELECT RAISE(ABORT, 'Submitted records are immutable'); END",
+    'CREATE TRIGGER submissions_insert_not_backfilled BEFORE INSERT ON submissions '
+    'WHEN NEW.provenance_backfill IS NOT NULL '
+    "BEGIN SELECT RAISE(ABORT, 'Only the private backfill can record backfilled provenance'); END",
+)
+# The statements that bring a store at the previous version to each version.
+_MIGRATIONS = {3: _SNAPSHOT_SCHEMA, 4: _BACKFILL_SCHEMA}
 
 
 class StudyError(Exception):
@@ -187,6 +211,29 @@ def accepted_releases(installed, directories):
     return releases
 
 
+def migrate(db):
+    """Bring a store to SCHEMA_VERSION inside the caller's open transaction.
+
+    Earlier layouts are migrated step by step without rewriting submitted JSON, IDs, digests,
+    receipts, or release metadata; repeating is a no-op, and any other version fails unchanged.
+    """
+    version = db.execute('PRAGMA user_version').fetchone()[0]
+    if version not in (0, 1, 2, *_MIGRATIONS):
+        raise sqlite3.DatabaseError('Unsupported schema')
+    if version == 0:
+        db.execute('CREATE TABLE submissions (submission_id TEXT PRIMARY KEY, '
+                   'digest TEXT NOT NULL, submission_json TEXT NOT NULL, receipt TEXT NOT NULL, '
+                   'release TEXT NOT NULL)')
+    elif version == 1:
+        db.execute('ALTER TABLE responses RENAME TO submissions')
+        db.execute('ALTER TABLE submissions RENAME COLUMN payload TO submission_json')
+    for target in range(max(version, 2) + 1, SCHEMA_VERSION + 1):
+        for statement in _MIGRATIONS[target]:
+            db.execute(statement)
+    if version != SCHEMA_VERSION:
+        db.execute(f'PRAGMA user_version={SCHEMA_VERSION}')
+
+
 INVALID_MESSAGE = 'Check consent, P1, versions, task outcomes, and answer limits. No answers were changed.'
 
 
@@ -275,20 +322,7 @@ class StudyService:
         try:
             db.execute('PRAGMA synchronous=FULL')
             db.execute('BEGIN IMMEDIATE')
-            version = db.execute('PRAGMA user_version').fetchone()[0]
-            if version not in (0, 1, 2, SCHEMA_VERSION):
-                raise sqlite3.DatabaseError('Unsupported schema')
-            if version == 0:
-                db.execute('CREATE TABLE submissions (submission_id TEXT PRIMARY KEY, '
-                           'digest TEXT NOT NULL, submission_json TEXT NOT NULL, receipt TEXT NOT NULL, '
-                           'release TEXT NOT NULL)')
-            elif version == 1:
-                db.execute('ALTER TABLE responses RENAME TO submissions')
-                db.execute('ALTER TABLE submissions RENAME COLUMN payload TO submission_json')
-            if version != SCHEMA_VERSION:
-                for statement in _SNAPSHOT_SCHEMA:
-                    db.execute(statement)
-                db.execute(f'PRAGMA user_version={SCHEMA_VERSION}')
+            migrate(db)
             db.commit()
             return db
         except Exception:

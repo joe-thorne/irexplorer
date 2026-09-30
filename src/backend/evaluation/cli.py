@@ -1,4 +1,4 @@
-"""Private researcher export, SQLite backup/restore, and retention operations."""
+"""Private researcher export, provenance backfill, SQLite backup/restore, and retention operations."""
 import argparse
 import csv
 import json
@@ -9,6 +9,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
+from .backfill import BackfillError, link_verified_records, load_evidence
 from .content import stored_snapshot, strict_json_loads
 from .researcher_packs import ResearcherPackError, join_researcher_packs
 from .service import (
@@ -19,6 +20,7 @@ from .service import (
     SNAPSHOT_TABLE,
     Config,
     canonical,
+    migrate,
 )
 
 # Stored legacy_unavailable provenance is exported with this explicit marker.
@@ -39,10 +41,15 @@ class StoreLayout:
 
     @property
     def has_snapshots(self):
-        return self.version == SCHEMA_VERSION
+        return self.version >= 3
+
+    @property
+    def has_backfill(self):
+        return self.version >= 4
 
 
 LAYOUTS = {1: StoreLayout(1, 'responses', 'payload'), 2: StoreLayout(2, 'submissions', 'submission_json'),
+           3: StoreLayout(3, 'submissions', 'submission_json'),
            SCHEMA_VERSION: StoreLayout(SCHEMA_VERSION, 'submissions', 'submission_json')}
 
 
@@ -61,7 +68,7 @@ def open_db(path, *, verify_snapshots=True):
         tables = {row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         if (layout is None or layout.table not in tables
                 or db.execute('PRAGMA integrity_check').fetchone()[0] != 'ok'
-                or (verify_snapshots and layout.has_snapshots and not snapshots_verified(db))):
+                or (verify_snapshots and layout.has_snapshots and not snapshots_verified(db, layout))):
             raise ValueError('Unsupported or damaged study database')
     except BaseException:
         db.close()
@@ -69,17 +76,21 @@ def open_db(path, *, verify_snapshots=True):
     return db, layout
 
 
-def snapshots_verified(db):
-    """Check every snapshot against its digest and identity, and every submission's provenance link."""
+def snapshots_verified(db, layout):
+    """Check every snapshot against its digest and identity, and every submission's provenance link.
+
+    Backfill evidence may only accompany a snapshot link.
+    """
     try:
         for row in db.execute(f"SELECT {', '.join(SNAPSHOT_COLUMNS)} FROM {SNAPSHOT_TABLE}"):
             stored_snapshot(row)
     except (ValueError, TypeError, sqlite3.Error):
         return False
+    backfill = 's.provenance_backfill' if layout.has_backfill else 'NULL'
     return not db.execute(
         f'SELECT 1 FROM submissions s LEFT JOIN {SNAPSHOT_TABLE} c ON c.digest = s.content_digest '
         'WHERE NOT ((s.content_provenance = ? AND c.digest IS NOT NULL) '
-        'OR (s.content_provenance = ? AND s.content_digest IS NULL)) LIMIT 1',
+        f'OR (s.content_provenance = ? AND s.content_digest IS NULL AND {backfill} IS NULL)) LIMIT 1',
         (PROVENANCE_SNAPSHOT, PROVENANCE_LEGACY_UNAVAILABLE)).fetchone()
 
 
@@ -101,6 +112,34 @@ def backup(source, destination):
             src.close()
         if dst:
             dst.close()
+
+
+def backfill_provenance(source, destination, releases, links):
+    """Write a verified copy of SOURCE whose explicitly linked legacy records name their exact content.
+
+    The frozen releases and links are verified before anything is written (see backfill). The
+    copy is migrated to the current schema, and every link is applied in one transaction; on any
+    failure the new DESTINATION is removed and SOURCE is never modified. Returns a BackfillResult.
+    """
+    evidence = load_evidence(releases, links)
+    backup(source, destination)
+    destination = private_path(destination)
+    try:
+        db = sqlite3.connect(destination)
+        try:
+            db.execute('BEGIN IMMEDIATE')
+            migrate(db)
+            result = link_verified_records(db, evidence)
+            db.commit()
+        finally:
+            db.rollback()
+            db.close()
+        check, _ = open_db(destination)
+        check.close()
+    except BaseException:
+        destination.unlink()
+        raise
+    return result
 
 
 def safe_cell(value):
@@ -126,15 +165,19 @@ def snapshot_file(digest):
 
 
 def read_store(source):
-    """Read exported rows in submission-ID order and every verified snapshot they reference, by digest."""
+    """Read exported rows in submission-ID order and every verified snapshot they reference, by digest.
+
+    Each row is (submission JSON, receipt, release, content digest, backfill evidence JSON).
+    """
     db, layout = open_db(source)
     try:
         if not layout.has_snapshots:
-            rows = [(*row, None) for row in db.execute(
+            rows = [(*row, None, None) for row in db.execute(
                 f'SELECT {layout.submission_json}, receipt, release FROM {layout.table} ORDER BY submission_id')]
             return rows, {}
-        rows = db.execute(f'SELECT {layout.submission_json}, receipt, release, content_digest FROM {layout.table} '
-                          'ORDER BY submission_id').fetchall()
+        backfill = 'provenance_backfill' if layout.has_backfill else 'NULL'
+        rows = db.execute(f'SELECT {layout.submission_json}, receipt, release, content_digest, {backfill} '
+                          f'FROM {layout.table} ORDER BY submission_id').fetchall()
         snapshots = [stored_snapshot(row) for row in db.execute(
             f"SELECT {', '.join(SNAPSHOT_COLUMNS)} FROM {SNAPSHOT_TABLE} "
             f'WHERE digest IN (SELECT content_digest FROM {layout.table}) ORDER BY digest')]
@@ -143,13 +186,21 @@ def read_store(source):
     return rows, {snapshot.digest: snapshot for snapshot in snapshots}
 
 
-def record_provenance(snapshot):
-    """A record's machine-readable link to its exact snapshot and codebook, or the unavailable marker."""
+def record_provenance(snapshot, backfill=None):
+    """A record's machine-readable link to its exact snapshot and codebook, or the unavailable marker.
+
+    A link established later by the verified provenance backfill, rather than at submission,
+    carries that operation's stored evidence under `backfill`.
+    """
     if snapshot is None:
         return dict(UNAVAILABLE_PROVENANCE)
-    return {'status': PROVENANCE_SNAPSHOT, 'digest': snapshot.digest, 'instrumentVersion': snapshot.instrument_version,
-            'contentVersion': snapshot.content_version, 'studyVersion': snapshot.study_version,
-            'codebook': snapshot.digest, 'snapshotFile': snapshot_file(snapshot.digest)}
+    provenance = {'status': PROVENANCE_SNAPSHOT, 'digest': snapshot.digest,
+                  'instrumentVersion': snapshot.instrument_version, 'contentVersion': snapshot.content_version,
+                  'studyVersion': snapshot.study_version, 'codebook': snapshot.digest,
+                  'snapshotFile': snapshot_file(snapshot.digest)}
+    if backfill is not None:
+        provenance['backfill'] = json.loads(backfill)
+    return provenance
 
 
 def snapshot_codebook(snapshot, pack):
@@ -197,8 +248,8 @@ def export(source, directory, researcher_packs=()):
     packs = join_researcher_packs(researcher_packs, snapshots)
     directory = private_path(Path(directory) / 'placeholder').parent
     records = [{'submission': json.loads(p), 'receipt': json.loads(r), 'release': json.loads(v),
-                'contentProvenance': record_provenance(snapshots.get(digest))}
-               for p, r, v, digest in rows]
+                'contentProvenance': record_provenance(snapshots.get(digest), backfill)}
+               for p, r, v, digest, backfill in rows]
     def write(name, value):
         with private_file(directory / name, 'x') as f:
             json.dump(value, f, ensure_ascii=False, indent=2)
@@ -362,6 +413,12 @@ def main():
             p.add_argument('--researcher-pack', dest='researcher_packs', type=Path, action='append', default=[],
                            metavar='RELEASE_DIR',
                            help='frozen instrument release whose researcher pack is verified and joined')
+    p = sub.add_parser('backfill-provenance')
+    p.add_argument('source', type=Path)
+    p.add_argument('destination', type=Path)
+    p.add_argument('--release', dest='releases', type=Path, action='append', required=True, metavar='PUBLIC_PAIR_DIR',
+                   help='frozen public participant package whose content a linked record used')
+    p.add_argument('--links', type=Path, required=True, help='explicit record-to-content links (JSON)')
     p = sub.add_parser('delete-participant')
     p.add_argument('source', type=Path)
     p.add_argument('participant_code')
@@ -373,6 +430,10 @@ def main():
     try:
         if args.command == 'export':
             print(f'Exported {export(args.source, args.destination, args.researcher_packs)} sessions.')
+        elif args.command == 'backfill-provenance':
+            result = backfill_provenance(args.source, args.destination, args.releases, args.links)
+            print(f'Linked {result.linked} records; {result.unchanged} already linked. Verify the copy, then '
+                  'replace the store only while collection is stopped.')
         elif args.command in ('backup', 'restore'):
             backup(args.source, args.destination)
             check, _ = open_db(args.destination)
@@ -382,7 +443,7 @@ def main():
             # Withdrawal needs only a sound SQLite file. A snapshot failure is reported after
             # deletion rather than blocking it; snapshots hold no respondent data.
             check, layout = open_db(args.source, verify_snapshots=False)
-            snapshots_ok = not layout.has_snapshots or snapshots_verified(check)
+            snapshots_ok = not layout.has_snapshots or snapshots_verified(check, layout)
             check.close()
             db = sqlite3.connect(args.source)
             try:
@@ -409,6 +470,9 @@ def main():
                     for suffix in ('-wal', '-shm', '-journal'):
                         Path(str(path) + suffix).unlink(missing_ok=True)
             print('Named files removed. Check backup, export, and host snapshot inventory.')
+    except BackfillError as error:
+        # The message names the failed check and link position only; the source is unchanged.
+        parser.exit(1, f'Provenance backfill rejected: {error}. Nothing was written.\n')
     except ResearcherPackError as error:
         # The message names the failed provenance check only; nothing was exported.
         parser.exit(1, f'Researcher pack rejected: {error}. Nothing was exported.\n')
