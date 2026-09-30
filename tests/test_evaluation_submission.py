@@ -20,7 +20,12 @@ from fastapi.testclient import TestClient
 from src.backend.api.app import create_app
 from src.backend.evaluation import content as study_content
 from src.backend.evaluation.cli import backup, export, open_db
-from src.backend.evaluation.content import content_snapshot, load_participant_package, participant_content
+from src.backend.evaluation.content import (
+    SUBMISSION_IDENTITY_KEYS,
+    content_snapshot,
+    load_participant_package,
+    participant_content,
+)
 from src.backend.evaluation.service import (
     MAX_BODY,
     PROVENANCE_LEGACY_UNAVAILABLE,
@@ -41,7 +46,7 @@ def synthetic(c=None):
     c = c or participant_content()
     def answers(section):
         return {field_id: {'status': 'unanswered', 'value': None} for field_id in c['membership'][section]}
-    p = {k: c[k] for k in ('studyVersion', 'contentVersion', 'instrumentVersion')}
+    p = {k: c[k] for k in SUBMISSION_IDENTITY_KEYS}
     p.update(submissionId=str(uuid.uuid4()), participantCode=str(uuid.uuid4()),
              consent={'version': c['contentVersion'],
                       'acknowledgements': {field_id: True for field_id in c['membership']['consent']}},

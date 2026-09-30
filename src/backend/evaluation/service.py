@@ -234,13 +234,12 @@ def validate(submission, releases):
 class StudyService:
     def __init__(self, config):
         self.config = config
-        # Fail application startup if the packaged public instrument is missing or its
-        # manifest/identity does not verify. The snapshot is computed from the package
-        # alone, before collection mode or enabled status can be attached to content.
-        participant_content()
+        # Fail application startup if the packaged public instrument, or any configured accepted
+        # package, is missing or its manifest/identity does not verify. Snapshots are computed from
+        # the packages alone, before collection mode or enabled status can be attached to content.
+        installed = participant_content()
         self.snapshot = participant_snapshot()
-        self.releases = accepted_releases(InstrumentRelease(participant_content(), self.snapshot),
-                                          config.accepted_instruments)
+        self.releases = accepted_releases(InstrumentRelease(installed, self.snapshot), config.accepted_instruments)
 
     def content(self):
         return {**participant_content(), 'collectionMode': self.config.collection_mode,
@@ -337,7 +336,7 @@ class StudyService:
         receipt = self.stored_receipt(submission)
         if receipt is not None:
             return receipt, False
-        submission, instrument = validate(submission, self.releases)
+        submission, accepted = validate(submission, self.releases)
         body = canonical(submission)
         digest = hashlib.sha256(body.encode()).hexdigest()
         receipt = {k: submission[k] for k in ('submissionId', 'participantCode', 'studyVersion')}
@@ -356,11 +355,11 @@ class StudyService:
                 stored = StoredSubmission.find(db, submission['submissionId'])
                 if stored:
                     return receipt_for_retry(stored, submission), False
-                self.register_snapshot(db, instrument.snapshot)
+                self.register_snapshot(db, accepted.snapshot)
                 db.execute('INSERT INTO submissions (submission_id, digest, submission_json, receipt, release, '
                            'content_digest, content_provenance) VALUES (?, ?, ?, ?, ?, ?, ?)',
                            (submission['submissionId'], digest, body, canonical(receipt), canonical(release),
-                            instrument.snapshot.digest, PROVENANCE_SNAPSHOT))
+                            accepted.snapshot.digest, PROVENANCE_SNAPSHOT))
             # Leaving the transaction committed both rows; only now is a receipt returned.
             return receipt, True
         except (sqlite3.Error, OSError):
