@@ -3,7 +3,7 @@
 window.StudySubmit = (() => {
   const KEY = 'irexplorer.submission.v3';
   const LEGACY_KEYS = ['irexplorer.submission.v2', 'irexplorer.submission.v1', 'irexplorer.study.submission.e6'];
-  const message = key => ({ key });
+  const message = (key, params) => params ? { key, params } : { key };
   // A failed attempt whose cause is a compiled message rather than a server or network error text.
   const failure = key => Object.assign(Error(key), { reference: message(key) });
   function submissionFromDraft(draft) {
@@ -75,7 +75,7 @@ window.StudySubmit = (() => {
           state = next; // Never resume editing acknowledged responses.
           try { persist(next); } catch { issue = message('cleanup.persist-failed'); }
         } catch (error) {
-          issue = { key: 'submission.uncertain', params: { error: error.reference || error.message } };
+          issue = message('submission.uncertain', { error: error.reference || error.message });
         } finally { busy = false; }
       },
       cleanup(removeDraft) {

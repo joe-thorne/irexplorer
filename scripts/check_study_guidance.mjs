@@ -198,7 +198,7 @@ async function journey(viewport) {
 
   // Discard confirmation, keyboard cancel, and a discard that cannot remove the saved copy.
   await click('[data-action="stop"]');
-  await check('Discard asks for confirmation with compiled wording', `document.querySelector('.stop-confirmation').getAttribute('role') === 'alert' && document.querySelector('.stop-confirmation p').textContent === ${q(M('discard.confirm'))} && document.querySelector('[data-action="cancel-stop"]').textContent === ${q(M('actions.keep'))} && document.querySelector('[data-action="confirm-stop"]').textContent === ${q(M('actions.discard'))} && document.activeElement.dataset.action === 'confirm-stop'`);
+  await check('Discard asks for confirmation with compiled wording and its question emphasised', `document.querySelector('.stop-confirmation').getAttribute('role') === 'alert' && document.querySelector('.stop-confirmation p').textContent === ${q(M('discard.confirm'))} && document.querySelector('.stop-confirmation strong').textContent === ${q(/^(.*?[?.!])(\s|$)/s.exec(M('discard.confirm'))[1])} && document.querySelector('[data-action="cancel-stop"]').textContent === ${q(M('actions.keep'))} && document.querySelector('[data-action="confirm-stop"]').textContent === ${q(M('actions.discard'))} && document.activeElement.dataset.action === 'confirm-stop'`);
   await key('Escape', 'Escape', 27);
   await check('Escape keeps the answers and returns focus to Stop', `!document.querySelector('.stop-confirmation') && document.activeElement.dataset.action === 'stop' && document.activeElement.textContent === ${q(M('actions.stop'))}`);
   await fault('removeItem', DRAFT);

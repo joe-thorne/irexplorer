@@ -93,5 +93,5 @@ window.StudyMessages = (() => {
       (name, supplied) => codes.includes(name) ? `<code>${esc(supplied)}</code>` : esc(supplied));
     return { text, html };
   }
-  return { USED, BOOTSTRAP, catalogue };
+  return { USED, BOOTSTRAP, catalogue, escape: esc };
 })();
