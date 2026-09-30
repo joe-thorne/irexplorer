@@ -6,6 +6,7 @@ supplies the frozen public package with that digest. A version label alone never
 content, and current packaged content is never consulted. Records nobody links, or whose link
 does not verify, keep their unavailable provenance.
 """
+import hashlib
 import json
 import sqlite3
 from dataclasses import dataclass
@@ -18,13 +19,14 @@ from .service import (
     StudyError,
     StudyService,
     canonical,
+    canonical_submission,
     validate,
 )
 
 LINKS_SCHEMA_VERSION = 1
 LINK_KEYS = frozenset({'submissionId', 'submissionDigest', 'contentDigest'})
 # Stored with each backfilled row, so exports distinguish it from a link made at submission.
-BACKFILL_EVIDENCE = {'backfillVersion': 1, 'evidence': 'frozen-public-package'}
+BACKFILL_RECORD = {'backfillVersion': 1, 'evidence': 'frozen-public-package'}
 
 
 class BackfillError(ValueError):
@@ -32,7 +34,7 @@ class BackfillError(ValueError):
 
 
 @dataclass(frozen=True)
-class BackfillEvidence:
+class VerifiedBackfillInput:
     """Verified frozen releases, keyed by content digest, and the researcher's explicit links."""
     releases: dict[str, InstrumentRelease]
     links: tuple[dict[str, str], ...]
@@ -44,7 +46,7 @@ class BackfillResult:
     unchanged: int
 
 
-def load_evidence(release_directories, links_path):
+def load_backfill_input(release_directories, links_path):
     """Verify every supplied frozen public package and read the links file, before any store is touched.
 
     Each directory holds a frozen public pair (`participant-package-v2.json` and
@@ -80,18 +82,18 @@ def load_evidence(release_directories, links_path):
         if link['submissionId'] in seen:
             raise BackfillError(f'link {position}: the submission is linked more than once')
         seen.add(link['submissionId'])
-    return BackfillEvidence(releases, tuple(links))
+    return VerifiedBackfillInput(releases, tuple(links))
 
 
-def link_verified_records(db, evidence):
+def link_verified_records(db, backfill_input):
     """Apply every link in the caller's open transaction, or raise BackfillError for the first that fails.
 
     The caller rolls back on failure, so a run links all of its records or none.
     """
     linked = unchanged = 0
-    for position, link in enumerate(evidence.links, start=1):
+    for position, link in enumerate(backfill_input.links, start=1):
         try:
-            changed = _link(db, link, evidence.releases)
+            changed = _link(db, link, backfill_input.releases)
         except BackfillError as error:
             raise BackfillError(f'link {position}: {error}') from None
         linked += changed
@@ -119,6 +121,9 @@ def _link(db, link, releases):
         submission = json.loads(submission_json)
     except ValueError:
         raise BackfillError('the stored record is not readable') from None
+    # The stored JSON itself must still be the record its digest names (canonicalisation version 1).
+    if hashlib.sha256(canonical(canonical_submission(submission)).encode()).hexdigest() != submission_digest:
+        raise BackfillError('the stored record does not match its stored submission digest')
     identities = tuple(submission.get(key) for key in SUBMISSION_IDENTITY_KEYS) if isinstance(submission, dict) else ()
     if identities != release.identities:
         raise BackfillError('the stored record names different study/content/instrument identities')
@@ -138,5 +143,5 @@ def _link(db, link, releases):
         raise BackfillError('a stored snapshot with the declared digest differs from the release') from None
     db.execute('UPDATE submissions SET content_provenance=?, content_digest=?, provenance_backfill=? '
                'WHERE submission_id=?',
-               (PROVENANCE_SNAPSHOT, release.snapshot.digest, canonical(BACKFILL_EVIDENCE), link['submissionId']))
+               (PROVENANCE_SNAPSHOT, release.snapshot.digest, canonical(BACKFILL_RECORD), link['submissionId']))
     return True

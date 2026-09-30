@@ -11,7 +11,7 @@ SQLite schema version 3 links each new submission to the participant-content sna
 - Schema version 4 replaces the unconditional trigger with one that permits exactly one provenance change. A row that is `legacy_unavailable`, with no digest and no backfill record, may become `snapshot`. The new digest must name a registered snapshot, and the new `provenance_backfill` column must record the evidence. Every other provenance change is rejected, whether to a linked row, a backfilled row, or a legacy row. So is any update of a row's submission ID, submission digest, submitted JSON, receipt, or release metadata. A new row cannot claim a backfill.
 - Only the private `backfill-provenance` CLI operation makes this change. It takes explicit input: one or more frozen public package pairs (`--release`) and a links file naming each record, its stored submission digest, and its content digest. It links a record only when all of the following hold:
   - the release verifies like an installed package;
-  - the submission digest matches the stored row;
+  - the submission digest matches the stored row and its stored JSON;
   - the record names that release's identities;
   - no other supplied release or stored snapshot carries those identities, so the link is unambiguous;
   - the stored JSON is admissible under that release's own rules.

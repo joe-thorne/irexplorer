@@ -218,6 +218,21 @@ class ProvenanceBackfillTests(unittest.TestCase):
         _, records = self.exported(self.store, 'still-unavailable')
         self.assertEqual({r['contentProvenance']['status'] for r in records.values()}, {'unavailable'})
 
+    def test_record_whose_json_no_longer_matches_its_digest_is_not_linked(self):
+        drifted = self.root / 'drifted.sqlite3'
+        drifted.write_bytes(self.store.read_bytes())
+        db = sqlite3.connect(drifted)
+        changed = deepcopy(self.verifiable)
+        changed['tasks'][1]['durationMs'] += 1
+        db.execute('UPDATE submissions SET submission_json = ? WHERE submission_id = ?',
+                   (json.dumps(changed), self.verifiable['submissionId']))
+        db.commit()
+        db.close()
+        with self.assertRaisesRegex(BackfillError, 'does not match its stored submission digest'):
+            backfill_provenance(drifted, self.root / 'drifted-backfilled.sqlite3', [self.historical_release],
+                                self.links((self.verifiable, self.historical)))
+        self.assertFalse((self.root / 'drifted-backfilled.sqlite3').exists())
+
     def test_links_file_must_be_explicit_and_strict(self):
         valid = json.loads(self.links((self.verifiable, self.historical)).read_text())
         link = valid['links'][0]

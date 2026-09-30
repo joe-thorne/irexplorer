@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
-from .backfill import BackfillError, link_verified_records, load_evidence
+from .backfill import BackfillError, link_verified_records, load_backfill_input
 from .content import stored_snapshot, strict_json_loads
 from .researcher_packs import ResearcherPackError, join_researcher_packs
 from .service import (
@@ -46,6 +46,11 @@ class StoreLayout:
     @property
     def has_backfill(self):
         return self.version >= 4
+
+    @property
+    def backfill_column(self):
+        """The backfill-evidence column to select, or NULL for a layout without one."""
+        return 'provenance_backfill' if self.has_backfill else 'NULL'
 
 
 LAYOUTS = {1: StoreLayout(1, 'responses', 'payload'), 2: StoreLayout(2, 'submissions', 'submission_json'),
@@ -86,11 +91,10 @@ def snapshots_verified(db, layout):
             stored_snapshot(row)
     except (ValueError, TypeError, sqlite3.Error):
         return False
-    backfill = 's.provenance_backfill' if layout.has_backfill else 'NULL'
     return not db.execute(
         f'SELECT 1 FROM submissions s LEFT JOIN {SNAPSHOT_TABLE} c ON c.digest = s.content_digest '
         'WHERE NOT ((s.content_provenance = ? AND c.digest IS NOT NULL) '
-        f'OR (s.content_provenance = ? AND s.content_digest IS NULL AND {backfill} IS NULL)) LIMIT 1',
+        f'OR (s.content_provenance = ? AND s.content_digest IS NULL AND {layout.backfill_column} IS NULL)) LIMIT 1',
         (PROVENANCE_SNAPSHOT, PROVENANCE_LEGACY_UNAVAILABLE)).fetchone()
 
 
@@ -121,7 +125,7 @@ def backfill_provenance(source, destination, releases, links):
     copy is migrated to the current schema, and every link is applied in one transaction; on any
     failure the new DESTINATION is removed and SOURCE is never modified. Returns a BackfillResult.
     """
-    evidence = load_evidence(releases, links)
+    backfill_input = load_backfill_input(releases, links)
     backup(source, destination)
     destination = private_path(destination)
     try:
@@ -129,7 +133,7 @@ def backfill_provenance(source, destination, releases, links):
         try:
             db.execute('BEGIN IMMEDIATE')
             migrate(db)
-            result = link_verified_records(db, evidence)
+            result = link_verified_records(db, backfill_input)
             db.commit()
         finally:
             db.rollback()
@@ -175,9 +179,8 @@ def read_store(source):
             rows = [(*row, None, None) for row in db.execute(
                 f'SELECT {layout.submission_json}, receipt, release FROM {layout.table} ORDER BY submission_id')]
             return rows, {}
-        backfill = 'provenance_backfill' if layout.has_backfill else 'NULL'
-        rows = db.execute(f'SELECT {layout.submission_json}, receipt, release, content_digest, {backfill} '
-                          f'FROM {layout.table} ORDER BY submission_id').fetchall()
+        rows = db.execute(f'SELECT {layout.submission_json}, receipt, release, content_digest, '
+                          f'{layout.backfill_column} FROM {layout.table} ORDER BY submission_id').fetchall()
         snapshots = [stored_snapshot(row) for row in db.execute(
             f"SELECT {', '.join(SNAPSHOT_COLUMNS)} FROM {SNAPSHOT_TABLE} "
             f'WHERE digest IN (SELECT content_digest FROM {layout.table}) ORDER BY digest')]

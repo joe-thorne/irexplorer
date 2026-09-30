@@ -67,7 +67,7 @@ A record stored before snapshots existed can be linked to its exact historical p
 
 Each record may appear once. A record is linked only when all of these hold:
 
-- the store holds that submission ID with that submission digest;
+- the store holds that submission ID with that submission digest, and the stored JSON still has that digest;
 - a supplied release has the content digest;
 - the stored JSON names that release's study, content, and instrument identities;
 - no other supplied release or stored snapshot carries the same identities, so a version label cannot be what decides the link;
@@ -78,14 +78,14 @@ The operation copies `$BACKUP` with the backup API to the new file `$BACKFILLED`
 The source is never modified. The submission ID, digest, submitted JSON, receipt, and release metadata are unchanged in the copy. The store triggers reject every other provenance change, and any change to those columns.
 
 - **Repeats.** A record already linked to the named digest, whether at submission or by an earlier backfill, is left unchanged, so repeating a run on its output is a no-op.
-- **Failures.** A record with different existing provenance is a conflict. That fails the run, as do any failed check, an unverified release, and a malformed links file. The command exits with status 1, prints `Provenance backfill rejected: link N: <check>. Nothing was written.` without answers or identifiers, and removes the new file.
+- **Failures.** A record with different existing provenance is a conflict. That fails the run, as do any failed check, an unverified release, and a malformed links file. The command exits with status 1, prints `Provenance backfill rejected: <check>. Nothing was written.`, naming the failed check with its link or release position but no answers or identifiers, and removes the new file.
 - **Unlinked records.** Records that are not named, or cannot be verified, stay `unavailable` in exports.
 
 The command prints how many records were linked and how many were already linked. Before use, export the copy and check its links, counts, and receipts. To put it into service, stop collection, then follow the restore replacement steps with the verified copy.
 
 Limitations:
 
-- The tool proves that a record is consistent with the frozen artefact. It cannot prove which release was deployed when the record was collected, so keep the deployment evidence that justifies each link with the links file.
+- The tool checks that a record is consistent with the frozen artefact. It cannot prove which release was deployed when the record was collected, so keep the deployment evidence that justifies each link with the links file.
 - Instruments with no frozen public package cannot be verified; currently this is any instrument before v0.11.
 - The store triggers protect integrity, not access. Private file permissions remain the control.
 
