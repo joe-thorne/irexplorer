@@ -62,6 +62,7 @@ class StudyError(Exception):
 
 
 def storage_unavailable():
+    """The retryable storage failure; it never names a path, SQL error, or stored answer."""
     return StudyError(503, 'storage_unavailable', 'Receipt unavailable. Retain this tab and retry the same submission.')
 
 

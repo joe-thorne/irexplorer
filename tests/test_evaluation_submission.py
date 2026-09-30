@@ -30,6 +30,10 @@ from src.backend.evaluation.service import (
     canonical,
 )
 
+# The retired version-1 response table, recreated to model stores written by earlier releases.
+RETIRED_V1_SCHEMA = ('CREATE TABLE responses (submission_id TEXT PRIMARY KEY, digest TEXT NOT NULL, '
+                     'payload TEXT NOT NULL, receipt TEXT NOT NULL, release TEXT NOT NULL)')
+
 
 def synthetic():
     c = participant_content()
@@ -425,8 +429,7 @@ class SubmissionTests(unittest.TestCase):
         legacy_path = self.config.directory / 'preview' / 'responses.sqlite3'
         legacy_path.parent.mkdir(parents=True)
         legacy_db = sqlite3.connect(legacy_path)
-        legacy_db.execute('CREATE TABLE responses (submission_id TEXT PRIMARY KEY, digest TEXT NOT NULL, '
-                          'payload TEXT NOT NULL, receipt TEXT NOT NULL, release TEXT NOT NULL)')
+        legacy_db.execute(RETIRED_V1_SCHEMA)
         original_payload = json.dumps(self.payload, ensure_ascii=False, separators=(',', ':'))
         receipt = {'receiptId': str(uuid.uuid4()), 'participantCode': self.payload['participantCode'],
                    'submissionId': self.payload['submissionId'], 'studyVersion': self.payload['studyVersion']}
@@ -457,8 +460,7 @@ class SubmissionTests(unittest.TestCase):
     def test_backup_and_restore_accept_v1_stores(self):
         legacy = Path(self.tmp.name) / 'legacy-v1.sqlite3'
         db = sqlite3.connect(legacy)
-        db.execute('CREATE TABLE responses (submission_id TEXT PRIMARY KEY, digest TEXT NOT NULL, '
-                   'payload TEXT NOT NULL, receipt TEXT NOT NULL, release TEXT NOT NULL)')
+        db.execute(RETIRED_V1_SCHEMA)
         raw_submission = canonical(self.payload)
         db.execute('INSERT INTO responses VALUES (?, ?, ?, ?, ?)', (
             self.payload['submissionId'], hashlib.sha256(raw_submission.encode()).hexdigest(), raw_submission,
@@ -834,8 +836,7 @@ class SubmissionTests(unittest.TestCase):
         v1_receipt = {'receiptId': str(uuid.uuid4()), 'participantCode': legacy_v1['participantCode'],
                       'submissionId': legacy_v1['submissionId'], 'studyVersion': legacy_v1['studyVersion']}
         db = sqlite3.connect(legacy_path)
-        db.execute('CREATE TABLE responses (submission_id TEXT PRIMARY KEY, digest TEXT NOT NULL, '
-                   'payload TEXT NOT NULL, receipt TEXT NOT NULL, release TEXT NOT NULL)')
+        db.execute(RETIRED_V1_SCHEMA)
         db.execute('INSERT INTO responses VALUES (?, ?, ?, ?, ?)', (
             legacy_v1['submissionId'], hashlib.sha256(canonical(legacy_v1).encode()).hexdigest(),
             canonical(legacy_v1), canonical(v1_receipt),
