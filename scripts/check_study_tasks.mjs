@@ -127,6 +127,7 @@ try {
   await click('#survey-form button[type="submit"]');
 
   // T1–T5 entry versus target; partial, skipped, inability and completed responses.
+  // Expected entries are the ticket's fixed procedure, kept independent of the package under test.
   const examples = { T1: 'score', T2: 'score', T3: 'binary_search', T4: 'binary_search', T5: 'quick_sort' };
   for (const id of ['T1', 'T2', 'T3', 'T4', 'T5']) {
     await onTask(id);

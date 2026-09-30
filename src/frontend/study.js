@@ -36,7 +36,7 @@
   const taskFor = id => content.tasks.find(task => task.id === id);
   const inherits = task => task?.entryWorkspace.inherit === 'previous';
   // A declared (non-inheriting) entry configuration in the workspace's own snapshot shape.
-  const entryWorkspace = ({ entryWorkspace: { example, left, right } }) => ({ exampleId: example, functionName: null,
+  const declaredEntry = ({ entryWorkspace: { example, left, right } }) => ({ exampleId: example, functionName: null,
     panels: { left: { ordinal: left.ordinal, viewType: left.view }, right: { ordinal: right.ordinal, viewType: right.view } } });
   // A task's workspace is kept for recovery when it, or the task after it, inherits.
   function carriesWorkspace(id) {
@@ -91,8 +91,8 @@
     const t = draft.tasks[id]; clock = window.TaskClock(t);
     if (t.status === 'pending') {
       startClock();
-      const task = taskFor(id);
-      window.StudyWorkspace.prepareTask(inherits(task) ? readWorkspaceSnapshot() : entryWorkspace(task), { inherit: inherits(task) });
+      const task = taskFor(id), inherit = inherits(task);
+      window.StudyWorkspace.prepareTask(inherit ? readWorkspaceSnapshot() : declaredEntry(task), { inherit });
     }
     updateTaskStatus();
   }
