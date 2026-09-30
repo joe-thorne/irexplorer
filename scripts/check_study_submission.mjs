@@ -6,9 +6,9 @@ const context={window:{},crypto:webcrypto,structuredClone,TextEncoder,AbortSigna
 vm.createContext(context);
 for(const file of ['study-draft.js','study-submit.js']) vm.runInContext(await readFile(new URL('../src/frontend/'+file,import.meta.url),'utf8'),context);
 const D=context.window.StudyDraft,S=context.window.StudySubmit;
-const content=JSON.parse(await readFile(new URL('../src/backend/evaluation/participant-content.json',import.meta.url)));
+const content=JSON.parse(await readFile(new URL('../src/backend/evaluation/participant-package-v2.json',import.meta.url))).content;
 const studyView=await readFile(new URL('../src/frontend/study.js',import.meta.url),'utf8');
-const d=D.create(content,Object.fromEntries(content.fields.filter(f=>f.id.startsWith('C')).map(f=>[f.id,true])));
+const d=D.create(content,Object.fromEntries(content.membership.consent.map(id=>[id,true])));
 d.pre.P1={status:'answered',value:1};d.preComplete=d.p13Locked=d.reviewReady=true;
 for(const t of Object.values(d.tasks)){t.status='completed';t.presented=true;t.durationMs=123.6;}
 let values=new Map(),fail=false;

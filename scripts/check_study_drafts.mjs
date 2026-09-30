@@ -3,14 +3,16 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 import { webcrypto } from 'node:crypto';
-const content = JSON.parse(await readFile(new URL('../src/backend/evaluation/participant-content.json', import.meta.url)));
+const packageFile = JSON.parse(await readFile(new URL('../src/backend/evaluation/participant-package-v2.json', import.meta.url)));
+const content = packageFile.content;
+const examples = JSON.parse(await readFile(new URL('../tests/data/study-validation-examples.json', import.meta.url)));
 const study = await readFile(new URL('../src/frontend/study.js', import.meta.url), 'utf8');
 const context = { window: {}, crypto: webcrypto };
 vm.createContext(context);
 vm.runInContext(await readFile(new URL('../src/frontend/study-draft.js', import.meta.url), 'utf8'), context);
 const D = context.window.StudyDraft, checks = [];
 function check(name, fn) { fn(); checks.push(name); }
-const consent = Object.fromEntries(content.fields.filter(f => f.id.startsWith('C')).map(f => [f.id, true]));
+const consent = Object.fromEntries(content.membership.consent.map(id => [id, true]));
 const draft = D.create(content, consent), answered = value => ({ status: 'answered', value });
 check('Consent is mandatory before identifiers/draft creation', () => assert.throws(() => D.create(content, {})));
 check('Missing P1 blocks completion; other pre/post items optional', () => {
@@ -74,6 +76,16 @@ check('Fixed task inventory: T0 has no fields; T5/T6 have no invented confidence
   assert.equal(Object.keys(d.tasks.T0.answers).length, 0);
   assert.equal(D.fieldsFor(content, 'T5').map(f => f.id).join(), 'T5a,T5b,T5c');
   assert.equal(D.fieldsFor(content, 'T6').some(f => f.scale === 'confidence'), false);
+});
+check('Browser validation matches the common browser/server response examples', () => {
+  for (const example of examples) {
+    const answers = JSON.parse(JSON.stringify(example.answers));
+    for (const answer of Object.values(answers)) if ('repeat' in answer) {
+      answer.value = answer.repeat.repeat(answer.times); delete answer.repeat; delete answer.times;
+    }
+    assert.deepEqual(Object.keys(D.validate(content, example.section, answers, example.complete || false)).sort(),
+      [...example.errorFields].sort(), example.name);
+  }
 });
 check('Task inability and not-applicable preserve null independently from numeric answers', () => {
   for (const [stage, id, status] of [['T2','T2a','could_not_work_out'], ['T3','T3a','could_not_work_out'], ['T4','T4a','could_not_work_out'], ['T5','T5a','could_not_work_out']]) {

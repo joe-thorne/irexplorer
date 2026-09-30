@@ -21,15 +21,15 @@ from src.backend.evaluation.service import MAX_BODY, Config, StudyError, StudySe
 
 def synthetic():
     c = participant_content()
-    def answers(prefix):
-        return {f['id']: {'status': 'unanswered', 'value': None} for f in c['fields'] if f['id'].startswith(prefix)}
+    def answers(section):
+        return {field_id: {'status': 'unanswered', 'value': None} for field_id in c['membership'][section]}
     p = {k: c[k] for k in ('studyVersion', 'contentVersion', 'instrumentVersion')}
     p.update(submissionId=str(uuid.uuid4()), participantCode=str(uuid.uuid4()),
              consent={'version': c['contentVersion'],
-                      'acknowledgements': {f['id']: True for f in c['fields'] if f['id'].startswith('C')}},
-             pre=answers('P'), post=answers('Q'),
-             tasks=[{'id': f'T{i}', 'status': 'completed', 'durationMs': 1234,
-                     'interrupted': False, 'answers': answers(f'T{i}')} for i in range(7)])
+                      'acknowledgements': {field_id: True for field_id in c['membership']['consent']}},
+             pre=answers('pre'), post=answers('post'),
+             tasks=[{'id': task['id'], 'status': 'completed', 'durationMs': 1234,
+                     'interrupted': False, 'answers': answers(task['id'])} for task in c['tasks']])
     p['pre']['P1'] = {'status': 'answered', 'value': 5}
     return p
 
@@ -110,6 +110,25 @@ class SubmissionTests(unittest.TestCase):
             with self.subTest(p=p):
                 self.assertEqual(self.post(p).status_code, 422)
         self.assertFalse(self.config.path.exists())
+
+    def test_common_browser_server_examples_match_authoritative_submission_acceptance(self):
+        examples = json.loads((Path(__file__).parent / 'data/study-validation-examples.json').read_text())
+        for example in examples:
+            with self.subTest(example=example['name']):
+                payload = synthetic()
+                answers = json.loads(json.dumps(example['answers']))
+                for answer in answers.values():
+                    if 'repeat' in answer:
+                        answer['value'] = answer.pop('repeat') * answer.pop('times')
+                section = example['section']
+                if section in ('pre', 'post'):
+                    payload[section].update(answers)
+                else:
+                    task = next(item for item in payload['tasks'] if item['id'] == section)
+                    task['answers'].update(answers)
+                response = self.post(payload)
+                expected_status = 422 if example['errorFields'] else 201
+                self.assertEqual(response.status_code, expected_status)
 
     def test_origin_content_type_body_limit_and_malformed_json(self):
         url = '/api/study/submissions'

@@ -8,6 +8,9 @@ const captures = process.env.IREXPLORER_CHECK_OUTPUT;
 const cdp = `http://127.0.0.1:${process.env.IREXPLORER_CDP_PORT || '9239'}`;
 if (captures) await mkdir(captures, { recursive: true });
 const release = await (await fetch(base + '/api/release')).json();
+const publicContent = await (await fetch(base + '/api/study/content')).json();
+const purposeText = publicContent.information.flatMap(section => section.blocks).find(block => block.role === 'study-purpose')?.text;
+const submissionText = publicContent.information.flatMap(section => section.blocks).find(block => block.role === 'submission-guidance')?.text;
 
 // A new tab has no opener and no inherited session draft, making reruns independent.
 const page = await (await fetch(`${cdp}/json/new?about:blank`, { method: 'PUT' })).json();
@@ -360,12 +363,13 @@ try {
   await check('Participant information shows no unresolved researcher annotations', `!document.querySelector('#study-screen').innerText.includes('[Joe/Joel to confirm')`);
   await check('The final information section appears once and before consent', `(() => { const questions=[...document.querySelectorAll('.participant-information h3')].filter(h=>h.textContent==='Questions'); return questions.length===1 && questions[0].compareDocumentPosition(document.querySelector('#C1')) & Node.DOCUMENT_POSITION_FOLLOWING; })()`);
   await check('Study navigation identifies its current sections', `document.querySelector('#study-progress').getAttribute('aria-label') === 'Study sections' && document.querySelector('#study-progress [aria-current="step"]') !== null`);
-  await check('Opening study explains tool-use purpose and highlights final-only submission', `(() => { const purposeNode = document.querySelector('.study-purpose'); const purpose = purposeNode?.innerText || ''; const submission = document.querySelector('.submission-guidance')?.innerText || ''; const information = document.querySelector('.participant-information'); return purpose.includes('This study evaluates how useful irexplorer is when students and non-expert developers use it to explore compiler changes.') && purpose.includes('not an unaided test') && submission.includes('submitted only from the final review page') && submission.includes('navigation does not send them') && Boolean(information && (purposeNode.compareDocumentPosition(information) & Node.DOCUMENT_POSITION_FOLLOWING)); })()`);
+  await check('Information role blocks render their packaged wording once and before general information', `(() => { const purpose = [...document.querySelectorAll('.study-purpose')]; const information = document.querySelector('.participant-information'); return purpose.length === 1 && purpose[0].textContent === ${JSON.stringify(purposeText)} && Boolean(information && (purpose[0].compareDocumentPosition(information) & Node.DOCUMENT_POSITION_FOLLOWING)); })()`);
+  await check('Submission guidance renders its packaged wording once', `(() => { const guidance = [...document.querySelectorAll('.submission-guidance')]; return guidance.length === 1 && guidance[0].textContent === ${JSON.stringify(submissionText)}; })()`);
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
   await check('Opening purpose and final-only submission guidance fit the narrow viewport', `document.documentElement.scrollWidth <= innerWidth && ['.study-purpose','.submission-guidance'].every(selector => { const rect = document.querySelector(selector)?.getBoundingClientRect(); return rect && rect.width > 0 && rect.left >= 0 && rect.right <= innerWidth; })`);
   await value("document.querySelector('#route-heading').focus()");
   await tabUntil(`document.activeElement.matches('[data-action="start"]')`);
-  await check('Narrow keyboard journey reaches Continue after the information and consent copy', `document.activeElement.matches('[data-action="start"]') && document.activeElement.getBoundingClientRect().top < innerHeight && document.querySelectorAll('.participant-information')[1].getBoundingClientRect().bottom < document.activeElement.getBoundingClientRect().top`);
+  await check('Narrow keyboard journey reaches Continue after the information and consent copy', `document.activeElement.matches('[data-action="start"]') && document.activeElement.getBoundingClientRect().top < innerHeight && document.querySelector('.participant-information').getBoundingClientRect().bottom < document.activeElement.getBoundingClientRect().top`);
   await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
   await check('Clean study interface and release label', `document.querySelector('#app-version').textContent === ${JSON.stringify(release.version === 'development' ? 'Development' : `v${release.version}`)} && !/synthetic|preview|not.live|E7/i.test(document.body.innerText) && !location.search`);
   await value(`document.querySelector('#C1').focus()`); await key(' ', 'Space', 32);

@@ -2,7 +2,8 @@
 window.StudyDraft = (() => {
   const KEY = 'irexplorer.study.v0.11'; // New key separates this instrument from every older local draft.
   const blank = () => ({ status: 'unanswered', value: null });
-  const fieldsFor = (content, section) => content.fields.filter(f => f.id.startsWith(section === 'pre' ? 'P' : section === 'post' ? 'Q' : section));
+  const fieldsFor = (content, section) => (content.membership?.[section] || [])
+    .map(id => content.fields.find(field => field.id === id)).filter(Boolean);
   function visible(field, answers) {
     if (!field.condition) return true;
     const parent = answers[field.condition.field];
@@ -17,8 +18,13 @@ window.StudyDraft = (() => {
       const answer = answers[field.id] ?? blank();
       if (!answer || Object.keys(answer).sort().join(',') !== 'status,value') { errors[field.id] = 'Invalid answer.'; continue; }
       const { status, value } = answer;
+      const isVisible = visible(field, answers);
+      if (!isVisible && (status !== 'unanswered' || value !== null)) {
+        errors[field.id] = 'Choose one of this item’s options.';
+        continue;
+      }
       if (status === 'unanswered' && value === null) {
-        if (complete && field.required && visible(field, answers)) errors[field.id] = field.id === 'P1' ? 'Choose an answer for P1.' : 'Complete this required follow-up.';
+        if (complete && field.required && isVisible) errors[field.id] = field.id === 'P1' ? 'Choose an answer for P1.' : 'Complete this required follow-up.';
         continue;
       }
       if (value === null && ((status === 'not_applicable' && (field.notApplicableLabel || Object.values(field.optionStatuses || {}).includes(status))) || (status === 'could_not_work_out' && (field.inabilityLabel || Object.values(field.optionStatuses || {}).includes(status))))) continue;
@@ -30,13 +36,13 @@ window.StudyDraft = (() => {
         const values = field.type === 'multiple' ? value : [value];
         valid &&= Array.isArray(values) && values.length > 0 && values.every(v => Number.isInteger(v) && allowed.includes(v)) && new Set(values).size === values.length && !(values.includes(field.exclusiveValue) && values.length > 1);
       }
-      valid &&= visible(field, answers);
+      valid &&= isVisible;
       if (!valid) errors[field.id] = ['text', 'short_text'].includes(field.type) ? `Use no more than ${field.maxLength.toLocaleString()} characters. Your text has not been shortened.` : 'Choose one of this item’s options.';
     }
     return errors;
   }
   function create(content, acknowledgements) {
-    if (!content.fields.filter(f => f.id.startsWith('C')).every(f => acknowledgements[f.id] === true)) throw new Error('Consent is required.');
+    if (!(content.membership?.consent || []).every(id => acknowledgements[id] === true)) throw new Error('Consent is required.');
     return { schemaVersion: 2, studyVersion: content.studyVersion, contentVersion: content.contentVersion,
       instrumentVersion: content.instrumentVersion, participantCode: crypto.randomUUID(),
       consent: { version: content.contentVersion, acknowledgements }, pre: Object.fromEntries(fieldsFor(content, 'pre').map(f => [f.id, blank()])),
@@ -49,7 +55,7 @@ window.StudyDraft = (() => {
     const d = JSON.parse(raw);
     const keys = ['schemaVersion', 'studyVersion', 'contentVersion', 'instrumentVersion', 'participantCode', 'consent', 'pre', 'post', 'preComplete', 'p13Locked', 'tasks', 'reviewReady'];
     if (!d || Object.keys(d).sort().join() !== keys.sort().join() || d.schemaVersion !== 2 || d.studyVersion !== content.studyVersion || d.contentVersion !== content.contentVersion || d.instrumentVersion !== content.instrumentVersion || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(d.participantCode)) throw new Error('Unsupported draft.');
-    const consent = content.fields.filter(f => f.id.startsWith('C'));
+    const consent = fieldsFor(content, 'consent');
     if (!d.consent || Object.keys(d.consent).sort().join() !== 'acknowledgements,version' || d.consent.version !== content.contentVersion || Object.keys(d.consent.acknowledgements || {}).length !== consent.length || !consent.every(f => d.consent.acknowledgements[f.id] === true)) throw new Error('Invalid consent.');
     if (!['preComplete', 'p13Locked', 'reviewReady'].every(k => typeof d[k] === 'boolean') || (d.reviewReady && !tasksComplete(d))) throw new Error('Invalid progress.');
     if (!d.tasks || Object.keys(d.tasks).join() !== content.tasks.map(t => t.id).join()) throw new Error('Invalid task order.');

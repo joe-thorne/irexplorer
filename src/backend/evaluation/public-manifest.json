@@ -1,0 +1,18 @@
+{
+  "manifestSchemaVersion": 1,
+  "packageSchemaVersion": 2,
+  "identity": {
+    "identityVersion": 1,
+    "algorithm": "sha256",
+    "canonicalisation": "sorted-json-utf8-v1",
+    "canonicalisationVersion": 1,
+    "digest": "cb0f303575810f72ae0596ec8a5554c05bd62d32066542f56484e7144f37a1a6",
+    "instrumentVersion": "v0.11",
+    "contentVersion": "v0.11-preview-2",
+    "studyVersion": "v0.11-synthetic-1"
+  },
+  "artifact": {
+    "file": "participant-package-v2.json",
+    "sha256": "abfe9116d25efcb56aebc0b34e218147a8a8df395a943da9afcfd8473ba5ed8f"
+  }
+}

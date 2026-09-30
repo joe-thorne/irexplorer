@@ -1,0 +1,1911 @@
+{
+  "packageSchemaVersion": 2,
+  "identity": {
+    "identityVersion": 1,
+    "algorithm": "sha256",
+    "canonicalisation": "sorted-json-utf8-v1",
+    "canonicalisationVersion": 1,
+    "digest": "cb0f303575810f72ae0596ec8a5554c05bd62d32066542f56484e7144f37a1a6",
+    "instrumentVersion": "v0.11",
+    "contentVersion": "v0.11-preview-2",
+    "studyVersion": "v0.11-synthetic-1"
+  },
+  "content": {
+    "instrumentVersion": "v0.11",
+    "contentVersion": "v0.11-preview-2",
+    "studyVersion": "v0.11-synthetic-1",
+    "scales": {
+      "familiarity": [
+        {
+          "value": 1,
+          "label": "Never encountered it"
+        },
+        {
+          "value": 2,
+          "label": "Heard of it, could not use it"
+        },
+        {
+          "value": 3,
+          "label": "Some exposure, would need help"
+        },
+        {
+          "value": 4,
+          "label": "Comfortable"
+        },
+        {
+          "value": 5,
+          "label": "Very comfortable"
+        }
+      ],
+      "agreement": [
+        {
+          "value": 1,
+          "label": "Strongly disagree"
+        },
+        {
+          "value": 2,
+          "label": "Disagree"
+        },
+        {
+          "value": 3,
+          "label": "Neither agree nor disagree"
+        },
+        {
+          "value": 4,
+          "label": "Agree"
+        },
+        {
+          "value": 5,
+          "label": "Strongly agree"
+        }
+      ],
+      "confidence": [
+        {
+          "value": 1,
+          "label": "Not at all"
+        },
+        {
+          "value": 2,
+          "label": "Slightly"
+        },
+        {
+          "value": 3,
+          "label": "Moderately"
+        },
+        {
+          "value": 4,
+          "label": "Very"
+        },
+        {
+          "value": 5,
+          "label": "Completely"
+        }
+      ],
+      "likelihood": [
+        {
+          "value": 1,
+          "label": "Definitely not"
+        },
+        {
+          "value": 2,
+          "label": "Probably not"
+        },
+        {
+          "value": 3,
+          "label": "Maybe"
+        },
+        {
+          "value": 4,
+          "label": "Probably"
+        },
+        {
+          "value": 5,
+          "label": "Definitely"
+        }
+      ]
+    },
+    "fields": [
+      {
+        "id": "C1",
+        "prompt": "I have read the information above and I understand what taking part involves.",
+        "type": "boolean",
+        "required": true,
+        "presentation": {
+          "control": "checkbox"
+        }
+      },
+      {
+        "id": "C2",
+        "prompt": "I understand that participation is voluntary and that I can stop before submitting without giving a reason.",
+        "type": "boolean",
+        "required": true,
+        "presentation": {
+          "control": "checkbox"
+        }
+      },
+      {
+        "id": "C3",
+        "prompt": "I understand that my answers remain a browser-tab draft until I select Submit answers, and that a receipt confirms submission.",
+        "type": "boolean",
+        "required": true,
+        "presentation": {
+          "control": "checkbox"
+        }
+      },
+      {
+        "id": "C4",
+        "prompt": "I have read the information above and have had the opportunity to review the confirmed study arrangements before deciding whether to take part.",
+        "type": "boolean",
+        "required": true,
+        "presentation": {
+          "control": "checkbox"
+        }
+      },
+      {
+        "id": "C5",
+        "prompt": "I can read basic C code, as described above.",
+        "type": "boolean",
+        "required": true,
+        "presentation": {
+          "control": "checkbox"
+        }
+      },
+      {
+        "id": "C6",
+        "prompt": "I agree to take part.",
+        "type": "boolean",
+        "required": true,
+        "presentation": {
+          "control": "checkbox"
+        }
+      },
+      {
+        "id": "P1",
+        "prompt": "Which best describes you?",
+        "type": "single",
+        "required": true,
+        "options": [
+          {
+            "value": 1,
+            "label": "Undergraduate student, computing or software engineering"
+          },
+          {
+            "value": 2,
+            "label": "Undergraduate student, other discipline"
+          },
+          {
+            "value": 3,
+            "label": "Postgraduate student"
+          },
+          {
+            "value": 4,
+            "label": "Working developer"
+          },
+          {
+            "value": 5,
+            "label": "Other — please describe:"
+          }
+        ],
+        "presentation": {
+          "control": "radio"
+        }
+      },
+      {
+        "id": "P1.other",
+        "prompt": "Other — please describe:",
+        "type": "text",
+        "required": false,
+        "maxLength": 4000,
+        "condition": {
+          "field": "P1",
+          "values": [
+            5
+          ]
+        },
+        "presentation": {
+          "control": "textarea"
+        }
+      },
+      {
+        "id": "P2",
+        "prompt": "If you are a student, what year of your programme are you in?",
+        "type": "single",
+        "required": false,
+        "options": [
+          {
+            "value": 1,
+            "label": "1st"
+          },
+          {
+            "value": 2,
+            "label": "2nd"
+          },
+          {
+            "value": 3,
+            "label": "3rd"
+          },
+          {
+            "value": 4,
+            "label": "4th"
+          },
+          {
+            "value": 5,
+            "label": "5th or beyond"
+          },
+          {
+            "value": 6,
+            "label": "Not applicable"
+          }
+        ],
+        "optionStatuses": {
+          "6": "not_applicable"
+        },
+        "presentation": {
+          "control": "radio"
+        }
+      },
+      {
+        "id": "P3",
+        "prompt": "Which of these UQ courses are you studying or have you studied? Select all that apply.",
+        "type": "multiple",
+        "required": false,
+        "exclusiveValue": 8,
+        "options": [
+          {
+            "value": 1,
+            "label": "CSSE1001 — Introduction to Software Engineering / ENGG1001 — Programming for Engineers"
+          },
+          {
+            "value": 2,
+            "label": "CSSE2002 — Programming in the Large"
+          },
+          {
+            "value": 3,
+            "label": "CSSE2010 — Introduction to Computer Systems"
+          },
+          {
+            "value": 4,
+            "label": "CSSE2310 — Computer Systems Principles and Programming"
+          },
+          {
+            "value": 5,
+            "label": "COMP3506 — Algorithms & Data Structures"
+          },
+          {
+            "value": 6,
+            "label": "COMP3301 — Operating Systems Architecture"
+          },
+          {
+            "value": 7,
+            "label": "COMP4403 — Compilers and Interpreters"
+          },
+          {
+            "value": 8,
+            "label": "None of these"
+          },
+          {
+            "value": 9,
+            "label": "Other relevant course"
+          }
+        ],
+        "presentation": {
+          "control": "checkboxes"
+        }
+      },
+      {
+        "id": "P3_other_name",
+        "prompt": "Name of other relevant course",
+        "type": "text",
+        "required": true,
+        "maxLength": 4000,
+        "condition": {
+          "field": "P3",
+          "values": [
+            9
+          ]
+        },
+        "presentation": {
+          "control": "textarea"
+        }
+      },
+      {
+        "id": "P4",
+        "prompt": "Reading and writing C",
+        "type": "rating",
+        "required": false,
+        "scale": "familiarity",
+        "presentation": {
+          "control": "radio"
+        }
+      },
+      {
+        "id": "P5",
+        "prompt": "Reading assembly language",
+        "type": "rating",
+        "required": false,
+        "scale": "familiarity",
+        "presentation": {
+          "control": "radio"
+        }
+      },
+      {
+        "id": "P6",
+        "prompt": "Reading LLVM intermediate representation (IR)",
+        "type": "rating",
+        "required": false,
+        "scale": "familiarity",
+        "presentation": {
+          "control": "radio"
+        }
+      },
+      {
+        "id": "P7",
+        "prompt": "Control-flow graphs",
+        "type": "rating",
+        "required": false,
+        "scale": "familiarity",
+        "presentation": {
+          "control": "radio"
+        }
+      },
+      {
+        "id": "P8",
+        "prompt": "What compiler optimisation passes do",
+        "type": "rating",
+        "required": false,
+        "scale": "familiarity",
+        "presentation": {
+          "control": "radio"
+        }
+      },
+      {
+        "id": "P9",
+        "prompt": "Compiler internals generally",
+        "type": "rating",
+        "required": false,
+        "scale": "familiarity",
+        "presentation": {
+          "control": "radio"
+        }
+      },
+      {
+        "id": "P10",
+        "prompt": "Have you used any of these before?",
+        "type": "multiple",
+        "required": false,
+        "options": [
+          {
+            "value": 1,
+            "label": "Compiler Explorer / godbolt.org"
+          },
+          {
+            "value": 2,
+            "label": "clang or gcc optimisation flags, deliberately (-O0, -O2, -O3, and similar)"
+          },
+          {
+            "value": 3,
+            "label": "objdump, perf, or a similar tool for inspecting compiled output"
+          },
+          {
+            "value": 4,
+            "label": "LLVM's opt tool directly"
+          },
+          {
+            "value": 5,
+            "label": "A debugger, on compiled C"
+          },
+          {
+            "value": 6,
+            "label": "None of these"
+          }
+        ],
+        "exclusiveValue": 6,
+        "presentation": {
+          "control": "checkboxes"
+        }
+      },
+      {
+        "id": "P11",
+        "prompt": "Have you ever looked at the intermediate representation or the assembly output of a program you wrote, to understand what the compiler did to it?",
+        "type": "single",
+        "required": false,
+        "options": [
+          {
+            "value": 1,
+            "label": "Never"
+          },
+          {
+            "value": 2,
+            "label": "Once or twice"
+          },
+          {
+            "value": 3,
+            "label": "Occasionally"
+          },
+          {
+            "value": 4,
+            "label": "Regularly"
+          }
+        ],
+        "presentation": {
+          "control": "radio"
+        }
+      },
+      {
+        "id": "P12",
+        "prompt": "Have you worked on a compiler, or on LLVM itself, in a course project, job, or personal project?",
+        "type": "single",
+        "required": false,
+        "options": [
+          {
+            "value": 1,
+            "label": "No"
+          },
+          {
+            "value": 2,
+            "label": "Yes, a course project"
+          },
+          {
+            "value": 3,
+            "label": "Yes, professionally or as a personal project"
+          }
+        ],
+        "presentation": {
+          "control": "radio"
+        }
+      },
+      {
+        "id": "P12.detail",
+        "prompt": "If you did, what/why?",
+        "type": "text",
+        "required": false,
+        "maxLength": 4000,
+        "condition": {
+          "field": "P12",
+          "values": [
+            2,
+            3
+          ]
+        },
+        "presentation": {
+          "control": "textarea"
+        }
+      },
+      {
+        "id": "P13",
+        "prompt": "Before you start: when a C compiler optimises a program, what kinds of changes do you expect it makes?",
+        "type": "text",
+        "required": false,
+        "maxLength": 4000,
+        "presentation": {
+          "control": "textarea"
+        }
+      },
+      {
+        "id": "Q1",
+        "type": "rating",
+        "required": false,
+        "scale": "agreement",
+        "notApplicableLabel": "Not applicable / did not use this",
+        "prompt": "I could tell which parts of the program had changed between two states.",
+        "presentation": {
+          "control": "radio"
+        }
+      },
+      {
+        "id": "Q2",
+        "type": "rating",
+        "required": false,
+        "scale": "agreement",
+        "notApplicableLabel": "Not applicable / did not use this",
+        "prompt": "The explanation for my selection matched the change I could see in the IR.",
+        "presentation": {
+          "control": "radio"
+        }
+      },
+      {
+        "id": "Q3",
+        "type": "rating",
+        "required": false,
+        "scale": "agreement",
+        "notApplicableLabel": "Not applicable / did not use this",
+        "prompt": "I had trouble understanding what the highlighting meant.",
+        "presentation": {
+          "control": "radio"
+        }
+      },
+      {
+        "id": "Q4",
+        "type": "rating",
+        "required": false,
+        "scale": "agreement",
+        "notApplicableLabel": "Not applicable / did not use this",
+        "prompt": "I could work out which pass was responsible for a change I had noticed.",
+        "presentation": {
+          "control": "radio"
+        }
+      },
+      {
+        "id": "Q5",
+        "type": "rating",
+        "required": false,
+        "scale": "agreement",
+        "notApplicableLabel": "Not applicable / did not use this",
+        "prompt": "Comparing consecutive states helped me identify when a change occurred.",
+        "presentation": {
+          "control": "radio"
+        }
+      },
+      {
+        "id": "Q6",
+        "type": "rating",
+        "required": false,
+        "scale": "agreement",
+        "notApplicableLabel": "Not applicable / did not use this",
+        "prompt": "Having the IR and the control-flow graph available at once helped me understand what had changed.",
+        "presentation": {
+          "control": "radio"
+        }
+      },
+      {
+        "id": "Q7",
+        "type": "rating",
+        "required": false,
+        "scale": "agreement",
+        "notApplicableLabel": "Not applicable / did not use this",
+        "prompt": "Selecting code helped me locate related instructions in another view.",
+        "presentation": {
+          "control": "radio"
+        }
+      },
+      {
+        "id": "Q8",
+        "type": "multiple",
+        "required": false,
+        "options": [
+          {
+            "value": 1,
+            "label": "C source"
+          },
+          {
+            "value": 2,
+            "label": "IR"
+          },
+          {
+            "value": 3,
+            "label": "CFG"
+          },
+          {
+            "value": 4,
+            "label": "Not sure"
+          }
+        ],
+        "exclusiveValue": 4,
+        "prompt": "Which representations did you use to answer the tasks?",
+        "presentation": {
+          "control": "checkboxes"
+        }
+      },
+      {
+        "id": "Q9",
+        "type": "rating",
+        "required": false,
+        "scale": "agreement",
+        "notApplicableLabel": "Not applicable / did not use this",
+        "prompt": "I felt I was in control of what the tool showed me.",
+        "presentation": {
+          "control": "radio"
+        }
+      },
+      {
+        "id": "Q10",
+        "type": "rating",
+        "required": false,
+        "scale": "agreement",
+        "notApplicableLabel": "Not applicable / did not use this",
+        "prompt": "During the open exploration task, I could investigate a question of my own.",
+        "presentation": {
+          "control": "radio"
+        }
+      },
+      {
+        "id": "Q11",
+        "type": "rating",
+        "required": false,
+        "scale": "agreement",
+        "notApplicableLabel": "Not applicable / did not use this",
+        "prompt": "The tool presented the information at a level I could follow.",
+        "presentation": {
+          "control": "radio"
+        }
+      },
+      {
+        "id": "Q12",
+        "type": "rating",
+        "required": false,
+        "scale": "agreement",
+        "notApplicableLabel": "Not applicable / did not use this",
+        "prompt": "The highlighting helped me distinguish selected instructions from other instructions.",
+        "presentation": {
+          "control": "radio"
+        }
+      },
+      {
+        "id": "Q13",
+        "type": "rating",
+        "required": false,
+        "scale": "agreement",
+        "notApplicableLabel": "Not applicable / did not use this",
+        "prompt": "I could tell when the tool was uncertain about a correspondence.",
+        "presentation": {
+          "control": "radio"
+        }
+      },
+      {
+        "id": "Q14",
+        "type": "text",
+        "required": false,
+        "maxLength": 4000,
+        "prompt": "Now that you have used the tool: when a C compiler optimises a program, what kinds of changes do you expect it makes?",
+        "presentation": {
+          "control": "textarea"
+        }
+      },
+      {
+        "id": "Q15",
+        "type": "text",
+        "required": false,
+        "maxLength": 4000,
+        "prompt": "Was there a moment where something the compiler had done suddenly made sense to you? What was it?",
+        "presentation": {
+          "control": "textarea"
+        }
+      },
+      {
+        "id": "Q16",
+        "type": "text",
+        "required": false,
+        "maxLength": 4000,
+        "prompt": "Was there a moment where you were stuck, confused, or unsure what you were looking at? What was happening?",
+        "presentation": {
+          "control": "textarea"
+        }
+      },
+      {
+        "id": "Q17",
+        "type": "text",
+        "required": false,
+        "maxLength": 4000,
+        "prompt": "If you could change one thing about the tool, what would it be?",
+        "presentation": {
+          "control": "textarea"
+        }
+      },
+      {
+        "id": "Q18",
+        "type": "text",
+        "required": false,
+        "maxLength": 4000,
+        "prompt": "If you used the IR word help or optimisation explanations, what helped or confused you? You may also leave any other comment.",
+        "presentation": {
+          "control": "textarea"
+        }
+      },
+      {
+        "id": "Q19",
+        "type": "rating",
+        "required": false,
+        "scale": "likelihood",
+        "prompt": "If a tool like this had been available while you were learning about compilers, or about how your code runs, would you have used it?",
+        "presentation": {
+          "control": "radio"
+        }
+      },
+      {
+        "id": "Q20",
+        "type": "single",
+        "required": false,
+        "options": [
+          {
+            "value": 1,
+            "label": "score"
+          },
+          {
+            "value": 2,
+            "label": "binary_search"
+          },
+          {
+            "value": 3,
+            "label": "quick_sort"
+          },
+          {
+            "value": 4,
+            "label": "About the same across them"
+          },
+          {
+            "value": 5,
+            "label": "Did not explore"
+          }
+        ],
+        "prompt": "During open exploration, which example did you spend the most time on?",
+        "presentation": {
+          "control": "radio"
+        }
+      },
+      {
+        "id": "T1a",
+        "type": "text",
+        "required": false,
+        "maxLength": 4000,
+        "prompt": "Name two changes you can see in the instructions or control flow. Describe them in your own words.",
+        "presentation": {
+          "control": "textarea"
+        }
+      },
+      {
+        "id": "T1b",
+        "type": "rating",
+        "required": false,
+        "scale": "confidence",
+        "prompt": "How confident are you that those two things are really differences?",
+        "presentation": {
+          "control": "radio"
+        }
+      },
+      {
+        "id": "T2a",
+        "type": "single",
+        "required": false,
+        "options": [
+          {
+            "value": 101,
+            "label": "State 1 · produced by mem2reg"
+          },
+          {
+            "value": 102,
+            "label": "State 2 · produced by instcombine"
+          },
+          {
+            "value": 103,
+            "label": "State 3 · produced by simplifycfg"
+          },
+          {
+            "value": 104,
+            "label": "State 4 · produced by gvn"
+          },
+          {
+            "value": 105,
+            "label": "State 5 · produced by instcombine,simplifycfg"
+          },
+          {
+            "value": 106,
+            "label": "State 6 · produced by loop-simplify,lcssa"
+          },
+          {
+            "value": 107,
+            "label": "State 7 · produced by loop-rotate"
+          },
+          {
+            "value": 108,
+            "label": "State 8 · produced by licm"
+          },
+          {
+            "value": 109,
+            "label": "State 9 · produced by indvars"
+          },
+          {
+            "value": 110,
+            "label": "State 10 · produced by instcombine,simplifycfg"
+          },
+          {
+            "value": 111,
+            "label": "State 11 · produced by loop-vectorize"
+          },
+          {
+            "value": 112,
+            "label": "State 12 · produced by instcombine,simplifycfg"
+          },
+          {
+            "value": 198,
+            "label": "It was already gone at State 0 (the unoptimised version)"
+          },
+          {
+            "value": 199,
+            "label": "I could not work this out"
+          }
+        ],
+        "optionStatuses": {
+          "199": "could_not_work_out"
+        },
+        "prompt": "Which State is the first in which this arithmetic is absent, and which pass produced that State?",
+        "presentation": {
+          "control": "select"
+        }
+      },
+      {
+        "id": "T2b",
+        "type": "text",
+        "required": false,
+        "maxLength": 4000,
+        "prompt": "What do you see immediately before and after that pass that supports your answer? If you used an explanation, describe how it relates to the instructions you compared.",
+        "presentation": {
+          "control": "textarea"
+        }
+      },
+      {
+        "id": "T2c",
+        "type": "rating",
+        "required": false,
+        "scale": "confidence",
+        "prompt": "How confident are you?",
+        "presentation": {
+          "control": "radio"
+        }
+      },
+      {
+        "id": "T3a",
+        "type": "short_text",
+        "required": false,
+        "maxLength": 256,
+        "inabilityLabel": "I could not work this out",
+        "prompt": "Which block of the control-flow graph does that comparison sit in? Give the block's label as the tool shows it.",
+        "presentation": {
+          "control": "textarea"
+        }
+      },
+      {
+        "id": "T3b",
+        "type": "text",
+        "required": false,
+        "maxLength": 4000,
+        "prompt": "How many arrows leave that block, and where does each one go?",
+        "presentation": {
+          "control": "textarea"
+        }
+      },
+      {
+        "id": "T3c",
+        "type": "rating",
+        "required": false,
+        "scale": "confidence",
+        "prompt": "How confident are you?",
+        "presentation": {
+          "control": "radio"
+        }
+      },
+      {
+        "id": "T4a",
+        "type": "text",
+        "required": false,
+        "maxLength": 4000,
+        "inabilityLabel": "I could not work this out",
+        "prompt": "Describe a change in the branches or loop path between these states. Refer to a block or arrow that supports your answer.",
+        "presentation": {
+          "control": "textarea"
+        }
+      },
+      {
+        "id": "T4b",
+        "type": "text",
+        "required": false,
+        "maxLength": 4000,
+        "prompt": "What do you think this change does to the way the loop runs? It is fine to say you are unsure.",
+        "presentation": {
+          "control": "textarea"
+        }
+      },
+      {
+        "id": "T4c",
+        "type": "single",
+        "required": false,
+        "options": [
+          {
+            "value": 1,
+            "label": "CFG"
+          },
+          {
+            "value": 2,
+            "label": "IR"
+          },
+          {
+            "value": 3,
+            "label": "Both"
+          },
+          {
+            "value": 4,
+            "label": "Neither"
+          },
+          {
+            "value": 5,
+            "label": "I am not sure"
+          }
+        ],
+        "prompt": "Which view helped you identify this change?",
+        "presentation": {
+          "control": "radio"
+        }
+      },
+      {
+        "id": "T4d",
+        "type": "rating",
+        "required": false,
+        "scale": "confidence",
+        "prompt": "How confident are you in your answer to T4a?",
+        "presentation": {
+          "control": "radio"
+        }
+      },
+      {
+        "id": "T5a",
+        "type": "text",
+        "required": false,
+        "maxLength": 4000,
+        "inabilityLabel": "I could not work this out",
+        "prompt": "What relationship does the tool show between the selected instructions, and what confidence wording appears beside the link?",
+        "presentation": {
+          "control": "textarea"
+        }
+      },
+      {
+        "id": "T5b",
+        "type": "text",
+        "required": false,
+        "maxLength": 4000,
+        "prompt": "What does the link’s confidence wording tell you about what you can conclude? Keep it separate from the explanation’s “likely” wording.",
+        "presentation": {
+          "control": "textarea"
+        }
+      },
+      {
+        "id": "T5c",
+        "type": "single",
+        "required": false,
+        "options": [
+          {
+            "value": 1,
+            "label": "More"
+          },
+          {
+            "value": 2,
+            "label": "Less"
+          },
+          {
+            "value": 3,
+            "label": "No change"
+          },
+          {
+            "value": 4,
+            "label": "Not sure"
+          },
+          {
+            "value": 5,
+            "label": "Did not find the information"
+          }
+        ],
+        "prompt": "How did this information affect your trust in the correspondence?",
+        "presentation": {
+          "control": "radio"
+        }
+      },
+      {
+        "id": "T6a",
+        "type": "text",
+        "required": false,
+        "maxLength": 4000,
+        "prompt": "What did you choose to investigate, and what did you find?",
+        "presentation": {
+          "control": "textarea"
+        }
+      },
+      {
+        "id": "T6b",
+        "type": "text",
+        "required": false,
+        "maxLength": 4000,
+        "prompt": "Did anything surprise you about what the compiler did?",
+        "presentation": {
+          "control": "textarea"
+        }
+      },
+      {
+        "id": "T6c",
+        "type": "text",
+        "required": false,
+        "maxLength": 4000,
+        "prompt": "Was there anything you wanted to do that the tool would not let you do?",
+        "presentation": {
+          "control": "textarea"
+        }
+      }
+    ],
+    "preSections": [
+      {
+        "title": "Section A — Background",
+        "intro": "Select the UQ courses you are studying or have studied. Select None of these if none apply. Leave all options unanswered if you prefer not to say; an unanswered response is unknown, not None.",
+        "fields": [
+          "P1",
+          "P1.other",
+          "P2",
+          "P3",
+          "P3_other_name"
+        ],
+        "id": "pre.section1"
+      },
+      {
+        "title": "Section B — Familiarity",
+        "intro": "For each of the following, how familiar are you?",
+        "fields": [
+          "P4",
+          "P5",
+          "P6",
+          "P7",
+          "P8",
+          "P9",
+          "P10",
+          "P11",
+          "P12",
+          "P12.detail"
+        ],
+        "id": "pre.section2"
+      },
+      {
+        "title": "Section C — Expectation",
+        "intro": "2–3 sentences, optional.",
+        "fields": [
+          "P13"
+        ],
+        "id": "pre.section3"
+      }
+    ],
+    "postSections": [
+      {
+        "title": "Section A — Rating statements",
+        "intro": "For rating statements: Strongly disagree · Disagree · Neither agree nor disagree · Agree · Strongly agree, plus Not applicable / did not use this. Q8 asks which representations you used.",
+        "groups": [
+          {
+            "title": "Seeing what changed",
+            "fields": [
+              "Q1",
+              "Q2",
+              "Q3"
+            ],
+            "id": "post.section1.group1"
+          },
+          {
+            "title": "Working out which pass was responsible",
+            "fields": [
+              "Q4",
+              "Q5"
+            ],
+            "id": "post.section1.group2"
+          },
+          {
+            "title": "Using the representations together",
+            "fields": [
+              "Q6",
+              "Q7",
+              "Q8"
+            ],
+            "id": "post.section1.group3"
+          },
+          {
+            "title": "Exploring",
+            "fields": [
+              "Q9",
+              "Q10"
+            ],
+            "id": "post.section1.group4"
+          },
+          {
+            "title": "Clarity",
+            "fields": [
+              "Q11",
+              "Q12"
+            ],
+            "id": "post.section1.group5"
+          },
+          {
+            "title": "Understanding uncertainty",
+            "fields": [
+              "Q13"
+            ],
+            "id": "post.section1.group6"
+          }
+        ],
+        "id": "post.section1"
+      },
+      {
+        "title": "Section B — In your own words",
+        "intro": "Answer as much or as little as you like. These matter more to the research than the ratings above.",
+        "fields": [
+          "Q14",
+          "Q15",
+          "Q16",
+          "Q17",
+          "Q18"
+        ],
+        "id": "post.section2"
+      },
+      {
+        "title": "Section C — Two closing questions",
+        "fields": [
+          "Q19",
+          "Q20"
+        ],
+        "id": "post.section3"
+      }
+    ],
+    "tasks": [
+      {
+        "id": "T0",
+        "fields": [],
+        "setup": {
+          "example": "score",
+          "left": {
+            "ordinal": 0,
+            "view": "ir"
+          },
+          "right": {
+            "ordinal": 1,
+            "view": "ir"
+          }
+        },
+        "title": "Orientation",
+        "goal": "get your bearings before anything is asked of you.",
+        "instructions": "With score open at State 0, set the right panel to State 1 (`mem2reg`). Select `return weighted + wasted;` in the C source and follow its highlight into IR. Change the right panel to CFG and select a block; inspect its links back to IR instructions and C lines. There is nothing to submit.",
+        "entryWorkspace": {
+          "example": "score",
+          "left": {
+            "ordinal": 0,
+            "view": "ir"
+          },
+          "right": {
+            "ordinal": 0,
+            "view": "ir"
+          },
+          "selection": "clear"
+        }
+      },
+      {
+        "id": "T1",
+        "fields": [
+          "T1a",
+          "T1b"
+        ],
+        "setup": {
+          "example": "score",
+          "left": {
+            "ordinal": 0,
+            "view": "ir"
+          },
+          "right": {
+            "ordinal": 12,
+            "view": "ir"
+          }
+        },
+        "title": "What changed?",
+        "goal": "work out what the optimiser did to a program overall, before worrying about how it did it.",
+        "instructions": "Compare score at State 0 (unoptimised) and State 12 (`final_cleanup`) in IR. State 13 (`-O3`) was compiled separately. Name two changes you can see. You may use the source and explanations. A brief or partial answer is fine.",
+        "entryWorkspace": {
+          "example": "score",
+          "left": {
+            "ordinal": 0,
+            "view": "ir"
+          },
+          "right": {
+            "ordinal": 0,
+            "view": "ir"
+          },
+          "selection": "clear"
+        }
+      },
+      {
+        "id": "T2",
+        "fields": [
+          "T2a",
+          "T2b",
+          "T2c"
+        ],
+        "setup": {
+          "example": "score",
+          "left": {
+            "ordinal": 0,
+            "view": "ir"
+          },
+          "right": {
+            "ordinal": 0,
+            "view": "ir"
+          }
+        },
+        "title": "Which pass did it?",
+        "goal": "trace a specific change back to the pass responsible for it.",
+        "instructions": "In score, compare IR at State 0 and successive states. A state is a snapshot; its listed pass is the step that produced it. Find the first state where this line’s arithmetic is absent, then name the pass that produced that state:\n\nint wasted = scale * scale - scale * scale;\n\nThis expression subtracts the same product from itself. Compare the states immediately before and after the change. You may follow the C line and use the explanations.",
+        "entryWorkspace": {
+          "example": "score",
+          "left": {
+            "ordinal": 0,
+            "view": "ir"
+          },
+          "right": {
+            "ordinal": 0,
+            "view": "ir"
+          },
+          "selection": "clear"
+        }
+      },
+      {
+        "id": "T3",
+        "fields": [
+          "T3a",
+          "T3b",
+          "T3c"
+        ],
+        "setup": {
+          "example": "binary_search",
+          "left": {
+            "ordinal": 3,
+            "view": "ir"
+          },
+          "right": {
+            "ordinal": 3,
+            "view": "cfg"
+          }
+        },
+        "title": "Following source into the graph",
+        "goal": "locate a C condition in IR and interpret its control-flow graph block.",
+        "instructions": "In binary_search, set both panels to State 3 (`simplifycfg`), with IR left and CFG right. Select `while (lo < hi)` in C, follow the highlight to its IR comparison, then identify that instruction’s block and its outgoing arrows.",
+        "entryWorkspace": {
+          "example": "binary_search",
+          "left": {
+            "ordinal": 0,
+            "view": "ir"
+          },
+          "right": {
+            "ordinal": 0,
+            "view": "ir"
+          },
+          "selection": "clear"
+        }
+      },
+      {
+        "id": "T4",
+        "fields": [
+          "T4a",
+          "T4b",
+          "T4c",
+          "T4d"
+        ],
+        "setup": {
+          "example": "binary_search",
+          "left": {
+            "ordinal": 6,
+            "view": "cfg"
+          },
+          "right": {
+            "ordinal": 7,
+            "view": "cfg"
+          }
+        },
+        "title": "A change in the shape of the program",
+        "goal": "notice a structural change, not just a textual one.",
+        "instructions": "In binary_search, compare CFG at State 6 (`loop_canonical`) and State 7 (`loop_rotate`). Describe a branch or loop-path change, using a block or arrow, and say what you think it does. You may inspect IR too.",
+        "entryWorkspace": {
+          "example": "binary_search",
+          "left": {
+            "ordinal": 0,
+            "view": "ir"
+          },
+          "right": {
+            "ordinal": 0,
+            "view": "ir"
+          },
+          "selection": "clear"
+        }
+      },
+      {
+        "id": "T5",
+        "fields": [
+          "T5a",
+          "T5b",
+          "T5c"
+        ],
+        "setup": {
+          "example": "quick_sort",
+          "function": "partition",
+          "left": {
+            "ordinal": 8,
+            "view": "ir"
+          },
+          "right": {
+            "ordinal": 9,
+            "view": "ir"
+          }
+        },
+        "title": "What does this correspondence tell you?",
+        "goal": "interpret a recorded correspondence and the confidence attached to it.",
+        "instructions": "In quick_sort, set the left panel to State 8 (`licm`) and the right to State 9 (`indvars`), with IR in both. Choose `partition`. Select `if (a[j] <= pivot)` in C, then select the highlighted right-panel getelementptr for `a[j]`. What relationship does the tool show, and what confidence wording appears beside the link? What does the optimisation explanation say happened? Keep the link’s confidence separate from the explanation’s qualification.",
+        "entryWorkspace": {
+          "example": "quick_sort",
+          "left": {
+            "ordinal": 0,
+            "view": "ir"
+          },
+          "right": {
+            "ordinal": 0,
+            "view": "ir"
+          },
+          "selection": "clear"
+        }
+      },
+      {
+        "id": "T6",
+        "fields": [
+          "T6a",
+          "T6b",
+          "T6c"
+        ],
+        "setup": {},
+        "inheritWorkspace": true,
+        "title": "Open exploration",
+        "goal": "use the tool for whatever you actually find interesting.",
+        "instructions": "Explore for about five minutes. Investigate something that interests you and describe what you found.",
+        "entryWorkspace": {
+          "inherit": "previous",
+          "selection": "clear"
+        }
+      }
+    ],
+    "taskIntroduction": [
+      "Three small C programs are already loaded. You do not need to write or compile code.",
+      "Each program has fourteen recorded states: State 0 is the unoptimised baseline compiled with -O0; States 1–12 are produced by successive compiler passes applied to the preceding output; State 13 is compiled separately with -O3.",
+      "T0 is the orientation; the six tasks are T1–T6. T1–T5 open on the named example at State 0 with IR in both panels; set the states and views named in each task. T6 continues with T5’s example, states, function, and views, with the previous selection cleared; continue there or change them. You can use the C source, highlighting, explanations, and word help. This study evaluates the tool, not you; the tasks are not an unaided test. Answer at your own level of detail: brief, partial, or blank answers are useful. You may also skip or choose “I could not work this out”.",
+      "As you move between sections and tasks, your answers remain a draft in this browser tab; navigation does not submit them. Continuing locks that task’s answers. Duration is recorded from task presentation and includes visible reading, setup, exploration, and answering. Paused time, hidden-tab time, and reload downtime are excluded. There is no time limit."
+    ],
+    "information": [
+      {
+        "id": "information1",
+        "title": "About this study",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Understanding what compilers do to your code",
+            "id": "information1.block1",
+            "role": "information"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Thanks for taking a look. This is a research study for an undergraduate thesis at the University of Queensland.",
+            "id": "information1.block2",
+            "role": "information"
+          },
+          {
+            "kind": "paragraph",
+            "text": "When you compile a C program, the compiler does not just translate it — it rewrites it. It deletes work it can prove is pointless, moves calculations out of loops, merges and splits branches, and reshapes the control flow, all before a single instruction of machine code is produced. Most of that happens where nobody can see it. You write the source, you get a binary, and the interesting part in between is invisible.",
+            "id": "information1.block3",
+            "role": "information"
+          },
+          {
+            "kind": "paragraph",
+            "text": "irexplorer is a web tool that makes that middle part visible. It takes a small C program, compiles it with LLVM one optimisation pass at a time, and lets you look at the program's intermediate representation — the internal form the compiler actually works on — at each step along the way. You can put any two of those steps side by side, read the textual form and the control-flow graph together, and see what a given pass changed.",
+            "id": "information1.block4",
+            "role": "information"
+          },
+          {
+            "kind": "paragraph",
+            "text": "This study evaluates how useful irexplorer is when students and non-expert developers use it to explore compiler changes. The tasks give you questions to try with the tool; they are not an unaided test of what you already know or an assessment of you. You can use the tool's views and explanations, and answer at your own level of detail.",
+            "id": "information1.block5",
+            "role": "study-purpose"
+          },
+          {
+            "kind": "paragraph",
+            "text": "You do not need to know anything about compilers to take part. Being able to read basic C is enough. If you have never seen LLVM intermediate representation before, you are exactly the person this study needs.",
+            "id": "information1.block6",
+            "role": "information"
+          },
+          {
+            "kind": "paragraph",
+            "text": "The Continue button is at the bottom of this page. Scroll down and select it when you are ready.",
+            "id": "information1.block7",
+            "role": "information"
+          }
+        ]
+      },
+      {
+        "id": "information2",
+        "title": "What taking part involves",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "About 35 minutes, done in your own time, in a browser.",
+            "id": "information2.block1",
+            "role": "information"
+          },
+          {
+            "kind": "ordered",
+            "items": [
+              "A few questions about your background (about 4 minutes) — what you have studied and how familiar you are with the topics involved. This is so I can describe who took part; there are no right answers.",
+              "Six short tasks using the tool (about 20 minutes) — each one gives you a goal, such as working out what changed between two versions of a program. Some have a correct answer and some are open-ended. You are welcome to say you could not work something out; that is a useful result and it is the tool being tested, not you.",
+              "A closing survey (about 8 minutes) — rating statements about the tool and writing whatever you want to say about it in your own words."
+            ],
+            "id": "information2.block2",
+            "role": "information"
+          },
+          {
+            "kind": "paragraph",
+            "text": "You can stop before submission without giving a reason. Stop and discard removes the unsubmitted draft in this tab and sends no answers. Closing a tab is not a supported way to save or erase a draft.",
+            "id": "information2.block3",
+            "role": "information"
+          }
+        ]
+      },
+      {
+        "id": "information3",
+        "title": "What is recorded",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Your answers to the surveys and the tasks, and how long each task took.",
+            "id": "information3.block1",
+            "role": "information"
+          },
+          {
+            "kind": "paragraph",
+            "text": "The response form does not ask for your name, student number, or email address. Your answers are linked by a random participant code. The researcher will explain before recruitment whether, when, and how a submitted response can be withdrawn, including what happens if it has already contributed to reported results.",
+            "id": "information3.block2",
+            "role": "information"
+          },
+          {
+            "kind": "paragraph",
+            "text": "The researcher will explain before recruitment what information the study application and its hosting services record. Those arrangements are still being checked.",
+            "id": "information3.block3",
+            "role": "information"
+          },
+          {
+            "kind": "paragraph",
+            "text": "The background questions ask about your degree programme, year of study, which relevant UQ courses you are studying or have studied, and how familiar you are with a handful of topics. Course completion and current enrolment are combined in the course question.",
+            "id": "information3.block4",
+            "role": "information"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Free-text answers are read through for anything accidentally identifying before any of it is quoted.",
+            "id": "information3.block5",
+            "role": "information"
+          }
+        ]
+      },
+      {
+        "id": "information4",
+        "title": "What happens to it",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "As you move between sections and tasks, your answers remain a draft in this browser tab; navigation does not send them. At the end, selecting Submit answers starts a submission attempt. The submission is confirmed only when the Submission received screen shows a receipt. If a receipt is not yet confirmed, keep this tab open and retry the same submission.",
+            "id": "information4.block1",
+            "role": "submission-guidance"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Before recruitment, the researcher will explain where responses, exports, and backups are stored, who can access them, how long they are kept, and when they are deleted. The permitted use and sharing of results, including any short quotations, will also be stated before you decide whether to take part.",
+            "id": "information4.block2",
+            "role": "information"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Nothing you do here reaches any course, any teaching staff, or any mark. This is not an assessment of you, and no individual result is reported.",
+            "id": "information4.block3",
+            "role": "information"
+          }
+        ]
+      },
+      {
+        "id": "information5",
+        "title": "Voluntary participation",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Taking part is voluntary. You can decline without giving a reason. The researcher will state before recruitment whether an incentive is offered and whether any contact details are needed to arrange it.",
+            "id": "information5.block1",
+            "role": "information"
+          }
+        ]
+      },
+      {
+        "id": "information6",
+        "title": "Questions",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Researcher: Joe Thorne, BE (Hons) Software, School of Electrical Engineering and Computer Science — s4784727@student.uq.edu.au\nSupervisor: Dr Joel Mackenzie, School of Electrical Engineering and Computer Science",
+            "id": "information6.block1",
+            "role": "information"
+          },
+          {
+            "kind": "paragraph",
+            "text": "The approved study contact details, including any required ethics contact, will be provided before recruitment.",
+            "id": "information6.block2",
+            "role": "information"
+          }
+        ]
+      }
+    ],
+    "membership": {
+      "consent": [
+        "C1",
+        "C2",
+        "C3",
+        "C4",
+        "C5",
+        "C6"
+      ],
+      "pre.section1": [
+        "P1",
+        "P1.other",
+        "P2",
+        "P3",
+        "P3_other_name"
+      ],
+      "pre.section2": [
+        "P4",
+        "P5",
+        "P6",
+        "P7",
+        "P8",
+        "P9",
+        "P10",
+        "P11",
+        "P12",
+        "P12.detail"
+      ],
+      "pre.section3": [
+        "P13"
+      ],
+      "post.section1.group1": [
+        "Q1",
+        "Q2",
+        "Q3"
+      ],
+      "post.section1.group2": [
+        "Q4",
+        "Q5"
+      ],
+      "post.section1.group3": [
+        "Q6",
+        "Q7",
+        "Q8"
+      ],
+      "post.section1.group4": [
+        "Q9",
+        "Q10"
+      ],
+      "post.section1.group5": [
+        "Q11",
+        "Q12"
+      ],
+      "post.section1.group6": [
+        "Q13"
+      ],
+      "post.section1": [
+        "Q1",
+        "Q2",
+        "Q3",
+        "Q4",
+        "Q5",
+        "Q6",
+        "Q7",
+        "Q8",
+        "Q9",
+        "Q10",
+        "Q11",
+        "Q12",
+        "Q13"
+      ],
+      "post.section2": [
+        "Q14",
+        "Q15",
+        "Q16",
+        "Q17",
+        "Q18"
+      ],
+      "post.section3": [
+        "Q19",
+        "Q20"
+      ],
+      "T0": [],
+      "T1": [
+        "T1a",
+        "T1b"
+      ],
+      "T2": [
+        "T2a",
+        "T2b",
+        "T2c"
+      ],
+      "T3": [
+        "T3a",
+        "T3b",
+        "T3c"
+      ],
+      "T4": [
+        "T4a",
+        "T4b",
+        "T4c",
+        "T4d"
+      ],
+      "T5": [
+        "T5a",
+        "T5b",
+        "T5c"
+      ],
+      "T6": [
+        "T6a",
+        "T6b",
+        "T6c"
+      ],
+      "pre": [
+        "P1",
+        "P1.other",
+        "P2",
+        "P3",
+        "P3_other_name",
+        "P4",
+        "P5",
+        "P6",
+        "P7",
+        "P8",
+        "P9",
+        "P10",
+        "P11",
+        "P12",
+        "P12.detail",
+        "P13"
+      ],
+      "post": [
+        "Q1",
+        "Q2",
+        "Q3",
+        "Q4",
+        "Q5",
+        "Q6",
+        "Q7",
+        "Q8",
+        "Q9",
+        "Q10",
+        "Q11",
+        "Q12",
+        "Q13",
+        "Q14",
+        "Q15",
+        "Q16",
+        "Q17",
+        "Q18",
+        "Q19",
+        "Q20"
+      ]
+    },
+    "journey": {
+      "sectionOrder": [
+        "information",
+        "pre",
+        "tasks",
+        "post",
+        "review",
+        "receipt"
+      ],
+      "taskOrder": [
+        "T0",
+        "T1",
+        "T2",
+        "T3",
+        "T4",
+        "T5",
+        "T6"
+      ],
+      "introductions": {
+        "pre": "Approximately 4 minutes. Every item is optional except P1.",
+        "post": "Approximately 8 minutes. All items may be left unanswered. Answers stay local until you submit them."
+      },
+      "timingPolicy": {
+        "measure": "task-presentation-duration",
+        "starts": "presentation",
+        "includes": [
+          "visible-reading",
+          "setup",
+          "exploration",
+          "answering"
+        ],
+        "excludes": [
+          "paused",
+          "hidden-tab",
+          "reload-downtime"
+        ],
+        "timeLimit": null,
+        "setupReachedCollected": false
+      }
+    },
+    "glossary": [
+      {
+        "id": "o0",
+        "match": "-O0",
+        "text": "Clang option that disables optimisation, giving the unoptimised baseline."
+      },
+      {
+        "id": "o3",
+        "match": "-O3",
+        "text": "Clang option that enables its high optimisation pipeline; this separately compiled state is not the teaching pass sequence."
+      },
+      {
+        "id": "recorded-states",
+        "match": "recorded states",
+        "text": "Saved snapshots of the program at points in its optimisation timeline."
+      },
+      {
+        "id": "compiler-passes",
+        "match": "compiler passes",
+        "text": "Individual transformations the compiler applies to its intermediate representation."
+      },
+      {
+        "id": "ir",
+        "match": "IR",
+        "text": "Intermediate representation: the compiler’s internal form of the program between source code and machine code."
+      },
+      {
+        "id": "cfg",
+        "match": "CFG",
+        "text": "Control-flow graph: boxes show straight runs of instructions and arrows show possible jumps."
+      }
+    ],
+    "messages": {
+      "information.title": "Information and consent",
+      "information.purpose-label": "Study purpose:",
+      "information.submission-label": "Answers are submitted only from the final review page.",
+      "consent.title": "Consent",
+      "consent.introduction": "Please confirm each of the following before starting.",
+      "consent.local": "Your answers stay in this tab until you submit. You can stop and discard them before submission.",
+      "consent.confirm": "Please confirm all six acknowledgements before starting.",
+      "consent.code-failure": "A secure random participant code could not be created. Use a secure browser connection and retry.",
+      "progress.information": "Information",
+      "progress.pre": "Pre-survey",
+      "progress.tasks": "Tasks",
+      "progress.post": "Post-survey",
+      "progress.review": "Review",
+      "progress.sections": "Study sections",
+      "pre.title": "Pre-survey",
+      "post.title": "Post-survey",
+      "pre.lock-pending": "P13 will be locked when you start the T0 orientation.",
+      "pre.locked": "P13 was locked when the T0 orientation started. Background corrections do not change it.",
+      "locking.expectation": "Locked when the T0 orientation started; kept as your pre-exposure answer.",
+      "locking.task": "Saved task answer; read-only.",
+      "locking.background": "Saved answer. Use Edit background answers to correct it.",
+      "field.choose": "Choose an answer…",
+      "field.text-limit": "{required} · up to {maxLength} characters.",
+      "field.required-label": "Required",
+      "field.optional-label": "Optional",
+      "field.required": "Required.",
+      "field.multiple": "Optional · select all that apply.",
+      "field.optional": "Optional.",
+      "field.clear-label": "Clear answer",
+      "field.clear-accessible": "Clear answer for {fieldId}",
+      "validation.summary": "Please correct the marked answers before continuing.",
+      "validation.unknown": "Unknown item.",
+      "validation.invalid": "Invalid answer.",
+      "validation.required-p1": "Choose an answer for P1.",
+      "validation.required-followup": "Complete this required follow-up.",
+      "validation.text-limit": "Use no more than {maxLength} characters. Your text has not been shortened.",
+      "validation.options": "Choose one of this item’s options.",
+      "actions.start": "Continue to pre-survey",
+      "actions.return": "Return to study",
+      "actions.decline": "Decline and exit",
+      "actions.pre-start": "Save pre-survey and start T0",
+      "actions.edit-pre": "Edit background answers",
+      "actions.pre-corrections": "Save background corrections",
+      "actions.return-tasks": "Return to tasks",
+      "actions.review": "Review answers",
+      "actions.edit-post": "Edit post-survey answers",
+      "actions.submit": "Submit answers",
+      "actions.disabled": "Participant collection disabled",
+      "actions.finish-orientation": "Finish orientation and start T1",
+      "actions.post": "Continue to post-survey",
+      "actions.continue": "Save and continue",
+      "actions.unable": "I could not work this out — continue",
+      "actions.skip": "Skip task",
+      "actions.pause": "Pause task",
+      "actions.resume": "Resume task",
+      "actions.current": "Return to current section",
+      "actions.retry-content": "Retry loading forms",
+      "actions.retry-save": "Retry local save",
+      "actions.memory": "Continue in memory only",
+      "actions.retry-discard": "Retry discard saved draft",
+      "actions.stop": "Stop and discard answers",
+      "actions.keep": "Keep answers",
+      "actions.discard": "Discard all answers",
+      "actions.restart": "Start a new session",
+      "actions.explore": "Explore curated artefacts",
+      "actions.retry-submit": "Retry submission",
+      "actions.cleanup": "Retry local cleanup",
+      "actions.new-session": "Start another session",
+      "actions.retry-recovery": "Retry recovery",
+      "actions.discard-incompatible": "Discard incompatible saved draft",
+      "discard.confirm": "Discard all local answers? This cannot be undone.",
+      "discard.declined": "Study declined",
+      "discard.stopped": "Study stopped",
+      "discard.done": "No submission was created. The local draft has been discarded.",
+      "storage.stale": " A previous saved copy may remain.",
+      "storage.memory": "Memory only: keep this tab open. Refreshing loses your answers.",
+      "storage.unreadable": " Any older saved copy could not be checked or removed.",
+      "storage.saved": "Saved in this tab. You can refresh; keep the tab open until you submit.",
+      "storage.before-consent": "After consent, your answers are saved in this tab until submission. Keep the tab open.",
+      "storage.unavailable": "Browser storage is unavailable. Any older saved copy could not be checked.",
+      "storage.incompatible": "A damaged or incompatible draft could not be restored. Discard it to start a new session.",
+      "storage.save-failed": "The latest answers could not be saved in this tab.",
+      "storage.discard-failed": "The saved draft could not be removed. Allow browser storage and retry discard; it may return on refresh.",
+      "load.unavailable": "Study content unavailable",
+      "load.loading": "Loading study content…",
+      "load.retry": "No study answers have been sent. Retry to load the forms and recover any compatible local draft.",
+      "task.title": "{taskId} — {title}",
+      "task.orientation": "Orientation · no scored response",
+      "task.number": "Task {taskNumber} of 6",
+      "task.goal-label": "Goal:",
+      "task.navigation": "Task sections",
+      "task.instructions": "Instructions",
+      "task.workspace-link": "Go to workspace",
+      "task.responses-link": "Go to responses",
+      "task.setup-title": "Setup and instructions",
+      "task.entry": "The workspace opens on {example} at State 0 with IR in both panels. Adjust it to explore the comparison in the task goal.",
+      "task.inherit": "Your workspace continues from T5 with its selection cleared. Continue there, or choose another example, State pair, function, and view. Five minutes is guidance; continue whenever you are ready.",
+      "task.responses-locked": "Saved responses (read-only)",
+      "task.responses-open": "Responses and continue",
+      "task.goal-link": "Back to goal",
+      "task.locked": "Recorded outcome: {outcome}. Responses are locked.",
+      "task.optional": "You may leave fields unanswered. Choosing inability or skipping is a valid outcome. Continuing locks this task’s responses.",
+      "task.progress": "Task progress",
+      "task.saved": "{taskId} saved",
+      "task.current": "{taskId} current",
+      "outcome.completed": "Completed",
+      "outcome.skipped": "Skipped",
+      "outcome.unable": "Could not work this out",
+      "outcome.pending": "In progress",
+      "answer.unanswered": "Unanswered",
+      "answer.not-applicable": "Not applicable",
+      "timing.saved": "Saved task-presentation duration: {seconds} seconds{interrupted}.",
+      "timing.interrupted": " · interrupted",
+      "timing.paused": "Paused. Resume when ready; paused time is excluded.",
+      "timing.active": "Task-presentation timing active · visible task time is counted; hidden-tab and pause time are excluded · no time limit.",
+      "review.title": "Review answers",
+      "review.not-submitted": "Nothing has been submitted.",
+      "review.submit-detail": "Select Submit answers to store your consent, survey and task answers, outcomes, and active task durations. Your journey is identified by a random participant code.",
+      "review.frozen": "Once submission begins, answers are locked. If the connection fails, keep this tab open and retry. A receipt confirms that your submission was saved.",
+      "review.editable": "You can correct background answers and post-survey answers below. P13 stays locked.",
+      "review.tasks": "Task outcomes and task-presentation durations",
+      "review.task-summary": "{taskId}: {outcome} · {seconds} seconds{interrupted}",
+      "review.section-answers": "{section} answers",
+      "review.duration": "Durations start when each task is presented and include visible reading, exploration, and answering. They exclude hidden-tab time, explicit pauses, and reload downtime. This task-presentation measure is distinct from the v0.5/v0.6 post-setup active duration and must not be pooled with it.",
+      "submission.submitting": "Submitting…",
+      "submission.unconfirmed": "Receipt not yet confirmed",
+      "submission.wait": "Wait for the server receipt. Answers are frozen for this attempt.",
+      "submission.retry": "A submission record may already exist. Retry with the same submission ID and answers.",
+      "submission.keep-tab": "Keep this tab open. Stop/discard is unavailable after an attempt because it cannot erase a stored submission.",
+      "submission.participant-code": "Participant code: {participantCode}",
+      "submission.no-receipt": "No receipt available.",
+      "submission.invalid-receipt": "Unrecognised receipt.",
+      "submission.uncertain": "{error} A submission may already be stored. Keep this tab and retry; the same ID and answers will be sent.",
+      "submission.limit": "Submission exceeds the 24-hour per-task or 128 KiB request limit. Nothing was sent. Shorten free text or contact the researcher about the task duration.",
+      "submission.retry-save-failed": "The retry copy could not be saved. Restore browser storage and try again. Nothing was sent.",
+      "recovery.title": "Submission recovery unavailable",
+      "recovery.incompatible": "An older saved submission is incompatible with this version. Discard the incompatible saved draft to start again.",
+      "recovery.unreadable": "Submission recovery could not be read. Restore browser storage before starting or retrying.",
+      "recovery.discard-failed": "The incompatible saved draft could not be removed. Allow browser storage and retry discard.",
+      "recovery.server-copy": "A server submission may already exist; discarding only removes this tab's incompatible retry copy.",
+      "recovery.memory": "Memory-only continuation starts a new session; an older submission may already exist. Refresh cannot recover this new session.",
+      "receipt.title": "Submission received",
+      "receipt.saved": "Your submission has been saved.",
+      "receipt.code": "Receipt: {receiptId}",
+      "receipt.keep": "Keep your participant code and receipt for reference.",
+      "cleanup.done": "Local answer drafts have been cleared. Only this receipt remains in the tab.",
+      "cleanup.persist-failed": "Receipt confirmed, but local cleanup needs retry. Keep this receipt code.",
+      "cleanup.retry-save": "Receipt confirmed. Allow browser storage and retry cleanup; a saved answer copy may remain.",
+      "cleanup.retry-draft": "Receipt confirmed. Retry cleanup to remove the local answer draft.",
+      "cleanup.retry": "Allow browser storage and retry."
+    }
+  }
+}

@@ -7,6 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+from src.backend.evaluation.content import participant_content  # noqa: E402
 from src.backend.toolchain.integrity import verify_curated_snapshot  # noqa: E402 - needs ROOT on sys.path
 
 
@@ -27,9 +28,11 @@ def build(version):
     digest, files = digest_files(paths)
     pin = dict(line.split('=', 1) for line in (ROOT / 'docs/curated-artefacts.sha256').read_text().splitlines()
                if line and not line.startswith('#'))
-    content = json.loads((ROOT / 'src/backend/evaluation/participant-content.json').read_text())
+    content = participant_content()
     manifest = {'version': version, 'revision': f'{version}+{digest[:12]}', 'sourceSha256': digest,
                 'artefactSha256': pin['sha256'], 'files': files,
+                'packageSchemaVersion': content['packageSchemaVersion'],
+                'packageIdentity': content['packageIdentity'],
                 **{k: content[k] for k in ('instrumentVersion', 'contentVersion', 'studyVersion')}}
     (ROOT / 'release.json').write_text(json.dumps(manifest, indent=2) + '\n')
     print(manifest['revision'])

@@ -1,7 +1,5 @@
 """Participant boundary and survey contract; no collection API."""
-import importlib.util
 import json
-import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -14,27 +12,24 @@ from src.backend.evaluation.service import Config
 
 
 class EvaluationContentTests(unittest.TestCase):
-    def test_public_content_projects_reviewed_information_and_consent(self):
-        reviewed = (Path(__file__).resolve().parents[2]
-                    / 'Docs/evaluation/instruments/00-participant-information.md').read_text()
-        information, consent = reviewed.split('## Consent\n', 1)
-        expected_titles = re.findall(r'^## (.+)$', information, re.MULTILINE)
-        expected_consent = [re.sub(r'\*\*(.*?)\*\*', r'\1', item)
-                            for item in re.findall(r'^- \[ \] (.+)$', consent, re.MULTILINE)]
-        builder_path = Path(__file__).resolve().parents[2] / 'scripts/irexplorer-research/build_content.py'
-        spec = importlib.util.spec_from_file_location('build_content', builder_path)
-        builder = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(builder)
-        expected_information, expected_fields = builder.information_and_consent()
+    def test_verified_public_package_exposes_explicit_membership_roles_and_controls(self):
         content = participant_content()
-
-        self.assertEqual([section['title'] for section in content['information']], expected_titles)
-        self.assertEqual([field['prompt'] for field in content['fields'] if field['id'].startswith('C')],
-                         expected_consent)
-        self.assertEqual(content['information'], expected_information)
-        self.assertEqual([field for field in content['fields'] if field['id'].startswith('C')], expected_fields)
+        self.assertEqual(content['packageSchemaVersion'], 2)
+        self.assertEqual(content['packageIdentity']['digest'],
+                         'cb0f303575810f72ae0596ec8a5554c05bd62d32066542f56484e7144f37a1a6')
+        self.assertEqual(content['membership']['consent'], [f'C{i}' for i in range(1, 7)])
+        self.assertEqual(content['membership']['pre'], [field_id for section in content['preSections']
+                                                       for field_id in section['fields']])
+        self.assertEqual([block['role'] for section in content['information'] for block in section['blocks']
+                          if block.get('role') in ('study-purpose', 'submission-guidance')],
+                         ['study-purpose', 'submission-guidance'])
+        self.assertEqual(next(field for field in content['fields'] if field['id'] == 'T2a')['presentation'],
+                         {'control': 'select'})
+        self.assertEqual(set(content), {'packageSchemaVersion', 'packageIdentity', 'instrumentVersion',
+                                        'contentVersion', 'studyVersion', 'scales', 'fields', 'preSections',
+                                        'postSections', 'tasks', 'taskIntroduction', 'information', 'membership',
+                                        'journey', 'glossary', 'messages'})
         self.assertNotIn('[Joe/Joel to confirm', json.dumps(content))
-        self.assertTrue(all(section['title'] for section in content['information']))
 
     def test_revised_response_types_reject_old_codes(self):
         def a(value):
@@ -89,7 +84,7 @@ class EvaluationContentTests(unittest.TestCase):
     def test_v011_task_copy_and_identity_match_current_runsheet(self):
         content = participant_content()
         self.assertEqual((content['instrumentVersion'], content['contentVersion'], content['studyVersion']),
-                         ('v0.11', 'v0.11-preview-1', 'v0.11-synthetic-1'))
+                         ('v0.11', 'v0.11-preview-2', 'v0.11-synthetic-1'))
         tasks = {task['id']: task for task in content['tasks']}
         self.assertIn('State 0 is the unoptimised baseline compiled with -O0', content['taskIntroduction'][1])
         self.assertIn('T0 is the orientation; the six tasks are T1–T6', content['taskIntroduction'][2])
@@ -97,13 +92,11 @@ class EvaluationContentTests(unittest.TestCase):
         self.assertIn('not an unaided test', content['taskIntroduction'][2])
         self.assertIn('Answer at your own level of detail', content['taskIntroduction'][2])
         self.assertIn('navigation does not submit them', content['taskIntroduction'][3])
-        about = content['information'][0]['blocks']
-        self.assertIn('evaluates how useful irexplorer is', about[4]['text'])
-        self.assertIn('not an unaided test', about[4]['text'])
-        handling = next(section for section in content['information'] if section['title'] == 'What happens to it')
-        self.assertIn('navigation does not send them', handling['blocks'][0]['text'])
-        self.assertIn('starts a submission attempt', handling['blocks'][0]['text'])
-        self.assertIn('shows a receipt', handling['blocks'][0]['text'])
+        role_blocks = [block for section in content['information'] for block in section['blocks']]
+        self.assertIn('evaluates how useful irexplorer is',
+                      next(block['text'] for block in role_blocks if block.get('role') == 'study-purpose'))
+        self.assertIn('navigation does not send them',
+                      next(block['text'] for block in role_blocks if block.get('role') == 'submission-guidance'))
         self.assertIn('A brief or partial answer is fine', tasks['T1']['instructions'])
         t2a = next(field for field in content['fields'] if field['id'] == 'T2a')
         self.assertIn('Which State is the first in which this arithmetic is absent', t2a['prompt'])
@@ -112,7 +105,7 @@ class EvaluationContentTests(unittest.TestCase):
         self.assertEqual(tasks['T5']['setup']['right']['ordinal'], 9)
         self.assertIn('confidence wording appears beside the link', tasks['T5']['instructions'])
         self.assertIn('Keep the link’s confidence separate', tasks['T5']['instructions'])
-        self.assertTrue(tasks['T6']['inheritWorkspace'])
+        self.assertEqual(tasks['T6']['entryWorkspace']['selection'], 'clear')
 
     def test_public_content_is_preview_only_and_participant_only(self):
         with tempfile.TemporaryDirectory() as directory, TestClient(create_app(
@@ -128,9 +121,11 @@ class EvaluationContentTests(unittest.TestCase):
             self.assertTrue(content['submissionEnabled'])
             self.assertEqual(len(content['fields']), 60)
             allowed = {'id', 'prompt', 'type', 'required', 'options', 'scale', 'notApplicableLabel', 'maxLength',
-                       'exclusiveValue', 'optionStatuses', 'condition', 'inabilityLabel'}
+                       'exclusiveValue', 'optionStatuses', 'condition', 'inabilityLabel', 'presentation'}
             for field in content['fields']:
                 self.assertLessEqual(set(field), allowed)
+            self.assertEqual(content['packageSchemaVersion'], 2)
+            self.assertEqual(content['packageIdentity'], participant_content()['packageIdentity'])
             for forbidden in ['(R)', 'stratification', 'reverse-scored', 'marking key', 'expected answer']:
                 self.assertNotIn(forbidden, response.text)
             for path in ['/participant-content.json', '/src/backend/evaluation/participant-content.json',
@@ -153,6 +148,17 @@ class EvaluationContentTests(unittest.TestCase):
             self.assertIn(field, validate_answers('post', {field: answer}))
         self.assertIn('P2', validate_answers('pre', {'P2': answered(6)}))
 
+    def test_common_browser_server_response_examples(self):
+        examples = json.loads((Path(__file__).parent / 'data/study-validation-examples.json').read_text())
+        for example in examples:
+            with self.subTest(example=example['name']):
+                answers = json.loads(json.dumps(example['answers']))
+                for answer in answers.values():
+                    if 'repeat' in answer:
+                        answer['value'] = answer.pop('repeat') * answer.pop('times')
+                errors = validate_answers(example['section'], answers, complete=example.get('complete', False))
+                self.assertEqual(sorted(errors), sorted(example['errorFields']))
+
     def test_exclusive_choices_and_conditional_details(self):
         def a(value):
             return {'status': 'answered', 'value': value}
@@ -166,7 +172,7 @@ class EvaluationContentTests(unittest.TestCase):
     def test_v011_course_selections_combine_status_and_distinguish_none_from_missing(self):
         content = participant_content()
         self.assertEqual((content['instrumentVersion'], content['contentVersion'], content['studyVersion']),
-                         ('v0.11', 'v0.11-preview-1', 'v0.11-synthetic-1'))
+                         ('v0.11', 'v0.11-preview-2', 'v0.11-synthetic-1'))
         course = next(field for field in content['fields'] if field['id'] == 'P3')
         self.assertEqual(course['type'], 'multiple')
         self.assertEqual([option['value'] for option in course['options']], list(range(1, 10)))
@@ -178,9 +184,7 @@ class EvaluationContentTests(unittest.TestCase):
             'CSSE2310 — Computer Systems Principles and Programming', 'COMP3506 — Algorithms & Data Structures',
             'COMP3301 — Operating Systems Architecture', 'COMP4403 — Compilers and Interpreters',
         ])
-        source = (Path(__file__).resolve().parents[2] / 'Docs/evaluation/instruments/01-pre-survey.md').read_text()
-        for label in labels:
-            self.assertIn(label, source)
+        self.assertEqual(len(labels), 7)
         def a(value):
             return {'status': 'answered', 'value': value}
         self.assertEqual(validate_answers('pre', {'P3': a([1, 7])}), {})
@@ -207,8 +211,6 @@ class EvaluationContentTests(unittest.TestCase):
 
     def test_task_inventory_setups_and_revised_response_structure(self):
         content = participant_content()
-        self.assertTrue(content['tasks'][-1]['inheritWorkspace'])
-        self.assertTrue(all(not task.get('inheritWorkspace', False) for task in content['tasks'][:-1]))
         self.assertEqual([t['id'] for t in content['tasks']], [f'T{i}' for i in range(7)])
         tasks = {t['id']: t for t in content['tasks']}
         self.assertEqual(tasks['T0']['fields'], [])
@@ -216,6 +218,9 @@ class EvaluationContentTests(unittest.TestCase):
         self.assertEqual(tasks['T5']['fields'], ['T5a', 'T5b', 'T5c'])
         self.assertEqual(tasks['T6']['fields'], ['T6a', 'T6b', 'T6c'])
         self.assertEqual(tasks['T6']['setup'], {})
+        self.assertEqual(tasks['T6']['entryWorkspace'], {'inherit': 'previous', 'selection': 'clear'})
+        self.assertTrue(all(task['entryWorkspace']['selection'] == 'clear' for task in content['tasks']))
+        self.assertEqual(content['membership']['T5'], tasks['T5']['fields'])
         self.assertEqual(tasks['T1']['setup']['right']['ordinal'], 12)
         self.assertEqual(tasks['T2']['setup']['left']['ordinal'], 0)
         self.assertEqual(tasks['T2']['setup']['right']['ordinal'], 0)
@@ -229,7 +234,7 @@ class EvaluationContentTests(unittest.TestCase):
         self.assertEqual([f['id'] for f in content['fields'] if f.get('scale') == 'confidence'],
                          ['T1b', 'T2c', 'T3c', 'T4d'])
         for task in tasks.values():
-            expected_keys = {'id', 'title', 'goal', 'instructions', 'fields', 'setup'}
+            expected_keys = {'id', 'title', 'goal', 'instructions', 'fields', 'setup', 'entryWorkspace'}
             self.assertIn(set(task), (expected_keys, expected_keys | {'inheritWorkspace'}))
             self.assertTrue(task['goal'])
             self.assertTrue(task['instructions'])

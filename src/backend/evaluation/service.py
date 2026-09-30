@@ -79,22 +79,22 @@ def validate(submission):
     require(isinstance(consent, dict) and set(consent) == {'version', 'acknowledgements'})
     require(consent['version'] == c['contentVersion'])
     a = consent['acknowledgements']
-    require(isinstance(a, dict) and set(a) == {f['id'] for f in c['fields'] if f['id'].startswith('C')}
+    require(isinstance(a, dict) and set(a) == set(c['membership']['consent'])
             and all(v is True for v in a.values()))
     def answers(section, values):
-        prefix = {'pre': 'P', 'post': 'Q'}.get(section, section)
         require(isinstance(values, dict)
-                and set(values) == {f['id'] for f in c['fields'] if f['id'].startswith(prefix)})
+                and set(values) == set(c['membership'][section]))
         require(not validate_answers(section, values, complete=True))
     answers('pre', submission['pre'])
     answers('post', submission['post'])
     ts = submission['tasks']
-    require(isinstance(ts, list) and len(ts) == 7)
-    for i, t in enumerate(ts):
+    require(isinstance(ts, list) and len(ts) == len(c['tasks']))
+    for task, t in zip(c['tasks'], ts, strict=True):
         require(isinstance(t, dict)
                 and set(t) == {'id', 'status', 'durationMs', 'interrupted', 'answers'})
-        require(t['id'] == f'T{i}'
-                and t['status'] in (['completed'] if i == 0 else ['completed', 'skipped', 'could_not_work_out']))
+        require(t['id'] == task['id']
+                and t['status'] in (['completed'] if task['id'] == 'T0'
+                                    else ['completed', 'skipped', 'could_not_work_out']))
         require(type(t['durationMs']) is int and 0 <= t['durationMs'] <= 86400000 and type(t['interrupted']) is bool)
         answers(t['id'], t['answers'])
     # Multi-choice order has no research meaning; preserve raw codes as a set.
@@ -109,6 +109,9 @@ def validate(submission):
 class StudyService:
     def __init__(self, config):
         self.config = config
+        # Fail application startup if the packaged public instrument is missing
+        # or its immutable manifest/identity does not verify.
+        participant_content()
 
     def content(self):
         return {**participant_content(), 'collectionMode': self.config.collection_mode,

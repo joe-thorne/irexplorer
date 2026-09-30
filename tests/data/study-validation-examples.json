@@ -1,0 +1,195 @@
+[
+  {
+    "name": "visible conditional requiredness",
+    "section": "pre",
+    "complete": true,
+    "answers": {
+      "P3": {
+        "status": "answered",
+        "value": [
+          9
+        ]
+      },
+      "P3_other_name": {
+        "status": "unanswered",
+        "value": null
+      },
+      "P1": {
+        "status": "answered",
+        "value": 1
+      }
+    },
+    "errorFields": [
+      "P3_other_name"
+    ]
+  },
+  {
+    "name": "hidden conditional follow-up cannot carry an answer",
+    "section": "pre",
+    "answers": {
+      "P3": {
+        "status": "unanswered",
+        "value": null
+      },
+      "P3_other_name": {
+        "status": "answered",
+        "value": "Synthetic other"
+      }
+    },
+    "errorFields": [
+      "P3_other_name"
+    ]
+  },
+  {
+    "name": "malformed conditional parent is reported without throwing",
+    "section": "pre",
+    "answers": {
+      "P3": {
+        "status": "answered",
+        "value": [
+          9,
+          9
+        ]
+      },
+      "P3_other_name": {
+        "status": "answered",
+        "value": "Synthetic other"
+      }
+    },
+    "errorFields": [
+      "P3"
+    ]
+  },
+  {
+    "name": "duplicate choices are rejected",
+    "section": "pre",
+    "answers": {
+      "P3": {
+        "status": "answered",
+        "value": [
+          1,
+          1
+        ]
+      }
+    },
+    "errorFields": [
+      "P3"
+    ]
+  },
+  {
+    "name": "unknown choices are rejected",
+    "section": "pre",
+    "answers": {
+      "P3": {
+        "status": "answered",
+        "value": [
+          99
+        ]
+      }
+    },
+    "errorFields": [
+      "P3"
+    ]
+  },
+  {
+    "name": "exclusive Not sure cannot accompany another representation",
+    "section": "post",
+    "answers": {
+      "Q8": {
+        "status": "answered",
+        "value": [
+          2,
+          4
+        ]
+      }
+    },
+    "errorFields": [
+      "Q8"
+    ]
+  },
+  {
+    "name": "exclusive Not sure can stand alone",
+    "section": "post",
+    "answers": {
+      "Q8": {
+        "status": "answered",
+        "value": [
+          4
+        ]
+      }
+    },
+    "errorFields": []
+  },
+  {
+    "name": "supplementary Unicode text at the limit is accepted",
+    "section": "post",
+    "answers": {
+      "Q14": {
+        "status": "answered",
+        "repeat": "🙂",
+        "times": 4000
+      }
+    },
+    "errorFields": []
+  },
+  {
+    "name": "supplementary Unicode text over the limit is rejected",
+    "section": "post",
+    "answers": {
+      "Q14": {
+        "status": "answered",
+        "repeat": "🙂",
+        "times": 4001
+      }
+    },
+    "errorFields": [
+      "Q14"
+    ]
+  },
+  {
+    "name": "not applicable remains a null status",
+    "section": "post",
+    "answers": {
+      "Q1": {
+        "status": "not_applicable",
+        "value": null
+      }
+    },
+    "errorFields": []
+  },
+  {
+    "name": "inability remains a null status",
+    "section": "T2",
+    "answers": {
+      "T2a": {
+        "status": "could_not_work_out",
+        "value": null
+      }
+    },
+    "errorFields": []
+  },
+  {
+    "name": "unanswered remains a null status",
+    "section": "post",
+    "answers": {
+      "Q1": {
+        "status": "unanswered",
+        "value": null
+      }
+    },
+    "errorFields": []
+  },
+  {
+    "name": "membership rejects an item owned by another section",
+    "section": "T0",
+    "answers": {
+      "T1a": {
+        "status": "answered",
+        "value": "Synthetic"
+      }
+    },
+    "errorFields": [
+      "T1a"
+    ]
+  }
+]
