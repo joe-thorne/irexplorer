@@ -1,20 +1,46 @@
 """Private researcher export, SQLite backup/restore, and retention operations."""
 import argparse
 import csv
-import hashlib
 import json
 import os
 import sqlite3
+import sys
+from dataclasses import dataclass
 from pathlib import Path
 
-from .content import participant_content, participant_snapshot
-from .service import SCHEMA_VERSION, Config, canonical
+from .content import participant_content, participant_snapshot, stored_snapshot
+from .service import (
+    PROVENANCE_LEGACY_UNAVAILABLE,
+    PROVENANCE_SNAPSHOT,
+    SCHEMA_VERSION,
+    SNAPSHOT_COLUMNS,
+    SNAPSHOT_TABLE,
+    Config,
+    canonical,
+)
 
-UNAVAILABLE_DEFINITION = {
+# Stored legacy_unavailable provenance is exported with this explicit marker.
+UNAVAILABLE_PROVENANCE = {
     'status': 'unavailable',
     'reason': ('Stored before participant-content snapshots were recorded; the exact participant content for '
                'this record is not available and current content must not be substituted.'),
 }
+
+
+@dataclass(frozen=True)
+class StoreLayout:
+    """Where one supported SQLite schema version keeps its submissions."""
+    version: int
+    table: str
+    submission_json: str
+
+    @property
+    def has_snapshots(self):
+        return self.version == SCHEMA_VERSION
+
+
+LAYOUTS = {1: StoreLayout(1, 'responses', 'payload'), 2: StoreLayout(2, 'submissions', 'submission_json'),
+           SCHEMA_VERSION: StoreLayout(SCHEMA_VERSION, 'submissions', 'submission_json')}
 
 
 def private_path(path):
@@ -24,47 +50,34 @@ def private_path(path):
     return path
 
 
-def open_db(path):
+def open_db(path, *, verify_snapshots=True):
+    """Open a supported store read-only after integrity (and, by default, snapshot) verification."""
     db = sqlite3.connect(f'{Path(path).resolve().as_uri()}?mode=ro', uri=True)
     try:
-        version = db.execute('PRAGMA user_version').fetchone()[0]
-        table = {1: 'responses', 2: 'submissions', SCHEMA_VERSION: 'submissions'}.get(version)
+        layout = LAYOUTS.get(db.execute('PRAGMA user_version').fetchone()[0])
         tables = {row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-        if (table not in tables or db.execute('PRAGMA integrity_check').fetchone()[0] != 'ok'
-                or (version == SCHEMA_VERSION and not snapshots_verified(db))):
+        if (layout is None or layout.table not in tables
+                or db.execute('PRAGMA integrity_check').fetchone()[0] != 'ok'
+                or (verify_snapshots and layout.has_snapshots and not snapshots_verified(db))):
             raise ValueError('Unsupported or damaged study database')
-    except (ValueError, sqlite3.Error):
+    except BaseException:
         db.close()
         raise
-    return db
+    return db, layout
 
 
 def snapshots_verified(db):
-    """Check every snapshot's bytes against its digest and identity, and every submission link."""
-    if 'participant_content' not in {row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}:
+    """Check every snapshot against its digest and identity, and every submission's provenance link."""
+    try:
+        for row in db.execute(f"SELECT {', '.join(SNAPSHOT_COLUMNS)} FROM {SNAPSHOT_TABLE}"):
+            stored_snapshot(row)
+    except (ValueError, TypeError, sqlite3.Error):
         return False
-    for digest, algorithm, package_schema, instrument, content, study, data in db.execute(
-            'SELECT digest, digest_algorithm, package_schema_version, instrument_version, content_version, '
-            'study_version, canonical_content FROM participant_content'):
-        if algorithm != 'sha256' or not isinstance(data, bytes) or hashlib.sha256(data).hexdigest() != digest:
-            return False
-        try:
-            public = json.loads(data)
-            definition = public['content']
-            if (public['packageSchemaVersion'], definition['instrumentVersion'], definition['contentVersion'],
-                    definition['studyVersion']) != (package_schema, instrument, content, study):
-                return False
-        except (ValueError, TypeError, KeyError):
-            return False
     return not db.execute(
-        'SELECT 1 FROM submissions s LEFT JOIN participant_content c ON c.digest = s.content_digest '
-        "WHERE NOT ((s.content_provenance = 'snapshot' AND c.digest IS NOT NULL) "
-        "OR (s.content_provenance = 'legacy_unavailable' AND s.content_digest IS NULL)) LIMIT 1").fetchone()
-
-
-def submission_storage_columns(db):
-    return ('responses', 'payload') if db.execute('PRAGMA user_version').fetchone()[0] == 1 else (
-        'submissions', 'submission_json')
+        f'SELECT 1 FROM submissions s LEFT JOIN {SNAPSHOT_TABLE} c ON c.digest = s.content_digest '
+        'WHERE NOT ((s.content_provenance = ? AND c.digest IS NOT NULL) '
+        'OR (s.content_provenance = ? AND s.content_digest IS NULL)) LIMIT 1',
+        (PROVENANCE_SNAPSHOT, PROVENANCE_LEGACY_UNAVAILABLE)).fetchone()
 
 
 def backup(source, destination):
@@ -74,7 +87,7 @@ def backup(source, destination):
     os.close(fd)
     src = dst = None
     try:
-        src = open_db(source)
+        src, _ = open_db(source)
         dst = sqlite3.connect(destination)
         src.backup(dst)
     except Exception:
@@ -98,22 +111,21 @@ def safe_cell(value):
 
 def export(source, directory):
     directory = private_path(Path(directory) / 'placeholder').parent
-    db = open_db(source)
+    db, layout = open_db(source)
     try:
-        table, submission_json = submission_storage_columns(db)
-        if db.execute('PRAGMA user_version').fetchone()[0] == SCHEMA_VERSION:
+        if layout.has_snapshots:
             rows = db.execute(
-                f'SELECT s.{submission_json}, s.receipt, s.release, c.digest, c.instrument_version, '
-                f'c.content_version, c.study_version FROM {table} s '
-                'LEFT JOIN participant_content c ON c.digest = s.content_digest ORDER BY s.submission_id').fetchall()
+                f'SELECT s.{layout.submission_json}, s.receipt, s.release, c.digest, c.instrument_version, '
+                f'c.content_version, c.study_version FROM {layout.table} s '
+                f'LEFT JOIN {SNAPSHOT_TABLE} c ON c.digest = s.content_digest ORDER BY s.submission_id').fetchall()
         else:
             rows = [(*row, None, None, None, None) for row in db.execute(
-                f'SELECT {submission_json}, receipt, release FROM {table} ORDER BY submission_id')]
+                f'SELECT {layout.submission_json}, receipt, release FROM {layout.table} ORDER BY submission_id')]
     finally:
         db.close()
     records = [{'submission': json.loads(p), 'receipt': json.loads(r), 'release': json.loads(v),
-                'contentProvenance': UNAVAILABLE_DEFINITION if digest is None else {
-                    'status': 'snapshot', 'digest': digest, 'instrumentVersion': instrument,
+                'contentProvenance': UNAVAILABLE_PROVENANCE if digest is None else {
+                    'status': PROVENANCE_SNAPSHOT, 'digest': digest, 'instrumentVersion': instrument,
                     'contentVersion': content_version, 'studyVersion': study}}
                for p, r, v, digest, instrument, content_version, study in rows]
     def write(name, value):
@@ -142,8 +154,8 @@ def export(source, directory):
         'contentProvenance': (
             'fields and scales are the currently packaged participant content identified by contentDigest. '
             'They describe only records whose contentDigest matches. A record with contentProvenance '
-            'unavailable was stored before snapshots were recorded: its exact definition is not available '
-            'here, and these current definitions must not be applied to it.'
+            'unavailable was stored before snapshots were recorded and has unavailable participant-content '
+            'provenance; these current definitions must not be applied to it.'
         ),
         'instrumentDefinitions': {
             'v0.5': {
@@ -280,24 +292,30 @@ def main():
             print(f'Exported {export(args.source, args.destination)} sessions.')
         elif args.command in ('backup', 'restore'):
             backup(args.source, args.destination)
-            check = open_db(args.destination)
+            check, _ = open_db(args.destination)
             check.close()
             print('Verified copy complete. Keep collection stopped during restore.')
         elif args.command == 'delete-participant':
-            check = open_db(args.source)
+            # Withdrawal needs only a sound SQLite file. A snapshot failure is reported after
+            # deletion rather than blocking it; snapshots hold no respondent data.
+            check, layout = open_db(args.source, verify_snapshots=False)
+            snapshots_ok = not layout.has_snapshots or snapshots_verified(check)
             check.close()
             db = sqlite3.connect(args.source)
             try:
                 db.execute('PRAGMA secure_delete=ON')
                 with db:
-                    table, submission_json = submission_storage_columns(db)
-                    rows = db.execute(f'SELECT submission_id, {submission_json} FROM {table}').fetchall()
+                    rows = db.execute(f'SELECT submission_id, {layout.submission_json} FROM {layout.table}').fetchall()
                     ids = [(sid,) for sid, p in rows if json.loads(p)['participantCode'] == args.participant_code]
-                    db.executemany(f'DELETE FROM {table} WHERE submission_id=?', ids)
+                    db.executemany(f'DELETE FROM {layout.table} WHERE submission_id=?', ids)
                 db.execute('VACUUM')
             finally:
                 db.close()
             print(f'Deleted {len(ids)} records. Apply deletion to backups and replace exports separately.')
+            if not snapshots_ok:
+                print('Warning: snapshot verification failed for this store. The deletion above completed; do not '
+                      'export or back up this store until it is restored from a verified backup.', file=sys.stderr)
+                sys.exit(2)
         else:
             for path in args.paths:
                 path = private_path(path)

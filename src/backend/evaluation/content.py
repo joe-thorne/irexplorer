@@ -320,8 +320,7 @@ def load_participant_package(package_path=PACKAGE_PATH, manifest_path=MANIFEST_P
     if manifest['identity'] != identity:
         raise ValueError('Public manifest identity does not match the package')
     _validate_content(package['content'], identity)
-    if identity['digest'] != hashlib.sha256(_public_bytes(package)).hexdigest():
-        raise ValueError('Participant package canonical identity is invalid')
+    content_snapshot(package)  # Rejects a package whose canonical bytes do not match its identity.
     return package
 
 
@@ -344,6 +343,31 @@ class ContentSnapshot:
     content_version: str
     study_version: str
     canonical_content: bytes
+
+
+def stored_snapshot(row):
+    """Rebuild a snapshot from a stored registry row, verifying its bytes against its identity.
+
+    The row holds ContentSnapshot fields in declaration order. Raises ValueError when the digest,
+    supported identity/canonicalisation versions, or the identities embedded in the bytes disagree.
+    """
+    snapshot = ContentSnapshot(*row)
+    data = snapshot.canonical_content
+    if (snapshot.algorithm != 'sha256' or not isinstance(data, bytes)
+            or hashlib.sha256(data).hexdigest() != snapshot.digest
+            or (snapshot.identity_version, snapshot.canonicalisation, snapshot.canonicalisation_version)
+            != (1, 'sorted-json-utf8-v1', 1)):
+        raise ValueError('Participant-content snapshot does not match its digest')
+    try:
+        public = _read_json(data)
+        embedded = (public['packageSchemaVersion'], public['content']['instrumentVersion'],
+                    public['content']['contentVersion'], public['content']['studyVersion'])
+    except (ValueError, TypeError, KeyError):
+        raise ValueError('Participant-content snapshot is not canonical public content') from None
+    if embedded != (snapshot.package_schema_version, snapshot.instrument_version, snapshot.content_version,
+                    snapshot.study_version):
+        raise ValueError('Participant-content snapshot identities do not match its content')
+    return snapshot
 
 
 def content_snapshot(package):
