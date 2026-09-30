@@ -328,6 +328,17 @@ class MixedReleaseExportTests(unittest.TestCase):
             with self.assertRaises(ResearcherPackError):
                 export(self.config.path, self.root / 'rejected-inside', researcher_packs=[self.root / 'inside'])
 
+    def test_rejection_names_the_failed_check(self):
+        release = self.root / 'releases/malformed'
+        write_release(release, self.current_package)
+        (release / 'researcher-pack.json').write_bytes(b'{"researcherSchemaVersion": 1, "researcherSchemaVersion": 1}')
+        manifest = json.loads((release / 'researcher-manifest.json').read_bytes())
+        manifest['artifacts']['researcher-pack.json'] = hashlib.sha256(
+            (release / 'researcher-pack.json').read_bytes()).hexdigest()
+        (release / 'researcher-manifest.json').write_bytes(formatted_bytes(manifest))
+        with self.assertRaisesRegex(ResearcherPackError, 'researcher pack is not strict JSON'):
+            export(self.config.path, self.root / 'rejected-malformed', researcher_packs=[release])
+
     def test_cli_joins_packs_and_reports_mismatch_without_private_material(self):
         write_release(self.root / 'releases/current', self.current_package, note='private coding note λ')
         write_release(self.root / 'releases/later', self.upgraded_package)

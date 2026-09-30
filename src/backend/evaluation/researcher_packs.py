@@ -8,7 +8,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from .content import ContentSnapshot, canonical_bytes, content_snapshot, load_participant_package, strict_json_loads
+from .content import (
+    ContentSnapshot,
+    canonical_identity,
+    content_snapshot,
+    load_participant_package,
+    strict_json_loads,
+)
 from .service import ROOT
 
 PACKAGE_FILE = 'participant-package-v2.json'
@@ -34,11 +40,6 @@ class ResearcherPack:
     codebook: dict[str, Any]
 
 
-def _identity(value):
-    return {'identityVersion': 1, 'algorithm': 'sha256', 'canonicalisation': 'sorted-json-utf8-v1',
-            'canonicalisationVersion': 1, 'digest': hashlib.sha256(canonical_bytes(value)).hexdigest()}
-
-
 def load_researcher_pack(directory):
     """Verify one frozen release's researcher pack against its declared public and researcher provenance."""
     directory = Path(directory).resolve()
@@ -62,14 +63,17 @@ def load_researcher_pack(directory):
     try:
         package = load_participant_package(directory / PACKAGE_FILE, directory / PUBLIC_MANIFEST_FILE)
         snapshot = content_snapshot(package)
-        pack = strict_json_loads(files[RESEARCHER_PACK_FILE])
     except (OSError, ValueError, TypeError, KeyError):
         raise ResearcherPackError('the public package does not match its declared public identity') from None
+    try:
+        pack = strict_json_loads(files[RESEARCHER_PACK_FILE])
+    except ValueError:
+        raise ResearcherPackError('the researcher pack is not strict JSON') from None
     public = package['identity']
     if not isinstance(pack, dict) or set(pack) != PACK_KEYS or type(pack['researcherSchemaVersion']) is not int \
             or pack['researcherSchemaVersion'] != 1:
         raise ResearcherPackError('unsupported researcher pack schema')
-    if pack['identity'] != _identity({key: value for key, value in pack.items() if key != 'identity'}):
+    if pack['identity'] != canonical_identity({key: value for key, value in pack.items() if key != 'identity'}):
         raise ResearcherPackError('the researcher pack does not match its canonical researcher identity')
     researcher = manifest.get('researcher')
     public_record = manifest.get('public')
@@ -82,7 +86,7 @@ def load_researcher_pack(directory):
             or not isinstance(codebook, dict) or codebook.get('publicIdentity') != public):
         raise ResearcherPackError('the researcher pack is linked to a different public identity')
     freeze = manifest.get('freezeIdentity')
-    if freeze != _identity({'publicIdentity': public, 'researcherIdentity': pack['identity']}):
+    if freeze != canonical_identity({'publicIdentity': public, 'researcherIdentity': pack['identity']}):
         raise ResearcherPackError('the release freeze identity does not bind its public and researcher identities')
     if not isinstance(material, dict):
         raise ResearcherPackError('unsupported researcher material')

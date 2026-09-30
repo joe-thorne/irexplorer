@@ -5,6 +5,7 @@ import json
 import os
 import sqlite3
 import sys
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -111,6 +112,14 @@ def safe_cell(value):
     return value
 
 
+@contextmanager
+def private_file(path, mode, **options):
+    """Open an export file readable only by its owner; callers pass an exclusive-create (x) mode."""
+    with open(path, mode, **({'encoding': 'utf-8'} if 'b' not in mode else {}), **options) as f:
+        os.chmod(path, 0o600)
+        yield f
+
+
 def snapshot_file(digest):
     """The export path of a snapshot's exact canonical bytes; the file's SHA-256 is the digest."""
     return f'snapshots/{digest}.json'
@@ -191,16 +200,12 @@ def export(source, directory, researcher_packs=()):
                 'contentProvenance': record_provenance(snapshots.get(digest))}
                for p, r, v, digest in rows]
     def write(name, value):
-        path = directory / name
-        with open(path, 'x', encoding='utf-8') as f:
-            os.chmod(path, 0o600)
+        with private_file(directory / name, 'x') as f:
             json.dump(value, f, ensure_ascii=False, indent=2)
     write('submissions.json', records)
     (directory / 'snapshots').mkdir(mode=0o700)
     for digest, snapshot in snapshots.items():
-        path = directory / snapshot_file(digest)
-        with open(path, 'xb') as f:
-            os.chmod(path, 0o600)
+        with private_file(directory / snapshot_file(digest), 'xb') as f:
             f.write(snapshot.canonical_content)
     if packs:
         write('researcher-codebooks.json', researcher_codebooks(packs))
@@ -319,9 +324,7 @@ def export(source, directory, researcher_packs=()):
                'consentVersion', 'schemaVersion', 'canonicalVersion', 'mode', 'appRevision', 'artefactSha256',
                'section', 'itemId', 'status', 'value', 'durationMs', 'interrupted', 'setupReached',
                'contentProvenance', 'contentDigest']
-    path = directory / 'submissions.csv'
-    with open(path, 'x', encoding='utf-8', newline='') as f:
-        os.chmod(path, 0o600)
+    with private_file(directory / 'submissions.csv', 'x', newline='') as f:
         writer = csv.DictWriter(f, fieldnames=columns)
         writer.writeheader()
         for record in records:

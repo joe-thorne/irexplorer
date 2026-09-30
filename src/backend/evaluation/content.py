@@ -25,6 +25,12 @@ def canonical_bytes(value):
     return json.dumps(value, sort_keys=True, ensure_ascii=False, separators=(',', ':'), allow_nan=False).encode('utf-8')
 
 
+def canonical_identity(value):
+    """The identity-version-1 record naming `value` by its sorted-json-utf8-v1 SHA-256 digest."""
+    return {'identityVersion': 1, 'algorithm': 'sha256', 'canonicalisation': 'sorted-json-utf8-v1',
+            'canonicalisationVersion': 1, 'digest': hashlib.sha256(canonical_bytes(value)).hexdigest()}
+
+
 def _unique_object(pairs):
     result = {}
     for key, value in pairs:
