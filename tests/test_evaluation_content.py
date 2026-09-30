@@ -16,7 +16,7 @@ class EvaluationContentTests(unittest.TestCase):
         content = participant_content()
         self.assertEqual(content['packageSchemaVersion'], 2)
         self.assertEqual(content['packageIdentity']['digest'],
-                         'cb0f303575810f72ae0596ec8a5554c05bd62d32066542f56484e7144f37a1a6')
+                         'b5715a6db30237ad31f50377862d62f832a7f312ccc9650e933975f541d33c7c')
         self.assertEqual(content['membership']['consent'], [f'C{i}' for i in range(1, 7)])
         self.assertEqual(content['membership']['pre'], [field_id for section in content['preSections']
                                                        for field_id in section['fields']])
@@ -84,7 +84,7 @@ class EvaluationContentTests(unittest.TestCase):
     def test_v011_task_copy_and_identity_match_current_runsheet(self):
         content = participant_content()
         self.assertEqual((content['instrumentVersion'], content['contentVersion'], content['studyVersion']),
-                         ('v0.11', 'v0.11-preview-2', 'v0.11-synthetic-1'))
+                         ('v0.11', 'v0.11-preview-3', 'v0.11-synthetic-1'))
         tasks = {task['id']: task for task in content['tasks']}
         self.assertIn('State 0 is the unoptimised baseline compiled with -O0', content['taskIntroduction'][1])
         self.assertIn('T0 is the orientation; the six tasks are T1–T6', content['taskIntroduction'][2])
@@ -172,7 +172,7 @@ class EvaluationContentTests(unittest.TestCase):
     def test_v011_course_selections_combine_status_and_distinguish_none_from_missing(self):
         content = participant_content()
         self.assertEqual((content['instrumentVersion'], content['contentVersion'], content['studyVersion']),
-                         ('v0.11', 'v0.11-preview-2', 'v0.11-synthetic-1'))
+                         ('v0.11', 'v0.11-preview-3', 'v0.11-synthetic-1'))
         course = next(field for field in content['fields'] if field['id'] == 'P3')
         self.assertEqual(course['type'], 'multiple')
         self.assertEqual([option['value'] for option in course['options']], list(range(1, 10)))

@@ -15,7 +15,8 @@ const ws = new WebSocket(page.webSocketDebuggerUrl);
 await new Promise(resolve => ws.addEventListener('open', resolve, { once: true }));
 let sequence = 0, served = packaged, variant = null;
 // Scripted outcomes for successive submission attempts: 'offline' fails before the server,
-// 'unavailable' answers 503 without reaching it, 'lost' stores the submission but drops the response.
+// 'unavailable' answers 503 without reaching it, 'unsupported' answers 422 unsupported_instrument
+// (the server stored nothing), 'lost' stores the submission but drops the response.
 let attempts = [], posted = [], statuses = [], delayMs = 0;
 const waiting = new Map(), exceptions = [], checks = [];
 const json = body => Buffer.from(JSON.stringify(body)).toString('base64');
@@ -39,6 +40,10 @@ ws.addEventListener('message', async ({ data }) => {
       else if (next === 'unavailable') {
         attempts.shift();
         send('Fetch.fulfillRequest', { requestId, responseCode: 503, body: json({ error: { code: 'storage_unavailable', message: 'Synthetic storage unavailable.' } }),
+          responseHeaders: [{ name: 'Content-Type', value: 'application/json' }] });
+      } else if (next === 'unsupported') {
+        attempts.shift();
+        send('Fetch.fulfillRequest', { requestId, responseCode: 422, body: json({ error: { code: 'unsupported_instrument', message: 'Check consent, P1, versions, task outcomes, and answer limits. No answers were changed.' } }),
           responseHeaders: [{ name: 'Content-Type', value: 'application/json' }] });
       } else send('Fetch.continueRequest', { requestId, interceptResponse: true });
     }
@@ -278,6 +283,27 @@ async function recovery() {
   await restore('removeItem');
   await click('[data-action="discard-incompatible-submission"]');
   await heading('information.title');
+  // A frozen submission whose release the server no longer accepts: the server confirmed nothing was
+  // stored, so the view says so instead of the uncertain server-copy wording.
+  const unsupported = { submissionId: 'synthetic-unsupported', participantCode: 'synthetic-unsupported-participant' };
+  await value(`sessionStorage.clear(); sessionStorage.setItem('${SUBMISSION}', ${q(JSON.stringify({ kind: 'pending', submission: unsupported }))})`);
+  await send('Page.reload');
+  await heading('submission.unconfirmed');
+  attempts = ['unsupported'];
+  await click('[data-action="retry-submit"]');
+  await heading('recovery.title');
+  const notStored = `document.querySelector('#study-screen [role="alert"]').textContent === ${q(M('recovery.incompatible'))} && ${shows(M('recovery.not-stored'), '#study-screen p')} && !${shows(M('recovery.server-copy'), '#study-screen p')} && ${shows(M('submission.participant-code', { participantCode: unsupported.participantCode }), '#study-screen p')} && document.querySelector('[data-action="discard-incompatible-submission"]').textContent === ${q(M('actions.discard-incompatible'))} && !document.querySelector('[data-action="retry-submit"]') && JSON.stringify(JSON.parse(sessionStorage.getItem('${SUBMISSION}')).submission) === ${q(JSON.stringify(unsupported))}`;
+  await check('An unsupported release says the answers were not saved, keeps the frozen submission, and makes no server-copy claim', notStored);
+  await check('The not-saved recovery fits the viewport', fits);
+  await send('Page.reload');
+  await heading('submission.unconfirmed');
+  attempts = ['unsupported'];
+  await click('[data-action="retry-submit"]');
+  await heading('recovery.title');
+  await check('After a refresh the server decides again and the not-saved message returns', notStored);
+  await click('[data-action="discard-incompatible-submission"]');
+  await heading('information.title');
+  await check('The unsupported frozen submission is removed only by the explicit discard', `sessionStorage.getItem('${SUBMISSION}') === null`);
   // A damaged answer draft must be discarded explicitly.
   await value(`sessionStorage.clear(); sessionStorage.setItem('${DRAFT}', '{broken')`);
   await send('Page.reload');

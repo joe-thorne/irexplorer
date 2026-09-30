@@ -12,17 +12,18 @@ window.StudySubmit = (() => {
   }
   function controller(getStorage = () => sessionStorage, send = (...args) => fetch(...args)) {
     let state = null, busy = false, issue = null, recoveryBlocked = false, legacyPending = false,
-      legacyKey = '', legacyParticipantCode = '';
+      legacyKey = '', legacyParticipantCode = '', notStored = false;
     function persist(next) { getStorage().setItem(KEY, JSON.stringify(next)); state = next; }
     // A pending submission that this version cannot accept: an older recovery record, or a frozen
     // submission whose instrument the server does not accept. It stays stored until explicitly discarded.
-    function blockIncompatible(key, participantCode) {
-      legacyPending = true; legacyKey = key; recoveryBlocked = true; legacyParticipantCode = participantCode || ''; issue = message('recovery.incompatible');
+    // notStored records that the server confirmed nothing was stored; an older record's outcome is unknown.
+    function blockIncompatible(key, participantCode, confirmedNotStored = false) {
+      notStored = confirmedNotStored; legacyPending = true; legacyKey = key; recoveryBlocked = true; legacyParticipantCode = participantCode || ''; issue = message('recovery.incompatible');
     }
     return {
       get state() { return state; }, get busy() { return busy; }, get issue() { return issue; }, get recoveryBlocked() { return recoveryBlocked; },
       read() {
-        issue = null; recoveryBlocked = false; legacyPending = false; legacyKey = ''; legacyParticipantCode = '';
+        issue = null; recoveryBlocked = false; legacyPending = false; legacyKey = ''; legacyParticipantCode = ''; notStored = false;
         try {
           const storage = getStorage();
           let raw = storage.getItem(KEY);
@@ -47,13 +48,13 @@ window.StudySubmit = (() => {
         } catch { recoveryBlocked = true; issue = message('recovery.unreadable'); }
       },
       get legacyPending() { return legacyPending; },
-      get legacyParticipantCode() { return legacyParticipantCode; },
+      get legacyParticipantCode() { return legacyParticipantCode; }, get notStored() { return notStored; },
       discardLegacy() {
         if (!legacyPending) return false;
         try {
           getStorage().removeItem(legacyKey);
           if (legacyKey === KEY) state = null;
-          legacyPending = false; legacyKey = ''; legacyParticipantCode = ''; recoveryBlocked = false; issue = null;
+          legacyPending = false; legacyKey = ''; legacyParticipantCode = ''; notStored = false; recoveryBlocked = false; issue = null;
           return true;
         } catch { issue = message('recovery.discard-failed'); return false; }
       },
@@ -74,7 +75,7 @@ window.StudySubmit = (() => {
           const response = await send('/api/study/submissions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(state.submission), signal: AbortSignal.timeout(15000) });
           const body = await response.json();
           // Nothing was stored: keep the frozen submission unchanged and report it as incompatible, not as uncertain.
-          if (response.status === 422 && body.error?.code === 'unsupported_instrument') { blockIncompatible(KEY, state.submission.participantCode); return; }
+          if (response.status === 422 && body.error?.code === 'unsupported_instrument') { blockIncompatible(KEY, state.submission.participantCode, true); return; }
           if (!response.ok) throw body.error?.message ? Error(body.error.message) : failure('submission.no-receipt');
           if (![200, 201].includes(response.status) || body.submissionId !== state.submission.submissionId || body.participantCode !== state.submission.participantCode || body.studyVersion !== state.submission.studyVersion || typeof body.receiptId !== 'string') throw failure('submission.invalid-receipt');
           const next = { kind: 'receipt', receipt: body };

@@ -5,14 +5,14 @@
     "algorithm": "sha256",
     "canonicalisation": "sorted-json-utf8-v1",
     "canonicalisationVersion": 1,
-    "digest": "cb0f303575810f72ae0596ec8a5554c05bd62d32066542f56484e7144f37a1a6",
+    "digest": "b5715a6db30237ad31f50377862d62f832a7f312ccc9650e933975f541d33c7c",
     "instrumentVersion": "v0.11",
-    "contentVersion": "v0.11-preview-2",
+    "contentVersion": "v0.11-preview-3",
     "studyVersion": "v0.11-synthetic-1"
   },
   "content": {
     "instrumentVersion": "v0.11",
-    "contentVersion": "v0.11-preview-2",
+    "contentVersion": "v0.11-preview-3",
     "studyVersion": "v0.11-synthetic-1",
     "scales": {
       "familiarity": [
@@ -1896,6 +1896,7 @@
       "recovery.unreadable": "Submission recovery could not be read. Restore browser storage before starting or retrying.",
       "recovery.discard-failed": "The incompatible saved draft could not be removed. Allow browser storage and retry discard.",
       "recovery.server-copy": "A server submission may already exist; discarding only removes this tab's incompatible retry copy.",
+      "recovery.not-stored": "The server did not save these answers because this study version is no longer accepted. Discarding removes this tab's unsent copy.",
       "recovery.memory": "Memory-only continuation starts a new session; an older submission may already exist. Refresh cannot recover this new session.",
       "receipt.title": "Submission received",
       "receipt.saved": "Your submission has been saved.",

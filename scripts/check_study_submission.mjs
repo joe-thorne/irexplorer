@@ -41,7 +41,7 @@ s=S.controller(()=>storage,async(...args)=>{count++;await gate;return send(...ar
 values.clear();s=S.controller(()=>storage,send);d.tasks.T0.durationMs=86400001;await s.submit(d);assert.equal(s.state,null);assert.equal(say(s.issue),content.messages['submission.limit']);checks.push('Oversized duration retained locally without an invalid network attempt');
 values.clear();values.set('irexplorer.submission.v2', JSON.stringify({kind:'pending',submission:{submissionId:'old',participantCode:'old-participant',instrumentVersion:'v0.6'}}));
 s=S.controller(()=>storage,send);s.read();assert.equal(s.recoveryBlocked,true);assert.equal(s.legacyPending,true);
-assert.equal(say(s.issue),content.messages['recovery.incompatible']);assert.equal(s.legacyParticipantCode, 'old-participant');assert.equal(s.discardLegacy(),true);assert.equal(values.has('irexplorer.submission.v2'),false);
+assert.equal(say(s.issue),content.messages['recovery.incompatible']);assert.equal(s.legacyParticipantCode, 'old-participant');assert.equal(s.notStored,false);assert.equal(s.discardLegacy(),true);assert.equal(values.has('irexplorer.submission.v2'),false);
 assert.match(studyView,/'actions\.discard-incompatible'/);assert.match(studyView,/submission\.discardLegacy\(\)/);
 checks.push('v0.6 pending submission is offered an explicit incompatible-draft discard path');
 values.clear();const frozen={...JSON.parse(calls[0]),submissionId:webcrypto.randomUUID(),instrumentVersion:'v0.10',contentVersion:'v0.10-preview-1',studyVersion:'v0.10-synthetic-1'};
@@ -71,13 +71,14 @@ const unsupported=async(url,options)=>{unsupportedCalls.push(options.body);retur
 s=S.controller(()=>storage,unsupported);s.read();await s.submit(null);
 assert.equal(s.state.kind,'pending');assert.deepEqual(JSON.parse(values.get(S.KEY)).submission,unsupportedFrozen);
 assert.equal(s.recoveryBlocked,true);assert.equal(s.legacyPending,true);assert.equal(s.legacyParticipantCode,unsupportedFrozen.participantCode);
-assert.equal(say(s.issue),content.messages['recovery.incompatible']);
+assert.equal(say(s.issue),content.messages['recovery.incompatible']);assert.equal(s.notStored,true);
 await s.submit(null);assert.equal(unsupportedCalls.length,1);
 assert.match(studyView,/submission\.state && !submission\.recoveryBlocked\) html = submissionHtml\(\)/);
-checks.push('Unsupported-instrument rejection keeps the frozen submission and reports incompatibility with compiled guidance, without a receipt or retry claim');
+assert.match(studyView,/messageHtml\(submission\.notStored \? 'recovery\.not-stored' : 'recovery\.server-copy'\)/);
+checks.push('Unsupported-instrument rejection keeps the frozen submission and reports that nothing was stored with compiled guidance, without a receipt or retry claim');
 const refreshed=S.controller(()=>storage,unsupported);refreshed.read();assert.equal(refreshed.recoveryBlocked,false);assert.equal(JSON.stringify(refreshed.state),JSON.stringify({kind:'pending',submission:unsupportedFrozen}));
-await refreshed.submit(null);assert.equal(unsupportedCalls.length,2);assert.deepEqual(JSON.parse(unsupportedCalls[1]),unsupportedFrozen);assert.equal(say(refreshed.issue),content.messages['recovery.incompatible']);
+await refreshed.submit(null);assert.equal(unsupportedCalls.length,2);assert.deepEqual(JSON.parse(unsupportedCalls[1]),unsupportedFrozen);assert.equal(say(refreshed.issue),content.messages['recovery.incompatible']);assert.equal(refreshed.notStored,true);
 checks.push('After a refresh the same frozen submission is offered again and the server decides; incompatibility is reported again');
-assert.equal(s.discardLegacy(),true);assert.equal(values.has(S.KEY),false);assert.equal(s.state,null);assert.equal(s.recoveryBlocked,false);
+assert.equal(s.discardLegacy(),true);assert.equal(values.has(S.KEY),false);assert.equal(s.state,null);assert.equal(s.recoveryBlocked,false);assert.equal(s.notStored,false);
 checks.push('Incompatible frozen submission is removed only by the explicit discard');
 console.log(`${checks.length} submission checks pass`);

@@ -6,13 +6,13 @@
     "algorithm": "sha256",
     "canonicalisation": "sorted-json-utf8-v1",
     "canonicalisationVersion": 1,
-    "digest": "cb0f303575810f72ae0596ec8a5554c05bd62d32066542f56484e7144f37a1a6",
+    "digest": "b5715a6db30237ad31f50377862d62f832a7f312ccc9650e933975f541d33c7c",
     "instrumentVersion": "v0.11",
-    "contentVersion": "v0.11-preview-2",
+    "contentVersion": "v0.11-preview-3",
     "studyVersion": "v0.11-synthetic-1"
   },
   "artifact": {
     "file": "participant-package-v2.json",
-    "sha256": "abfe9116d25efcb56aebc0b34e218147a8a8df395a943da9afcfd8473ba5ed8f"
+    "sha256": "b16c5d8b8d929798bbda857e84a5e02c949e6edec7296538f1d6478a65a961f5"
   }
 }

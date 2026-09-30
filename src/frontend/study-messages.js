@@ -38,7 +38,7 @@ window.StudyMessages = (() => {
     'submission.keep-tab': [], 'submission.participant-code': ['participantCode'], 'submission.no-receipt': [],
     'submission.invalid-receipt': [], 'submission.uncertain': ['error'], 'submission.limit': [], 'submission.retry-save-failed': [],
     'recovery.title': [], 'recovery.incompatible': [], 'recovery.unreadable': [], 'recovery.discard-failed': [],
-    'recovery.server-copy': [], 'recovery.memory': [],
+    'recovery.server-copy': [], 'recovery.not-stored': [], 'recovery.memory': [],
     'receipt.title': [], 'receipt.saved': [], 'receipt.code': ['receiptId'], 'receipt.keep': [],
     'cleanup.done': [], 'cleanup.persist-failed': [], 'cleanup.retry-save': [], 'cleanup.retry-draft': [], 'cleanup.retry': [],
   });
