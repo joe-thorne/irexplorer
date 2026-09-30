@@ -21,7 +21,6 @@ const appState = {
   loadId: 0,
   ready: false,
   manualSetup: false,
-  studyStateDefault: false,
   comparisonReport: null,
   panels: {
     left: { ordinal: 0, viewType: "ir", ir: null, cfg: null, function: null, selectedNodeIds: new Set() },
@@ -128,7 +127,7 @@ async function loadExamples() {
   }
 }
 
-async function loadExample(inheritedWorkspace = null) {
+async function loadExample(workspace = null) {
   const exampleId = elements.exampleSelect.value;
   if (!exampleId) return;
   const loadId = ++appState.loadId;
@@ -154,18 +153,18 @@ async function loadExample(inheritedWorkspace = null) {
     appState.functionName = null;
     appState.panels.left.ordinal = 0;
     appState.panels.left.viewType = "ir";
-    appState.panels.right.ordinal = appState.studyStateDefault ? 0 : Math.min(1, appState.states.length - 1);
+    appState.panels.right.ordinal = Math.min(1, appState.states.length - 1);
     appState.panels.right.viewType = "ir";
-    if (inheritedWorkspace?.exampleId === exampleId) {
+    if (workspace?.exampleId === exampleId) {
       for (const side of ["left", "right"]) {
-        const panel = inheritedWorkspace.panels?.[side];
+        const panel = workspace.panels?.[side];
         if (Number.isInteger(panel?.ordinal) && panel.ordinal >= 0 && panel.ordinal < appState.states.length &&
             ["ir", "cfg"].includes(panel.viewType)) {
           appState.panels[side].ordinal = panel.ordinal;
           appState.panels[side].viewType = panel.viewType;
         }
       }
-      appState.functionName = typeof inheritedWorkspace.functionName === "string" ? inheritedWorkspace.functionName : null;
+      appState.functionName = typeof workspace.functionName === "string" ? workspace.functionName : null;
     }
     renderStateOptions();
     elements.left.view.value = appState.panels.left.viewType;
@@ -196,7 +195,6 @@ async function loadExample(inheritedWorkspace = null) {
       announce("Choose the states and views described in the task instructions.");
       return;
     }
-    appState.studyStateDefault = false;
     await refreshWorkspace();
     if (loadId !== appState.loadId || !appState.ready) return;
     elements.emptyState.hidden = true;
@@ -279,13 +277,7 @@ async function refreshWorkspace() {
     renderComparisonReport();
     elements.workspace.setAttribute("aria-busy", "false");
     if (selectionInput) selectWorkspace(selectionInput, { scroll: false });
-    else {
-      clearSelection();
-      applySourceHighlights();
-      renderComparison();
-      renderPanel("left");
-      renderPanel("right");
-    }
+    else renderWithoutSelection();
     document.dispatchEvent(new Event("workspace-ready"));
   } catch (error) {
     if (refreshId === appState.refreshId) {
@@ -317,6 +309,14 @@ function clearSelection() {
     panel.selectedInstructionIds = new Set();
     panel.sourceNodeIds = new Set();
   }
+}
+
+function renderWithoutSelection() {
+  clearSelection();
+  applySourceHighlights();
+  renderComparison();
+  renderPanel("left");
+  renderPanel("right");
 }
 
 function renderComparison() {
@@ -695,6 +695,7 @@ for (const side of ["left", "right"]) {
 }
 
 const examplesReady = loadExamples();
+let taskWorkspaceRequest = 0;
 
 // Study setup seam: presentation configuration only. No answers, node selection,
 // persistence, compiler parsing, or task-specific matching belongs in the workspace.
@@ -703,29 +704,22 @@ window.StudyWorkspace = {
   clearManualSetup() {
     appState.manualSetup = false;
   },
-  prepareTask(exampleId, inheritWorkspace = false, workspaceSnapshot = null) {
+  // Open a task on `workspace` (the shape `snapshot()` returns). An inheriting task
+  // keeps the workspace already on screen, or opens `workspace` after a reload.
+  // Either way the task starts with no selection.
+  async prepareTask(workspace, { inherit = false } = {}) {
     appState.manualSetup = false;
-    if (inheritWorkspace && appState.ready) {
-      clearSelection();
-      renderComparison();
-      renderPanel("left");
-      renderPanel("right");
+    const request = ++taskWorkspaceRequest;
+    if (inherit && appState.ready) {
+      renderWithoutSelection();
       return;
     }
-    if (inheritWorkspace) {
-      const inheritedWorkspace = workspaceSnapshot;
-      const inheritedExample = inheritedWorkspace?.exampleId || exampleId;
-      if (inheritedExample) {
-        appState.studyStateDefault = !inheritedWorkspace;
-        elements.exampleSelect.value = inheritedExample;
-        loadExample(inheritedWorkspace);
-        return;
-      }
-    }
-    if (!exampleId) return;
-    appState.studyStateDefault = true;
-    elements.exampleSelect.value = exampleId;
-    loadExample();
+    if (!workspace?.exampleId) return;
+    // After a reload, study content can arrive before the curated example list.
+    await examplesReady;
+    if (request !== taskWorkspaceRequest) return;
+    elements.exampleSelect.value = workspace.exampleId;
+    loadExample(workspace);
   },
   snapshot() {
     if (!appState.ready || !appState.exampleId) return null;

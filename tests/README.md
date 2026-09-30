@@ -80,6 +80,14 @@ Before running the regression, confirm that the isolated browser is available:
 curl -fsS http://127.0.0.1:9239/json/version
 ```
 
-The script requires Node 22 or later. It checks default Explore navigation, coordinated views, study navigation, retry/receipt behaviour, and independent browser tabs. It submits synthetic data, so use a disposable local instance and study volume. `IREXPLORER_ORIGIN` overrides the default `http://localhost:8000`. Results go to stdout; optionally set `IREXPLORER_CHECK_OUTPUT` to a directory outside the repository for JSON and screenshots. Close the temporary Chrome process after testing.
+The script requires Node 22 or later. It checks default Explore navigation, coordinated views, study navigation, retry/receipt behaviour, and independent browser tabs. It submits synthetic data, so use a disposable local instance and study volume.
+
+With the same application and browser, check the task procedure:
+
+```sh
+node scripts/check_study_tasks.mjs
+```
+
+It runs T0–T6 from the packaged task declarations: each task's entry workspace against its target comparison, T6 inheritance and refresh, pause, hidden-tab and reload exclusions, P13 locking, read-only task responses, partial, skipped and inability answers, and background/post corrections. It then serves a synthetic content variant with different declared entry workspaces, inheritance and membership through the DevTools protocol. It sends no submission and discards each draft. `IREXPLORER_ORIGIN` overrides the default `http://localhost:8000`. Results go to stdout; optionally set `IREXPLORER_CHECK_OUTPUT` to a directory outside the repository for JSON and screenshots. Close the temporary Chrome process after testing.
 
 Automated checks do not establish complete accessibility conformance or replace physical keyboard and spoken screen-reader testing.

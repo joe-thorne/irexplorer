@@ -33,23 +33,33 @@
   const answersFor = section => section.startsWith('T') ? draft.tasks[section].answers : draft[section];
   const outcomeLabel = status => ({ completed: 'Completed', skipped: 'Skipped', could_not_work_out: 'Could not work this out', pending: 'In progress' })[status];
   const taskRoute = () => '/study/tasks/' + D.currentTask(draft);
+  const taskFor = id => content.tasks.find(task => task.id === id);
+  const inherits = task => task?.entryWorkspace.inherit === 'previous';
+  // A declared (non-inheriting) entry configuration in the workspace's own snapshot shape.
+  const entryWorkspace = ({ entryWorkspace: { example, left, right } }) => ({ exampleId: example, functionName: null,
+    panels: { left: { ordinal: left.ordinal, viewType: left.view }, right: { ordinal: right.ordinal, viewType: right.view } } });
+  // A task's workspace is kept for recovery when it, or the task after it, inherits.
+  function carriesWorkspace(id) {
+    const order = content.journey.taskOrder;
+    return inherits(taskFor(id)) || inherits(taskFor(order[order.indexOf(id) + 1]));
+  }
   function leaveTask(route) {
     if (!activeTask || route === '/study/tasks/' + activeTask) return;
     clock?.stop(true); save(); clock = null; activeTask = null;
   }
   function taskHtml(id) {
-    const task = content.tasks.find(t => t.id === id), record = draft.tasks[id];
+    const task = taskFor(id), record = draft.tasks[id];
     const locked = record.status !== 'pending';
     return heading(`${id} — ${task.title}`) + `<p class="eyebrow">${id === 'T0' ? 'Orientation · no scored response' : `Task ${id.slice(1)} of 6`}</p><p><strong>Goal:</strong> ${esc(task.goal)}</p>
       <nav class="task-jumps" aria-label="Task sections"><a href="#task-instructions">Instructions</a><a href="#workspace-shell">Go to workspace</a><a href="#task-responses">Go to responses</a></nav>
       <details id="task-instructions" class="task-details"${matchMedia('(max-width: 1100px)').matches ? '' : ' open'}><summary>Setup and instructions</summary>
       ${id === 'T0' ? (() => { const seen = new Set(); return content.taskIntroduction.map(p => `<p>${termHelp(p, seen)}</p>`).join('') + `<p class="task-prose">${termHelp(task.instructions, seen)}</p>`; })() : `<p class="task-prose">${esc(task.instructions)}</p>`}
-      ${task.inheritWorkspace ? '<p>Your workspace continues from T5 with its selection cleared. Continue there, or choose another example, State pair, function, and view. Five minutes is guidance; continue whenever you are ready.</p>' : `<p>The workspace opens on ${esc(task.setup.example)} at State 0 with IR in both panels. Adjust it to explore the comparison in the task goal.</p>`}</details>
+      ${inherits(task) ? '<p>Your workspace continues from T5 with its selection cleared. Continue there, or choose another example, State pair, function, and view. Five minutes is guidance; continue whenever you are ready.</p>' : `<p>The workspace opens on ${esc(task.entryWorkspace.example)} at State 0 with IR in both panels. Adjust it to explore the comparison in the task goal.</p>`}</details>
       <p id="task-timing" class="form-note" role="status"></p>${!locked ? button('pause-task', record.paused ? 'Resume task' : 'Pause task') : ''}<div id="task-responses" class="task-responses panel">
       <details class="task-details task-responses-details"${matchMedia('(max-width: 1100px)').matches ? '' : ' open'}><summary>${locked ? 'Saved responses (read-only)' : 'Responses and continue'}</summary>
       <a href="#route-heading">Back to goal</a><p>${locked ? `Recorded outcome: ${esc(outcomeLabel(record.status))}. Responses are locked.` : 'You may leave fields unanswered. Choosing inability or skipping is a valid outcome. Continuing locks this task’s responses.'}</p>
       <form id="survey-form" data-section="${id}" novalidate><p id="form-errors" role="alert" tabindex="-1"></p><fieldset class="task-inputs"${locked ? ' disabled' : ''}>
-      ${task.fields.map(fid => fieldHtml(content.fields.find(f => f.id === fid), id)).join('')}
+      ${D.fieldsFor(content, id).map(field => fieldHtml(field, id)).join('')}
       </fieldset>${!locked ? `<div class="screen-actions"><button type="submit" class="primary task-complete">${id === 'T0' ? 'Finish orientation and start T1' : id === 'T6' ? 'Continue to post-survey' : 'Save and continue'}</button>${id !== 'T0' ? button('unable-task', 'I could not work this out — continue') + button('skip-task', 'Skip task') : ''}</div>` : ''}</form></details>
       <nav class="task-history" aria-label="Task progress">${content.tasks.map(t => draft.tasks[t.id].status !== 'pending' ? `<a href="#/study/tasks/${t.id}">${t.id} saved</a>` : t.id === D.currentTask(draft) ? `<a href="#${taskRoute()}">${t.id} current</a>` : `<span>${t.id}</span>`).join(' ')}</nav>
       ${locked ? `<a href="#${D.tasksComplete(draft) ? '/study/post' : taskRoute()}">Return to current section</a>` : ''}</div>`;
@@ -81,9 +91,8 @@
     const t = draft.tasks[id]; clock = window.TaskClock(t);
     if (t.status === 'pending') {
       startClock();
-      const task = content.tasks.find(task => task.id === id);
-      window.StudyWorkspace.prepareTask(task.setup.example, task.inheritWorkspace === true,
-        task.inheritWorkspace === true ? readWorkspaceSnapshot() : null);
+      const task = taskFor(id);
+      window.StudyWorkspace.prepareTask(inherits(task) ? readWorkspaceSnapshot() : entryWorkspace(task), { inherit: inherits(task) });
     }
     updateTaskStatus();
   }
@@ -124,7 +133,7 @@
     } catch { return null; }
   }
   function saveWorkspaceSnapshot() {
-    if (!['T5', 'T6'].includes(activeTask)) return;
+    if (!activeTask || !carriesWorkspace(activeTask)) return;
     const workspaceSnapshot = window.StudyWorkspace.snapshot();
     if (!workspaceSnapshot) return;
     try { sessionStorage.setItem(WORKSPACE_KEY, JSON.stringify({ contentVersion: content.contentVersion, workspace: workspaceSnapshot })); }
@@ -147,8 +156,7 @@
     const answer = answersFor(section)[field.id], id = field.id.replaceAll('.', '-');
     const locked = section.startsWith('T') ? draft.tasks[section].status !== 'pending' : section === 'pre' && ((draft.preComplete && !editingPre) || (field.id === 'P13' && draft.p13Locked));
     const label = `${field.id}. ${field.prompt}`;
-    const controlHint = field.presentation?.control || (['text', 'short_text'].includes(field.type) ? 'textarea' :
-      field.type === 'multiple' ? 'checkboxes' : field.type === 'boolean' ? 'checkbox' : 'radio');
+    const controlHint = field.presentation.control;
     let control;
     if (controlHint === 'textarea') control = `<label class="sr-only" for="answer-${id}">${esc(label)}</label><textarea id="answer-${id}" name="${field.id}" rows="3" aria-describedby="note-${id} error-${id}"${locked ? ' readonly' : ''}>${esc(answer.status === 'answered' ? answer.value : '')}</textarea>`;
     else if (controlHint === 'input') control = `<label class="sr-only" for="answer-${id}">${esc(label)}</label><input id="answer-${id}" type="text" name="${field.id}" value="${esc(answer.status === 'answered' ? answer.value : '')}" aria-describedby="note-${id} error-${id}"${locked ? ' readonly' : ''}>`;
@@ -253,7 +261,7 @@
     if (!field || (section.startsWith('T') && (draft.tasks[section].status !== 'pending' || !draft.tasks[section].presented || draft.tasks[section].paused)) || (section === 'pre' && ((draft.preComplete && !editingPre) || (field.id === 'P13' && draft.p13Locked)))) return;
     if (input.dataset.inability) { answersFor(section)[field.id] = input.checked ? { status: 'could_not_work_out', value: null } : D.blank(); const textControl = input.closest('fieldset').querySelector('input[type="text"], textarea'); if (textControl) textControl.value = ''; }
     else if (['text', 'short_text'].includes(field.type)) answersFor(section)[field.id] = input.value.trim() ? { status: 'answered', value: input.value } : D.blank();
-    else if (field.presentation?.control === 'select') {
+    else if (field.presentation.control === 'select') {
       if (event.type !== 'change') return;
       const status = input.selectedOptions[0].dataset.status;
       answersFor(section)[field.id] = status ? { status, value: status === 'answered' ? Number(input.value) : null } : D.blank();
@@ -301,7 +309,8 @@
       if (content.packageSchemaVersion !== 2 || !identity ||
           !/^[0-9a-f]{64}$/.test(identity.digest) ||
           ['instrumentVersion', 'contentVersion', 'studyVersion'].some(key => identity[key] !== content[key]) ||
-          !['local', 'preview', 'pilot', 'live'].includes(content.collectionMode) || content.contentVersion !== CONTENT_VERSION) throw new Error('Unsupported content');
+          !['local', 'preview', 'pilot', 'live'].includes(content.collectionMode) || content.contentVersion !== CONTENT_VERSION ||
+          content.journey?.taskOrder?.join() !== content.tasks.map(task => task.id).join()) throw new Error('Unsupported content');
       store = D.storage(content); submission.read(); draft = store.read();
       if (submission.state?.kind === 'receipt' && submission.cleanup(() => store.discard())) draft = null;
       if (draft) { const t = draft.tasks[D.currentTask(draft)]; if (t.presented && t.status === 'pending') { t.interrupted = true; store.save(draft); } }
