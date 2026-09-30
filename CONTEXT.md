@@ -163,6 +163,14 @@ _Avoid_: acknowledgement, confirmation code
 The exact canonical public participant content a submission was validated against, stored once by its digest and linked to each submission that used it. Records stored before snapshots existed have unavailable provenance, never the current content.
 _Avoid_: definition copy, instrument cache
 
+**Snapshot codebook**:
+The participant definitions an export reads from one participant-content snapshot, keyed by its digest; each exported record names the snapshot codebook that describes it, or none when its provenance is unavailable.
+_Avoid_: current codebook, version codebook
+
+**Researcher pack**:
+The private researcher interpretation frozen with one instrument release and linked to that release's public identity. It is supplied only to the private export, verified against its declared provenance, and never packaged or served by the application.
+_Avoid_: researcher mapping file, marking key
+
 **Setup reached**:
 A historical v0.5/v0.6 outcome recording whether a usable comparison appeared; it did not confirm that the task's requested comparison was ready. v0.7 no longer collects or analyses this outcome.
 _Avoid_: task started, attempted

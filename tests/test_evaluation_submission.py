@@ -282,7 +282,8 @@ class SubmissionTests(unittest.TestCase):
         destination = Path(self.tmp.name) / 'early-export'
         export(self.config.path, destination)
         book = json.loads((destination / 'codebook.json').read_text())
-        self.assertEqual(book['versions']['instrumentVersion'], 'v0.11')
+        [versions] = [entry['versions'] for entry in book['codebooks'].values()]
+        self.assertEqual(versions['instrumentVersion'], 'v0.11')
         self.assertIn('Q3 only', book['analysis'])
         self.assertIn('section', book['csv'])
         self.assertIn('task presentation', book['durationMs'])
@@ -635,12 +636,15 @@ class SubmissionTests(unittest.TestCase):
                    for record in json.loads((destination / 'submissions.json').read_text())}
         self.assertEqual(records[legacy['submissionId']]['submission'], json.loads(row[2]))
         self.assertEqual(records[legacy['submissionId']]['contentProvenance']['status'], 'unavailable')
+        digest = self.service.snapshot.digest
         self.assertEqual(records[current['submissionId']]['contentProvenance'], {
-            'status': 'snapshot', 'digest': self.service.snapshot.digest, 'instrumentVersion': 'v0.11',
-            'contentVersion': 'v0.11-preview-2', 'studyVersion': 'v0.11-synthetic-1'})
+            'status': 'snapshot', 'digest': digest, 'instrumentVersion': 'v0.11',
+            'contentVersion': 'v0.11-preview-2', 'studyVersion': 'v0.11-synthetic-1',
+            'codebook': digest, 'snapshotFile': f'snapshots/{digest}.json'})
         codebook = json.loads((destination / 'codebook.json').read_text())
-        self.assertEqual(codebook['contentDigest'], self.service.snapshot.digest)
-        self.assertIn('must not be applied', codebook['contentProvenance'])
+        self.assertEqual(list(codebook['codebooks']), [digest])
+        self.assertEqual(codebook['unavailableDefinitions']['submissionIds'], [legacy['submissionId']])
+        self.assertIn('no codebook entry may be applied', codebook['contentProvenance'])
         with open(destination / 'submissions.csv', newline='') as handle:
             rows = list(csv.DictReader(handle))
         self.assertEqual({(r['submissionId'], r['contentProvenance'], r['contentDigest']) for r in rows}, {

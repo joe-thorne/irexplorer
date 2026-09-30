@@ -8,7 +8,8 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from .content import participant_content, participant_snapshot, stored_snapshot
+from .content import stored_snapshot, strict_json_loads
+from .researcher_packs import ResearcherPackError, join_researcher_packs
 from .service import (
     PROVENANCE_LEGACY_UNAVAILABLE,
     PROVENANCE_SNAPSHOT,
@@ -22,6 +23,7 @@ from .service import (
 # Stored legacy_unavailable provenance is exported with this explicit marker.
 UNAVAILABLE_PROVENANCE = {
     'status': 'unavailable',
+    'codebook': None,
     'reason': ('Stored before participant-content snapshots were recorded; the exact participant content for '
                'this record is not available and current content must not be substituted.'),
 }
@@ -109,32 +111,99 @@ def safe_cell(value):
     return value
 
 
-def export(source, directory):
-    directory = private_path(Path(directory) / 'placeholder').parent
+def snapshot_file(digest):
+    """The export path of a snapshot's exact canonical bytes; the file's SHA-256 is the digest."""
+    return f'snapshots/{digest}.json'
+
+
+def read_store(source):
+    """Read exported rows in submission-ID order and every verified snapshot they reference, by digest."""
     db, layout = open_db(source)
     try:
-        if layout.has_snapshots:
-            rows = db.execute(
-                f'SELECT s.{layout.submission_json}, s.receipt, s.release, c.digest, c.instrument_version, '
-                f'c.content_version, c.study_version FROM {layout.table} s '
-                f'LEFT JOIN {SNAPSHOT_TABLE} c ON c.digest = s.content_digest ORDER BY s.submission_id').fetchall()
-        else:
-            rows = [(*row, None, None, None, None) for row in db.execute(
+        if not layout.has_snapshots:
+            rows = [(*row, None) for row in db.execute(
                 f'SELECT {layout.submission_json}, receipt, release FROM {layout.table} ORDER BY submission_id')]
+            return rows, {}
+        rows = db.execute(f'SELECT {layout.submission_json}, receipt, release, content_digest FROM {layout.table} '
+                          'ORDER BY submission_id').fetchall()
+        snapshots = [stored_snapshot(row) for row in db.execute(
+            f"SELECT {', '.join(SNAPSHOT_COLUMNS)} FROM {SNAPSHOT_TABLE} "
+            f'WHERE digest IN (SELECT content_digest FROM {layout.table}) ORDER BY digest')]
     finally:
         db.close()
+    return rows, {snapshot.digest: snapshot for snapshot in snapshots}
+
+
+def record_provenance(snapshot):
+    """A record's machine-readable link to its exact snapshot and codebook, or the unavailable marker."""
+    if snapshot is None:
+        return dict(UNAVAILABLE_PROVENANCE)
+    return {'status': PROVENANCE_SNAPSHOT, 'digest': snapshot.digest, 'instrumentVersion': snapshot.instrument_version,
+            'contentVersion': snapshot.content_version, 'studyVersion': snapshot.study_version,
+            'codebook': snapshot.digest, 'snapshotFile': snapshot_file(snapshot.digest)}
+
+
+def snapshot_codebook(snapshot, pack):
+    """Participant definitions read only from the stored snapshot, never from the running package."""
+    content = strict_json_loads(snapshot.canonical_content)['content']
+    return {
+        'contentDigest': snapshot.digest, 'snapshotFile': snapshot_file(snapshot.digest),
+        'packageSchemaVersion': snapshot.package_schema_version,
+        'versions': {'studyVersion': snapshot.study_version, 'instrumentVersion': snapshot.instrument_version,
+                     'contentVersion': snapshot.content_version},
+        'fields': content['fields'], 'scales': content['scales'], 'membership': content['membership'],
+        'researcherPack': None if pack is None else pack.identity['digest'],
+    }
+
+
+def researcher_codebooks(packs):
+    """Private researcher interpretation, kept apart from participant definitions and raw answers."""
+    return {
+        'schemaVersion': 1,
+        'rawAnswers': (
+            'submissions.json and submissions.csv keep raw codes, statuses, and text. Researcher transforms such as '
+            'answered-only reverse-coding, and qualitative pairings, are declarations to apply in separate '
+            'analysis files; they are never applied to exported answers.'
+        ),
+        'taskOutcomes': (
+            'Task status in the submissions is the participant-reported completion, skip, or inability. Researcher '
+            'task outcome and correctness use the researcher vocabulary in each pack codebook and are coded '
+            'separately; no correctness is derived from participant status.'
+        ),
+        'packs': {digest: {
+            'researcherIdentity': pack.identity, 'publicIdentity': pack.public_identity,
+            'freezeIdentity': pack.freeze_identity, 'researcherSchemaVersion': pack.schema_version,
+            'codebook': pack.codebook, 'material': pack.material,
+        } for digest, pack in sorted(packs.items())},
+    }
+
+
+def export(source, directory, researcher_packs=()):
+    """Export records with the exact snapshots and codebooks that describe them.
+
+    Researcher packs (frozen release directories) are verified against the exported snapshots
+    before anything is written; a mismatch raises ResearcherPackError.
+    """
+    rows, snapshots = read_store(source)
+    packs = join_researcher_packs(researcher_packs, snapshots)
+    directory = private_path(Path(directory) / 'placeholder').parent
     records = [{'submission': json.loads(p), 'receipt': json.loads(r), 'release': json.loads(v),
-                'contentProvenance': UNAVAILABLE_PROVENANCE if digest is None else {
-                    'status': PROVENANCE_SNAPSHOT, 'digest': digest, 'instrumentVersion': instrument,
-                    'contentVersion': content_version, 'studyVersion': study}}
-               for p, r, v, digest, instrument, content_version, study in rows]
+                'contentProvenance': record_provenance(snapshots.get(digest))}
+               for p, r, v, digest in rows]
     def write(name, value):
         path = directory / name
         with open(path, 'x', encoding='utf-8') as f:
             os.chmod(path, 0o600)
             json.dump(value, f, ensure_ascii=False, indent=2)
     write('submissions.json', records)
-    content = participant_content()
+    (directory / 'snapshots').mkdir(mode=0o700)
+    for digest, snapshot in snapshots.items():
+        path = directory / snapshot_file(digest)
+        with open(path, 'xb') as f:
+            os.chmod(path, 0o600)
+            f.write(snapshot.canonical_content)
+    if packs:
+        write('researcher-codebooks.json', researcher_codebooks(packs))
     historical_course_status_definition = {
         'courseStatusOptions': {'1': 'Completed', '2': 'Currently enrolled', '3': 'Neither'},
         'courseItems': {
@@ -148,14 +217,20 @@ def export(source, directory):
         ),
     }
     write('codebook.json', {
-        'schemaVersion': 3, 'fields': content['fields'], 'scales': content['scales'],
-        'versions': {k: content[k] for k in ('studyVersion', 'instrumentVersion', 'contentVersion')},
-        'contentDigest': participant_snapshot().digest,
+        'schemaVersion': 4,
+        'codebooks': {digest: snapshot_codebook(snapshot, packs.get(digest))
+                      for digest, snapshot in snapshots.items()},
+        'unavailableDefinitions': {
+            'marker': dict(UNAVAILABLE_PROVENANCE),
+            'submissionIds': [r['submission']['submissionId'] for r in records
+                              if r['contentProvenance']['codebook'] is None],
+        },
         'contentProvenance': (
-            'fields and scales are the currently packaged participant content identified by contentDigest. '
-            'They describe only records whose contentDigest matches. A record with contentProvenance '
-            'unavailable was stored before snapshots were recorded and has unavailable participant-content '
-            'provenance; these current definitions must not be applied to it.'
+            'codebooks holds one entry per participant-content snapshot referenced by an exported record, keyed '
+            'by its digest and read from the stored snapshot, never from the running application. Each record\'s '
+            'contentProvenance.codebook names its entry and snapshotFile the exact canonical public bytes, whose '
+            'SHA-256 is the digest. A record whose codebook is null has unavailable participant-content '
+            'provenance and is listed under unavailableDefinitions; no codebook entry may be applied to it.'
         ),
         'instrumentDefinitions': {
             'v0.5': {
@@ -212,9 +287,10 @@ def export(source, directory):
             'not false.'
         ),
         'definitionScope': (
-            'Fields/scales describe only the versions named here. Separate records by instrumentVersion. '
-            'Consult the matching historical instrument for older versions; never apply current definitions '
-            'to legacy answers.'
+            'Each codebooks entry describes only records that name it. instrumentDefinitions are historical '
+            'notes by instrumentVersion, not exact definitions. Separate records by instrumentVersion. '
+            'Consult the matching historical instrument for records with unavailable definitions; never apply '
+            'current definitions to legacy answers.'
         ),
         'interrupted': (
             'Coarse pause/hide/route/recovery flag, not an event log. Abrupt termination may lose time since '
@@ -279,6 +355,10 @@ def main():
         p = sub.add_parser(name)
         p.add_argument('source', type=Path)
         p.add_argument('destination', type=Path)
+        if name == 'export':
+            p.add_argument('--researcher-pack', dest='researcher_packs', type=Path, action='append', default=[],
+                           metavar='RELEASE_DIR',
+                           help='frozen instrument release whose researcher pack is verified and joined')
     p = sub.add_parser('delete-participant')
     p.add_argument('source', type=Path)
     p.add_argument('participant_code')
@@ -289,7 +369,7 @@ def main():
     args = parser.parse_args()
     try:
         if args.command == 'export':
-            print(f'Exported {export(args.source, args.destination)} sessions.')
+            print(f'Exported {export(args.source, args.destination, args.researcher_packs)} sessions.')
         elif args.command in ('backup', 'restore'):
             backup(args.source, args.destination)
             check, _ = open_db(args.destination)
@@ -326,6 +406,9 @@ def main():
                     for suffix in ('-wal', '-shm', '-journal'):
                         Path(str(path) + suffix).unlink(missing_ok=True)
             print('Named files removed. Check backup, export, and host snapshot inventory.')
+    except ResearcherPackError as error:
+        # The message names the failed provenance check only; nothing was exported.
+        parser.exit(1, f'Researcher pack rejected: {error}. Nothing was exported.\n')
     except (OSError, ValueError, sqlite3.Error):
         parser.exit(1, 'Operation failed. Check private paths, schema, permissions, and destination existence.\n')
 

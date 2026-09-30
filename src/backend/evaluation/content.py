@@ -42,6 +42,11 @@ def _read_json(data):
     return json.loads(data, object_pairs_hook=_unique_object, parse_constant=_reject_constant)
 
 
+def strict_json_loads(data):
+    """Parse JSON, rejecting duplicate object keys and non-finite numbers."""
+    return _read_json(data)
+
+
 def _only(value, keys, label, *, required=()):
     if not isinstance(value, dict) or not set(required).issubset(value) or not set(value).issubset(keys):
         raise ValueError(f'Unsupported public participant structure: {label}')
