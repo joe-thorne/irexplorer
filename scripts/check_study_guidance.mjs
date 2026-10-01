@@ -18,11 +18,15 @@ let sequence = 0, served = packaged, variant = null;
 // 'unavailable' answers 503 without reaching it, 'unsupported' answers 422 unsupported_instrument
 // (the server stored nothing), 'lost' stores the submission but drops the response.
 let attempts = [], posted = [], statuses = [], delayMs = 0;
-const waiting = new Map(), exceptions = [], checks = [];
+const waiting = new Map(), exceptions = [], consoleErrors = [], checks = [];
 const json = body => Buffer.from(JSON.stringify(body)).toString('base64');
 ws.addEventListener('message', async ({ data }) => {
   const message = JSON.parse(data);
   if (message.method === 'Runtime.exceptionThrown') exceptions.push(message.params.exceptionDetails);
+  if (message.method === 'Log.entryAdded' && message.params.entry.level === 'error') {
+    const { source, text, url } = message.params.entry;
+    consoleErrors.push({ source, text, url });
+  }
   if (message.method === 'Fetch.requestPaused') {
     const { requestId, request, responseStatusCode } = message.params;
     if (request.url.endsWith('/api/study/content')) {
@@ -313,7 +317,7 @@ async function recovery() {
 }
 
 try {
-  await send('Runtime.enable'); await send('Page.enable');
+  await send('Runtime.enable'); await send('Page.enable'); await send('Log.enable');
   await send('Fetch.enable', { patterns: [
     { urlPattern: '*/api/study/content', requestStage: 'Request' },
     { urlPattern: '*/api/study/submissions', requestStage: 'Request' },
@@ -361,8 +365,10 @@ try {
   served = packaged;
   await load();
   await until(`document.querySelector('#route-heading')?.textContent === ${q(M('information.title'))}`);
-  if (exceptions.length) throw Error(JSON.stringify(exceptions));
-  console.log(JSON.stringify({ assertions: checks.length, checks, runtimeExceptions: exceptions.length }, null, 1));
+  const cspViolations = consoleErrors.filter(entry => entry.source === 'security' || /Content Security Policy/i.test(entry.text));
+  if (exceptions.length) throw Error(`Browser runtime exceptions: ${JSON.stringify(exceptions)}`);
+  if (cspViolations.length) throw Error(`Browser Content Security Policy violations: ${JSON.stringify(cspViolations)}`);
+  console.log(JSON.stringify({ assertions: checks.length, checks, runtimeExceptions: exceptions.length, consoleErrors, cspViolations }, null, 1));
 } finally {
   ws.close();
   await fetch(`${cdp}/json/close/${page.id}`);

@@ -117,6 +117,70 @@ class FastApiTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.client.close()
 
+    def assert_security_headers(self, response) -> None:
+        self.assertEqual(
+            response.headers.get("content-security-policy"),
+            "default-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'",
+        )
+        self.assertEqual(response.headers.get("x-content-type-options"), "nosniff")
+        self.assertEqual(response.headers.get("referrer-policy"), "no-referrer")
+
+    def test_development_hides_docs_and_every_response_has_security_headers(self) -> None:
+        paths = (
+            ("/", 200),
+            ("/api/health", 200),
+            ("/api/study/content", 200),
+            ("/api/examples/missing/states", 404),
+            ("/api/examples/score/states/nope/ir", 422),
+            ("/missing", 404),
+            ("/docs", 404),
+            ("/openapi.json", 404),
+        )
+        for path, expected_status in paths:
+            with self.subTest(path=path):
+                response = self.client.get(path)
+                self.assertEqual(response.status_code, expected_status)
+                self.assert_security_headers(response)
+                if path in ("/docs", "/openapi.json"):
+                    self.assertEqual(response.json()["error"]["code"], "not_found")
+
+        submission = self.client.post(
+            "/api/study/submissions",
+            json={},
+            headers={
+                "Origin": "http://127.0.0.1:8000",
+                "Sec-Fetch-Site": "same-origin",
+            },
+        )
+        self.assertEqual(submission.status_code, 422)
+        self.assert_security_headers(submission)
+
+    def test_packaged_release_hides_docs_and_openapi_with_controlled_not_found(self) -> None:
+        with patch("src.backend.api.app.metadata", return_value={"version": "0.1.36"}):
+            packaged = TestClient(create_app())
+        self.addCleanup(packaged.close)
+
+        for path in ("/docs", "/openapi.json"):
+            with self.subTest(path=path):
+                response = packaged.get(path)
+                self.assertEqual(response.status_code, 404)
+                self.assertEqual(response.json()["error"]["code"], "not_found")
+                self.assert_security_headers(response)
+
+    def test_unhandled_server_errors_are_controlled_and_keep_security_headers(self) -> None:
+        with patch(
+            "src.backend.api.query.QueryService.list_examples",
+            side_effect=RuntimeError("internal detail must not leak"),
+        ), self.assertLogs("src.backend.api.app", level="ERROR"):
+            client = TestClient(create_app(), raise_server_exceptions=False)
+            self.addCleanup(client.close)
+            response = client.get("/api/examples")
+
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(response.json()["error"]["code"], "internal_error")
+        self.assertNotIn("internal detail", response.text)
+        self.assert_security_headers(response)
+
     def test_stateless_routes_supply_the_two_panel_data(self) -> None:
         self.assertEqual(self.client.get("/api/health").json(), {"status": "ok"})
         self.assertIn("score", self.client.get("/api/examples").json()["examples"])
@@ -219,29 +283,12 @@ class FastApiTests(unittest.TestCase):
         self.assertNotIn("formatVersion", response.text)
         self.assertIn("formatVersion", "\n".join(logs.output))
 
-    def test_openapi_separates_study_write_from_read_only_queries(self) -> None:
-        schema = self.client.get("/openapi.json")
-        self.assertEqual(schema.status_code, 200)
-        self.assertEqual(
-            set(schema.json()["paths"]),
-            {
-                "/api/health",
-                "/api/release",
-                "/api/study/content",
-                "/api/study/submissions",
-                "/api/examples",
-                "/api/examples/{example_id}/states",
-                "/api/examples/{example_id}/source",
-                "/api/examples/{example_id}/comparison-report",
-                "/api/examples/{example_id}/states/{ordinal}/source-mappings",
-                "/api/examples/{example_id}/states/{ordinal}/ir",
-                "/api/examples/{example_id}/states/{ordinal}/cfg",
-            },
-        )
-        self.assertEqual(self.client.get("/docs").status_code, 200)
-        no_docs_client = TestClient(create_app(include_docs=False))
-        self.addCleanup(no_docs_client.close)
-        self.assertEqual(no_docs_client.get("/docs").status_code, 404)
+    def test_openapi_and_interactive_docs_are_not_exposed(self) -> None:
+        for path in ("/docs", "/openapi.json"):
+            with self.subTest(path=path):
+                response = self.client.get(path)
+                self.assertEqual(response.status_code, 404)
+                self.assertEqual(response.json()["error"]["code"], "not_found")
 
     def test_application_serves_the_lean_browser_frontend(self) -> None:
         html = self.client.get("/")

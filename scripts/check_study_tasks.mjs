@@ -11,10 +11,14 @@ const page = await (await fetch(`${cdp}/json/new?about:blank`, { method: 'PUT' }
 const ws = new WebSocket(page.webSocketDebuggerUrl);
 await new Promise(resolve => ws.addEventListener('open', resolve, { once: true }));
 let sequence = 0, variant = null, contentDelayMs = 0, examplesDelayMs = 0;
-const waiting = new Map(), exceptions = [], checks = [], requests = [];
+const waiting = new Map(), exceptions = [], consoleErrors = [], checks = [], requests = [];
 ws.addEventListener('message', async ({ data }) => {
   const message = JSON.parse(data);
   if (message.method === 'Runtime.exceptionThrown') exceptions.push(message.params.exceptionDetails);
+  if (message.method === 'Log.entryAdded' && message.params.entry.level === 'error') {
+    const { source, text, url } = message.params.entry;
+    consoleErrors.push({ source, text, url });
+  }
   if (message.method === 'Network.requestWillBeSent') {
     const { method, url, postData } = message.params.request;
     requests.push({ method, url, postData: postData || '' });
@@ -87,7 +91,7 @@ async function discardJourney() {
 }
 
 try {
-  await send('Runtime.enable'); await send('Page.enable'); await send('Network.enable');
+  await send('Runtime.enable'); await send('Page.enable'); await send('Network.enable'); await send('Log.enable');
   await send('Fetch.enable', { patterns: ['*/api/study/content', '*/api/examples'].map(urlPattern => ({ urlPattern, requestStage: 'Request' })) });
   await send('Emulation.setFocusEmulationEnabled', { enabled: true });
   await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
@@ -226,8 +230,10 @@ try {
   await check('Inheritance follows entryWorkspace without the legacy flag', `${workspaceIs('quick_sort', [0, 'ir'], [0, 'ir'])} && ${selectionClear} && document.querySelector('#task-instructions').innerText.includes('Your workspace continues from') && !document.querySelector('#task-instructions').innerText.includes('The workspace opens on')`);
   await discardJourney();
 
-  if (exceptions.length) throw Error(JSON.stringify(exceptions));
-  console.log(JSON.stringify({ assertions: checks.length, checks, runtimeExceptions: exceptions.length }, null, 1));
+  const cspViolations = consoleErrors.filter(entry => entry.source === 'security' || /Content Security Policy/i.test(entry.text));
+  if (exceptions.length) throw Error(`Browser runtime exceptions: ${JSON.stringify(exceptions)}`);
+  if (cspViolations.length) throw Error(`Browser Content Security Policy violations: ${JSON.stringify(cspViolations)}`);
+  console.log(JSON.stringify({ assertions: checks.length, checks, runtimeExceptions: exceptions.length, consoleErrors, cspViolations }, null, 1));
 } finally {
   ws.close();
   await fetch(`${cdp}/json/close/${page.id}`);

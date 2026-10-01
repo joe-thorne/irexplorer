@@ -2,7 +2,9 @@
 
 FastAPI serves the static browser application and stateless queries over included compiler artefacts. Every query names its example; the browser owns panel and selection state. The immutable per-example cache contains no participant responses. No runtime source upload or compiler execution is supported.
 
-Run `.venv/bin/python -m src.backend.api.server` from the repository root and open `http://127.0.0.1:8000`. Interactive HTTP schemas are available at `/docs`.
+Run `.venv/bin/python -m src.backend.api.server` from the repository root and open `http://127.0.0.1:8000`. The interactive API docs and OpenAPI schema are not exposed by development or packaged releases; both `/docs` and `/openapi.json` return a controlled `404 not_found` response.
+
+Every response carries a self-only Content Security Policy with `frame-ancestors 'none'`, `X-Content-Type-Options: nosniff`, and `Referrer-Policy: no-referrer`. The policy allows same-origin resources only and prevents this application from being framed.
 
 ## Curated queries
 

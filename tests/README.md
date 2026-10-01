@@ -101,3 +101,13 @@ It reads every expected sentence from the served message catalogue, glossary and
 All three scripts connect to the browser on port 9239 unless `IREXPLORER_CDP_PORT` names another. Close the temporary Chrome process after testing.
 
 Automated checks do not establish complete accessibility conformance or replace physical keyboard and spoken screen-reader testing.
+
+## Deployment checker contract
+
+The deployment checker’s public-origin assertions run against a local mock server without network access:
+
+```sh
+node --test tests/test_deployment_checker.mjs
+```
+
+The checks require controlled not-found responses for the packaged documentation and OpenAPI routes, verify the required response headers, and prove that reachable docs or missing study-response headers fail the deployment check.

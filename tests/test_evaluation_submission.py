@@ -425,11 +425,8 @@ class SubmissionTests(unittest.TestCase):
             self.assertEqual(caught.exception.status,503)
             self.assertFalse(service.config.path.exists())
         for path in ('/submissions.sqlite3','/api/study/submissions','/api/study/export',
-                     '/src/backend/evaluation/service.py'):
+                     '/src/backend/evaluation/service.py', '/docs', '/openapi.json'):
             self.assertIn(self.client.get(path).status_code,(404,405))
-        schema=self.client.get('/openapi.json').json()
-        for path, methods in schema['paths'].items():
-            self.assertEqual(set(methods), {'post'} if path=='/api/study/submissions' else {'get'})
         self.assertEqual(self.client.post('/api/examples',json=self.payload).status_code,405)
 
     def test_shipped_live_configuration_rejects_submissions(self):

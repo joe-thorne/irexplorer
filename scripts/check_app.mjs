@@ -17,10 +17,14 @@ const page = await (await fetch(`${cdp}/json/new?about:blank`, { method: 'PUT' }
 const ws = new WebSocket(page.webSocketDebuggerUrl);
 await new Promise(resolve => ws.addEventListener('open', resolve, { once: true }));
 let sequence = 0;
-const waiting = new Map(), exceptions = [], checks = [];
+const waiting = new Map(), exceptions = [], consoleErrors = [], checks = [];
 ws.addEventListener('message', ({ data }) => {
   const message = JSON.parse(data);
   if (message.method === 'Runtime.exceptionThrown') exceptions.push(message.params.exceptionDetails);
+  if (message.method === 'Log.entryAdded' && message.params.entry.level === 'error') {
+    const { source, text, url } = message.params.entry;
+    consoleErrors.push({ source, text, url });
+  }
   if (waiting.has(message.id)) {
     const [resolve, reject] = waiting.get(message.id); waiting.delete(message.id);
     message.error ? reject(message.error) : resolve(message.result);
@@ -187,7 +191,7 @@ async function task(id) {
 }
 
 try {
-  await send('Runtime.enable'); await send('Page.enable'); await send('Network.enable');
+  await send('Runtime.enable'); await send('Page.enable'); await send('Network.enable'); await send('Log.enable');
   await send('Emulation.setFocusEmulationEnabled', { enabled: true });
   await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
   await send('Page.navigate', { url: `${base}/` });
@@ -454,8 +458,10 @@ try {
   await until(`document.querySelector('.error-state .error-message')?.textContent === 'Model records are temporarily unavailable.'`);
   checks.push('Explore displays the model-record-unavailable message');
   await value('window.fetch = window.originalFetch');
-  if (exceptions.length) throw Error(JSON.stringify(exceptions));
-  const result = { release, assertions: checks.length, checks, runtimeExceptions: exceptions.length };
+  const cspViolations = consoleErrors.filter(entry => entry.source === 'security' || /Content Security Policy/i.test(entry.text));
+  if (exceptions.length) throw Error(`Browser runtime exceptions: ${JSON.stringify(exceptions)}`);
+  if (cspViolations.length) throw Error(`Browser Content Security Policy violations: ${JSON.stringify(cspViolations)}`);
+  const result = { release, assertions: checks.length, checks, runtimeExceptions: exceptions.length, consoleErrors, cspViolations };
   if (captures) await writeFile(join(captures, 'browser-checks.json'), JSON.stringify(result, null, 2) + '\n');
   console.log(JSON.stringify(result));
 } finally {

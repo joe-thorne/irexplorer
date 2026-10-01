@@ -52,16 +52,37 @@ function noStore(response, path) {
           `${path}: expected Cache-Control to include no-store`);
 }
 
+function securityHeaders(response, path) {
+  require(response.headers.get('content-security-policy') ===
+          "default-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'",
+          `${path}: expected the self-only Content Security Policy with frame-ancestors 'none'`);
+  require(response.headers.get('x-content-type-options') === 'nosniff',
+          `${path}: expected X-Content-Type-Options: nosniff`);
+  require(response.headers.get('referrer-policy') === 'no-referrer',
+          `${path}: expected Referrer-Policy: no-referrer`);
+}
+
+async function controlledNotFound(path) {
+  const response = await request(path);
+  require(response.status === 404, `${path}: expected packaged 404, got ${response.status}`);
+  securityHeaders(response, path);
+  const body = await json(response, path);
+  require(body?.error?.code === 'not_found', `${path}: expected controlled not_found response`);
+  checks.push(`${path} is a controlled 404`);
+}
+
 const checks = [];
 
 const healthResponse = await request('/api/health');
 require(healthResponse.status === 200, `/api/health: expected 200, got ${healthResponse.status}`);
+securityHeaders(healthResponse, '/api/health');
 const health = await json(healthResponse, '/api/health');
 require(health?.status === 'ok', '/api/health: expected {"status":"ok"}');
 checks.push('/api/health');
 
 const releaseResponse = await request('/api/release');
 require(releaseResponse.status === 200, `/api/release: expected 200, got ${releaseResponse.status}`);
+securityHeaders(releaseResponse, '/api/release');
 const release = await json(releaseResponse, '/api/release');
 require(typeof release?.version === 'string' && release.version.length > 0 && release.version !== 'development',
         '/api/release: expected a packaged, non-development version');
@@ -71,11 +92,16 @@ checks.push(`/api/release (${release.version}, ${release.artefactSha256})`);
 
 const appResponse = await request('/app.js');
 require(appResponse.status === 200, `/app.js: expected 200, got ${appResponse.status}`);
+securityHeaders(appResponse, '/app.js');
 noStore(appResponse, '/app.js');
 checks.push('/app.js Cache-Control: no-store');
 
+await controlledNotFound('/docs');
+await controlledNotFound('/openapi.json');
+
 const contentResponse = await request('/api/study/content');
 require(contentResponse.status === 200, `/api/study/content: expected 200, got ${contentResponse.status}`);
+securityHeaders(contentResponse, '/api/study/content');
 const content = await json(contentResponse, '/api/study/content');
 require(content?.collectionMode === expectedCollectionMode,
         `/api/study/content: expected collection mode ${expectedCollectionMode}, got ${content?.collectionMode}`);
@@ -99,6 +125,7 @@ const submissionResponse = await request('/api/study/submissions', {
   },
   body: '{}',
 });
+securityHeaders(submissionResponse, '/api/study/submissions');
 const submission = await json(submissionResponse, '/api/study/submissions');
 const expectedSubmissionStatus = expectedSubmissionEnabled ? 422 : 503;
 const expectedSubmissionCode = expectedSubmissionEnabled ? 'invalid_submission' : 'collection_disabled';

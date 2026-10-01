@@ -13,7 +13,7 @@ A retry is identical when it names the stored instrument, content, and study ver
 
 The browser freezes the submission before sending and retries that same submission after uncertain delivery. No draft is sent on unload. Compiler queries remain read-only and cannot invoke compilation or mutate study records.
 
-See [study operations](evaluation-operations.md) for modes, data paths, and private researcher commands, and the runtime `/docs` endpoint for HTTP schemas.
+See [study operations](evaluation-operations.md) for modes, data paths, and private researcher commands. The public application does not expose interactive API documentation or an OpenAPI schema.
 
 ## Instrument v0.11 preview 2
 

@@ -35,6 +35,13 @@ ExampleId = Annotated[str, ApiPath(min_length=1)]
 Ordinal = Annotated[int, ApiPath(ge=0)]
 FunctionId = Annotated[str, Query(alias="functionId", min_length=1)]
 logger = logging.getLogger(__name__)
+SECURITY_HEADERS = {
+    "Content-Security-Policy": (
+        "default-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+    ),
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "no-referrer",
+}
 
 
 class AppStaticFiles(StaticFiles):
@@ -52,7 +59,6 @@ class AppStaticFiles(StaticFiles):
 def create_app(
     service: QueryService | None = None,
     *,
-    include_docs: bool = True,
     study_config: Config | None = None,
 ) -> FastAPI:
     """Create the same-origin API and static frontend application."""
@@ -62,9 +68,17 @@ def create_app(
         title="irexplorer curated query API",
         version="1.0.0",
         description="Read-only curated compiler queries plus isolated final-only study submissions.",
-        docs_url="/docs" if include_docs else None,
+        docs_url=None,
         redoc_url=None,
+        openapi_url=None,
     )
+
+    @app.middleware("http")
+    async def add_security_headers(request: Request, call_next):
+        response = await call_next(request)
+        for name, value in SECURITY_HEADERS.items():
+            response.headers[name] = value
+        return response
 
     @app.exception_handler(QueryError)
     async def query_error_handler(
@@ -104,6 +118,26 @@ def create_app(
         code = "not_found" if exc.status_code == 404 else "method_not_allowed"
         message = "Resource not found." if exc.status_code == 404 else "Method not allowed."
         return _error_response(exc.status_code, code, message)
+
+    @app.exception_handler(Exception)
+    async def internal_error_handler(
+        _request: Request,
+        exc: Exception,
+    ) -> JSONResponse:
+        logger.error(
+            "Unhandled application error",
+            exc_info=(type(exc), exc, exc.__traceback__),
+        )
+        return JSONResponse(
+            status_code=500,
+            content=ErrorResponse(
+                error=ErrorDetail(
+                    code="internal_error",
+                    message="The request could not be completed.",
+                ),
+            ).model_dump(),
+            headers=SECURITY_HEADERS,
+        )
 
     @app.get("/api/health", response_model=HealthResponse)
     def health() -> dict[str, str]:

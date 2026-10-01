@@ -46,7 +46,7 @@ Open **http://127.0.0.1:8000**. Stop the Docker application first if it already 
 
 - [Tests](tests/README.md): backend, browser, and study state checks, plus lint and type checks (install `src/backend/requirements-dev.txt` for these).
 - [Compiler environment](docs/environment.md): pinned LLVM toolchain and intentional artefact regeneration.
-- [API](src/backend/api/README.md): curated query interfaces; interactive OpenAPI at `/docs` while running.
+- [API](src/backend/api/README.md): curated query interfaces; interactive API documentation and OpenAPI are not exposed.
 - [Study operations](docs/evaluation-operations.md): configuration, export, backup, restore, and deletion.
 - [Accessibility](docs/accessibility.md): interface behaviour and testing limitations.
 
@@ -60,11 +60,14 @@ For a new version:
 
 ```sh
 export IREXPLORER_VERSION=0.1.1
+scripts/check_dependency_advisories.sh
 docker compose build app
 docker compose up -d --no-build --pull never --wait
 ```
 
-Keep the version set when operating that image, or record it in a local `.env` file. An accepted release version should identify one source state. Application versions, instrument versions, and database schema versions are independent.
+The advisory check uses the pinned `pip-audit` tool from `src/backend/requirements-dev.txt` to query published Python package advisories for the exact pins in `src/backend/requirements.lock`. It requires network access and deliberately stays outside the offline repository gate. Install the development requirements first if `.venv/bin/pip-audit` is unavailable.
+
+Keep the version set when operating that image, or record it in a local `.env` file. An accepted release version should identify one source state. Application versions, instrument versions, and database schema versions are independent. `/docs` and `/openapi.json` are disabled in development checkouts and packaged releases.
 
 ## Licence
 
