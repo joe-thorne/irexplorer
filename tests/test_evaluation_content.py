@@ -13,6 +13,9 @@ from src.backend.evaluation.service import Config
 
 class EvaluationContentTests(unittest.TestCase):
     def test_verified_public_package_exposes_explicit_membership_roles_and_controls(self):
+        evaluation = Path(__file__).parents[1] / 'src/backend/evaluation'
+        self.assertTrue((evaluation / 'participant-package-v2.json').is_file())
+        self.assertFalse((evaluation / 'participant-content.json').exists())
         content = participant_content()
         self.assertEqual(content['packageSchemaVersion'], 2)
         self.assertEqual(content['packageIdentity']['digest'],
