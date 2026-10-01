@@ -103,7 +103,7 @@ class MixedReleaseExportTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        self.root = Path(self.tmp.name)
+        self.root = Path(self.tmp.name).resolve()
         self.config = Config(self.root / 'study', origin='http://testserver')
         self.legacy = synthetic()
         self.legacy.update(instrumentVersion='v0.10', contentVersion='v0.10-preview-1',
