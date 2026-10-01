@@ -19,14 +19,6 @@ Compiler artefacts for `irexplorer` are generated with one pinned Linux toolchai
 
 - `Dockerfile.toolchain`: multi-stage Ubuntu 24.04 image with a pruned LLVM 22.1.8 `clang`/`opt` toolchain.
 - `docker-compose.yml`: `toolchain` service built for `linux/amd64`.
-- `scripts/smoke-toolchain.sh`: prints tool versions, compiles a minimal C file to LLVM IR, and checks target/debug metadata.
-
-Run from `irexplorer/`:
-
-```sh
-docker compose build toolchain
-docker compose run --rm toolchain ./scripts/smoke-toolchain.sh
-```
 
 ## Local Workflow
 

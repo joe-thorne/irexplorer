@@ -104,7 +104,8 @@ Automated checks do not establish complete accessibility conformance or replace 
 
 ## Deployment checker contract
 
-The deployment checker’s public-origin assertions run against a local mock server without network access:
+The repository gate runs the deployment checker’s public-origin assertions
+against a local mock server without network access:
 
 ```sh
 node --test tests/test_deployment_checker.mjs

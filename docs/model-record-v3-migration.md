@@ -13,14 +13,8 @@ normalised JSON structures must then match exactly. It reported 45 model records
 and 315 comparison responses equivalent, with all 93 compiler artefacts
 outside the model-record directories byte-identical.
 
-To repeat the check, extract the baseline application and make its Python
-environment available through the same `.venv` path:
-
-```sh
-git archive afa93410bd302d99bf93bcb527758ad186c4d | tar -x -C /private/tmp/irexplorer-v2
-ln -s "$PWD/.venv" /private/tmp/irexplorer-v2/.venv
-.venv/bin/python -m scripts.check_model_v3_equivalence /private/tmp/irexplorer-v2
-```
+The one-off equivalence checker used for this migration has been retired; the
+comparison results above remain the record of that verification.
 
 The expected result is `45 model records, 315 comparison responses,
 93 compiler artefacts byte-identical`.
