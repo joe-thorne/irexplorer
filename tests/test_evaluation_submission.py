@@ -553,7 +553,7 @@ class SubmissionTests(unittest.TestCase):
         self.assertEqual(canonical_content, expected)
         self.assertEqual(hashlib.sha256(canonical_content).hexdigest(), linked)
         self.assertEqual(tuple(identity), (linked, 'sha256', 1, 'sorted-json-utf8-v1', 1, 2,
-                                        'v0.11', 'v0.11-preview-3', 'v0.11-synthetic-1'))
+                                        'v0.11', 'v0.11-preview-4', 'v0.11-synthetic-1'))
         for secret in (submission['participantCode'], submission['submissionId'], b'collectionMode',
                        b'submissionEnabled'):
             self.assertNotIn(secret.encode() if isinstance(secret, str) else secret, canonical_content)
@@ -604,13 +604,14 @@ class SubmissionTests(unittest.TestCase):
 
     def test_same_digest_with_different_definition_bytes_fails_without_replacement(self):
         self.service.connect().close()
-        digest = self.service.snapshot.digest
-        altered = self.service.snapshot.canonical_content.replace(b'v0.11-preview-3', b'v0.11-preview-X', 1)
-        self.assertNotEqual(altered, self.service.snapshot.canonical_content)
+        snapshot = self.service.snapshot
+        altered = snapshot.canonical_content.replace(snapshot.content_version.encode(), b'v0.11-preview-corrupt', 1)
+        self.assertNotEqual(altered, snapshot.canonical_content)
         db = sqlite3.connect(self.config.path)
         db.execute('INSERT INTO participant_content_snapshots VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                   (digest, 'sha256', 1, 'sorted-json-utf8-v1', 1, 2, 'v0.11', 'v0.11-preview-3',
-                    'v0.11-synthetic-1', altered))
+                   (snapshot.digest, snapshot.algorithm, snapshot.identity_version, snapshot.canonicalisation,
+                    snapshot.canonicalisation_version, snapshot.package_schema_version, snapshot.instrument_version,
+                    snapshot.content_version, snapshot.study_version, altered))
         db.commit()
         db.close()
         failed = self.post()
@@ -682,7 +683,7 @@ class SubmissionTests(unittest.TestCase):
         digest = self.service.snapshot.digest
         self.assertEqual(records[current['submissionId']]['contentProvenance'], {
             'status': 'snapshot', 'digest': digest, 'instrumentVersion': 'v0.11',
-            'contentVersion': 'v0.11-preview-3', 'studyVersion': 'v0.11-synthetic-1',
+            'contentVersion': 'v0.11-preview-4', 'studyVersion': 'v0.11-synthetic-1',
             'codebook': digest, 'snapshotFile': f'snapshots/{digest}.json'})
         codebook = json.loads((destination / 'codebook.json').read_text())
         self.assertEqual(list(codebook['codebooks']), [digest])

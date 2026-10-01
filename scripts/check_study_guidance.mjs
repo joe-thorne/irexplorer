@@ -84,6 +84,11 @@ async function check(name, expression) {
 }
 const q = JSON.stringify;
 const click = selector => value(`document.querySelector(${q(selector)}).click()`);
+async function hover(elementExpression) {
+  const point = await value(`(() => { const e = ${elementExpression}; e.scrollIntoView({ block: 'center' }); const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`);
+  await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 0, y: 0 });
+  await send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...point });
+}
 const fill = (name, text) => value(`(() => { const e = document.querySelector('textarea[name="${name}"]'); e.value = ${q(text)}; e.dispatchEvent(new Event('input', { bubbles: true })); })()`);
 async function key(name, code, keyCode) {
   await send('Input.dispatchKeyEvent', { type: 'keyDown', key: name, code, windowsVirtualKeyCode: keyCode, ...(name === 'Enter' ? { text: '\r' } : {}) });
@@ -156,6 +161,15 @@ async function journey(viewport) {
     await value(`document.querySelector('#task-instructions').open = true; [...document.querySelectorAll('#task-instructions .study-term-help')].find(t => t.textContent.toLowerCase() === ${q(g.match.toLowerCase())}).focus()`);
     await until(`!document.querySelector('#ir-help-tooltip').hidden`);
     await check(`Keyboard focus on ${g.match} explains it with its compiled help text`, `document.activeElement.getAttribute('aria-describedby') === 'ir-help-tooltip' && document.querySelector('#ir-help-tooltip').textContent === ${q(g.text)} && document.querySelector('#ir-help-tooltip').childElementCount === 0`);
+  }
+  for (const g of served.glossary.filter(item => ['pass', 'optimisation-state'].includes(item.id))) {
+    await value(`document.activeElement.blur(); document.querySelector('#task-instructions').open = true; window.glossaryTerm = [...document.querySelectorAll('#task-instructions .study-term-help')].find(term => term.textContent.toLowerCase() === ${q(g.match.toLowerCase())}); glossaryTerm.focus()`);
+    await until(`!document.querySelector('#ir-help-tooltip').hidden && document.querySelector('#ir-help-tooltip').textContent === ${q(g.text)} && document.activeElement.getAttribute('aria-describedby') === 'ir-help-tooltip'`);
+    await check(`Keyboard focus on ${g.match} exposes its exact compiled help`, `document.activeElement.getAttribute('aria-describedby') === 'ir-help-tooltip' && document.querySelector('#ir-help-tooltip').textContent === ${q(g.text)}`);
+    await value('glossaryTerm.blur()');
+    await hover('window.glossaryTerm');
+    await until(`!document.querySelector('#ir-help-tooltip').hidden && document.querySelector('#ir-help-tooltip').textContent === ${q(g.text)} && glossaryTerm.getAttribute('aria-describedby') === 'ir-help-tooltip'`);
+    await check(`Hover on ${g.match} exposes its exact compiled help`, `!document.querySelector('#ir-help-tooltip').hidden && glossaryTerm.getAttribute('aria-describedby') === 'ir-help-tooltip' && document.querySelector('#ir-help-tooltip').textContent === ${q(g.text)} && document.querySelector('#ir-help-tooltip').childElementCount === 0`);
   }
   await value(`document.activeElement.blur()`);
   await check('T0 timing, pause and response guidance come from the catalogue', `document.querySelector('#task-timing').textContent === ${q(M('timing.active'))} && document.querySelector('#task-timing').getAttribute('role') === 'status' && document.querySelector('[data-action="pause-task"]').textContent === ${q(M('actions.pause'))} && document.querySelector('.task-responses-details > summary').textContent === ${q(M('task.responses-open'))} && ${shows(M('task.optional'), '#task-responses p')} && document.querySelector('#task-responses a[href="#route-heading"]').textContent === ${q(M('task.goal-link'))} && document.querySelector('.task-complete').textContent === ${q(M('actions.finish-orientation'))} && document.querySelector('.task-history').getAttribute('aria-label') === ${q(M('task.progress'))} && document.querySelector('.task-history a').textContent === ${q(M('task.current', { taskId: 'T0' }))}`);

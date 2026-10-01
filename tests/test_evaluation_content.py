@@ -19,7 +19,7 @@ class EvaluationContentTests(unittest.TestCase):
         content = participant_content()
         self.assertEqual(content['packageSchemaVersion'], 2)
         self.assertEqual(content['packageIdentity']['digest'],
-                         'b5715a6db30237ad31f50377862d62f832a7f312ccc9650e933975f541d33c7c')
+                         '002bca6aa1f1b7aa0c9edc57ae7bbb9b22aa037a779c274a420859308b9c80cd')
         self.assertEqual(content['membership']['consent'], [f'C{i}' for i in range(1, 7)])
         self.assertEqual(content['membership']['pre'], [field_id for section in content['preSections']
                                                        for field_id in section['fields']])
@@ -87,14 +87,15 @@ class EvaluationContentTests(unittest.TestCase):
     def test_v011_task_copy_and_identity_match_current_runsheet(self):
         content = participant_content()
         self.assertEqual((content['instrumentVersion'], content['contentVersion'], content['studyVersion']),
-                         ('v0.11', 'v0.11-preview-3', 'v0.11-synthetic-1'))
+                         ('v0.11', 'v0.11-preview-4', 'v0.11-synthetic-1'))
         tasks = {task['id']: task for task in content['tasks']}
-        self.assertIn('State 0 is the unoptimised baseline compiled with -O0', content['taskIntroduction'][1])
-        self.assertIn('T0 is the orientation; the six tasks are T1–T6', content['taskIntroduction'][2])
-        self.assertIn('State 13 is compiled separately with -O3', content['taskIntroduction'][1])
-        self.assertIn('not an unaided test', content['taskIntroduction'][2])
-        self.assertIn('Answer at your own level of detail', content['taskIntroduction'][2])
-        self.assertIn('navigation does not submit them', content['taskIntroduction'][3])
+        introduction = '\n'.join(content['taskIntroduction'])
+        self.assertIn('State 0 is the unoptimised baseline compiled with -O0', introduction)
+        self.assertIn('T0 is the orientation; the six tasks are T1–T6', introduction)
+        self.assertIn('State 13 is compiled separately with -O3', introduction)
+        self.assertIn('not an unaided test', introduction)
+        self.assertIn('Answer at your own level of detail', introduction)
+        self.assertIn('navigation does not submit them', introduction)
         role_blocks = [block for section in content['information'] for block in section['blocks']]
         self.assertIn('evaluates how useful irexplorer is',
                       next(block['text'] for block in role_blocks if block.get('role') == 'study-purpose'))
@@ -175,7 +176,7 @@ class EvaluationContentTests(unittest.TestCase):
     def test_v011_course_selections_combine_status_and_distinguish_none_from_missing(self):
         content = participant_content()
         self.assertEqual((content['instrumentVersion'], content['contentVersion'], content['studyVersion']),
-                         ('v0.11', 'v0.11-preview-3', 'v0.11-synthetic-1'))
+                         ('v0.11', 'v0.11-preview-4', 'v0.11-synthetic-1'))
         course = next(field for field in content['fields'] if field['id'] == 'P3')
         self.assertEqual(course['type'], 'multiple')
         self.assertEqual([option['value'] for option in course['options']], list(range(1, 10)))

@@ -5,14 +5,14 @@
     "algorithm": "sha256",
     "canonicalisation": "sorted-json-utf8-v1",
     "canonicalisationVersion": 1,
-    "digest": "b5715a6db30237ad31f50377862d62f832a7f312ccc9650e933975f541d33c7c",
+    "digest": "002bca6aa1f1b7aa0c9edc57ae7bbb9b22aa037a779c274a420859308b9c80cd",
     "instrumentVersion": "v0.11",
-    "contentVersion": "v0.11-preview-3",
+    "contentVersion": "v0.11-preview-4",
     "studyVersion": "v0.11-synthetic-1"
   },
   "content": {
     "instrumentVersion": "v0.11",
-    "contentVersion": "v0.11-preview-3",
+    "contentVersion": "v0.11-preview-4",
     "studyVersion": "v0.11-synthetic-1",
     "scales": {
       "familiarity": [
@@ -1358,6 +1358,7 @@
     "taskIntroduction": [
       "Three small C programs are already loaded. You do not need to write or compile code.",
       "Each program has fourteen recorded states: State 0 is the unoptimised baseline compiled with -O0; States 1–12 are produced by successive compiler passes applied to the preceding output; State 13 is compiled separately with -O3.",
+      "A pass is one self-contained transformation; an optimisation state is the program as it stands after a particular pass has run.",
       "T0 is the orientation; the six tasks are T1–T6. T1–T5 open on the named example at State 0 with IR in both panels; set the states and views named in each task. T6 continues with T5’s example, states, function, and views, with the previous selection cleared; continue there or change them. You can use the C source, highlighting, explanations, and word help. This study evaluates the tool, not you; the tasks are not an unaided test. Answer at your own level of detail: brief, partial, or blank answers are useful. You may also skip or choose “I could not work this out”.",
       "As you move between sections and tasks, your answers remain a draft in this browser tab; navigation does not submit them. Continuing locks that task’s answers. Duration is recorded from task presentation and includes visible reading, setup, exploration, and answering. Paused time, hidden-tab time, and reload downtime are excluded. There is no time limit."
     ],
@@ -1743,6 +1744,16 @@
         "id": "compiler-passes",
         "match": "compiler passes",
         "text": "Individual transformations the compiler applies to its intermediate representation."
+      },
+      {
+        "id": "pass",
+        "match": "Pass",
+        "text": "One self-contained transformation the compiler applies to the IR. A real compiler runs dozens of these in sequence. This tool uses a fixed chain of twelve chosen for teaching, so the sequence is short enough to step through."
+      },
+      {
+        "id": "optimisation-state",
+        "match": "Optimisation state",
+        "text": "The program as it stands after a particular pass has run. The tool holds one state per step, so you can pick any two and compare them."
       },
       {
         "id": "ir",
