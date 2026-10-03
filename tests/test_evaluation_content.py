@@ -19,8 +19,8 @@ class EvaluationContentTests(unittest.TestCase):
         content = participant_content()
         self.assertEqual(content['packageSchemaVersion'], 2)
         self.assertEqual(content['packageIdentity']['digest'],
-                         '002bca6aa1f1b7aa0c9edc57ae7bbb9b22aa037a779c274a420859308b9c80cd')
-        self.assertEqual(content['membership']['consent'], [f'C{i}' for i in range(1, 7)])
+                         'a4d2c2868d455cd1622cd662b88c58d650df5a82b0c5e8453ca60ed3b9923615')
+        self.assertEqual(content['membership']['consent'], ['C1', 'C2', 'C3', 'C4', 'C6'])
         self.assertEqual(content['membership']['pre'], [field_id for section in content['preSections']
                                                        for field_id in section['fields']])
         self.assertEqual([block['role'] for section in content['information'] for block in section['blocks']
@@ -87,7 +87,7 @@ class EvaluationContentTests(unittest.TestCase):
     def test_v011_task_copy_and_identity_match_current_runsheet(self):
         content = participant_content()
         self.assertEqual((content['instrumentVersion'], content['contentVersion'], content['studyVersion']),
-                         ('v0.11', 'v0.11-preview-4', 'v0.11-synthetic-1'))
+                         ('v0.11', 'v0.11-preview-5', 'v0.11-synthetic-1'))
         tasks = {task['id']: task for task in content['tasks']}
         introduction = '\n'.join(content['taskIntroduction'])
         self.assertIn('State 0 is the unoptimised baseline compiled with -O0', introduction)
@@ -95,7 +95,7 @@ class EvaluationContentTests(unittest.TestCase):
         self.assertIn('State 13 is compiled separately with -O3', introduction)
         self.assertIn('not an unaided test', introduction)
         self.assertIn('Answer at your own level of detail', introduction)
-        self.assertIn('navigation does not submit them', introduction)
+        self.assertIn('a comment on what you could do', introduction)
         role_blocks = [block for section in content['information'] for block in section['blocks']]
         self.assertIn('evaluates how useful irexplorer is',
                       next(block['text'] for block in role_blocks if block.get('role') == 'study-purpose'))
@@ -123,7 +123,7 @@ class EvaluationContentTests(unittest.TestCase):
                                        'submissionEnabled': True})
             self.assertEqual(content['collectionMode'], 'preview')
             self.assertTrue(content['submissionEnabled'])
-            self.assertEqual(len(content['fields']), 60)
+            self.assertEqual(len(content['fields']), 59)
             allowed = {'id', 'prompt', 'type', 'required', 'options', 'scale', 'notApplicableLabel', 'maxLength',
                        'exclusiveValue', 'optionStatuses', 'condition', 'inabilityLabel', 'presentation'}
             for field in content['fields']:
@@ -176,7 +176,7 @@ class EvaluationContentTests(unittest.TestCase):
     def test_v011_course_selections_combine_status_and_distinguish_none_from_missing(self):
         content = participant_content()
         self.assertEqual((content['instrumentVersion'], content['contentVersion'], content['studyVersion']),
-                         ('v0.11', 'v0.11-preview-4', 'v0.11-synthetic-1'))
+                         ('v0.11', 'v0.11-preview-5', 'v0.11-synthetic-1'))
         course = next(field for field in content['fields'] if field['id'] == 'P3')
         self.assertEqual(course['type'], 'multiple')
         self.assertEqual([option['value'] for option in course['options']], list(range(1, 10)))

@@ -553,7 +553,7 @@ class SubmissionTests(unittest.TestCase):
         self.assertEqual(canonical_content, expected)
         self.assertEqual(hashlib.sha256(canonical_content).hexdigest(), linked)
         self.assertEqual(tuple(identity), (linked, 'sha256', 1, 'sorted-json-utf8-v1', 1, 2,
-                                        'v0.11', 'v0.11-preview-4', 'v0.11-synthetic-1'))
+                                        'v0.11', 'v0.11-preview-5', 'v0.11-synthetic-1'))
         for secret in (submission['participantCode'], submission['submissionId'], b'collectionMode',
                        b'submissionEnabled'):
             self.assertNotIn(secret.encode() if isinstance(secret, str) else secret, canonical_content)
@@ -683,7 +683,7 @@ class SubmissionTests(unittest.TestCase):
         digest = self.service.snapshot.digest
         self.assertEqual(records[current['submissionId']]['contentProvenance'], {
             'status': 'snapshot', 'digest': digest, 'instrumentVersion': 'v0.11',
-            'contentVersion': 'v0.11-preview-4', 'studyVersion': 'v0.11-synthetic-1',
+            'contentVersion': 'v0.11-preview-5', 'studyVersion': 'v0.11-synthetic-1',
             'codebook': digest, 'snapshotFile': f'snapshots/{digest}.json'})
         codebook = json.loads((destination / 'codebook.json').read_text())
         self.assertEqual(list(codebook['codebooks']), [digest])

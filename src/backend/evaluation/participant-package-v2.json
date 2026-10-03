@@ -5,14 +5,14 @@
     "algorithm": "sha256",
     "canonicalisation": "sorted-json-utf8-v1",
     "canonicalisationVersion": 1,
-    "digest": "002bca6aa1f1b7aa0c9edc57ae7bbb9b22aa037a779c274a420859308b9c80cd",
+    "digest": "a4d2c2868d455cd1622cd662b88c58d650df5a82b0c5e8453ca60ed3b9923615",
     "instrumentVersion": "v0.11",
-    "contentVersion": "v0.11-preview-4",
+    "contentVersion": "v0.11-preview-5",
     "studyVersion": "v0.11-synthetic-1"
   },
   "content": {
     "instrumentVersion": "v0.11",
-    "contentVersion": "v0.11-preview-4",
+    "contentVersion": "v0.11-preview-5",
     "studyVersion": "v0.11-synthetic-1",
     "scales": {
       "familiarity": [
@@ -142,15 +142,6 @@
         }
       },
       {
-        "id": "C5",
-        "prompt": "I can read basic C code, as described above.",
-        "type": "boolean",
-        "required": true,
-        "presentation": {
-          "control": "checkbox"
-        }
-      },
-      {
         "id": "C6",
         "prompt": "I agree to take part.",
         "type": "boolean",
@@ -208,7 +199,7 @@
       },
       {
         "id": "P2",
-        "prompt": "If you are a student, what year of your programme are you in?",
+        "prompt": "If you are a student, what year of your program are you in?",
         "type": "single",
         "required": false,
         "options": [
@@ -1021,7 +1012,7 @@
     "preSections": [
       {
         "title": "Section A — Background",
-        "intro": "Select the UQ courses you are studying or have studied. Select None of these if none apply. Leave all options unanswered if you prefer not to say; an unanswered response is unknown, not None.",
+        "intro": "Select the UQ courses you are studying or have studied. Select None of these if none apply. If you have completed studies somewhere else, select those that are similar to ones you have completed.",
         "fields": [
           "P1",
           "P1.other",
@@ -1152,7 +1143,7 @@
         },
         "title": "Orientation",
         "goal": "get your bearings before anything is asked of you.",
-        "instructions": "With score open at State 0, set the right panel to State 1 (`mem2reg`). Select `return weighted + wasted;` in the C source and follow its highlight into IR. Change the right panel to CFG and select a block; inspect its links back to IR instructions and C lines. There is nothing to submit.",
+        "instructions": "Select score.c as the source program, it is a trivial program written to show specific compiler optimisations. Leave the left IR panel on State 0 and set the right panel to State 1 (`mem2reg`). Select the line `return weighted + wasted;` in the C source and follow its highlight into IR. Change the right panel to CFG and select a block; inspect its links back to IR instructions and C lines. There is nothing to submit.",
         "entryWorkspace": {
           "example": "score",
           "left": {
@@ -1185,7 +1176,7 @@
         },
         "title": "What changed?",
         "goal": "work out what the optimiser did to a program overall, before worrying about how it did it.",
-        "instructions": "Compare score at State 0 (unoptimised) and State 12 (`final_cleanup`) in IR. State 13 (`-O3`) was compiled separately. Name two changes you can see. You may use the source and explanations. A brief or partial answer is fine.",
+        "instructions": "Compare score at State 0 (unoptimised) and State 12 (`final_cleanup`) in IR. State 13 (`-O3`) was compiled separately. Name two changes you can see. You may use the source and explanations. A brief or partial answer is fine. The changes can be high level or from a specific line or part thereof.",
         "entryWorkspace": {
           "example": "score",
           "left": {
@@ -1323,7 +1314,7 @@
         },
         "title": "What does this correspondence tell you?",
         "goal": "interpret a recorded correspondence and the confidence attached to it.",
-        "instructions": "In quick_sort, set the left panel to State 8 (`licm`) and the right to State 9 (`indvars`), with IR in both. Choose `partition`. Select `if (a[j] <= pivot)` in C, then select the highlighted right-panel getelementptr for `a[j]`. What relationship does the tool show, and what confidence wording appears beside the link? What does the optimisation explanation say happened? Keep the link’s confidence separate from the explanation’s qualification.",
+        "instructions": "In quick_sort, set the left panel to State 8 (`licm`) and the right to State 9 (`indvars`), with IR in both. Choose `partition` from the section next to the C source file to focus the IR on that function. Select `if (a[j] <= pivot)` in C, then select the highlighted right-panel getelementptr for `a[j]`. What relationship does the tool show, and what confidence wording appears beside the link? What does the optimisation explanation say happened? Keep the link’s confidence separate from the explanation’s qualification.",
         "entryWorkspace": {
           "example": "quick_sort",
           "left": {
@@ -1356,11 +1347,10 @@
       }
     ],
     "taskIntroduction": [
-      "Three small C programs are already loaded. You do not need to write or compile code.",
+      "Three small C programs are already loaded. You do not need to write or compile code and this version of the prototype does not allow you to do so.",
       "Each program has fourteen recorded states: State 0 is the unoptimised baseline compiled with -O0; States 1–12 are produced by successive compiler passes applied to the preceding output; State 13 is compiled separately with -O3.",
       "A pass is one self-contained transformation; an optimisation state is the program as it stands after a particular pass has run.",
-      "T0 is the orientation; the six tasks are T1–T6. T1–T5 open on the named example at State 0 with IR in both panels; set the states and views named in each task. T6 continues with T5’s example, states, function, and views, with the previous selection cleared; continue there or change them. You can use the C source, highlighting, explanations, and word help. This study evaluates the tool, not you; the tasks are not an unaided test. Answer at your own level of detail: brief, partial, or blank answers are useful. You may also skip or choose “I could not work this out”.",
-      "As you move between sections and tasks, your answers remain a draft in this browser tab; navigation does not submit them. Continuing locks that task’s answers. Duration is recorded from task presentation and includes visible reading, setup, exploration, and answering. Paused time, hidden-tab time, and reload downtime are excluded. There is no time limit."
+      "T0 is the orientation; the six tasks are T1–T6. You can use the C source, highlighting, explanations, and word help. This study evaluates the tool, not you; the tasks are not an unaided test. Answer at your own level of detail: brief, partial, or blank answers are useful. You may also skip or choose “I could not work this out”. If you are able to partially work something out or get stuck, a comment on what you could do would help me identify areas to improve the program."
     ],
     "information": [
       {
@@ -1375,7 +1365,7 @@
           },
           {
             "kind": "paragraph",
-            "text": "Thanks for taking a look. This is a research study for an undergraduate thesis at the University of Queensland.",
+            "text": "Thanks for your participation. This is a research study for an undergraduate thesis at the University of Queensland.",
             "id": "information1.block2",
             "role": "information"
           },
@@ -1387,7 +1377,7 @@
           },
           {
             "kind": "paragraph",
-            "text": "irexplorer is a web tool that makes that middle part visible. It takes a small C program, compiles it with LLVM one optimisation pass at a time, and lets you look at the program's intermediate representation — the internal form the compiler actually works on — at each step along the way. You can put any two of those steps side by side, read the textual form and the control-flow graph together, and see what a given pass changed.",
+            "text": "irexplorer is a web tool that makes that middle part visible. It takes a small C program, compiles it with LLVM, one optimisation pass at a time, and lets you look at the program's intermediate representation — the internal form the compiler actually works on — at each step along the way. You can put any two of those states side by side, read the textual form and the control-flow graph together, and see what a given pass changed.",
             "id": "information1.block4",
             "role": "information"
           },
@@ -1399,7 +1389,7 @@
           },
           {
             "kind": "paragraph",
-            "text": "You do not need to know anything about compilers to take part. Being able to read basic C is enough. If you have never seen LLVM intermediate representation before, you are exactly the person this study needs.",
+            "text": "You do not need to know anything about compilers to take part. Being able to read basic C, or C-like code, is enough. If you have never seen LLVM intermediate representation before, you are exactly the person this study needs.",
             "id": "information1.block6",
             "role": "information"
           },
@@ -1417,23 +1407,23 @@
         "blocks": [
           {
             "kind": "paragraph",
-            "text": "About 35 minutes, done in your own time, in a browser.",
+            "text": "About 30 minutes, done in your own time, in a browser.",
             "id": "information2.block1",
             "role": "information"
           },
           {
             "kind": "ordered",
             "items": [
-              "A few questions about your background (about 4 minutes) — what you have studied and how familiar you are with the topics involved. This is so I can describe who took part; there are no right answers.",
-              "Six short tasks using the tool (about 20 minutes) — each one gives you a goal, such as working out what changed between two versions of a program. Some have a correct answer and some are open-ended. You are welcome to say you could not work something out; that is a useful result and it is the tool being tested, not you.",
-              "A closing survey (about 8 minutes) — rating statements about the tool and writing whatever you want to say about it in your own words."
+              "A few questions about your background — what you have studied and how familiar you are with the topics involved. This is so I can describe who took part; there are no right or wrong answers.",
+              "Six short tasks using the tool — each one gives you a goal, such as working out what changed between two versions of a program. Some have a correct answer and some are open-ended. You are welcome to say you could not work something out; that is a useful result and it is the tool being tested, not you.",
+              "A closing survey — rating statements about the tool and writing whatever you want to say about it in your own words."
             ],
             "id": "information2.block2",
             "role": "information"
           },
           {
             "kind": "paragraph",
-            "text": "You can stop before submission without giving a reason. Stop and discard removes the unsubmitted draft in this tab and sends no answers. Closing a tab is not a supported way to save or erase a draft.",
+            "text": "You can stop before submission without giving a reason. Stop and discard removes the unsubmitted draft in this tab and sends no answers.",
             "id": "information2.block3",
             "role": "information"
           }
@@ -1451,26 +1441,20 @@
           },
           {
             "kind": "paragraph",
-            "text": "The response form does not ask for your name, student number, or email address. Your answers are linked by a random participant code. The researcher will explain before recruitment whether, when, and how a submitted response can be withdrawn, including what happens if it has already contributed to reported results.",
+            "text": "The response form does not ask for your name, student number, or email address. Your answers are linked by a random participant code. Keep that code. Until 5:00 pm AEST (Brisbane time) on 14 October 2026, you can email the researcher (below) quoting it requesting removal, and your response will be removed from the study data and every copy the researcher holds. After that time responses are analysed and can no longer be withdrawn. Without the code, the researcher cannot find your response.",
             "id": "information3.block2",
             "role": "information"
           },
           {
             "kind": "paragraph",
-            "text": "The researcher will explain before recruitment what information the study application and its hosting services record. Those arrangements are still being checked.",
+            "text": "The study records only your answers and the time spent on each task. It does not record your name, student number, email address, IP address, or browser or device details. UQ's hosting service keeps standard web server logs that the researcher does not use for this study and is not planning to access.",
             "id": "information3.block3",
             "role": "information"
           },
           {
             "kind": "paragraph",
-            "text": "The background questions ask about your degree programme, year of study, which relevant UQ courses you are studying or have studied, and how familiar you are with a handful of topics. Course completion and current enrolment are combined in the course question.",
+            "text": "The background questions ask about your degree program, year of study, which relevant UQ courses you are studying or have studied, and how familiar you are with a handful of topics. Course completion and current enrolment are combined in the course question. Free-text answers are read through for anything accidentally identifying before any of it is quoted.",
             "id": "information3.block4",
-            "role": "information"
-          },
-          {
-            "kind": "paragraph",
-            "text": "Free-text answers are read through for anything accidentally identifying before any of it is quoted.",
-            "id": "information3.block5",
             "role": "information"
           }
         ]
@@ -1487,13 +1471,13 @@
           },
           {
             "kind": "paragraph",
-            "text": "Before recruitment, the researcher will explain where responses, exports, and backups are stored, who can access them, how long they are kept, and when they are deleted. The permitted use and sharing of results, including any short quotations, will also be stated before you decide whether to take part.",
+            "text": "Only the researcher sees individual responses; the supervisor sees aggregate results and de-identified quotations. Results are reported only in aggregate in the honours thesis, course poster and demonstration. Short quotations from free-text answers may be used after checking that they contain nothing identifying.",
             "id": "information4.block2",
             "role": "information"
           },
           {
             "kind": "paragraph",
-            "text": "Nothing you do here reaches any course, any teaching staff, or any mark. This is not an assessment of you, and no individual result is reported.",
+            "text": "Nothing you do here will be attributed to you for any reason. This is not an assessment of you, and no individual result is reported.",
             "id": "information4.block3",
             "role": "information"
           }
@@ -1505,7 +1489,7 @@
         "blocks": [
           {
             "kind": "paragraph",
-            "text": "Taking part is voluntary. You can decline without giving a reason. The researcher will state before recruitment whether an incentive is offered and whether any contact details are needed to arrange it.",
+            "text": "Taking part is voluntary. You can decline without giving a reason.",
             "id": "information5.block1",
             "role": "information"
           }
@@ -1517,14 +1501,20 @@
         "blocks": [
           {
             "kind": "paragraph",
-            "text": "Researcher: Joe Thorne, BE (Hons) Software, School of Electrical Engineering and Computer Science — s4784727@student.uq.edu.au\nSupervisor: Dr Joel Mackenzie, School of Electrical Engineering and Computer Science",
+            "text": "Researcher: Joe Thorne, BE (Hons) Software, School of Electrical Engineering and Computer Science — s4784727@student.uq.edu.au",
             "id": "information6.block1",
             "role": "information"
           },
           {
             "kind": "paragraph",
-            "text": "The approved study contact details, including any required ethics contact, will be provided before recruitment.",
+            "text": "Supervisor: Dr Joel Mackenzie, School of Electrical Engineering and Computer Science",
             "id": "information6.block2",
+            "role": "information"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Email the researcher with any questions or to withdraw your response.",
+            "id": "information6.block3",
             "role": "information"
           }
         ]
@@ -1536,7 +1526,6 @@
         "C2",
         "C3",
         "C4",
-        "C5",
         "C6"
       ],
       "pre.section1": [
@@ -1703,8 +1692,8 @@
         "T6"
       ],
       "introductions": {
-        "pre": "Approximately 4 minutes. Every item is optional except P1.",
-        "post": "Approximately 8 minutes. All items may be left unanswered. Answers stay local until you submit them."
+        "pre": "Every item is optional except P1.",
+        "post": "All items may be left unanswered. Answers stay local until you submit them."
       },
       "timingPolicy": {
         "measure": "task-presentation-duration",
@@ -1733,7 +1722,7 @@
       {
         "id": "o3",
         "match": "-O3",
-        "text": "Clang option that enables its high optimisation pipeline; this separately compiled state is not the teaching pass sequence."
+        "text": "Clang option that enables its high optimisation pipeline; this separately compiled state is not the curated pass sequence."
       },
       {
         "id": "recorded-states",
@@ -1773,7 +1762,7 @@
       "consent.title": "Consent",
       "consent.introduction": "Please confirm each of the following before starting.",
       "consent.local": "Your answers stay in this tab until you submit. You can stop and discard them before submission.",
-      "consent.confirm": "Please confirm all six acknowledgements before starting.",
+      "consent.confirm": "Please confirm all five acknowledgements before starting.",
       "consent.code-failure": "A secure random participant code could not be created. Use a secure browser connection and retry.",
       "progress.information": "Information",
       "progress.pre": "Pre-survey",
@@ -1912,7 +1901,7 @@
       "receipt.title": "Submission received",
       "receipt.saved": "Your submission has been saved.",
       "receipt.code": "Receipt: {receiptId}",
-      "receipt.keep": "Keep your participant code and receipt for reference.",
+      "receipt.keep": "Keep your participant code and receipt. To withdraw your response, email the researcher quoting this code before 5:00 pm AEST (Brisbane time) on 14 October 2026.",
       "cleanup.done": "Local answer drafts have been cleared. Only this receipt remains in the tab.",
       "cleanup.persist-failed": "Receipt confirmed, but local cleanup needs retry. Keep this receipt code.",
       "cleanup.retry-save": "Receipt confirmed. Allow browser storage and retry cleanup; a saved answer copy may remain.",
