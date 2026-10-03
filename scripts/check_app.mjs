@@ -378,7 +378,7 @@ try {
   await check('Clean study interface and release label', `document.querySelector('#app-version').textContent === ${JSON.stringify(release.version === 'development' ? 'Development' : `v${release.version}`)} && !/synthetic|preview|not.live|E7/i.test(document.body.innerText) && !location.search`);
   await value(`document.querySelector('#C1').focus()`); await key(' ', 'Space', 32);
   await check('Keyboard Space operates consent checkbox', `document.querySelector('#C1').checked`);
-  for (let i = 2; i <= 6; i += 1) await click('#C' + i);
+  for (const id of publicContent.membership.consent.slice(1)) await click('#' + id);
   await click('[data-action="start"]'); await screen('Pre-survey');
   await choose('P1', '1'); await fill('P13', 'Container test background response');
   await choose('P3', '7'); await choose('P3', '9'); await fill('P3_other_name', 'Synthetic course');
