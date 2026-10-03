@@ -2,8 +2,8 @@
 // Usage: node scripts/check_deployment.mjs https://canonical-host.example preview --service-environment-stdin
 
 const [originArgument, expectedCollectionMode, ...extra] = process.argv.slice(2);
-const enabledModes = new Set(['local', 'preview']);
-const supportedModes = new Set([...enabledModes, 'pilot', 'live']);
+// Every mode that starts can submit: the application refuses to start an unfinished pilot or live configuration.
+const supportedModes = new Set(['local', 'preview', 'pilot', 'live']);
 if (!originArgument || !supportedModes.has(expectedCollectionMode) || extra.length !== 1 ||
     extra[0] !== '--service-environment-stdin') {
   throw Error('Usage: node scripts/check_deployment.mjs <https://origin> <local|preview|pilot|live> --service-environment-stdin');
@@ -111,9 +111,8 @@ for (const field of ['studyVersion', 'contentVersion', 'instrumentVersion']) {
   require(content[field] === release[field],
           `/api/study/content: ${field} does not match /api/release`);
 }
-const expectedSubmissionEnabled = enabledModes.has(expectedCollectionMode);
-require(content.submissionEnabled === expectedSubmissionEnabled,
-        `/api/study/content: expected submissionEnabled: ${expectedSubmissionEnabled} in ${expectedCollectionMode} collection mode`);
+require(content.submissionEnabled === true,
+        `/api/study/content: expected submissionEnabled: true in ${expectedCollectionMode} collection mode`);
 checks.push(`/api/study/content (${expectedCollectionMode}, ${content.studyVersion}, ${content.contentVersion}, ${content.instrumentVersion})`);
 
 const submissionResponse = await request('/api/study/submissions', {
@@ -127,13 +126,10 @@ const submissionResponse = await request('/api/study/submissions', {
 });
 securityHeaders(submissionResponse, '/api/study/submissions');
 const submission = await json(submissionResponse, '/api/study/submissions');
-const expectedSubmissionStatus = expectedSubmissionEnabled ? 422 : 503;
-const expectedSubmissionCode = expectedSubmissionEnabled ? 'invalid_submission' : 'collection_disabled';
-require(submissionResponse.status === expectedSubmissionStatus,
-        `/api/study/submissions: expected ${expectedSubmissionStatus} in ${expectedCollectionMode} collection mode, got ${submissionResponse.status}`);
-require(submission?.error?.code === expectedSubmissionCode,
-        `/api/study/submissions: expected ${expectedSubmissionCode}`);
-checks.push(`/api/study/submissions rejects the non-writing probe with ${expectedSubmissionStatus} ${expectedSubmissionCode}`);
+require(submissionResponse.status === 422,
+        `/api/study/submissions: expected 422 in ${expectedCollectionMode} collection mode, got ${submissionResponse.status}`);
+require(submission?.error?.code === 'invalid_submission', '/api/study/submissions: expected invalid_submission');
+checks.push('/api/study/submissions rejects the non-writing probe with 422 invalid_submission');
 
 console.log(`Deployment checks passed for ${base}`);
 for (const check of checks) console.log(`- ${check}`);

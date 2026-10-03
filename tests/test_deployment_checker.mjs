@@ -15,6 +15,7 @@ const release = {
 const csp = "default-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'";
 
 async function runChecker(options = {}) {
+  const mode = options.mode ?? 'preview';
   const server = createServer((request, response) => {
     const headers = options.missingHeaders === request.url ? {} : {
       'Content-Security-Policy': csp,
@@ -37,7 +38,7 @@ async function runChecker(options = {}) {
       : request.url === '/api/release'
         ? release
         : request.url === '/api/study/content'
-          ? { ...release, collectionMode: 'preview', submissionEnabled: true }
+          ? { ...release, collectionMode: mode, submissionEnabled: true }
           : request.url === '/api/study/submissions'
             ? { error: { code: 'invalid_submission', message: 'Invalid submission.' } }
             : null;
@@ -51,14 +52,14 @@ async function runChecker(options = {}) {
   const address = server.address();
   try {
     return await new Promise((resolve, reject) => {
-      const child = spawn(process.execPath, [checker, `http://127.0.0.1:${address.port}`, 'preview', '--service-environment-stdin']);
+      const child = spawn(process.execPath, [checker, `http://127.0.0.1:${address.port}`, mode, '--service-environment-stdin']);
       let stdout = '';
       let stderr = '';
       child.stdout.setEncoding('utf8').on('data', chunk => { stdout += chunk; });
       child.stderr.setEncoding('utf8').on('data', chunk => { stderr += chunk; });
       child.on('error', reject);
       child.on('close', status => resolve({ status, stdout, stderr }));
-      child.stdin.end('IREXPLORER_COLLECTION_MODE=preview\n');
+      child.stdin.end(`IREXPLORER_COLLECTION_MODE=${mode}\n`);
     });
   } finally {
     await new Promise((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
@@ -70,6 +71,15 @@ test('deployment checker accepts absent docs and all required security headers',
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /\/docs is a controlled 404/);
   assert.match(result.stdout, /\/openapi\.json is a controlled 404/);
+});
+
+test('deployment checker requires enabled collection in pilot and live modes', async () => {
+  for (const mode of ['pilot', 'live']) {
+    const result = await runChecker({ mode });
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, new RegExp(`/api/study/content \\(${mode},`));
+    assert.match(result.stdout, /rejects the non-writing probe with 422 invalid_submission/);
+  }
 });
 
 test('deployment checker rejects reachable docs', async () => {

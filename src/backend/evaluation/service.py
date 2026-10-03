@@ -86,6 +86,11 @@ _BACKFILL_SCHEMA = (
 _MIGRATIONS = {3: _SNAPSHOT_SCHEMA, 4: _BACKFILL_SCHEMA}
 
 
+RESEARCH_MODES = ('pilot', 'live')
+# Identity words that mark participant content or a study as not yet frozen for participants.
+UNFINISHED_IDENTITY = re.compile(r'preview|synthetic', re.I)
+
+
 class StudyError(Exception):
     def __init__(self, status, code, message):
         self.status, self.code, self.message = status, code, message
@@ -129,11 +134,18 @@ class Config:
             raise ValueError('Study storage must be outside the application repository')
         if not re.fullmatch(r'https?://[^/]+', self.origin):
             raise ValueError('Configure an exact origin without a trailing slash')
+        if self.research:
+            # Research data is collected only by a deliberately configured, released deployment.
+            if not self.origin.startswith('https://'):
+                raise ValueError(f'{self.collection_mode} collection requires a configured HTTPS study origin')
+            # A checkout is a development build whatever revision label the environment supplies.
+            if 'development' in (self.app_revision, metadata()['version']):
+                raise ValueError(f'{self.collection_mode} collection cannot run a development release')
 
     @property
-    def enabled(self):
-        # Local assessment and legacy preview stores are separate from research data.
-        return self.collection_mode in ('local', 'preview')
+    def research(self):
+        """Pilot and live stores hold research data; local and preview stores never do."""
+        return self.collection_mode in RESEARCH_MODES
 
     @property
     def path(self):
@@ -292,10 +304,15 @@ class StudyService:
         installed = participant_content()
         self.snapshot = participant_snapshot()
         self.releases = accepted_releases(InstrumentRelease(installed, self.snapshot), config.accepted_instruments)
+        if config.research and any(UNFINISHED_IDENTITY.search(version)
+                                   for study_version, content_version, _ in self.releases
+                                   for version in (content_version, study_version)):
+            raise ValueError(f'{config.collection_mode} collection cannot accept unfinished participant content '
+                             '(a preview content or synthetic study identity)')
 
     def content(self):
-        return {**participant_content(), 'collectionMode': self.config.collection_mode,
-                'submissionEnabled': self.config.enabled}
+        # Every configuration that starts can submit; unfinished research configurations never start.
+        return {**participant_content(), 'collectionMode': self.config.collection_mode, 'submissionEnabled': True}
 
     def _retired_path(self):
         return self.config.path.with_name('responses.sqlite3')
@@ -370,8 +387,6 @@ class StudyService:
         return None if stored is None else receipt_for_retry(stored, submission)
 
     def submit(self, submission):
-        if not self.config.enabled:
-            raise StudyError(503, 'collection_disabled', 'Participant collection is not enabled.')
         receipt = self.stored_receipt(submission)
         if receipt is not None:
             return receipt, False

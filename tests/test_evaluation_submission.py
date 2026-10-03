@@ -87,7 +87,7 @@ UPGRADED = {'instrumentVersion': 'v0.12', 'contentVersion': 'v0.12-preview-1', '
 
 
 @contextmanager
-def upgraded_release():
+def upgraded_release(identities=UPGRADED):
     """Install a synthetic later participant package, as a deployed application upgrade would.
 
     Only the package changes: its identities and one prompt are revised and its canonical digest
@@ -95,9 +95,9 @@ def upgraded_release():
     the upgraded release. Services created inside the block model the restarted application.
     """
     package = deepcopy(load_participant_package())
-    package['content'].update(UPGRADED)
+    package['content'].update(identities)
     package['content']['fields'][0]['prompt'] += ' (upgraded synthetic wording)'
-    package['identity'].update(UPGRADED)
+    package['identity'].update(identities)
     package['identity']['digest'] = hashlib.sha256(json.dumps(
         {'packageSchemaVersion': package['packageSchemaVersion'], 'content': package['content']},
         sort_keys=True, ensure_ascii=False, separators=(',', ':')).encode()).hexdigest()
@@ -105,6 +105,20 @@ def upgraded_release():
     with (patch.object(study_content, '_installed_package', lambda: package),
           patch('src.backend.evaluation.service.participant_snapshot', lambda: snapshot)):
         yield snapshot
+
+
+# Identities a frozen participant release carries: neither preview content nor a synthetic study.
+FINISHED = {'instrumentVersion': 'v0.12', 'contentVersion': 'v0.12-release-1', 'studyVersion': 'v0.12-study-1'}
+RESEARCH_ORIGIN = 'https://study.example.test'
+RESEARCH_REVISION = '0.1.1-webproject.1'
+
+
+def research_config(directory, mode, **changes):
+    """A pilot or live configuration as a packaged release (not this checkout) with an HTTPS origin."""
+    settings = {'collection_mode': mode, 'origin': RESEARCH_ORIGIN, 'app_revision': RESEARCH_REVISION, **changes}
+    with patch('src.backend.evaluation.service.metadata',
+               lambda: {'version': '0.4.1', 'revision': RESEARCH_REVISION}):
+        return Config(directory, **settings)
 
 
 HISTORICAL = {'instrumentVersion': 'v0.10', 'contentVersion': 'v0.10-preview-9', 'studyVersion': 'v0.10-synthetic-9'}
@@ -416,30 +430,84 @@ class SubmissionTests(unittest.TestCase):
                               course['contentProvenance'], course['contentDigest']),
                              (version, '2', 'answered', 'unavailable', ''))
 
-    def test_pilot_mode_and_private_http_boundary(self):
-        for mode in ('pilot',):
-            service=StudyService(Config(Path(self.tmp.name),collection_mode=mode))
-            self.assertFalse(service.content()['submissionEnabled'])
-            with self.assertRaises(StudyError) as caught:
-                service.submit(self.payload)
-            self.assertEqual(caught.exception.status,503)
-            self.assertFalse(service.config.path.exists())
+    def test_private_http_boundary(self):
         for path in ('/submissions.sqlite3','/api/study/submissions','/api/study/export',
                      '/src/backend/evaluation/service.py', '/docs', '/openapi.json'):
             self.assertIn(self.client.get(path).status_code,(404,405))
         self.assertEqual(self.client.post('/api/examples',json=self.payload).status_code,405)
 
-    def test_shipped_live_configuration_rejects_submissions(self):
-        live = StudyService(Config(
-            Path(self.tmp.name), collection_mode='live', origin='https://study.example.test',
-            app_revision='0.1.1-webproject.1',
-        ))
+    def test_configured_pilot_and_live_deployments_collect(self):
+        with upgraded_release(FINISHED):
+            for mode in ('pilot', 'live'):
+                config = research_config(Path(self.tmp.name), mode)
+                with self.subTest(mode=mode), TestClient(create_app(study_config=config)) as client:
+                    content = client.get('/api/study/content').json()
+                    self.assertEqual((content['collectionMode'], content['submissionEnabled']), (mode, True))
+                    record = synthetic(content)
+                    headers = {'Origin': RESEARCH_ORIGIN}
+                    self.assertEqual(client.post('/api/study/submissions', json=record,
+                                                 headers={'Origin': 'http://testserver'}).status_code, 403)
+                    self.assertFalse(config.path.exists())
+                    first = client.post('/api/study/submissions', json=record, headers=headers)
+                    self.assertEqual(first.status_code, 201)
+                    retry = client.post('/api/study/submissions', json=record, headers=headers)
+                    self.assertEqual((retry.status_code, retry.json()), (200, first.json()))
+                    self.assertEqual(config.path, Path(self.tmp.name) / mode / 'submissions.sqlite3')
+                    (release,), = self.stored('SELECT release FROM submissions', path=config.path)
+                    self.assertEqual(json.loads(release)['mode'], mode)
+                    self.assertEqual(json.loads(release)['appRevision'], RESEARCH_REVISION)
 
-        self.assertFalse(live.content()['submissionEnabled'])
-        with self.assertRaises(StudyError) as caught:
-            live.submit(self.payload)
-        self.assertEqual((caught.exception.status, caught.exception.code), (503, 'collection_disabled'))
-        self.assertFalse(live.config.path.exists())
+    def test_research_modes_reject_unfinished_configuration(self):
+        root = Path(self.tmp.name)
+        for mode in ('pilot', 'live'):
+            for origin in ('http://study.example.test', 'http://127.0.0.1:8000'):
+                with self.subTest(mode=mode, origin=origin), self.assertRaisesRegex(ValueError, 'HTTPS'):
+                    research_config(root, mode, origin=origin)
+            with self.subTest(mode=mode, revision='development'), self.assertRaisesRegex(ValueError, 'development'):
+                research_config(root, mode, app_revision='development')
+            # This checkout is a development build, whatever revision label the environment supplies.
+            with self.subTest(mode=mode, build='checkout'), self.assertRaisesRegex(ValueError, 'development'):
+                Config(root, collection_mode=mode, origin=RESEARCH_ORIGIN, app_revision=RESEARCH_REVISION)
+            with (self.subTest(mode=mode, origin='unconfigured'),
+                  patch.dict('os.environ', {'IREXPLORER_COLLECTION_MODE': mode, 'IREXPLORER_STUDY_DIR': str(root),
+                                            'IREXPLORER_APP_REVISION': RESEARCH_REVISION}, clear=True),
+                  self.assertRaisesRegex(ValueError, 'HTTPS')):
+                Config.environment()
+            config = research_config(root, mode)
+            # The installed package is itself unfinished (preview content, synthetic study).
+            with self.subTest(mode=mode, content='installed'), self.assertRaisesRegex(ValueError, 'unfinished'):
+                create_app(study_config=config)
+            for content_version, study_version in (('v0.12-preview-1', 'v0.12-study-1'),
+                                                   ('v0.12-release-1', 'v0.12-synthetic-1')):
+                identities = {**FINISHED, 'contentVersion': content_version, 'studyVersion': study_version}
+                with (self.subTest(mode=mode, identities=identities), upgraded_release(identities),
+                      self.assertRaisesRegex(ValueError, 'unfinished participant content')):
+                    StudyService(config)
+            with self.subTest(mode=mode, content='accepted preview package'), upgraded_release(FINISHED):
+                accepted = frozen_public_pair(root / f'accepted-{mode}', historical_package())
+                with self.assertRaisesRegex(ValueError, 'unfinished participant content'):
+                    StudyService(research_config(root, mode, accepted_instruments=(accepted,)))
+            self.assertFalse((root / mode).exists())
+
+    def test_preview_pilot_and_live_stores_are_separate(self):
+        with upgraded_release(FINISHED):
+            record = synthetic()
+            preview_receipt, created = StudyService(self.config).submit(record)
+            self.assertTrue(created)
+            preview_rows = self.stored('SELECT * FROM submissions')
+            receipts = {preview_receipt['receiptId']}
+            for mode in ('pilot', 'live'):
+                config = research_config(self.config.directory, mode)
+                service = StudyService(config)
+                # The submission committed in preview is a new first delivery in a research store.
+                receipt, created = service.submit(record)
+                self.assertTrue(created)
+                self.assertNotIn(receipt['receiptId'], receipts)
+                receipts.add(receipt['receiptId'])
+                self.assertEqual(self.stored('SELECT submission_id FROM submissions', path=config.path),
+                                 [(record['submissionId'],)])
+        self.assertEqual(self.stored('SELECT * FROM submissions'), preview_rows)
+        self.assertEqual(sorted(p.name for p in self.config.directory.iterdir()), ['live', 'pilot', 'preview'])
 
     def test_schema_fail_closed(self):
         self.service.submit(self.payload)
@@ -853,12 +921,6 @@ class SubmissionTests(unittest.TestCase):
                     response = client.post(url, **kwargs)
                     self.assertEqual(response.status_code, status)
                     self.assertNotIn(first.json()['receiptId'], response.text)
-            for mode in ('pilot', 'live'):
-                disabled = StudyService(Config(self.config.directory, collection_mode=mode))
-                with self.assertRaises(StudyError) as caught:
-                    disabled.submit(committed)
-                self.assertEqual(caught.exception.code, 'collection_disabled')
-                self.assertFalse(disabled.config.path.exists())
 
     def test_legacy_receipts_recover_under_original_canonicalisation(self):
         def historical(version):

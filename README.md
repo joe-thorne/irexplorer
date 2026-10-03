@@ -6,7 +6,7 @@ Choose a curated program, select two optimisation states, and follow correspondi
 
 ## Project status
 
-The curated application, local study flow, submission/retry service, and researcher export tools are implemented. Local and preview modes support synthetic testing; pilot and live collection are deliberately disabled until an authorised research release. This standalone repository keeps only current technical documentation—completed thesis audits, phase plans, and research worklists belong outside the application repository.
+The curated application, local study flow, submission/retry service, and researcher export tools are implemented. Local and preview modes support synthetic testing; pilot and live collection start only from a deliberately configured release with finished participant content, a released build, and an HTTPS origin (see [evaluation operations](docs/evaluation-operations.md#pilot-and-live-collection)). This standalone repository keeps only current technical documentation—completed thesis audits, phase plans, and research worklists belong outside the application repository.
 
 ## Run locally
 

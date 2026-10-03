@@ -4,7 +4,7 @@ The local container stores assessment sessions separately from compiler queries.
 
 | Setting | Container behaviour |
 |---|---|
-| `IREXPLORER_COLLECTION_MODE` | `local`; `preview` is for synthetic testing; `pilot` and `live` remain disabled pending separate approval |
+| `IREXPLORER_COLLECTION_MODE` | `local`; `preview` is for synthetic testing; `pilot` and `live` collect research data and start only with a finished configuration ([below](#pilot-and-live-collection)) |
 | `IREXPLORER_STUDY_DIR` | `/data`, backed by the named `study-data` volume; each mode has its own database |
 | `IREXPLORER_STUDY_ORIGIN` | `http://localhost:8000`; the exact origin is required for submission |
 | `IREXPLORER_ACCEPTED_INSTRUMENTS` | Unset: first deliveries are accepted only for the installed participant package |
@@ -116,22 +116,21 @@ Only Submit answers sends a submission. Before it, Stop/discard removes local dr
 
 An acknowledged receipt replaces the frozen submission, then the original answer draft is removed. Failure in either cleanup step stays visible and offers retry; success is not falsely described as local erasure. An explicitly selected memory-only participant journey can submit but cannot promise refresh recovery, and unavailable storage can require cleanup retry. Keep the tab and receipt code. Corrupt/unreadable submission recovery blocks normal progression and offers recovery retry or explicitly acknowledged memory-only continuation; a previous server record may exist.
 
-The included flow supports local collection and synthetic preview testing. Pilot and live collection require separate approval and remain disabled.
+The included flow supports local collection and synthetic preview testing. Pilot and live collection use the same flow, but the application starts in those modes only with the finished configuration described below; opening collection still requires the human release approval in that section.
 
-## Release step: enabling live collection
+## Pilot and live collection
 
-This is a future, human-approved release step; it does not enable collection in the shipped application. Keep `pilot` disabled. The deliberate code change, made only in the frozen live-release branch after the checks below, is in `src/backend/evaluation/service.py`:
+Every collection mode that starts accepts submissions; `/api/study/content` reports the configured `collectionMode` with `submissionEnabled: true`. Pilot and live collection hold research data, so the application refuses to start in either mode, before any store is opened, when:
 
-```python
-@property
-def enabled(self):
-    # Local assessment and synthetic preview stores stay separate from research data.
-    return self.collection_mode in ('local', 'preview', 'live')
-```
+- `IREXPLORER_STUDY_ORIGIN` is unset or not an exact `https://` origin (the unset default is the HTTP development origin);
+- the application is a development build: a host checkout (whatever `IREXPLORER_APP_REVISION` says) or a revision of `development`; or
+- the installed participant package, or any configured accepted instrument release, has a content identity containing `preview` or a study identity containing `synthetic`.
 
-Do not apply that change to a development checkout or to a service with an HTTP, missing, or non-canonical origin. The live systemd environment must set `IREXPLORER_COLLECTION_MODE=live`, `IREXPLORER_STUDY_ORIGIN=https://<canonical-host>` and `IREXPLORER_STUDY_DIR=/var/lib/irexplorer`; deploy a non-development, immutable release whose `/api/release` fingerprint is recorded. The exact deployment and host checks are in [Prepare for live evaluation](../../deploy/uq-webproject/LIVE-EVALUATION.md), not in this local-collection guide.
+The startup error names the failed condition. Each mode keeps its own store at `<study-dir>/<collection-mode>/submissions.sqlite3`: a pilot or live store is created on its first submission, never copied, renamed, or migrated from a preview or local store, and a submission ID committed in another mode has no receipt there. Final-only submission, exact-origin validation, commit before receipt, identical-retry receipts, and the private CLI operations are the same in every mode.
 
-Before changing `Config.enabled`, record D3 (withdrawal process and participant code), D4 (private storage, access, backups, retention and deletion), and D5 (all participant-facing, ethics and infrastructure-disclosure confirmations) in the thesis instruments. Verify nginx, systemd journal and upstream UQ logging against the participant disclosure as required by `LIVE-EVALUATION.md`; application request logging alone is not that verification. Joe is the release approver, after Joel has confirmed the D3–D5 participant/ethics commitments.
+The live systemd environment must set `IREXPLORER_COLLECTION_MODE=live`, `IREXPLORER_STUDY_ORIGIN=https://<canonical-host>` and `IREXPLORER_STUDY_DIR=/var/lib/irexplorer`, and deploy a non-development, immutable release whose `/api/release` fingerprint is recorded. The exact deployment and host checks are in [Prepare for live evaluation](../../deploy/uq-webproject/LIVE-EVALUATION.md), not in this local-collection guide. The startup guards check configuration only; they do not approve a participant release.
+
+Before configuring live collection, record D3 (withdrawal process and participant code), D4 (private storage, access, backups, retention and deletion), and D5 (all participant-facing, ethics and infrastructure-disclosure confirmations) in the thesis instruments. Verify nginx, systemd journal and upstream UQ logging against the participant disclosure as required by `LIVE-EVALUATION.md`; application request logging alone is not that verification. Joe is the release approver, after Joel has confirmed the D3–D5 participant/ethics commitments.
 
 Use this checklist for the cutover:
 
@@ -141,4 +140,4 @@ Use this checklist for the cutover:
 - [ ] Run the documented health, release and study-content checks, and verify `mode: live` and `submissionEnabled: true` before opening collection.
 - [ ] Record Joe's approval, the release fingerprint, checksum, versions, canonical URL, opening time and data location; retain the verified off-zone backup procedure.
 
-Until every item is complete, leave the current `Config.enabled` implementation unchanged. Its dedicated regression test asserts that the shipped `live` configuration rejects a submission with `503 collection_disabled` without creating a database.
+Do not set `IREXPLORER_COLLECTION_MODE=live` on the public service until every item is complete.
