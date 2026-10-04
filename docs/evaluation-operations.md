@@ -8,6 +8,7 @@ The local container stores assessment sessions separately from compiler queries.
 | `IREXPLORER_STUDY_DIR` | `/data`, backed by the named `study-data` volume; each mode has its own database |
 | `IREXPLORER_STUDY_ORIGIN` | `http://localhost:8000`; the exact origin is required for submission |
 | `IREXPLORER_ACCEPTED_INSTRUMENTS` | Unset: first deliveries are accepted only for the installed participant package |
+| `IREXPLORER_COLLECTION_CLOSED` | Unset or `0`: collection is open; `1` closes collection in any mode ([below](#closed-collection)); any other value refuses startup |
 | Application revision | Baked version plus source fingerprint, also exposed by `/api/release`; recorded by the server on submission |
 
 The submission store is `/data/<collection-mode>/submissions.sqlite3`. SQLite schema version 4 stores rows in `submissions`, with submitted JSON in `submission_json`, and keeps the `participant_content_snapshots` registry of participant-content snapshots (added in version 3). Each snapshot holds the canonical public participant-content bytes (package schema plus content, without collection mode or enabled status), their SHA-256 digest, the identity, digest-algorithm and canonicalisation versions, and the instrument/content/study identities. The server computes and verifies a snapshot at startup for the installed package and for each configured accepted instrument release (below); submitted JSON cannot supply or register one. Each new submission records `content_provenance = snapshot` and the `content_digest` of the snapshot it was validated against; a submission's provenance cannot be changed afterwards, except that the verified provenance backfill (below) can link a legacy row once; the snapshot registration and submission insert commit in one transaction before the receipt is returned. A stored snapshot with the same digest but different bytes is an integrity failure: the submission is refused with `storage_unavailable`, nothing is replaced, and export, backup, and restore reject the store (participant deletion still proceeds, as described below). Snapshots cannot be updated, and a referenced snapshot cannot be deleted. A stored submission's ID, digest, submitted JSON, receipt, and release metadata cannot be updated.
@@ -120,7 +121,7 @@ The included flow supports local collection and synthetic preview testing. Pilot
 
 ## Pilot and live collection
 
-Every collection mode that starts accepts submissions; `/api/study/content` reports the configured `collectionMode` with `submissionEnabled: true`. Pilot and live collection hold research data, so the application refuses to start in either mode, before any store is opened, when:
+Every collection mode that starts accepts submissions unless collection is [closed](#closed-collection); `/api/study/content` reports the configured `collectionMode` with `submissionEnabled: true` (`false` when closed). Pilot and live collection hold research data, so the application refuses to start in either mode, before any store is opened, when:
 
 - `IREXPLORER_STUDY_ORIGIN` is unset or not an exact `https://` origin (the unset default is the HTTP development origin);
 - the application is a development build: a host checkout (whatever `IREXPLORER_APP_REVISION` says) or a revision of `development`; or
@@ -141,3 +142,26 @@ Use this checklist for the cutover:
 - [ ] Record Joe's approval, the release fingerprint, checksum, versions, canonical URL, opening time and data location; retain the verified off-zone backup procedure.
 
 Do not set `IREXPLORER_COLLECTION_MODE=live` on the public service until every item is complete.
+
+## Closed collection
+
+To close collection in any mode, set `IREXPLORER_COLLECTION_CLOSED=1` in the service environment and restart the service; the setting is read only at startup. Unset or `0` leaves collection open, and any other value refuses startup with an error that names the setting. Closure neither relaxes nor replaces the pilot and live startup guards: a closed pilot or live service still needs an HTTPS origin, a non-development release and finished participant packages. It is not part of the package identity, the participant content, the participant-content snapshot or any submission's release metadata.
+
+While collection is closed:
+
+- `/api/study/content` still serves the installed package and collection mode, with `submissionEnabled: false`.
+- `POST /api/study/submissions` keeps the origin, content-type, size and JSON checks. A submission ID that is already committed is then answered as when open: an identical retry gets its original receipt (`200`), and different answers get `409 submission_conflict`. This lookup only reads an existing store. It never creates a store, directory or file, and never moves or migrates one; a store that would need either is reported as `503 storage_unavailable`.
+- Every other request, including the deployment checker's `{}` probe, is refused before validation with `410 collection_closed` and `Cache-Control: no-store`. Nothing is stored, and no store is created, opened for writing or written.
+- Explore, `/api/health`, `/api/release` and every curated query behave exactly as when collection is open.
+
+`410` is sent only when nothing is committed under the submission ID, which is what lets the browser truthfully say that these answers were not saved. Once the store has been deleted (see [retention](#backup-restore-withdrawal-and-retention)), nothing is committed under any ID, so every delivery gets `410`, including a retry of a submission that was committed and then deleted.
+
+Participants see the participant package's closed-collection journey messages, not the application's bootstrap wording:
+
+- With no draft or submission record, the closed message replaces information and consent and links to Explore. No participant journey starts and no participant code is made.
+- With a local draft, the closed message says that the answers in the tab were not submitted and now cannot be, with an explicit discard that removes them. There is no Submit, and journey routes do not open.
+- With a pending submission record, the pending screen and retry stay, because the tab cannot know whether an earlier attempt committed. A retry that returns a receipt shows it as usual.
+- Whenever a submission is refused with `410 collection_closed`, from a tab loaded before closure or from a retry, the tab says that collection has closed and the server did not save these answers. It shows the participant code and offers an explicit discard that removes the pending submission record and any local draft; it never asks for a retry. The record is kept until it is discarded, so after a refresh the pending screen returns and a retry is refused again.
+- A receipt is shown unchanged.
+
+Confirm the closed state with `node scripts/check_deployment.mjs <origin> <mode> --expect-closed --service-environment-stdin`. It requires `IREXPLORER_COLLECTION_CLOSED=1` in the service environment, `submissionEnabled: false`, and the `410 collection_closed` probe response with the security headers and `no-store`. Without `--expect-closed`, the checker requires open collection and fails if the service environment sets `IREXPLORER_COLLECTION_CLOSED` to anything but `0`.

@@ -227,6 +227,10 @@ _Avoid_: rehearsal, trial
 Collection of research responses from recruited participants.
 _Avoid_: production, real mode
 
+**Closed collection**:
+A server-configured state, in any collection mode, in which study content is still served but first deliveries are refused and no store is created or written; an identical retry of a committed submission still receives its receipt. Explore is unaffected.
+_Avoid_: paused, disabled, offline collection
+
 ### Release
 
 **Release identity**:

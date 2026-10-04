@@ -82,6 +82,8 @@ curl -fsS http://127.0.0.1:9239/json/version
 
 The script requires Node 22 or later. It checks default Explore navigation, coordinated views, study navigation, retry/receipt behaviour, and independent browser tabs. It submits synthetic data, so use a disposable local instance and study volume. `IREXPLORER_ORIGIN` overrides the default `http://localhost:8000`. Results go to stdout; optionally set `IREXPLORER_CHECK_OUTPUT` to a directory outside the repository for JSON and screenshots.
 
+Run it again against an instance restarted with `IREXPLORER_COLLECTION_CLOSED=1` (and the same study store) to check closed collection. When the served content reports `submissionEnabled: false`, the script runs the same Explore checks, then, instead of the journey, checks the closed message before consent, a local draft's explicit discard, and a frozen submission that the server refuses with `410 collection_closed`, across a refresh and its discard. It also checks that a pending submission whose retry returns a receipt shows it. The closed instance stores nothing, so that receipt is supplied in the page.
+
 With the same application and browser, check the task procedure:
 
 ```sh
@@ -96,7 +98,7 @@ Then check the journey guidance:
 node scripts/check_study_guidance.mjs
 ```
 
-It reads every expected sentence from the served message catalogue, glossary and introductions, and runs the journey at desktop and narrow widths. It covers normal guidance, T0 glossary help by keyboard focus and hover, validation, a failed local save, discard confirmation (including Escape and a failed discard), and review. It then covers uncertain delivery: an offline attempt, a reload, a 503, and a stored attempt whose response is lost. These must send identical content under one submission ID. The receipt appears only after the server confirms storage; cleanup failures are checked, as are incompatible and corrupt recovery. The journey runs again with every message marked, then with markup in the prose, then with catalogues that break the key or placeholder contract. Each full journey submits one synthetic record, so use a disposable local or preview store.
+It reads every expected sentence from the served message catalogue, glossary and introductions, and runs the journey at desktop and narrow widths. It covers normal guidance, T0 glossary help by keyboard focus and hover, validation, a failed local save, discard confirmation (including Escape and a failed discard), and review. It then covers uncertain delivery: an offline attempt, a reload, a 503, and a stored attempt whose response is lost. These must send identical content under one submission ID. The receipt appears only after the server confirms storage; cleanup failures are checked, as are incompatible and corrupt recovery. Closed collection is served as a content variant with scripted `410 collection_closed` refusals: the closed message, a local draft's discard (including a failed one), a refused submission across a refresh and its discard, and a pending retry that returns a receipt. The journey runs again with every message marked, then with markup in the prose, then with catalogues that break the key or placeholder contract or content without a boolean `submissionEnabled`. Each full journey submits one synthetic record, so use a disposable local or preview store.
 
 All three scripts connect to the browser on port 9239 unless `IREXPLORER_CDP_PORT` names another. Close the temporary Chrome process after testing.
 
@@ -111,4 +113,4 @@ against a local mock server without network access:
 node --test tests/test_deployment_checker.mjs
 ```
 
-The checks require controlled not-found responses for the packaged documentation and OpenAPI routes, verify the required response headers, and prove that reachable docs or missing study-response headers fail the deployment check.
+The checks require controlled not-found responses for the packaged documentation and OpenAPI routes, verify the required response headers, and prove that reachable docs or missing study-response headers fail the deployment check. They also cover the `--expect-closed` expectation: a closed service passes in every mode, and the check fails when content reports open collection, the probe gets `422`, the service environment lacks `IREXPLORER_COLLECTION_CLOSED=1`, or the `410` lacks a security header or `no-store`. Without it, a service environment that sets `IREXPLORER_COLLECTION_CLOSED=1` fails.
