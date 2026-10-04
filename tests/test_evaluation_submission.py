@@ -107,7 +107,7 @@ def upgraded_release(identities=UPGRADED):
         yield snapshot
 
 
-# A finished participant release: the thesis compiler's final identity with the explicit marker in its
+# A finished participant release: the thesis compiler's finished identity with the explicit marker in its
 # content and public identity. The marker, not the label wording, is what pilot and live collection require.
 UNMARKED = {'instrumentVersion': 'v0.12', 'contentVersion': 'v0.12-final-1', 'studyVersion': 'v0.12-study-1'}
 FINISHED = {**UNMARKED, 'finished': True}
