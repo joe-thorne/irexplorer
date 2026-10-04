@@ -205,7 +205,7 @@
     const answerText = (f, a) => a.status === 'not_applicable' ? (f.notApplicableLabel ? esc(f.notApplicableLabel) : messageHtml('answer.not-applicable'))
       : a.status === 'answered' ? esc(['text', 'short_text'].includes(f.type) ? a.value : (Array.isArray(a.value) ? a.value : [a.value]).map(v => (f.options || content.scales[f.scale]).find(o => o.value === v).label).join('; '))
       : messageHtml('answer.unanswered');
-    return heading(messageHtml('review.title')) + (submission.issue ? `<p role="alert">${messageHtml(submission.issue)}</p>` : '') + `<p><strong>${messageHtml('review.not-submitted')}</strong> ${messageHtml('review.submit-detail')}</p><p>${messageHtml('review.frozen')}</p><p>${messageHtml('review.editable')}</p><div class="screen-actions">${button('edit-pre', 'actions.edit-pre')}<a href="#/study/post">${messageHtml('actions.edit-post')}</a>${content.submissionEnabled ? button('submit-responses', 'actions.submit', true) : `<button disabled>${messageHtml('actions.disabled')}</button>`}</div>${taskReview()}${['pre', 'post'].map(section => `<details class="response-review"><summary>${messageHtml('review.section-answers', { section: { key: section === 'pre' ? 'progress.pre' : 'progress.post' } })}</summary><dl>${D.fieldsFor(content, section).filter(f => D.visible(f, draft[section])).map(f => `<dt>${esc(f.id + '. ' + f.prompt)}</dt><dd>${answerText(f, draft[section][f.id])}</dd>`).join('')}</dl></details>`).join('')}`;
+    return heading(messageHtml('review.title')) + (submission.issue ? `<p role="alert">${messageHtml(submission.issue)}</p>` : '') + `<p><strong>${messageHtml('review.not-submitted')}</strong> ${messageHtml('review.submit-detail')}</p><p>${messageHtml('review.frozen')}</p><p>${messageHtml('review.editable')}</p><div class="screen-actions">${button('edit-pre', 'actions.edit-pre')}<a href="#/study/post">${messageHtml('actions.edit-post')}</a>${button('submit-responses', 'actions.submit', true)}</div>${taskReview()}${['pre', 'post'].map(section => `<details class="response-review"><summary>${messageHtml('review.section-answers', { section: { key: section === 'pre' ? 'progress.pre' : 'progress.post' } })}</summary><dl>${D.fieldsFor(content, section).filter(f => D.visible(f, draft[section])).map(f => `<dt>${esc(f.id + '. ' + f.prompt)}</dt><dd>${answerText(f, draft[section][f.id])}</dd>`).join('')}</dl></details>`).join('')}`;
   }
   function submissionHtml() {
     const state = submission.state, issue = submission.issue ? `<p role="alert">${messageHtml(submission.issue)}</p>` : '';
@@ -367,7 +367,7 @@
     if (!action) return;
     if (action === 'retry-content') { load(); return; }
     if (!loaded) return;
-    if (action === 'submit-responses' && content.submissionEnabled && draft) {
+    if (action === 'submit-responses' && draft) {
       const promise = submission.submit(draft, store.mode === 'memory'); render();
       promise.then(() => { if (submission.state?.kind === 'receipt' && submission.cleanup(() => store.discard())) draft = null; render(); }); return;
     }

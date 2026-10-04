@@ -16,7 +16,7 @@ window.StudyMessages = (() => {
     'validation.required-followup': [], 'validation.text-limit': ['maxLength'], 'validation.options': [],
     'actions.start': [], 'actions.return': [], 'actions.decline': [], 'actions.pre-start': [], 'actions.edit-pre': [],
     'actions.pre-corrections': [], 'actions.return-tasks': [], 'actions.review': [], 'actions.edit-post': [], 'actions.submit': [],
-    'actions.disabled': [], 'actions.finish-orientation': [], 'actions.post': [], 'actions.continue': [], 'actions.unable': [],
+    'actions.finish-orientation': [], 'actions.post': [], 'actions.continue': [], 'actions.unable': [],
     'actions.skip': [], 'actions.pause': [], 'actions.resume': [], 'actions.current': [], 'actions.retry-save': [],
     'actions.memory': [], 'actions.retry-discard': [], 'actions.stop': [], 'actions.keep': [], 'actions.discard': [],
     'actions.restart': [], 'actions.explore': [], 'actions.retry-submit': [], 'actions.cleanup': [], 'actions.new-session': [],

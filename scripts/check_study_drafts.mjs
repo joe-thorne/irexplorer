@@ -183,9 +183,22 @@ check('Stop and discard requires a separate destructive confirmation', () => {
 vm.runInContext(await readFile(new URL('../src/frontend/study-messages.js', import.meta.url), 'utf8'), context);
 const Messages = context.window.StudyMessages, messages = Messages.catalogue(content.messages);
 const say = reference => messages.text(reference);
+// Every collection mode that starts accepts submissions, so no journey shows the disabled-submission
+// message; the installed v0.11-preview-5 catalogue still carries it, and a finished catalogue omits it.
+const RETIRED = new Set(['actions.disabled']);
 check('Every compiled journey message is displayed by the journey or its loading state', () => {
-  assert.deepEqual(Object.keys(content.messages).filter(key => !Object.hasOwn(Messages.USED, key) && !Object.hasOwn(Messages.BOOTSTRAP, key)), []);
+  assert.deepEqual(Object.keys(content.messages).filter(key => !Object.hasOwn(Messages.USED, key) && !Object.hasOwn(Messages.BOOTSTRAP, key) && !RETIRED.has(key)), []);
+  for (const key of RETIRED) assert.equal(Object.hasOwn(Messages.USED, key), false, key);
   for (const [key, text] of Object.entries(Messages.BOOTSTRAP)) assert.equal(text, content.messages[key], key);
+});
+check('A catalogue without the retired disabled-submission message is accepted', () => {
+  const finished = structuredClone(content.messages);
+  for (const key of RETIRED) delete finished[key];
+  assert.equal(Messages.catalogue(finished).text('actions.submit'), content.messages['actions.submit']);
+});
+check('The review screen always renders Submit, with no disabled-collection branch', () => {
+  assert.doesNotMatch(study, /actions\.disabled|submissionEnabled/);
+  assert.match(study, /button\('submit-responses', 'actions\.submit', true\)/);
 });
 check('A catalogue missing a key or breaking a placeholder contract is rejected', () => {
   for (const change of [m => delete m['receipt.title'], m => { m['task.entry'] = 'Opens at State 0.'; }, m => { m['receipt.saved'] = 'Saved {receiptId}.'; },
