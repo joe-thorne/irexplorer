@@ -1,13 +1,17 @@
 // Deployment boundary check. Node 22+; no dependencies or writes.
-// Usage: node scripts/check_deployment.mjs https://canonical-host.example preview --service-environment-stdin
+// Usage: node scripts/check_deployment.mjs https://canonical-host.example preview [--expect-closed] --service-environment-stdin
 
 const [originArgument, expectedCollectionMode, ...extra] = process.argv.slice(2);
-// Every mode that starts can submit: the application refuses to start an unfinished pilot or live configuration.
+// Every open mode that starts can submit: the application refuses to start an unfinished pilot or live
+// configuration. A closed collection (any mode) is checked only when --expect-closed says it is intended.
 const supportedModes = new Set(['local', 'preview', 'pilot', 'live']);
-if (!originArgument || !supportedModes.has(expectedCollectionMode) || extra.length !== 1 ||
-    extra[0] !== '--service-environment-stdin') {
-  throw Error('Usage: node scripts/check_deployment.mjs <https://origin> <local|preview|pilot|live> --service-environment-stdin');
+const flags = new Set(extra);
+if (!originArgument || !supportedModes.has(expectedCollectionMode) || flags.size !== extra.length ||
+    !flags.has('--service-environment-stdin') ||
+    [...flags].some(flag => !['--service-environment-stdin', '--expect-closed'].includes(flag))) {
+  throw Error('Usage: node scripts/check_deployment.mjs <https://origin> <local|preview|pilot|live> [--expect-closed] --service-environment-stdin');
 }
+const expectClosed = flags.has('--expect-closed');
 
 const origin = new URL(originArgument);
 if (!['http:', 'https:'].includes(origin.protocol) || origin.pathname !== '/' || origin.search || origin.hash) {
@@ -46,6 +50,13 @@ require(!serviceSettings.has('IREXPLORER_STUDY_MODE'),
         'systemd still sets retired IREXPLORER_STUDY_MODE; application startup rejects it');
 require(serviceSettings.get('IREXPLORER_COLLECTION_MODE') === expectedCollectionMode,
         `systemd must set IREXPLORER_COLLECTION_MODE=${expectedCollectionMode}`);
+if (expectClosed) {
+  require(serviceSettings.get('IREXPLORER_COLLECTION_CLOSED') === '1',
+          'systemd must set IREXPLORER_COLLECTION_CLOSED=1 for a closed collection');
+} else {
+  require([undefined, '0'].includes(serviceSettings.get('IREXPLORER_COLLECTION_CLOSED')),
+          'systemd must leave IREXPLORER_COLLECTION_CLOSED unset or 0 for open collection; pass --expect-closed to check a closed one');
+}
 
 function noStore(response, path) {
   require(response.headers.get('cache-control')?.toLowerCase().split(',').map(value => value.trim()).includes('no-store'),
@@ -111,9 +122,9 @@ for (const field of ['studyVersion', 'contentVersion', 'instrumentVersion']) {
   require(content[field] === release[field],
           `/api/study/content: ${field} does not match /api/release`);
 }
-require(content.submissionEnabled === true,
-        `/api/study/content: expected submissionEnabled: true in ${expectedCollectionMode} collection mode`);
-checks.push(`/api/study/content (${expectedCollectionMode}, ${content.studyVersion}, ${content.contentVersion}, ${content.instrumentVersion})`);
+require(content.submissionEnabled === !expectClosed,
+        `/api/study/content: expected submissionEnabled: ${!expectClosed} in ${expectClosed ? 'closed ' : ''}${expectedCollectionMode} collection mode`);
+checks.push(`/api/study/content (${expectedCollectionMode}, ${expectClosed ? 'closed, ' : ''}${content.studyVersion}, ${content.contentVersion}, ${content.instrumentVersion})`);
 
 const submissionResponse = await request('/api/study/submissions', {
   method: 'POST',
@@ -126,10 +137,19 @@ const submissionResponse = await request('/api/study/submissions', {
 });
 securityHeaders(submissionResponse, '/api/study/submissions');
 const submission = await json(submissionResponse, '/api/study/submissions');
-require(submissionResponse.status === 422,
-        `/api/study/submissions: expected 422 in ${expectedCollectionMode} collection mode, got ${submissionResponse.status}`);
-require(submission?.error?.code === 'invalid_submission', '/api/study/submissions: expected invalid_submission');
-checks.push('/api/study/submissions rejects the non-writing probe with 422 invalid_submission');
+if (expectClosed) {
+  // A closed collection refuses every first delivery before validation, creating and writing no store.
+  require(submissionResponse.status === 410,
+          `/api/study/submissions: expected 410 in closed ${expectedCollectionMode} collection mode, got ${submissionResponse.status}`);
+  require(submission?.error?.code === 'collection_closed', '/api/study/submissions: expected collection_closed');
+  noStore(submissionResponse, '/api/study/submissions');
+  checks.push('/api/study/submissions refuses the non-writing probe with 410 collection_closed');
+} else {
+  require(submissionResponse.status === 422,
+          `/api/study/submissions: expected 422 in ${expectedCollectionMode} collection mode, got ${submissionResponse.status}`);
+  require(submission?.error?.code === 'invalid_submission', '/api/study/submissions: expected invalid_submission');
+  checks.push('/api/study/submissions rejects the non-writing probe with 422 invalid_submission');
+}
 
 console.log(`Deployment checks passed for ${base}`);
 for (const check of checks) console.log(`- ${check}`);
