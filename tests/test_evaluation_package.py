@@ -112,6 +112,40 @@ class PublicPackageTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'content schema'):
                 load_participant_package(package_path, manifest_path)
 
+    def test_finished_marker_is_covered_by_the_digest_and_mirrored_in_the_identity(self):
+        def finished(content_marker=True, identity_marker=True):
+            package = package_fixture()
+            for key, value in (('contentVersion', 'v1-final-1'), ('studyVersion', 'v1-study-1')):
+                package['content'][key] = package['identity'][key] = value
+            if content_marker is not None:
+                package['content']['finished'] = content_marker
+            if identity_marker is not None:
+                package['identity']['finished'] = identity_marker
+            return rehash(package)
+
+        with tempfile.TemporaryDirectory() as directory:
+            package = load_participant_package(*self.write_pair(directory, finished()))
+        self.assertIs(package['identity']['finished'], True)
+        self.assertIs(package['content']['finished'], True)
+        self.assertNotIn('finished', package_fixture()['identity'])
+
+        for label, tampered in (
+            ('identity only', finished(content_marker=None)),
+            ('content only', finished(identity_marker=None)),
+            ('false', finished(False, False)),
+            ('text', finished('true', 'true')),
+        ):
+            with (self.subTest(label=label), tempfile.TemporaryDirectory() as directory,
+                  self.assertRaisesRegex(ValueError, 'finished marker')):
+                load_participant_package(*self.write_pair(directory, tampered))
+
+        # The digest covers the marker: dropping it from the content leaves a stale identity.
+        with tempfile.TemporaryDirectory() as directory:
+            stale = finished()
+            del stale['content']['finished'], stale['identity']['finished']
+            with self.assertRaisesRegex(ValueError, 'canonical identity'):
+                load_participant_package(*self.write_pair(directory, stale))
+
     def test_rejects_nested_private_field_metadata_after_recomputing_all_hashes(self):
         with tempfile.TemporaryDirectory() as directory:
             package = package_fixture()

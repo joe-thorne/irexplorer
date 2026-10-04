@@ -87,8 +87,6 @@ _MIGRATIONS = {3: _SNAPSHOT_SCHEMA, 4: _BACKFILL_SCHEMA}
 
 
 RESEARCH_MODES = ('pilot', 'live')
-# Identity words that mark participant content or a study as not yet frozen for participants.
-UNFINISHED_IDENTITY = re.compile(r'preview|synthetic', re.I)
 
 
 class StudyError(Exception):
@@ -304,11 +302,11 @@ class StudyService:
         installed = participant_content()
         self.snapshot = participant_snapshot()
         self.releases = accepted_releases(InstrumentRelease(installed, self.snapshot), config.accepted_instruments)
-        if config.research and any(UNFINISHED_IDENTITY.search(version)
-                                   for study_version, content_version, _ in self.releases
-                                   for version in (content_version, study_version)):
+        # Research data is collected only under finished participant content: the installed package
+        # and every accepted release must carry the explicit marker, whatever their labels say.
+        if config.research and not all(release.finished for release in self.releases.values()):
             raise ValueError(f'{config.collection_mode} collection cannot accept unfinished participant content '
-                             '(a preview content or synthetic study identity)')
+                             '(a participant package without the finished marker)')
 
     def content(self):
         # Every configuration that starts can submit; unfinished research configurations never start.

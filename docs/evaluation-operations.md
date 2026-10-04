@@ -124,7 +124,7 @@ Every collection mode that starts accepts submissions; `/api/study/content` repo
 
 - `IREXPLORER_STUDY_ORIGIN` is unset or not an exact `https://` origin (the unset default is the HTTP development origin);
 - the application is a development build: a host checkout (whatever `IREXPLORER_APP_REVISION` says) or a revision of `development`; or
-- the installed participant package, or any configured accepted instrument release, has a content identity containing `preview` or a study identity containing `synthetic`.
+- the installed participant package, or any configured accepted instrument release, lacks the explicit finished marker. A finished release carries `finished: true` in its participant content, which the public digest covers, and the same marker in its public identity; the thesis compiler adds it only to a finished release, whose content version is `<instrument>-final-N`, and preview packages carry none. Label wording is not consulted: a package without the marker is refused even when its identities name neither preview content nor a synthetic study.
 
 The startup error names the failed condition. Each mode keeps its own store at `<study-dir>/<collection-mode>/submissions.sqlite3`: a pilot or live store is created on its first submission, never copied, renamed, or migrated from a preview or local store, and a submission ID committed in another mode has no receipt there. Final-only submission, exact-origin validation, commit before receipt, identical-retry receipts, and the private CLI operations are the same in every mode.
 

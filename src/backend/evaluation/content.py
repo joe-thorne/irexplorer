@@ -19,6 +19,9 @@ IDENTITY_KEYS = frozenset({
     'digest', 'instrumentVersion', 'contentVersion', 'studyVersion',
 })
 MANIFEST_KEYS = frozenset({'manifestSchemaVersion', 'packageSchemaVersion', 'identity', 'artifact'})
+# A finished release carries `finished: true` in its content, which the public digest covers, and
+# mirrors it in its identity; preview content carries neither. Pilot and live collection require it.
+FINISHED_MARKER = 'finished'
 
 
 def canonical_bytes(value):
@@ -121,10 +124,13 @@ def _membership(content):
 
 
 def _validate_content(content, identity):
-    if not isinstance(content, dict) or set(content) != CONTENT_KEYS:
+    if not isinstance(content, dict) or set(content) - {FINISHED_MARKER} != CONTENT_KEYS:
         raise ValueError('Unsupported participant content schema')
-    if not isinstance(identity, dict) or set(identity) != IDENTITY_KEYS:
+    if not isinstance(identity, dict) or set(identity) - {FINISHED_MARKER} != IDENTITY_KEYS:
         raise ValueError('Unsupported participant identity schema')
+    if ((FINISHED_MARKER in content or FINISHED_MARKER in identity)
+            and not (content.get(FINISHED_MARKER) is True and identity.get(FINISHED_MARKER) is True)):
+        raise ValueError('Participant content and identity must both carry a true finished marker, or neither')
     if any(not isinstance(content.get(key), str) or not content[key]
            for key in ('instrumentVersion', 'contentVersion', 'studyVersion')):
         raise ValueError('Participant version tuple is incomplete')
@@ -428,6 +434,11 @@ class InstrumentRelease:
     def identities(self):
         """The study/content/instrument identities a submission names to select this release."""
         return tuple(self.content[key] for key in SUBMISSION_IDENTITY_KEYS)
+
+    @property
+    def finished(self):
+        """Whether the release's verified public identity carries the explicit finished marker."""
+        return self.content['packageIdentity'].get(FINISHED_MARKER) is True
 
 
 def packaged_release(directory):

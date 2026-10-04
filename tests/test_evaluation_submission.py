@@ -107,8 +107,10 @@ def upgraded_release(identities=UPGRADED):
         yield snapshot
 
 
-# Identities a frozen participant release carries: neither preview content nor a synthetic study.
-FINISHED = {'instrumentVersion': 'v0.12', 'contentVersion': 'v0.12-release-1', 'studyVersion': 'v0.12-study-1'}
+# A finished participant release: the thesis compiler's final identity with the explicit marker in its
+# content and public identity. The marker, not the label wording, is what pilot and live collection require.
+UNMARKED = {'instrumentVersion': 'v0.12', 'contentVersion': 'v0.12-final-1', 'studyVersion': 'v0.12-study-1'}
+FINISHED = {**UNMARKED, 'finished': True}
 RESEARCH_ORIGIN = 'https://study.example.test'
 RESEARCH_REVISION = '0.1.1-webproject.1'
 
@@ -474,20 +476,40 @@ class SubmissionTests(unittest.TestCase):
                   self.assertRaisesRegex(ValueError, 'HTTPS')):
                 Config.environment()
             config = research_config(root, mode)
-            # The installed package is itself unfinished (preview content, synthetic study).
-            with self.subTest(mode=mode, content='installed'), self.assertRaisesRegex(ValueError, 'unfinished'):
+            # The installed v0.11-preview-5 package carries no finished marker.
+            with self.subTest(mode=mode, content='installed'), self.assertRaisesRegex(ValueError, 'finished marker'):
                 create_app(study_config=config)
-            for content_version, study_version in (('v0.12-preview-1', 'v0.12-study-1'),
-                                                   ('v0.12-release-1', 'v0.12-synthetic-1')):
-                identities = {**FINISHED, 'contentVersion': content_version, 'studyVersion': study_version}
+            # The marker decides, not the label wording: an unmarked package is refused even when its
+            # labels name neither preview content nor a synthetic study.
+            for content_version, study_version in (('v0.12-final-1', 'v0.12-study-1'),
+                                                   ('v0.12-release-1', 'v0.12-study-1'),
+                                                   ('v0.12-preview-1', 'v0.12-synthetic-1')):
+                identities = {**UNMARKED, 'contentVersion': content_version, 'studyVersion': study_version}
                 with (self.subTest(mode=mode, identities=identities), upgraded_release(identities),
-                      self.assertRaisesRegex(ValueError, 'unfinished participant content')):
+                      self.assertRaisesRegex(ValueError, 'unfinished participant content.*finished marker')):
                     StudyService(config)
-            with self.subTest(mode=mode, content='accepted preview package'), upgraded_release(FINISHED):
+            with self.subTest(mode=mode, content='accepted unmarked package'), upgraded_release(FINISHED):
                 accepted = frozen_public_pair(root / f'accepted-{mode}', historical_package())
-                with self.assertRaisesRegex(ValueError, 'unfinished participant content'):
+                with self.assertRaisesRegex(ValueError, 'unfinished participant content.*finished marker'):
                     StudyService(research_config(root, mode, accepted_instruments=(accepted,)))
+            with self.subTest(mode=mode, content='marked'), upgraded_release(FINISHED):
+                self.assertEqual(StudyService(config).content()['packageIdentity']['finished'], True)
             self.assertFalse((root / mode).exists())
+
+    def test_local_and_preview_start_with_the_installed_unmarked_package(self):
+        installed = load_participant_package()
+        self.assertEqual(installed['identity']['contentVersion'], 'v0.11-preview-5')
+        self.assertNotIn('finished', installed['identity'])
+        self.assertIn('actions.disabled', installed['content']['messages'])
+        for mode in ('local', 'preview'):
+            config = Config(Path(self.tmp.name), collection_mode=mode, origin='http://testserver')
+            with self.subTest(mode=mode), TestClient(create_app(study_config=config)) as client:
+                content = client.get('/api/study/content').json()
+                self.assertEqual((content['collectionMode'], content['submissionEnabled'], content['contentVersion']),
+                                 (mode, True, 'v0.11-preview-5'))
+                response = client.post('/api/study/submissions', json=synthetic(content),
+                                       headers={'Origin': 'http://testserver'})
+                self.assertEqual(response.status_code, 201)
 
     def test_preview_pilot_and_live_stores_are_separate(self):
         with upgraded_release(FINISHED):
