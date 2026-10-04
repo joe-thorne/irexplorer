@@ -190,6 +190,156 @@ async function task(id) {
   await check(`${id} keeps the task goal programmatically reachable`, `location.hash === '#/study/tasks/${id}' && document.querySelector('#route-heading')?.tabIndex === -1`);
 }
 
+// The participant journey of an open collection, from information and consent to a confirmed
+// receipt, then an independent tab.
+async function openStudy() {
+  await route('/study'); await screen('Information and consent');
+  await check('Opening information page explains Continue is at the bottom', `document.querySelector('#study-screen').innerText.includes('Continue button is at the bottom of this page')`);
+  await check('Participant information shows no unresolved researcher annotations', `!document.querySelector('#study-screen').innerText.includes('[Joe/Joel to confirm')`);
+  await check('The final information section appears once and before consent', `(() => { const questions=[...document.querySelectorAll('.participant-information h3')].filter(h=>h.textContent==='Questions'); return questions.length===1 && questions[0].compareDocumentPosition(document.querySelector('#C1')) & Node.DOCUMENT_POSITION_FOLLOWING; })()`);
+  await check('Study navigation identifies its current sections', `document.querySelector('#study-progress').getAttribute('aria-label') === 'Study sections' && document.querySelector('#study-progress [aria-current="step"]') !== null`);
+  await check('Information role blocks render their compiled label and packaged wording once, before general information', `(() => { const purpose = [...document.querySelectorAll('.study-purpose')]; const information = document.querySelector('.participant-information'); return purpose.length === 1 && purpose[0].textContent === ${JSON.stringify(`${publicContent.messages['information.purpose-label']} ${purposeText}`)} && Boolean(information && (purpose[0].compareDocumentPosition(information) & Node.DOCUMENT_POSITION_FOLLOWING)); })()`);
+  await check('Submission guidance renders its compiled label and packaged wording once', `(() => { const guidance = [...document.querySelectorAll('.submission-guidance')]; return guidance.length === 1 && guidance[0].textContent === ${JSON.stringify(`${publicContent.messages['information.submission-label']} ${submissionText}`)}; })()`);
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
+  await check('Opening purpose and final-only submission guidance fit the narrow viewport', `document.documentElement.scrollWidth <= innerWidth && ['.study-purpose','.submission-guidance'].every(selector => { const rect = document.querySelector(selector)?.getBoundingClientRect(); return rect && rect.width > 0 && rect.left >= 0 && rect.right <= innerWidth; })`);
+  await value("document.querySelector('#route-heading').focus()");
+  await tabUntil(`document.activeElement.matches('[data-action="start"]')`);
+  await check('Narrow keyboard journey reaches Continue after the information and consent copy', `document.activeElement.matches('[data-action="start"]') && document.activeElement.getBoundingClientRect().top < innerHeight && document.querySelector('.participant-information').getBoundingClientRect().bottom < document.activeElement.getBoundingClientRect().top`);
+  await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
+  await check('Clean study interface and release label', `document.querySelector('#app-version').textContent === ${JSON.stringify(release.version === 'development' ? 'Development' : `v${release.version}`)} && !/synthetic|preview|not.live|E7/i.test(document.body.innerText) && !location.search`);
+  await value(`document.querySelector('#C1').focus()`); await key(' ', 'Space', 32);
+  await check('Keyboard Space operates consent checkbox', `document.querySelector('#C1').checked`);
+  for (const id of publicContent.membership.consent.slice(1)) await click('#' + id);
+  await click('[data-action="start"]'); await screen('Pre-survey');
+  await choose('P1', '1'); await fill('P13', 'Container test background response');
+  await choose('P3', '7'); await choose('P3', '9'); await fill('P3_other_name', 'Synthetic course');
+  await check('Pre-survey records studied courses and optional named Other', `document.querySelector('[data-field="P3"] input[name="P3"][value="7"]:checked') !== null && document.querySelector('[data-field="P3"] input[name="P3"][value="9"]:checked') !== null && document.querySelector('[data-field="P3_other_name"] textarea').value === 'Synthetic course'`);
+  await check('Course exposure distinguishes explicit none from unanswered', `(() => { const field=document.querySelector('[data-field="P3"]'); return field.innerText.includes('None of these') && field.innerText.includes('studying or have you studied') && field.querySelector('input[name="P3"][value="8"]')?.type === 'checkbox'; })()`);
+  await send('Page.reload'); await screen('Pre-survey');
+  await check('Ordinary refresh restores course selections without a special URL', `document.querySelector('input[name="P1"][value="1"]').checked && document.querySelector('textarea[name="P13"]').value === 'Container test background response' && document.querySelector('input[name="P3"][value="7"]').checked && document.querySelector('input[name="P3"][value="9"]').checked && document.querySelector('textarea[name="P3_other_name"]').value === 'Synthetic course' && !location.search`);
+  await value(`window.taskTimingFetch = window.fetch; window.fetch = async (input, ...args) => { if (String(input) === '/api/examples/score/states') await new Promise(resolve => setTimeout(resolve, 1250)); return taskTimingFetch(input, ...args); };`);
+  await click('#survey-form button[type="submit"]');
+  await until(`document.querySelector('#survey-form')?.dataset.section === 'T0'`);
+  await new Promise(resolve => setTimeout(resolve, 1100));
+  await check('Task-presentation duration accumulates before the example comparison is ready', `!window.StudyWorkspace.ready && JSON.parse(sessionStorage.getItem('irexplorer.study.v0.11')).tasks.T0.durationMs >= 500`);
+  await value('window.fetch = window.taskTimingFetch');
+  await task('T0');
+  await check('T0 distinguishes its orientation from tasks T1–T6 and renders help terms safely', `document.querySelector('#task-instructions').innerText.includes('T0 is the orientation; the six tasks are T1–T6') && document.querySelector('#task-instructions').querySelector('img,script') === null && [...document.querySelectorAll('#task-instructions .study-term-help')].map(term=>term.textContent).includes('-O0') && [...document.querySelectorAll('#task-instructions .study-term-help')].map(term=>term.textContent).includes('-O3')`);
+  await value(`window.studyFlag = [...document.querySelectorAll('#task-instructions .study-term-help')].find(term=>term.textContent==='-O0'); studyFlag.focus()`);
+  await until(`!document.querySelector('#ir-help-tooltip').hidden`);
+  await check('T0 keyboard focus explains -O0 accessibly', `studyFlag.getAttribute('aria-describedby')==='ir-help-tooltip' && document.querySelector('#ir-help-tooltip').textContent.includes('disables optimisation')`);
+  await value(`studyFlag.blur()`);
+  await hover('#task-instructions .study-term-help[data-help*="disables optimisation"]');
+  await until(`!document.querySelector('#ir-help-tooltip').hidden`);
+  await check('T0 -O0 also exposes its explanation on hover using text content', `document.querySelector('#ir-help-tooltip').textContent.includes('disables optimisation') && document.querySelector('#ir-help-tooltip').childElementCount===0`);
+  await value(`window.studyFlag = [...document.querySelectorAll('#task-instructions .study-term-help')].find(term=>term.textContent==='-O3'); studyFlag.focus()`);
+  await until(`!document.querySelector('#ir-help-tooltip').hidden`);
+  await check('T0 keyboard focus explains -O3 as a separate high-optimisation build', `studyFlag.getAttribute('aria-describedby')==='ir-help-tooltip' && document.querySelector('#ir-help-tooltip').textContent.includes('separately compiled state')`);
+  await value(`window.studyFlag = [...document.querySelectorAll('#task-instructions .study-term-help')].find(term=>term.textContent==='CFG'); studyFlag.focus()`);
+  await until(`!document.querySelector('#ir-help-tooltip').hidden`);
+  await check('T0 keyboard focus explains CFG without raw markup', `studyFlag.getAttribute('aria-describedby')==='ir-help-tooltip' && document.querySelector('#ir-help-tooltip').textContent.includes('Control-flow graph') && !document.querySelector('#ir-help-tooltip').querySelector('img,script')`);
+  await click('[data-action="pause-task"]');
+  await check('Pause disables task completion', `document.querySelector('.task-inputs').disabled`);
+  await click('[data-action="pause-task"]');
+  await check('T0 opens at its named C example and a ready comparison', `document.querySelector('#example-select').value === 'score' && document.querySelector('#left-state').value === '0' && document.querySelector('#right-state').value === '0' && !document.querySelector('.task-complete').disabled`);
+  await click('#survey-form button[type="submit"]');
+  for (const id of ['T1', 'T2', 'T3', 'T4', 'T5', 'T6']) {
+    if (id === 'T1' || id === 'T2') {
+      await task(id);
+      await check(`${id} can finish or skip without matching the requested comparison`, `!document.querySelector('[data-action="skip-task"]').disabled && !document.querySelector('.task-complete').disabled`);
+      await click(id === 'T1' ? '[data-action="skip-task"]' : '[data-action="unable-task"]');
+      continue;
+    }
+    await task(id);
+    if (id === 'T4') await snap('task-cfg.png');
+    await click('[data-action="skip-task"]');
+  }
+  await screen('Post-survey'); await choose('Q1', 'na'); await fill('Q14', 'Container test post answer'); await click('#survey-form button[type="submit"]'); await screen('Review answers');
+  await check('Review provides an explicit final submission action', `!!document.querySelector('[data-action="submit-responses"]')`);
+  await check('Review says nothing has been submitted before the final action', `(() => { const notice = [...document.querySelectorAll('#study-screen p')].find(p => p.innerText.includes('Nothing has been submitted.')); const submit = document.querySelector('[data-action="submit-responses"]'); return Boolean(notice && submit && (notice.compareDocumentPosition(submit) & Node.DOCUMENT_POSITION_FOLLOWING)); })()`);
+  await snap('study-review.png');
+  await value(`window.testFetch = window.fetch; window.fetch = async (...args) => { const response = await window.testFetch(...args); if (args[0] === '/api/study/submissions') throw Error('Synthetic lost acknowledgement'); return response; };`);
+  await click('[data-action="submit-responses"]'); await screen('Receipt not yet confirmed');
+  await check('Uncertain attempt says a record may exist and directs the participant to retry the same submission', `!document.querySelector('#survey-form') && document.querySelector('#study-screen').textContent.includes('may already exist') && document.querySelector('#study-screen').textContent.includes('same submission ID and answers')`);
+  if (captures) await writeFile(join(captures, 'pending.json'), await value(`sessionStorage.getItem('irexplorer.submission.v3')`));
+  await send('Page.reload'); await screen('Receipt not yet confirmed');
+  await click('[data-action="retry-submit"]'); await screen('Submission received');
+  await check('Retry confirms receipt storage and removes answer draft', `document.querySelector('#study-screen').innerText.includes('Your submission has been saved.') && document.querySelector('#study-screen').innerText.includes('Receipt:') && sessionStorage.getItem('irexplorer.study.v0.11') === null && JSON.parse(sessionStorage.getItem('irexplorer.submission.v3')).kind === 'receipt'`);
+
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: false });
+  await send('Emulation.setPageScaleFactor', { pageScaleFactor: 2 });
+  await check('200% emulated zoom has no page-width overflow', `document.documentElement.scrollWidth <= innerWidth`);
+  await send('Emulation.setPageScaleFactor', { pageScaleFactor: 1 }); await snap('receipt-narrow.png');
+
+  const newTarget = await send('Target.createTarget', { url: 'about:blank' });
+  const second = (await (await fetch(`${cdp}/json/list`)).json()).find(item => item.id === newTarget.targetId);
+  const other = new WebSocket(second.webSocketDebuggerUrl); await new Promise(resolve => other.addEventListener('open', resolve, { once: true }));
+  let otherId = 0; const otherPending = new Map();
+  other.addEventListener('message', ({ data }) => { const message = JSON.parse(data); if (otherPending.has(message.id)) { const resolve = otherPending.get(message.id); otherPending.delete(message.id); resolve(message.result); } });
+  const otherSend = (method, params = {}) => new Promise(resolve => { const id = ++otherId; otherPending.set(id, resolve); other.send(JSON.stringify({ id, method, params })); });
+  await otherSend('Runtime.enable'); await otherSend('Page.enable'); await otherSend('Page.navigate', { url: `${base}/#/study` });
+  for (let attempt = 0; attempt < 100; attempt += 1) { const result = await otherSend('Runtime.evaluate', { expression: `document.querySelector('#route-heading')?.textContent`, returnByValue: true }); if (result.result.value === 'Information and consent') break; await new Promise(resolve => setTimeout(resolve, 75)); }
+  const isolated = await otherSend('Runtime.evaluate', { expression: `!sessionStorage.getItem('irexplorer.study.v0.11') && !document.querySelector('[data-action="new-study"]')`, returnByValue: true });
+  if (!isolated.result.value) throw Error('Failed: Independent browser tab does not start without the first tab’s draft.');
+  checks.push('Independent browser tab has no first-session draft or receipt'); other.close(); await send('Target.closeTarget', { targetId: newTarget.targetId });
+}
+
+// A closed collection (a server started with IREXPLORER_COLLECTION_CLOSED=1): the study route shows only the
+// closed message, a local draft can only be discarded, and the server's own 410 refusal reaches the tab.
+async function closedStudy() {
+  const DRAFT = 'irexplorer.study.v0.11', SUBMISSION = 'irexplorer.submission.v3', M = publicContent.messages, q = JSON.stringify;
+  // A consented local draft and, optionally, its frozen submission, as a tab saved them before closure.
+  const saveDraft = withSubmission => value(`(() => { const content = ${q(publicContent)}; const draft = window.StudyDraft.create(content, Object.fromEntries(content.membership.consent.map(id => [id, true]))); sessionStorage.setItem('${DRAFT}', JSON.stringify(draft)); if (${withSubmission}) sessionStorage.setItem('${SUBMISSION}', JSON.stringify({ kind: 'pending', submission: window.StudySubmit.submissionFromDraft(draft) })); return true; })()`);
+  await value('sessionStorage.clear()');
+  await route('/study'); await screen(M['closed.title']);
+  await check('Closed collection replaces information and consent, starting no participant journey', `document.querySelector('#study-screen').textContent.includes(${q(M['closed.detail'])}) && !document.querySelector('.acknowledgement, [data-action="start"], .participant-code, #survey-form, [data-action="discard-closed"]') && document.querySelector('#study-progress').hidden && sessionStorage.getItem('${DRAFT}') === null && sessionStorage.getItem('${SUBMISSION}') === null`);
+  await route('/study/tasks/T0');
+  await until(`location.hash === '#/study' && !document.querySelector('#survey-form')`);
+  checks.push('Journey routes do not open while collection is closed');
+  await click('#study-screen a[href="#/explore"]');
+  await until(`location.hash === '#/explore' && !document.querySelector('#explore-heading').hidden`);
+  checks.push('The closed message links to Explore');
+
+  await saveDraft(false);
+  const kept = await value(`sessionStorage.getItem('${DRAFT}')`);
+  await route('/study'); await send('Page.reload');
+  await until(`document.querySelector('[data-action="discard-closed"]') !== null`); await screen(M['closed.title']);
+  await check('A local draft is not resumed: the closed message offers only an explicit discard', `document.querySelector('#study-screen').textContent.includes(${q(M['closed.draft'])}) && document.querySelector('[data-action="discard-closed"]').textContent === ${q(M['actions.discard-closed'])} && !document.querySelector('[data-action="submit-responses"], [data-action="stop"], .participant-code, #survey-form') && sessionStorage.getItem('${DRAFT}') === ${q(kept)}`);
+  await click('[data-action="discard-closed"]');
+  await check('Discarding removes the local draft', `sessionStorage.getItem('${DRAFT}') === null && !document.querySelector('[data-action="discard-closed"]') && document.querySelector('#route-heading').textContent === ${q(M['closed.title'])}`);
+
+  // A tab that froze its submission before closure retries it, and this server refuses it with 410.
+  await saveDraft(true);
+  const frozen = await value(`sessionStorage.getItem('${SUBMISSION}')`);
+  await send('Page.reload');
+  await until(`document.querySelector('[data-action="retry-submit"]') !== null`); await screen(M['submission.unconfirmed']);
+  await click('[data-action="retry-submit"]');
+  await until(`document.querySelector('[data-action="discard-closed"]') !== null`); await screen(M['closed.title']);
+  const notStored = `document.querySelector('#study-screen [role="alert"]').textContent === ${q(M['closed.not-stored'])} && document.querySelector('#study-screen code').textContent === ${q(JSON.parse(frozen).submission.participantCode)} && !document.querySelector('[data-action="retry-submit"]') && !document.querySelector('#study-screen').textContent.includes(${q(M['submission.retry'])}) && sessionStorage.getItem('${SUBMISSION}') === ${q(frozen)}`;
+  await check('The server refusal says these answers were not saved, without retry wording', notStored);
+  await send('Page.reload');
+  await until(`document.querySelector('[data-action="retry-submit"]') !== null`); await screen(M['submission.unconfirmed']);
+  await click('[data-action="retry-submit"]');
+  await until(`document.querySelector('[data-action="discard-closed"]') !== null`);
+  await check('After a refresh the recovery record is kept and the server refuses it again', notStored);
+  await click('[data-action="discard-closed"]');
+  await until(`location.hash === '#/study'`);
+  await check('Discarding removes the refused submission and its local draft', `sessionStorage.getItem('${SUBMISSION}') === null && sessionStorage.getItem('${DRAFT}') === null && document.querySelector('#route-heading').textContent === ${q(M['closed.title'])} && !document.querySelector('[data-action="discard-closed"]')`);
+
+  // A submission committed before closure gets its original receipt from an identical retry. This server
+  // stores nothing while closed, so that receipt is supplied in the page.
+  await saveDraft(true);
+  await send('Page.reload');
+  await until(`document.querySelector('[data-action="retry-submit"]') !== null`); await screen(M['submission.unconfirmed']);
+  await value(`window.closedFetch = window.fetch; window.fetch = async (input, options) => { if (String(input) !== '/api/study/submissions') return closedFetch(input, options); const { submissionId, participantCode, studyVersion } = JSON.parse(options.body); return new Response(JSON.stringify({ receiptId: 'synthetic-committed-receipt', submissionId, participantCode, studyVersion }), { status: 200, headers: { 'Content-Type': 'application/json' } }); };`);
+  await click('[data-action="retry-submit"]'); await screen(M['receipt.title']);
+  await check('A pending submission whose retry returns a receipt shows the receipt', `document.querySelector('#study-screen code').textContent === 'synthetic-committed-receipt' && sessionStorage.getItem('${DRAFT}') === null && JSON.parse(sessionStorage.getItem('${SUBMISSION}')).kind === 'receipt'`);
+  await value('window.fetch = window.closedFetch');
+  await click('[data-action="new-study"]'); await screen(M['closed.title']);
+  await check('After the receipt no new participant journey is offered while collection is closed', `!document.querySelector('.acknowledgement, [data-action="start"]')`);
+  await value('sessionStorage.clear()');
+}
+
 try {
   await send('Runtime.enable'); await send('Page.enable'); await send('Network.enable'); await send('Log.enable');
   await send('Emulation.setFocusEmulationEnabled', { enabled: true });
@@ -362,95 +512,8 @@ try {
   await check('Comparison separates states, trace and steps', `document.querySelectorAll('.comparison-state').length === 2 && document.querySelector('#selection-context').textContent.includes('Right panel') && document.querySelector('#ir-step-heading').closest('section').contains(document.querySelector('#optimisation-explanations')) && document.querySelector('#source-mapping-heading').closest('section').contains(document.querySelector('#source-status'))`);
   await check('Source mapping text only describes Left', `!document.querySelector('#source-status').textContent.includes('Right:')`);
   await snap('workspace.png');
-  await route('/study'); await screen('Information and consent');
-  await check('Opening information page explains Continue is at the bottom', `document.querySelector('#study-screen').innerText.includes('Continue button is at the bottom of this page')`);
-  await check('Participant information shows no unresolved researcher annotations', `!document.querySelector('#study-screen').innerText.includes('[Joe/Joel to confirm')`);
-  await check('The final information section appears once and before consent', `(() => { const questions=[...document.querySelectorAll('.participant-information h3')].filter(h=>h.textContent==='Questions'); return questions.length===1 && questions[0].compareDocumentPosition(document.querySelector('#C1')) & Node.DOCUMENT_POSITION_FOLLOWING; })()`);
-  await check('Study navigation identifies its current sections', `document.querySelector('#study-progress').getAttribute('aria-label') === 'Study sections' && document.querySelector('#study-progress [aria-current="step"]') !== null`);
-  await check('Information role blocks render their compiled label and packaged wording once, before general information', `(() => { const purpose = [...document.querySelectorAll('.study-purpose')]; const information = document.querySelector('.participant-information'); return purpose.length === 1 && purpose[0].textContent === ${JSON.stringify(`${publicContent.messages['information.purpose-label']} ${purposeText}`)} && Boolean(information && (purpose[0].compareDocumentPosition(information) & Node.DOCUMENT_POSITION_FOLLOWING)); })()`);
-  await check('Submission guidance renders its compiled label and packaged wording once', `(() => { const guidance = [...document.querySelectorAll('.submission-guidance')]; return guidance.length === 1 && guidance[0].textContent === ${JSON.stringify(`${publicContent.messages['information.submission-label']} ${submissionText}`)}; })()`);
-  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
-  await check('Opening purpose and final-only submission guidance fit the narrow viewport', `document.documentElement.scrollWidth <= innerWidth && ['.study-purpose','.submission-guidance'].every(selector => { const rect = document.querySelector(selector)?.getBoundingClientRect(); return rect && rect.width > 0 && rect.left >= 0 && rect.right <= innerWidth; })`);
-  await value("document.querySelector('#route-heading').focus()");
-  await tabUntil(`document.activeElement.matches('[data-action="start"]')`);
-  await check('Narrow keyboard journey reaches Continue after the information and consent copy', `document.activeElement.matches('[data-action="start"]') && document.activeElement.getBoundingClientRect().top < innerHeight && document.querySelector('.participant-information').getBoundingClientRect().bottom < document.activeElement.getBoundingClientRect().top`);
-  await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
-  await check('Clean study interface and release label', `document.querySelector('#app-version').textContent === ${JSON.stringify(release.version === 'development' ? 'Development' : `v${release.version}`)} && !/synthetic|preview|not.live|E7/i.test(document.body.innerText) && !location.search`);
-  await value(`document.querySelector('#C1').focus()`); await key(' ', 'Space', 32);
-  await check('Keyboard Space operates consent checkbox', `document.querySelector('#C1').checked`);
-  for (const id of publicContent.membership.consent.slice(1)) await click('#' + id);
-  await click('[data-action="start"]'); await screen('Pre-survey');
-  await choose('P1', '1'); await fill('P13', 'Container test background response');
-  await choose('P3', '7'); await choose('P3', '9'); await fill('P3_other_name', 'Synthetic course');
-  await check('Pre-survey records studied courses and optional named Other', `document.querySelector('[data-field="P3"] input[name="P3"][value="7"]:checked') !== null && document.querySelector('[data-field="P3"] input[name="P3"][value="9"]:checked') !== null && document.querySelector('[data-field="P3_other_name"] textarea').value === 'Synthetic course'`);
-  await check('Course exposure distinguishes explicit none from unanswered', `(() => { const field=document.querySelector('[data-field="P3"]'); return field.innerText.includes('None of these') && field.innerText.includes('studying or have you studied') && field.querySelector('input[name="P3"][value="8"]')?.type === 'checkbox'; })()`);
-  await send('Page.reload'); await screen('Pre-survey');
-  await check('Ordinary refresh restores course selections without a special URL', `document.querySelector('input[name="P1"][value="1"]').checked && document.querySelector('textarea[name="P13"]').value === 'Container test background response' && document.querySelector('input[name="P3"][value="7"]').checked && document.querySelector('input[name="P3"][value="9"]').checked && document.querySelector('textarea[name="P3_other_name"]').value === 'Synthetic course' && !location.search`);
-  await value(`window.taskTimingFetch = window.fetch; window.fetch = async (input, ...args) => { if (String(input) === '/api/examples/score/states') await new Promise(resolve => setTimeout(resolve, 1250)); return taskTimingFetch(input, ...args); };`);
-  await click('#survey-form button[type="submit"]');
-  await until(`document.querySelector('#survey-form')?.dataset.section === 'T0'`);
-  await new Promise(resolve => setTimeout(resolve, 1100));
-  await check('Task-presentation duration accumulates before the example comparison is ready', `!window.StudyWorkspace.ready && JSON.parse(sessionStorage.getItem('irexplorer.study.v0.11')).tasks.T0.durationMs >= 500`);
-  await value('window.fetch = window.taskTimingFetch');
-  await task('T0');
-  await check('T0 distinguishes its orientation from tasks T1–T6 and renders help terms safely', `document.querySelector('#task-instructions').innerText.includes('T0 is the orientation; the six tasks are T1–T6') && document.querySelector('#task-instructions').querySelector('img,script') === null && [...document.querySelectorAll('#task-instructions .study-term-help')].map(term=>term.textContent).includes('-O0') && [...document.querySelectorAll('#task-instructions .study-term-help')].map(term=>term.textContent).includes('-O3')`);
-  await value(`window.studyFlag = [...document.querySelectorAll('#task-instructions .study-term-help')].find(term=>term.textContent==='-O0'); studyFlag.focus()`);
-  await until(`!document.querySelector('#ir-help-tooltip').hidden`);
-  await check('T0 keyboard focus explains -O0 accessibly', `studyFlag.getAttribute('aria-describedby')==='ir-help-tooltip' && document.querySelector('#ir-help-tooltip').textContent.includes('disables optimisation')`);
-  await value(`studyFlag.blur()`);
-  await hover('#task-instructions .study-term-help[data-help*="disables optimisation"]');
-  await until(`!document.querySelector('#ir-help-tooltip').hidden`);
-  await check('T0 -O0 also exposes its explanation on hover using text content', `document.querySelector('#ir-help-tooltip').textContent.includes('disables optimisation') && document.querySelector('#ir-help-tooltip').childElementCount===0`);
-  await value(`window.studyFlag = [...document.querySelectorAll('#task-instructions .study-term-help')].find(term=>term.textContent==='-O3'); studyFlag.focus()`);
-  await until(`!document.querySelector('#ir-help-tooltip').hidden`);
-  await check('T0 keyboard focus explains -O3 as a separate high-optimisation build', `studyFlag.getAttribute('aria-describedby')==='ir-help-tooltip' && document.querySelector('#ir-help-tooltip').textContent.includes('separately compiled state')`);
-  await value(`window.studyFlag = [...document.querySelectorAll('#task-instructions .study-term-help')].find(term=>term.textContent==='CFG'); studyFlag.focus()`);
-  await until(`!document.querySelector('#ir-help-tooltip').hidden`);
-  await check('T0 keyboard focus explains CFG without raw markup', `studyFlag.getAttribute('aria-describedby')==='ir-help-tooltip' && document.querySelector('#ir-help-tooltip').textContent.includes('Control-flow graph') && !document.querySelector('#ir-help-tooltip').querySelector('img,script')`);
-  await click('[data-action="pause-task"]');
-  await check('Pause disables task completion', `document.querySelector('.task-inputs').disabled`);
-  await click('[data-action="pause-task"]');
-  await check('T0 opens at its named C example and a ready comparison', `document.querySelector('#example-select').value === 'score' && document.querySelector('#left-state').value === '0' && document.querySelector('#right-state').value === '0' && !document.querySelector('.task-complete').disabled`);
-  await click('#survey-form button[type="submit"]');
-  for (const id of ['T1', 'T2', 'T3', 'T4', 'T5', 'T6']) {
-    if (id === 'T1' || id === 'T2') {
-      await task(id);
-      await check(`${id} can finish or skip without matching the requested comparison`, `!document.querySelector('[data-action="skip-task"]').disabled && !document.querySelector('.task-complete').disabled`);
-      await click(id === 'T1' ? '[data-action="skip-task"]' : '[data-action="unable-task"]');
-      continue;
-    }
-    await task(id);
-    if (id === 'T4') await snap('task-cfg.png');
-    await click('[data-action="skip-task"]');
-  }
-  await screen('Post-survey'); await choose('Q1', 'na'); await fill('Q14', 'Container test post answer'); await click('#survey-form button[type="submit"]'); await screen('Review answers');
-  await check('Review provides an explicit final submission action', `!!document.querySelector('[data-action="submit-responses"]')`);
-  await check('Review says nothing has been submitted before the final action', `(() => { const notice = [...document.querySelectorAll('#study-screen p')].find(p => p.innerText.includes('Nothing has been submitted.')); const submit = document.querySelector('[data-action="submit-responses"]'); return Boolean(notice && submit && (notice.compareDocumentPosition(submit) & Node.DOCUMENT_POSITION_FOLLOWING)); })()`);
-  await snap('study-review.png');
-  await value(`window.testFetch = window.fetch; window.fetch = async (...args) => { const response = await window.testFetch(...args); if (args[0] === '/api/study/submissions') throw Error('Synthetic lost acknowledgement'); return response; };`);
-  await click('[data-action="submit-responses"]'); await screen('Receipt not yet confirmed');
-  await check('Uncertain attempt says a record may exist and directs the participant to retry the same submission', `!document.querySelector('#survey-form') && document.querySelector('#study-screen').textContent.includes('may already exist') && document.querySelector('#study-screen').textContent.includes('same submission ID and answers')`);
-  if (captures) await writeFile(join(captures, 'pending.json'), await value(`sessionStorage.getItem('irexplorer.submission.v3')`));
-  await send('Page.reload'); await screen('Receipt not yet confirmed');
-  await click('[data-action="retry-submit"]'); await screen('Submission received');
-  await check('Retry confirms receipt storage and removes answer draft', `document.querySelector('#study-screen').innerText.includes('Your submission has been saved.') && document.querySelector('#study-screen').innerText.includes('Receipt:') && sessionStorage.getItem('irexplorer.study.v0.11') === null && JSON.parse(sessionStorage.getItem('irexplorer.submission.v3')).kind === 'receipt'`);
-
-  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: false });
-  await send('Emulation.setPageScaleFactor', { pageScaleFactor: 2 });
-  await check('200% emulated zoom has no page-width overflow', `document.documentElement.scrollWidth <= innerWidth`);
-  await send('Emulation.setPageScaleFactor', { pageScaleFactor: 1 }); await snap('receipt-narrow.png');
-
-  const newTarget = await send('Target.createTarget', { url: 'about:blank' });
-  const second = (await (await fetch(`${cdp}/json/list`)).json()).find(item => item.id === newTarget.targetId);
-  const other = new WebSocket(second.webSocketDebuggerUrl); await new Promise(resolve => other.addEventListener('open', resolve, { once: true }));
-  let otherId = 0; const otherPending = new Map();
-  other.addEventListener('message', ({ data }) => { const message = JSON.parse(data); if (otherPending.has(message.id)) { const resolve = otherPending.get(message.id); otherPending.delete(message.id); resolve(message.result); } });
-  const otherSend = (method, params = {}) => new Promise(resolve => { const id = ++otherId; otherPending.set(id, resolve); other.send(JSON.stringify({ id, method, params })); });
-  await otherSend('Runtime.enable'); await otherSend('Page.enable'); await otherSend('Page.navigate', { url: `${base}/#/study` });
-  for (let attempt = 0; attempt < 100; attempt += 1) { const result = await otherSend('Runtime.evaluate', { expression: `document.querySelector('#route-heading')?.textContent`, returnByValue: true }); if (result.result.value === 'Information and consent') break; await new Promise(resolve => setTimeout(resolve, 75)); }
-  const isolated = await otherSend('Runtime.evaluate', { expression: `!sessionStorage.getItem('irexplorer.study.v0.11') && !document.querySelector('[data-action="new-study"]')`, returnByValue: true });
-  if (!isolated.result.value) throw Error('Failed: Independent browser tab does not start without the first tab’s draft.');
-  checks.push('Independent browser tab has no first-session draft or receipt'); other.close(); await send('Target.closeTarget', { targetId: newTarget.targetId });
+  if (publicContent.submissionEnabled) await openStudy();
+  else await closedStudy();
   await route('/explore'); await select('#example-select', 'score');
   await until('!document.querySelector("#workspace").hidden && window.StudyWorkspace?.ready');
   await value(`window.originalFetch = window.fetch; window.fetch = (input, options) => String(input).includes('/comparison-report') ? Promise.resolve(new Response(JSON.stringify({ error: { code: 'data_unavailable', message: 'Model records are temporarily unavailable.' } }), { status: 503, headers: { 'Content-Type': 'application/json' } })) : window.originalFetch(input, options);`);

@@ -12,7 +12,7 @@ window.StudySubmit = (() => {
   }
   function controller(getStorage = () => sessionStorage, send = (...args) => fetch(...args)) {
     let state = null, busy = false, issue = null, recoveryBlocked = false, legacyPending = false,
-      legacyKey = '', legacyParticipantCode = '', notStored = false;
+      legacyKey = '', legacyParticipantCode = '', notStored = false, closed = false;
     function persist(next) { getStorage().setItem(KEY, JSON.stringify(next)); state = next; }
     // A pending submission that this version cannot accept: an older recovery record, or a frozen
     // submission whose instrument the server does not accept. It stays stored until explicitly discarded.
@@ -23,7 +23,7 @@ window.StudySubmit = (() => {
     return {
       get state() { return state; }, get busy() { return busy; }, get issue() { return issue; }, get recoveryBlocked() { return recoveryBlocked; },
       read() {
-        issue = null; recoveryBlocked = false; legacyPending = false; legacyKey = ''; legacyParticipantCode = ''; notStored = false;
+        issue = null; recoveryBlocked = false; legacyPending = false; legacyKey = ''; legacyParticipantCode = ''; notStored = false; closed = false;
         try {
           const storage = getStorage();
           let raw = storage.getItem(KEY);
@@ -58,8 +58,18 @@ window.StudySubmit = (() => {
           return true;
         } catch { issue = message('recovery.discard-failed'); return false; }
       },
+      // Collection has closed and the server stored nothing under this submission ID. The frozen
+      // submission stays in the tab, and is retried after a refresh, until it is explicitly discarded.
+      get closed() { return closed; },
+      discardClosed(removeDraft) {
+        if (!closed) return false;
+        // The draft goes first, so a failed removal leaves the recovery record and its participant code.
+        try { if (!removeDraft()) throw Error(); getStorage().removeItem(KEY); }
+        catch { issue = message('storage.discard-failed'); return false; }
+        state = null; closed = false; issue = null; return true;
+      },
       async submit(draft, memory = false) {
-        if (recoveryBlocked || busy || state?.kind === 'receipt') return;
+        if (recoveryBlocked || closed || busy || state?.kind === 'receipt') return;
         issue = null;
         if (!state) {
           const next = { kind: 'pending', submission: submissionFromDraft(draft) };
@@ -76,6 +86,7 @@ window.StudySubmit = (() => {
           const body = await response.json();
           // Nothing was stored: keep the frozen submission unchanged and report it as incompatible, not as uncertain.
           if (response.status === 422 && body.error?.code === 'unsupported_instrument') { blockIncompatible(KEY, state.submission.participantCode, true); return; }
+          if (response.status === 410 && body.error?.code === 'collection_closed') { closed = true; return; }
           if (!response.ok) throw body.error?.message ? Error(body.error.message) : failure('submission.no-receipt');
           if (![200, 201].includes(response.status) || body.submissionId !== state.submission.submissionId || body.participantCode !== state.submission.participantCode || body.studyVersion !== state.submission.studyVersion || typeof body.receiptId !== 'string') throw failure('submission.invalid-receipt');
           const next = { kind: 'receipt', receipt: body };

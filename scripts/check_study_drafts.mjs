@@ -183,22 +183,51 @@ check('Stop and discard requires a separate destructive confirmation', () => {
 vm.runInContext(await readFile(new URL('../src/frontend/study-messages.js', import.meta.url), 'utf8'), context);
 const Messages = context.window.StudyMessages, messages = Messages.catalogue(content.messages);
 const say = reference => messages.text(reference);
-// Every collection mode that starts accepts submissions, so no journey shows the disabled-submission
-// message; the installed v0.11-preview-5 catalogue still carries it, and a finished catalogue omits it.
-const RETIRED = 'actions.disabled';
 check('Every compiled journey message is displayed by the journey or its loading state', () => {
-  assert.deepEqual(Object.keys(content.messages).filter(key => !Object.hasOwn(Messages.USED, key) && !Object.hasOwn(Messages.BOOTSTRAP, key) && key !== RETIRED), []);
-  assert.equal(Object.hasOwn(Messages.USED, RETIRED), false);
+  assert.deepEqual(Object.keys(content.messages).filter(key => !Object.hasOwn(Messages.USED, key) && !Object.hasOwn(Messages.BOOTSTRAP, key)), []);
   for (const [key, text] of Object.entries(Messages.BOOTSTRAP)) assert.equal(text, content.messages[key], key);
 });
-check('A catalogue without the retired disabled-submission message is accepted', () => {
-  const finished = structuredClone(content.messages);
-  delete finished[RETIRED];
-  assert.equal(Messages.catalogue(finished).text('actions.submit'), content.messages['actions.submit']);
+// A closed collection's wording is participant content: only a catalogue that carries it loads.
+const CLOSED = ['closed.title', 'closed.detail', 'closed.draft', 'closed.not-stored', 'actions.discard-closed'];
+check('Only a catalogue carrying every closed-collection message, without placeholders, is accepted', () => {
+  for (const key of CLOSED) {
+    assert.equal(Messages.USED[key]?.length, 0, key);
+    const missing = structuredClone(content.messages); delete missing[key];
+    assert.throws(() => Messages.catalogue(missing), new RegExp(`Unsupported journey message: ${key}`));
+    const placeholder = structuredClone(content.messages); placeholder[key] += ' {participantCode}';
+    assert.throws(() => Messages.catalogue(placeholder), new RegExp(`Unsupported journey message: ${key}`));
+  }
 });
-check('The review screen always renders Submit, with no disabled-collection branch', () => {
-  assert.doesNotMatch(study, /actions\.disabled|submissionEnabled/);
+// The view branches on the served flag: closed content shows the closed screen instead of the journey.
+const closedView = /function closedHtml\(\) \{[\s\S]*?\n  \}/.exec(study)?.[0] || '';
+check('Study content whose submissionEnabled is missing or not a boolean is unsupported', () => {
+  assert.match(study, /typeof candidate\.submissionEnabled !== 'boolean'/);
+  assert.match(study, /collectionClosed = !candidate\.submissionEnabled/);
+});
+check('Closed collection replaces information and consent, starting no participant journey and making no participant code', () => {
+  assert.match(closedView, /heading\(messageHtml\('closed\.title'\)\) \+ `<p>\$\{messageHtml\('closed\.detail'\)\}<\/p>/);
+  assert.match(closedView, /<a href="#\/explore">\$\{messageHtml\('actions\.explore'\)\}<\/a>/);
+  assert.doesNotMatch(closedView, /acknowledgement|participant-code|submit-responses|'actions\.start'/);
+  assert.ok(study.indexOf('html = closedHtml()') > 0 && study.indexOf('html = closedHtml()') < study.indexOf("html = heading(messageHtml('information.title')) + info()"));
+  assert.match(study, /if \(closedJourney\(\) && !explore && route !== '\/study'\) return go\('\/study', true\)/);
+  assert.match(study, /if \(submission\.state \|\| submission\.recoveryBlocked \|\| collectionClosed\) return;/);
+});
+check('A closed collection offers a local draft only an explicit discard, never Submit or a journey route', () => {
+  assert.match(closedView, /local \? `<p>\$\{messageHtml\('closed\.draft'\)\}<\/p>/);
+  assert.match(closedView, /button\('discard-closed', 'actions\.discard-closed'\)/);
+  assert.match(closedView, /discardFailed \? `<p role="alert">\$\{messageHtml\('storage\.discard-failed'\)\}<\/p>`/);
+  assert.match(study, /else if \(closedJourney\(\)\) \{ discardFailed = !store\.discard\(\); if \(!discardFailed\) draft = null; render\(\); \}/);
+  assert.match(study, /if \(draft && !collectionClosed\) \{ const t = draft\.tasks/);
+  // Submit is offered only by the review, which an open collection alone reaches.
   assert.match(study, /button\('submit-responses', 'actions\.submit', true\)/);
+});
+check('A refused submission says nothing was saved and offers a discard that removes the record and the draft', () => {
+  const notStored = /function notStoredHtml\(\) \{[\s\S]*?\n  \}/.exec(study)?.[0] || '';
+  assert.match(notStored, /heading\(messageHtml\('closed\.title'\)\) \+ `<p role="alert">\$\{messageHtml\('closed\.not-stored'\)\}<\/p>/);
+  assert.match(notStored, /messageHtml\('submission\.participant-code'/);
+  assert.match(notStored, /button\('discard-closed', 'actions\.discard-closed'\)/);
+  assert.doesNotMatch(notStored, /submission\.uncertain|submission\.retry|retry-submit/);
+  assert.match(study, /if \(submission\.closed\) \{ if \(submission\.discardClosed\(\(\) => store\.discard\(\)\)\) \{ draft = null; go\('\/study', true\); \} else render\(\); \}/);
 });
 check('A catalogue missing a key or breaking a placeholder contract is rejected', () => {
   for (const change of [m => delete m['receipt.title'], m => { m['task.entry'] = 'Opens at State 0.'; }, m => { m['receipt.saved'] = 'Saved {receiptId}.'; },

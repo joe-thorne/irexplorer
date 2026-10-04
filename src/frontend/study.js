@@ -33,6 +33,10 @@
   const heading = html => `<h2 id="route-heading" tabindex="-1">${html}</h2>`;
   let content, store, draft = null, editingPre = false, errors = {}, loaded = false, loadError = false;
   let activeTask = null, clock = null, stopConfirming = false, returnFocusToStop = false;
+  // Collection has closed: the served content says so, or the server refused a submission from this tab.
+  let collectionClosed = false, discardFailed = false;
+  // With collection closed and no submission to retry, no participant journey starts and every study route shows the closed message.
+  const closedJourney = () => loaded && collectionClosed && !submission.state && !submission.recoveryBlocked;
   const answersFor = section => section.startsWith('T') ? draft.tasks[section].answers : draft[section];
   const outcome = status => ({ key: { completed: 'outcome.completed', skipped: 'outcome.skipped', could_not_work_out: 'outcome.unable', pending: 'outcome.pending' }[status] });
   const seconds = ms => (ms / 1000).toFixed(1);
@@ -212,11 +216,21 @@
     if (state.kind === 'receipt') return heading(messageHtml('receipt.title')) + `<p>${messageHtml('receipt.saved')}</p><p>${messageHtml('receipt.code', { receiptId: state.receipt.receiptId }, ['receiptId'])}</p><p>${messageHtml('submission.participant-code', { participantCode: state.receipt.participantCode }, ['participantCode'])}</p><p>${messageHtml('receipt.keep')}</p>${submission.issue ? `${issue}${button('cleanup-receipt', 'actions.cleanup')}` : `<p>${messageHtml('cleanup.done')}</p>${button('new-study', 'actions.new-session')}`}`;
     return heading(messageHtml(submission.busy ? 'submission.submitting' : 'submission.unconfirmed')) + `<p role="status">${messageHtml(submission.busy ? 'submission.wait' : 'submission.retry')}</p><p>${messageHtml('submission.participant-code', { participantCode: state.submission.participantCode }, ['participantCode'])}</p>${issue}${submission.busy ? '' : button('retry-submit', 'actions.retry-submit', true)}<p>${messageHtml('submission.keep-tab')}</p>`;
   }
+  function closedHtml() {
+    // A local draft, or a saved copy that could not be read, can never be sent now; it can only be discarded.
+    const local = draft || store.stale;
+    return heading(messageHtml('closed.title')) + `<p>${messageHtml('closed.detail')}</p>` + (local ? `<p>${messageHtml('closed.draft')}</p>${discardFailed ? `<p role="alert">${messageHtml('storage.discard-failed')}</p>` : ''}` : '') + `<div class="screen-actions">${local ? button('discard-closed', 'actions.discard-closed') : ''}<a href="#/explore">${messageHtml('actions.explore')}</a></div>`;
+  }
+  function notStoredHtml() {
+    // The server refused the frozen submission because collection has closed, so nothing was saved under it.
+    return heading(messageHtml('closed.title')) + `<p role="alert">${messageHtml('closed.not-stored')}</p><p>${messageHtml('submission.participant-code', { participantCode: submission.state.submission.participantCode }, ['participantCode'])}</p>${submission.issue ? `<p role="alert">${messageHtml(submission.issue)}</p>` : ''}${button('discard-closed', 'actions.discard-closed')}`;
+  }
   function render() {
     const oldResponses = layout.querySelector('#task-responses');
     if (oldResponses?.parentNode) oldResponses.parentNode.removeChild(oldResponses);
     const route = location.hash.slice(1) || '/explore', explore = route === '/explore';
     if (loaded && submission.state && !explore && route !== '/study/complete') return go('/study/complete', true);
+    if (closedJourney() && !explore && route !== '/study') return go('/study', true);
     leaveTask(route);
     const exited = ['/study/declined', '/study/stopped'].includes(route);
     const requestedTask = /^\/study\/tasks\/(T[0-6])$/.exec(route)?.[1];
@@ -224,7 +238,7 @@
     if (loaded && draft?.preComplete && requestedTask && Number(requestedTask.slice(1)) > Number(D.currentTask(draft).slice(1))) return go(taskRoute(), true);
     if (loaded && !explore && !exited && (index < 0 || index > maximum())) return go(maximum() === 2 ? taskRoute() : routes[maximum()], true);
     screen.hidden = explore; workspace.hidden = !explore && (!loaded || index !== 2);
-    progress.hidden = explore || exited || !loaded;
+    progress.hidden = explore || exited || !loaded || closedJourney();
     document.querySelector('#explore-heading').hidden = !explore;
     document.querySelector('.skip-link').href = explore ? '#explore-heading' : '#route-heading';
     layout.classList.toggle('with-task', !explore && loaded && index === 2);
@@ -235,15 +249,18 @@
       progress.setAttribute('aria-label', messageText('progress.sections'));
       progress.innerHTML = `<ol>${sectionNames.map((name, n) => `<li${n === index ? ' aria-current="step"' : ''}>${n + 1}. ${n <= maximum() ? `<a href="#${n === 2 && draft ? taskRoute() : routes[n]}">${messageHtml(name)}</a>` : messageHtml(name)}</li>`).join('')}</ol>`;
       let html;
-      if (submission.state && !submission.recoveryBlocked) html = submissionHtml();
+      const closedScreen = submission.closed || closedJourney();
+      if (submission.closed) html = notStoredHtml();
+      else if (submission.state && !submission.recoveryBlocked) html = submissionHtml();
       else if (submission.recoveryBlocked) html = heading(messageHtml('recovery.title')) + `<p role="alert">${messageHtml(submission.issue)}</p>${submission.legacyPending ? `<p>${messageHtml(submission.notStored ? 'recovery.not-stored' : 'recovery.server-copy')}</p>${submission.legacyParticipantCode ? `<p>${messageHtml('submission.participant-code', { participantCode: submission.legacyParticipantCode }, ['participantCode'])}</p>` : ''}${button('discard-incompatible-submission', 'actions.discard-incompatible')}` : `${button('retry-content', 'actions.retry-recovery')}<p>${messageHtml('recovery.memory')}</p>${button('memory', 'actions.memory')}`}`;
+      else if (closedJourney()) html = closedHtml();
       else if (exited) html = heading(messageHtml(route.endsWith('declined') ? 'discard.declined' : 'discard.stopped')) + `<p>${messageHtml('discard.done')}</p>${button('restart', 'actions.restart', true)} <a href="#/explore">${messageHtml('actions.explore')}</a>`;
       else if (index === 0) html = heading(messageHtml('information.title')) + info();
       else if (index === 1) html = heading(messageHtml('pre.title')) + `<p>${esc(content.journey.introductions.pre)}</p><p>${messageHtml(draft.p13Locked ? 'pre.locked' : 'pre.lock-pending')}</p>` + survey('pre');
       else if (index === 2) html = taskHtml(requestedTask);
       else if (index === 3) html = heading(messageHtml('post.title')) + `<p>${esc(content.journey.introductions.post)}</p>` + survey('post');
       else html = review();
-      screen.innerHTML = (!exited ? html.replace('</h2>', '</h2><div id="draft-status" class="draft-status" tabindex="-1"></div>') : html) + (draft && !exited && !submission.state ? `<p class="participant-code">${messageHtml('submission.participant-code', { participantCode: draft.participantCode })}</p><div class="study-utilities"><a href="#/study">${messageHtml('progress.information')}</a>${stopControls()}</div>` : '');
+      screen.innerHTML = (!exited && !closedScreen ? html.replace('</h2>', '</h2><div id="draft-status" class="draft-status" tabindex="-1"></div>') : html) + (draft && !exited && !closedScreen && !submission.state ? `<p class="participant-code">${messageHtml('submission.participant-code', { participantCode: draft.participantCode })}</p><div class="study-utilities"><a href="#/study">${messageHtml('progress.information')}</a>${stopControls()}</div>` : '');
       const taskResponses = screen.querySelector('#task-responses');
       if (taskResponses?.id === 'task-responses') layout.append(taskResponses);
       updateStorage(); showErrors();
@@ -323,15 +340,24 @@
       if (candidate.packageSchemaVersion !== 2 || !identity ||
           !/^[0-9a-f]{64}$/.test(identity.digest) ||
           ['instrumentVersion', 'contentVersion', 'studyVersion'].some(key => identity[key] !== candidate[key]) ||
-          !['local', 'preview', 'pilot', 'live'].includes(candidate.collectionMode) || candidate.contentVersion !== identity.contentVersion) throw new Error('Unsupported content');
+          !['local', 'preview', 'pilot', 'live'].includes(candidate.collectionMode) || candidate.contentVersion !== identity.contentVersion ||
+          typeof candidate.submissionEnabled !== 'boolean') throw new Error('Unsupported content');
       // A catalogue missing a required key or breaking a placeholder contract is unsupported content.
       const catalogue = window.StudyMessages.catalogue(candidate.messages), glossaryTerms = glossary(candidate.glossary);
       content = candidate; messages = catalogue; terms = glossaryTerms;
+      collectionClosed = !candidate.submissionEnabled; discardFailed = false;
       store = D.storage(content); submission.read(); draft = store.read();
       if (submission.state?.kind === 'receipt' && submission.cleanup(() => store.discard())) draft = null;
-      if (draft) { const t = draft.tasks[D.currentTask(draft)]; if (t.presented && t.status === 'pending') { t.interrupted = true; store.save(draft); } }
+      // A closed collection never resumes the journey, so its draft is left exactly as saved.
+      if (draft && !collectionClosed) { const t = draft.tasks[D.currentTask(draft)]; if (t.presented && t.status === 'pending') { t.interrupted = true; store.save(draft); } }
       loaded = true;
     } catch { loadError = true; }
+    render();
+  }
+  // After an attempt: a receipt clears the local draft; a closed-collection refusal closes this tab's journey too.
+  function settled() {
+    if (submission.state?.kind === 'receipt' && submission.cleanup(() => store.discard())) draft = null;
+    if (submission.closed) collectionClosed = true;
     render();
   }
   function discard(route) {
@@ -369,17 +395,23 @@
     if (!loaded) return;
     if (action === 'submit-responses' && draft) {
       const promise = submission.submit(draft, store.mode === 'memory'); render();
-      promise.then(() => { if (submission.state?.kind === 'receipt' && submission.cleanup(() => store.discard())) draft = null; render(); }); return;
+      promise.then(settled); return;
     }
     if (action === 'retry-submit' && submission.state?.kind === 'pending') {
-      const promise = submission.submit(null); render(); promise.then(() => { if (submission.state?.kind === 'receipt' && submission.cleanup(() => store.discard())) draft = null; render(); }); return;
+      const promise = submission.submit(null); render(); promise.then(settled); return;
+    }
+    if (action === 'discard-closed') {
+      // Neither a refused submission nor a local draft can be sent now; a failed removal stays reported for retry.
+      if (submission.closed) { if (submission.discardClosed(() => store.discard())) { draft = null; go('/study', true); } else render(); }
+      else if (closedJourney()) { discardFailed = !store.discard(); if (!discardFailed) draft = null; render(); }
+      return;
     }
     if (action === 'cleanup-receipt') { if (submission.cleanup(() => store.discard())) draft = null; render(); return; }
     // A failed discard or receipt clearance keeps the current screen and shows its issue.
     if (action === 'discard-incompatible-submission') { if (submission.discardLegacy()) load(); else render(); return; }
     if (action === 'new-study' && !submission.issue) { if (submission.clearReceipt()) { draft = null; go('/study', true); } else render(); return; }
     if (action === 'memory' && !submission.state && store.memory()) { submission.memory(); render(); return; }
-    if (submission.state || submission.recoveryBlocked) return;
+    if (submission.state || submission.recoveryBlocked || collectionClosed) return;
     if (action === 'start') {
       if (!available()) return;
       if (!draft) {

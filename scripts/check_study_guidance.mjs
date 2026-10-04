@@ -3,7 +3,8 @@
 // and introductions, so the same journey runs on the packaged content (desktop and narrow) and on a
 // synthetic catalogue variant whose every message is marked. Covers normal guidance, T0 glossary help,
 // storage and discard failures, review, uncertain delivery with same-content retries, receipt and
-// cleanup failure, then incompatible and corrupt recovery and invalid catalogues.
+// cleanup failure, then incompatible and corrupt recovery, closed collection (served as a content
+// variant, with scripted 410 refusals), and invalid catalogues or collection flags.
 // Each full journey submits one synthetic record: use a disposable local or preview store.
 const base = process.env.IREXPLORER_ORIGIN || 'http://localhost:8000';
 const cdp = `http://127.0.0.1:${process.env.IREXPLORER_CDP_PORT || '9239'}`;
@@ -16,7 +17,9 @@ await new Promise(resolve => ws.addEventListener('open', resolve, { once: true }
 let sequence = 0, served = packaged, variant = null;
 // Scripted outcomes for successive submission attempts: 'offline' fails before the server,
 // 'unavailable' answers 503 without reaching it, 'unsupported' answers 422 unsupported_instrument
-// (the server stored nothing), 'lost' stores the submission but drops the response.
+// (the server stored nothing), 'closed' answers 410 collection_closed (likewise), 'receipt' answers
+// with the receipt of a submission committed before closure, and 'lost' stores the submission but
+// drops the response.
 let attempts = [], posted = [], statuses = [], delayMs = 0;
 const waiting = new Map(), exceptions = [], consoleErrors = [], checks = [];
 const json = body => Buffer.from(JSON.stringify(body)).toString('base64');
@@ -49,6 +52,15 @@ ws.addEventListener('message', async ({ data }) => {
         attempts.shift();
         send('Fetch.fulfillRequest', { requestId, responseCode: 422, body: json({ error: { code: 'unsupported_instrument', message: 'Check consent, P1, versions, task outcomes, and answer limits. No answers were changed.' } }),
           responseHeaders: [{ name: 'Content-Type', value: 'application/json' }] });
+      } else if (next === 'closed') {
+        attempts.shift();
+        send('Fetch.fulfillRequest', { requestId, responseCode: 410, body: json({ error: { code: 'collection_closed', message: 'Study collection has closed. These answers were not saved.' } }),
+          responseHeaders: [{ name: 'Content-Type', value: 'application/json' }, { name: 'Cache-Control', value: 'no-store' }] });
+      } else if (next === 'receipt') {
+        attempts.shift();
+        const { submissionId, participantCode, studyVersion } = JSON.parse(request.postData);
+        send('Fetch.fulfillRequest', { requestId, responseCode: 200, body: json({ receiptId: 'synthetic-closed-receipt', submissionId, participantCode, studyVersion }),
+          responseHeaders: [{ name: 'Content-Type', value: 'application/json' }, { name: 'Cache-Control', value: 'no-store' }] });
       } else send('Fetch.continueRequest', { requestId, interceptResponse: true });
     }
   }
@@ -330,6 +342,82 @@ async function recovery() {
   await value(`sessionStorage.clear()`);
 }
 
+async function closedCollection() {
+  // The served content reports a closed collection; `open` models a tab loaded before closure.
+  const open = served, closedContent = { ...open, submissionEnabled: false };
+  const consent = async () => {
+    await heading('information.title');
+    for (const id of served.membership.consent) await click('#' + id);
+    await click('[data-action="start"]'); await heading('pre.title');
+  };
+  const explore = `document.querySelector('#study-screen a[href="#/explore"]')?.textContent === ${q(M('actions.explore'))}`;
+  served = closedContent; await load();
+  await heading('closed.title');
+  await check('Closed collection replaces information and consent with the compiled closed message', `${shows(M('closed.detail'))} && ${explore} && !${shows(M('closed.draft'))} && !document.querySelector('.acknowledgement, [data-action="start"], [data-action="discard-closed"], .participant-code, #survey-form, #draft-status') && document.querySelector('#study-progress').hidden && sessionStorage.getItem('${DRAFT}') === null && sessionStorage.getItem('${SUBMISSION}') === null`);
+  await check('The closed message fits the viewport', fits);
+
+  // A draft saved before closure is not resumed: only an explicit discard, which can fail and be retried.
+  served = open; await load(); await consent();
+  const kept = await value(`sessionStorage.getItem('${DRAFT}')`);
+  served = closedContent; await send('Page.reload');
+  await heading('closed.title');
+  await check('A local draft is not resumed: the closed message explains it and offers only a discard', `location.hash === '#/study' && ${shows(M('closed.detail'))} && ${shows(M('closed.draft'))} && document.querySelector('[data-action="discard-closed"]').textContent === ${q(M('actions.discard-closed'))} && ${explore} && !document.querySelector('[data-action="submit-responses"], [data-action="stop"], .participant-code, #survey-form') && sessionStorage.getItem('${DRAFT}') === ${q(kept)}`);
+  await value(`location.hash = '/study/tasks/T0'`);
+  await until(`location.hash === '#/study' && document.querySelector('#route-heading')?.textContent === ${q(M('closed.title'))}`);
+  await check('Journey routes do not open while collection is closed', `!document.querySelector('#survey-form') && document.querySelector('#workspace-shell').hidden && sessionStorage.getItem('${DRAFT}') === ${q(kept)}`);
+  await fault('removeItem', DRAFT);
+  await click('[data-action="discard-closed"]');
+  await check('A failed discard is reported and the draft can be discarded again', `document.querySelector('#study-screen [role="alert"]').textContent === ${q(M('storage.discard-failed'))} && sessionStorage.getItem('${DRAFT}') !== null && document.querySelector('[data-action="discard-closed"]') !== null`);
+  await restore('removeItem');
+  await click('[data-action="discard-closed"]');
+  await check('Discarding removes the draft and leaves the closed message', `document.querySelector('#route-heading').textContent === ${q(M('closed.title'))} && sessionStorage.getItem('${DRAFT}') === null && !${shows(M('closed.draft'))} && !document.querySelector('[data-action="discard-closed"], #study-screen [role="alert"]') && ${explore}`);
+
+  // A tab loaded before closure: its submission is refused with 410, so nothing was saved under it.
+  served = open; await load(); await consent();
+  const refused = { submissionId: 'synthetic-closed', participantCode: 'synthetic-closed-participant' };
+  await value(`sessionStorage.setItem('${SUBMISSION}', ${q(JSON.stringify({ kind: 'pending', submission: refused }))})`);
+  await send('Page.reload');
+  await heading('submission.unconfirmed');
+  attempts = ['closed'];
+  await click('[data-action="retry-submit"]');
+  await heading('closed.title');
+  const uncertain = served.messages['submission.uncertain'].split('{error}').at(-1).trim();
+  const notStored = `document.querySelector('#study-screen [role="alert"]').textContent === ${q(M('closed.not-stored'))} && ${shows(M('submission.participant-code', { participantCode: refused.participantCode }), '#study-screen p')} && document.querySelector('[data-action="discard-closed"]').textContent === ${q(M('actions.discard-closed'))} && !document.querySelector('[data-action="retry-submit"], [data-action="stop"]') && !document.querySelector('#study-screen').textContent.includes(${q(uncertain)}) && !document.querySelector('#study-screen').textContent.includes(${q(M('submission.retry'))}) && JSON.stringify(JSON.parse(sessionStorage.getItem('${SUBMISSION}')).submission) === ${q(JSON.stringify(refused))}`;
+  await check('A refused submission says the server did not save it, keeps the frozen record, and makes no retry claim', notStored);
+  await check('The not-saved message fits the viewport', fits);
+  await send('Page.reload');
+  await heading('submission.unconfirmed');
+  await check('After a refresh the kept record offers the pending screen and retry again', `document.querySelector('[data-action="retry-submit"]') !== null && JSON.stringify(JSON.parse(sessionStorage.getItem('${SUBMISSION}')).submission) === ${q(JSON.stringify(refused))}`);
+  attempts = ['closed'];
+  await click('[data-action="retry-submit"]');
+  await heading('closed.title');
+  await check('The retry is refused again and the not-saved message returns', notStored);
+  await fault('removeItem', SUBMISSION);
+  await click('[data-action="discard-closed"]');
+  await check('A failed removal of the refused submission is reported and can be retried', `${notStored} && [...document.querySelectorAll('#study-screen [role="alert"]')].some(e => e.textContent === ${q(M('storage.discard-failed'))})`);
+  await restore('removeItem');
+  await click('[data-action="discard-closed"]');
+  await until(`location.hash === '#/study' && sessionStorage.getItem('${SUBMISSION}') === null`);
+  await check('Discarding removes the refused submission and the local draft; the tab then shows the closed message', `document.querySelector('#route-heading').textContent === ${q(M('closed.title'))} && sessionStorage.getItem('${DRAFT}') === null && ${shows(M('closed.detail'))} && !document.querySelector('[data-action="discard-closed"], .acknowledgement, [data-action="start"]')`);
+
+  // A submission committed before closure: the pending screen stays, and a retry shows its receipt.
+  served = closedContent;
+  const committed = { submissionId: 'synthetic-committed', participantCode: 'synthetic-committed-participant', studyVersion: served.studyVersion };
+  await value(`sessionStorage.clear(); sessionStorage.setItem('${SUBMISSION}', ${q(JSON.stringify({ kind: 'pending', submission: committed }))})`);
+  await send('Page.reload');
+  await heading('submission.unconfirmed');
+  await check('A pending submission keeps its pending screen and retry while collection is closed', `document.querySelector('#study-screen [role="status"]').textContent === ${q(M('submission.retry'))} && document.querySelector('[data-action="retry-submit"]').textContent === ${q(M('actions.retry-submit'))}`);
+  attempts = ['receipt'];
+  await click('[data-action="retry-submit"]');
+  await heading('receipt.title');
+  await check('A retry that returns the original receipt shows it', `${shows(M('receipt.code', { receiptId: 'synthetic-closed-receipt' }), '#study-screen p')} && JSON.parse(sessionStorage.getItem('${SUBMISSION}')).receipt.receiptId === 'synthetic-closed-receipt' && ${shows(M('cleanup.done'), '#study-screen p')}`);
+  await click('[data-action="new-study"]');
+  await heading('closed.title');
+  await check('After the receipt no new participant journey is offered while collection is closed', `!document.querySelector('.acknowledgement, [data-action="start"]') && sessionStorage.getItem('${SUBMISSION}') === null`);
+  served = open;
+  await value(`sessionStorage.clear()`);
+}
+
 try {
   await send('Runtime.enable'); await send('Page.enable'); await send('Log.enable');
   await send('Fetch.enable', { patterns: [
@@ -340,8 +428,8 @@ try {
   await send('Page.navigate', { url: `${base}/` });
   await until(`document.readyState === 'complete'`);
 
-  label = 'Packaged desktop'; await journey({ width: 1440, height: 1000 }); await recovery();
-  label = 'Packaged narrow'; await journey({ width: 390, height: 844 }); await recovery();
+  label = 'Packaged desktop'; await journey({ width: 1440, height: 1000 }); await recovery(); await closedCollection();
+  label = 'Packaged narrow'; await journey({ width: 390, height: 844 }); await recovery(); await closedCollection();
 
   // Synthetic catalogue variant: every message, glossary help and introduction is marked, so each
   // participant sentence checked above must come from the served catalogue rather than the code.
@@ -350,7 +438,7 @@ try {
   for (const item of marked.glossary) item.text = `‹glossary ${item.id}› ${item.text}`;
   for (const section of ['pre', 'post']) marked.journey.introductions[section] = `‹intro ${section}› ${marked.journey.introductions[section]}`;
   served = marked;
-  label = 'Marked catalogue desktop'; await journey({ width: 1440, height: 1000 }); await recovery();
+  label = 'Marked catalogue desktop'; await journey({ width: 1440, height: 1000 }); await recovery(); await closedCollection();
 
   // Catalogue prose is displayed as text, never markup.
   label = 'Unsafe prose variant';
@@ -375,6 +463,17 @@ try {
     await load();
     await until(`document.querySelector('#route-heading')?.textContent === 'Study content unavailable'`);
     await check('Content is rejected before any journey guidance or draft', `!document.querySelector('#survey-form, .acknowledgement') && document.querySelector('[data-action="retry-content"]').textContent === 'Retry loading forms' && sessionStorage.getItem('${DRAFT}') === null`);
+  }
+  // Collection status is not guessed: content without a boolean submissionEnabled is unsupported.
+  for (const [name, change] of [
+    ['missing', c => { delete c.submissionEnabled; }], ['a string', c => { c.submissionEnabled = 'false'; }],
+    ['null', c => { c.submissionEnabled = null; }], ['a number', c => { c.submissionEnabled = 0; }],
+  ]) {
+    label = `Unsupported collection flag (${name})`;
+    served = JSON.parse(JSON.stringify(packaged)); change(served);
+    await load();
+    await until(`document.querySelector('#route-heading')?.textContent === 'Study content unavailable'`);
+    await check('Content is rejected before any journey or closed message', `!document.querySelector('#survey-form, .acknowledgement, [data-action="discard-closed"]') && document.querySelector('[data-action="retry-content"]').textContent === 'Retry loading forms' && sessionStorage.getItem('${DRAFT}') === null`);
   }
   served = packaged;
   await load();

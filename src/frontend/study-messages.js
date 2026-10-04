@@ -20,7 +20,7 @@ window.StudyMessages = (() => {
     'actions.skip': [], 'actions.pause': [], 'actions.resume': [], 'actions.current': [], 'actions.retry-save': [],
     'actions.memory': [], 'actions.retry-discard': [], 'actions.stop': [], 'actions.keep': [], 'actions.discard': [],
     'actions.restart': [], 'actions.explore': [], 'actions.retry-submit': [], 'actions.cleanup': [], 'actions.new-session': [],
-    'actions.retry-recovery': [], 'actions.discard-incompatible': [],
+    'actions.retry-recovery': [], 'actions.discard-incompatible': [], 'actions.discard-closed': [],
     'discard.confirm': [], 'discard.declined': [], 'discard.stopped': [], 'discard.done': [],
     'storage.stale': [], 'storage.memory': [], 'storage.unreadable': [], 'storage.saved': [], 'storage.before-consent': [],
     'storage.unavailable': [], 'storage.incompatible': [], 'storage.save-failed': [], 'storage.discard-failed': [],
@@ -39,6 +39,7 @@ window.StudyMessages = (() => {
     'submission.invalid-receipt': [], 'submission.uncertain': ['error'], 'submission.limit': [], 'submission.retry-save-failed': [],
     'recovery.title': [], 'recovery.incompatible': [], 'recovery.unreadable': [], 'recovery.discard-failed': [],
     'recovery.server-copy': [], 'recovery.not-stored': [], 'recovery.memory': [],
+    'closed.title': [], 'closed.detail': [], 'closed.draft': [], 'closed.not-stored': [],
     'receipt.title': [], 'receipt.saved': [], 'receipt.code': ['receiptId'], 'receipt.keep': [],
     'cleanup.done': [], 'cleanup.persist-failed': [], 'cleanup.retry-save': [], 'cleanup.retry-draft': [], 'cleanup.retry': [],
   });

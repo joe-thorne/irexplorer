@@ -81,4 +81,23 @@ await refreshed.submit(null);assert.equal(unsupportedCalls.length,2);assert.deep
 checks.push('After a refresh the same frozen submission is offered again and the server decides; incompatibility is reported again');
 assert.equal(s.discardLegacy(),true);assert.equal(values.has(S.KEY),false);assert.equal(s.state,null);assert.equal(s.recoveryBlocked,false);assert.equal(s.notStored,false);
 checks.push('Incompatible frozen submission is removed only by the explicit discard');
+// Collection closed: the server confirms nothing is committed under this ID, so the answers were not saved.
+values.clear();const closedFrozen={...JSON.parse(calls[0]),submissionId:webcrypto.randomUUID()};values.set(S.KEY,JSON.stringify({kind:'pending',submission:closedFrozen}));
+const closedCalls=[];
+const collectionClosed=async(url,options)=>{closedCalls.push(options.body);return {ok:false,status:410,json:async()=>({error:{code:'collection_closed',message:'Study collection has closed. These answers were not saved.'}})};};
+s=S.controller(()=>storage,collectionClosed);s.read();assert.equal(s.closed,false);await s.submit(null);
+assert.equal(s.state.kind,'pending');assert.deepEqual(JSON.parse(values.get(S.KEY)).submission,closedFrozen);
+assert.equal(s.closed,true);assert.equal(s.issue,null);assert.equal(s.recoveryBlocked,false);
+await s.submit(null);assert.equal(closedCalls.length,1);
+assert.match(studyView,/if \(submission\.closed\) html = notStoredHtml\(\);\s*else if \(submission\.state && !submission\.recoveryBlocked\) html = submissionHtml\(\)/);
+checks.push('A closed-collection refusal keeps the frozen submission, reports no uncertain delivery, and sends no further attempt');
+const reopened=S.controller(()=>storage,collectionClosed);reopened.read();assert.equal(reopened.closed,false);assert.equal(JSON.stringify(reopened.state),JSON.stringify({kind:'pending',submission:closedFrozen}));
+await reopened.submit(null);assert.equal(closedCalls.length,2);assert.deepEqual(JSON.parse(closedCalls[1]),closedFrozen);assert.equal(reopened.closed,true);
+checks.push('After a refresh the same frozen submission is offered again and the closed collection refuses it again');
+fail=true;assert.equal(reopened.discardClosed(()=>true),false);assert.equal(say(reopened.issue),content.messages['storage.discard-failed']);assert.ok(values.has(S.KEY));assert.equal(reopened.closed,true);
+fail=false;assert.equal(reopened.discardClosed(()=>false),false);assert.equal(say(reopened.issue),content.messages['storage.discard-failed']);assert.ok(values.has(S.KEY));
+let draftRemoved=false;assert.equal(reopened.discardClosed(()=>{draftRemoved=true;return true;}),true);
+assert.ok(draftRemoved);assert.equal(values.has(S.KEY),false);assert.equal(reopened.state,null);assert.equal(reopened.closed,false);assert.equal(reopened.issue,null);
+assert.equal(S.controller(()=>storage,send).discardClosed(()=>true),false);
+checks.push('A refused submission and its local draft are removed only by the explicit discard; a failed removal stays reported for retry');
 console.log(`${checks.length} submission checks pass`);

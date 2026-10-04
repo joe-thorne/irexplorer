@@ -10,7 +10,7 @@ import tempfile
 import unittest
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from copy import deepcopy
 from pathlib import Path
 from unittest.mock import patch
@@ -30,6 +30,7 @@ from src.backend.evaluation.service import (
     MAX_BODY,
     PROVENANCE_LEGACY_UNAVAILABLE,
     PROVENANCE_SNAPSHOT,
+    RESEARCH_MODES,
     Config,
     StudyError,
     StudyService,
@@ -476,7 +477,7 @@ class SubmissionTests(unittest.TestCase):
                   self.assertRaisesRegex(ValueError, 'HTTPS')):
                 Config.environment()
             config = research_config(root, mode)
-            # The installed v0.11-preview-5 package carries no finished marker.
+            # The installed v0.11-preview-7 package carries no finished marker.
             with self.subTest(mode=mode, content='installed'), self.assertRaisesRegex(ValueError, 'finished marker'):
                 create_app(study_config=config)
             # The marker decides, not the label wording: an unmarked package is refused even when its
@@ -498,15 +499,17 @@ class SubmissionTests(unittest.TestCase):
 
     def test_local_and_preview_start_with_the_installed_unmarked_package(self):
         installed = load_participant_package()
-        self.assertEqual(installed['identity']['contentVersion'], 'v0.11-preview-5')
+        self.assertEqual(installed['identity']['contentVersion'], 'v0.11-preview-7')
         self.assertNotIn('finished', installed['identity'])
-        self.assertIn('actions.disabled', installed['content']['messages'])
+        # The closed-collection wording is participant content, carried by the installed package.
+        self.assertLessEqual({'closed.title', 'closed.detail', 'closed.draft', 'closed.not-stored',
+                              'actions.discard-closed'}, set(installed['content']['messages']))
         for mode in ('local', 'preview'):
             config = Config(Path(self.tmp.name), collection_mode=mode, origin='http://testserver')
             with self.subTest(mode=mode), TestClient(create_app(study_config=config)) as client:
                 content = client.get('/api/study/content').json()
                 self.assertEqual((content['collectionMode'], content['submissionEnabled'], content['contentVersion']),
-                                 (mode, True, 'v0.11-preview-5'))
+                                 (mode, True, 'v0.11-preview-7'))
                 response = client.post('/api/study/submissions', json=synthetic(content),
                                        headers={'Origin': 'http://testserver'})
                 self.assertEqual(response.status_code, 201)
@@ -643,7 +646,7 @@ class SubmissionTests(unittest.TestCase):
         self.assertEqual(canonical_content, expected)
         self.assertEqual(hashlib.sha256(canonical_content).hexdigest(), linked)
         self.assertEqual(tuple(identity), (linked, 'sha256', 1, 'sorted-json-utf8-v1', 1, 2,
-                                        'v0.11', 'v0.11-preview-5', 'v0.11-synthetic-1'))
+                                        'v0.11', 'v0.11-preview-7', 'v0.11-synthetic-1'))
         for secret in (submission['participantCode'], submission['submissionId'], b'collectionMode',
                        b'submissionEnabled'):
             self.assertNotIn(secret.encode() if isinstance(secret, str) else secret, canonical_content)
@@ -773,7 +776,7 @@ class SubmissionTests(unittest.TestCase):
         digest = self.service.snapshot.digest
         self.assertEqual(records[current['submissionId']]['contentProvenance'], {
             'status': 'snapshot', 'digest': digest, 'instrumentVersion': 'v0.11',
-            'contentVersion': 'v0.11-preview-5', 'studyVersion': 'v0.11-synthetic-1',
+            'contentVersion': 'v0.11-preview-7', 'studyVersion': 'v0.11-synthetic-1',
             'codebook': digest, 'snapshotFile': f'snapshots/{digest}.json'})
         codebook = json.loads((destination / 'codebook.json').read_text())
         self.assertEqual(list(codebook['codebooks']), [digest])
@@ -1106,6 +1109,151 @@ class SubmissionTests(unittest.TestCase):
             Config.environment()
         with patch.dict('os.environ', {'IREXPLORER_COLLECTION_MODE': 'local'}, clear=True):
             self.assertEqual(Config.environment().collection_mode, 'local')
+
+
+CLOSED_REFUSAL = {'error': {'code': 'collection_closed',
+                            'message': 'Study collection has closed. These answers were not saved.'}}
+
+
+class ClosedCollectionTests(unittest.TestCase):
+    """A closed collection serves content and recovers committed receipts, but stores nothing new."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+
+    def config(self, mode, closed, **changes):
+        if mode in RESEARCH_MODES:
+            return research_config(self.root, mode, collection_closed=closed, **changes)
+        return Config(self.root, collection_mode=mode, origin=RESEARCH_ORIGIN, collection_closed=closed, **changes)
+
+    @staticmethod
+    def installed(mode):
+        """Pilot and live start only with a finished package; local and preview use the installed one."""
+        return upgraded_release(FINISHED) if mode in RESEARCH_MODES else nullcontext()
+
+    @staticmethod
+    def post(client, body):
+        return client.post('/api/study/submissions', json=body, headers={'Origin': RESEARCH_ORIGIN})
+
+    @staticmethod
+    def files(config):
+        """Every file in a mode's store directory with its bytes, to show that nothing was written."""
+        return {path.name: path.read_bytes() for path in sorted(config.path.parent.iterdir())}
+
+    @staticmethod
+    def counts(config):
+        db = sqlite3.connect(f'{config.path.as_uri()}?mode=ro', uri=True)
+        try:
+            return tuple(db.execute(f'SELECT COUNT(*) FROM {table}').fetchone()[0]
+                         for table in ('submissions', 'participant_content_snapshots'))
+        finally:
+            db.close()
+
+    def test_closed_collection_serves_content_and_refuses_first_deliveries_in_every_mode(self):
+        for mode in ('local', 'preview', 'pilot', 'live'):
+            open_config, closed_config = self.config(mode, False), self.config(mode, True)
+            with (self.subTest(mode=mode), self.installed(mode),
+                  TestClient(create_app(study_config=open_config)) as opened,
+                  TestClient(create_app(study_config=closed_config)) as closed):
+                served = opened.get('/api/study/content').json()
+                closed_content = closed.get('/api/study/content').json()
+                self.assertEqual((served['submissionEnabled'], closed_content['submissionEnabled']), (True, False))
+                self.assertEqual({**closed_content, 'submissionEnabled': True}, served)
+                # Without a store, the probe and a valid first delivery are refused and nothing is created.
+                first = synthetic(closed_content)
+                for body in ({}, first):
+                    refused = self.post(closed, body)
+                    self.assertEqual((refused.status_code, refused.json()), (410, CLOSED_REFUSAL))
+                    self.assertEqual(refused.headers['cache-control'], 'no-store')
+                self.assertFalse(closed_config.path.parent.exists())
+                # A submission committed while collection was open keeps its receipt after closure.
+                committed = synthetic(served)
+                receipt = self.post(opened, committed)
+                self.assertEqual(receipt.status_code, 201)
+                before = self.files(closed_config)
+                for body in ({}, first):
+                    refused = self.post(closed, body)
+                    self.assertEqual((refused.status_code, refused.json()), (410, CLOSED_REFUSAL))
+                    self.assertEqual(refused.headers['cache-control'], 'no-store')
+                retry = self.post(closed, committed)
+                self.assertEqual((retry.status_code, retry.json()), (200, receipt.json()))
+                changed = deepcopy(committed)
+                changed['tasks'][1]['durationMs'] += 1
+                conflict = self.post(closed, changed)
+                self.assertEqual((conflict.status_code, conflict.json()['error']['code']), (409, 'submission_conflict'))
+                self.assertEqual(self.counts(closed_config), (1, 1))
+                self.assertEqual(self.files(closed_config), before)
+                # Everything other than first deliveries behaves identically whether open or closed.
+                for path in ('/api/health', '/api/release', '/api/examples', '/api/examples/score/states',
+                             '/api/examples/score/states/0/ir'):
+                    expected, actual = opened.get(path), closed.get(path)
+                    self.assertEqual((actual.status_code, actual.json()), (expected.status_code, expected.json()))
+
+    def test_closure_is_not_part_of_package_identity_or_snapshot(self):
+        services = [StudyService(self.config('preview', closed)) for closed in (False, True)]
+        self.assertEqual(services[0].snapshot, services[1].snapshot)
+        self.assertEqual(services[0].releases, services[1].releases)
+        self.assertEqual({**services[1].content(), 'submissionEnabled': True}, services[0].content())
+
+    def test_closed_setting_is_strict_and_keeps_the_research_startup_guards(self):
+        settings = {'IREXPLORER_STUDY_DIR': str(self.root)}
+        with patch.dict('os.environ', settings, clear=True):
+            self.assertFalse(Config.environment().collection_closed)
+        for value, closed in (('0', False), ('1', True)):
+            with patch.dict('os.environ', {**settings, 'IREXPLORER_COLLECTION_CLOSED': value}, clear=True):
+                self.assertIs(Config.environment().collection_closed, closed)
+        for value in ('', 'true', 'True', 'yes', 'closed', '01', ' 1', '1 ', '2', '-1'):
+            with (self.subTest(value=value),
+                  patch.dict('os.environ', {**settings, 'IREXPLORER_COLLECTION_CLOSED': value}, clear=True),
+                  self.assertRaisesRegex(ValueError, 'IREXPLORER_COLLECTION_CLOSED')):
+                Config.environment()
+        with self.assertRaises(ValueError):
+            Config(self.root, collection_closed='1')
+        # Closure neither relaxes nor replaces the pilot and live guards.
+        for mode in RESEARCH_MODES:
+            with self.subTest(mode=mode, origin='http'), self.assertRaisesRegex(ValueError, 'HTTPS'):
+                self.config(mode, True, origin='http://study.example.test')
+            with self.subTest(mode=mode, revision='development'), self.assertRaisesRegex(ValueError, 'development'):
+                self.config(mode, True, app_revision='development')
+            with (self.subTest(mode=mode, origin='unconfigured'),
+                  patch.dict('os.environ', {**settings, 'IREXPLORER_COLLECTION_MODE': mode,
+                                            'IREXPLORER_APP_REVISION': RESEARCH_REVISION,
+                                            'IREXPLORER_COLLECTION_CLOSED': '1'}, clear=True),
+                  self.assertRaisesRegex(ValueError, 'HTTPS')):
+                Config.environment()
+            with self.subTest(mode=mode, content='installed'), self.assertRaisesRegex(ValueError, 'finished marker'):
+                StudyService(self.config(mode, True))
+        self.assertEqual(list(self.root.iterdir()), [])
+
+    def test_closed_lookup_never_moves_or_migrates_a_store(self):
+        config = self.config('preview', True)
+        legacy = synthetic()
+        [row] = pre_snapshot_store(config.path, [legacy])
+        before = self.files(config)
+        service = StudyService(config)
+        # A version-2 store is read where it is: the receipt returns and the store stays at version 2.
+        self.assertEqual(service.submit(legacy), (json.loads(row[3]), False))
+        with self.assertRaises(StudyError) as refused:
+            service.submit(synthetic())
+        self.assertEqual((refused.exception.status, refused.exception.code), (410, 'collection_closed'))
+        self.assertEqual(self.files(config), before)
+        # A store that only a write could make readable is a storage fault, not a statement that
+        # nothing was committed: a retired store awaiting its move, or an unsupported schema.
+        config.path.rename(config.path.with_name('responses.sqlite3'))
+        retired = self.files(config)
+        with self.assertRaises(StudyError) as unavailable:
+            service.submit(legacy)
+        self.assertEqual(unavailable.exception.code, 'storage_unavailable')
+        self.assertEqual(self.files(config), retired)
+        unsupported = self.config('local', True)
+        pre_snapshot_store(unsupported.path, [legacy], version=99)
+        stored = self.files(unsupported)
+        with self.assertRaises(StudyError) as unavailable:
+            StudyService(unsupported).submit(legacy)
+        self.assertEqual(unavailable.exception.code, 'storage_unavailable')
+        self.assertEqual(self.files(unsupported), stored)
 
 
 if __name__ == '__main__':

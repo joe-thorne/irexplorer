@@ -99,6 +99,11 @@ def storage_unavailable():
     return StudyError(503, 'storage_unavailable', 'Receipt unavailable. Retain this tab and retry the same submission.')
 
 
+def collection_closed():
+    """The refusal of a first delivery while collection is closed; nothing is committed under its ID."""
+    return StudyError(410, 'collection_closed', 'Study collection has closed. These answers were not saved.')
+
+
 class StoredSubmission(NamedTuple):
     """The stored columns a retry is compared with; field names are the column names."""
     digest: str
@@ -122,12 +127,17 @@ class Config:
     # Directories of frozen public packages accepted for first deliveries besides the installed one.
     # Empty by default: only the installed package is accepted, with no grace period.
     accepted_instruments: tuple[Path, ...] = ()
+    # A closed collection still serves content and recovers committed receipts, but refuses first
+    # deliveries and never creates or writes a store. It is valid in every mode and changes no guard.
+    collection_closed: bool = False
 
     def __post_init__(self):
         if self.collection_mode not in ('local', 'preview', 'pilot', 'live'):
             raise ValueError('Unsupported collection mode')
         if not all(isinstance(path, Path) and path.is_absolute() for path in self.accepted_instruments):
             raise ValueError('Configure each accepted instrument package as an absolute directory')
+        if not isinstance(self.collection_closed, bool):
+            raise ValueError('Configure collection closure as a boolean')
         if self.directory.resolve().is_relative_to(ROOT):
             raise ValueError('Study storage must be outside the application repository')
         if not re.fullmatch(r'https?://[^/]+', self.origin):
@@ -153,13 +163,17 @@ class Config:
     def environment(cls):
         if 'IREXPLORER_STUDY_MODE' in os.environ:
             raise ValueError('IREXPLORER_STUDY_MODE was retired; use IREXPLORER_COLLECTION_MODE.')
+        closed = os.environ.get('IREXPLORER_COLLECTION_CLOSED', '0')
+        if closed not in ('0', '1'):
+            raise ValueError('IREXPLORER_COLLECTION_CLOSED must be 0 (open) or 1 (closed).')
         default = Path(tempfile.gettempdir()) / f'irexplorer-study-{os.getuid()}'
         return cls(Path(os.environ.get('IREXPLORER_STUDY_DIR', default)),
                    os.environ.get('IREXPLORER_COLLECTION_MODE', 'preview'),
                    os.environ.get('IREXPLORER_STUDY_ORIGIN', 'http://127.0.0.1:8000'),
                    os.environ.get('IREXPLORER_APP_REVISION', metadata()['revision']),
                    tuple(Path(directory) for directory
-                         in os.environ.get('IREXPLORER_ACCEPTED_INSTRUMENTS', '').split(os.pathsep) if directory))
+                         in os.environ.get('IREXPLORER_ACCEPTED_INSTRUMENTS', '').split(os.pathsep) if directory),
+                   closed == '1')
 
 
 def canonical(value):
@@ -309,11 +323,27 @@ class StudyService:
                              '(a participant package without the finished marker)')
 
     def content(self):
-        # Every configuration that starts can submit; unfinished research configurations never start.
-        return {**participant_content(), 'collectionMode': self.config.collection_mode, 'submissionEnabled': True}
+        # Every open configuration that starts can submit; unfinished research configurations never start.
+        return {**participant_content(), 'collectionMode': self.config.collection_mode,
+                'submissionEnabled': not self.config.collection_closed}
 
     def _retired_path(self):
         return self.config.path.with_name('responses.sqlite3')
+
+    def connect_read_only(self):
+        """Open the existing store for a closed collection's lookup, never moving, migrating, or writing it."""
+        # Only the one-time move and migration, which write, would make a retired store readable here.
+        if self._retired_path().exists():
+            raise sqlite3.DatabaseError('The retired response store has not been moved')
+        db = sqlite3.connect(f'{self.config.path.resolve().as_uri()}?mode=ro', uri=True, timeout=10)
+        try:
+            # Every supported version keeps the looked-up columns in its submissions table.
+            if db.execute('PRAGMA user_version').fetchone()[0] not in (2, *_MIGRATIONS):
+                raise sqlite3.DatabaseError('Unsupported schema')
+            return db
+        except Exception:
+            db.close()
+            raise
 
     def connect(self):
         path = self.config.path
@@ -369,13 +399,14 @@ class StudyService:
         None when nothing is committed under the ID, so the submission is a first delivery.
         """
         submission_id = submission.get('submissionId') if isinstance(submission, dict) else None
-        # Without an existing store nothing can be committed, so a lookup never creates one. An
-        # existing older store is moved and migrated here, as on any first use.
+        # Without an existing store nothing can be committed, so a lookup never creates one. While
+        # collection is open, an existing older store is moved and migrated here, as on any first
+        # use; a closed collection only reads the store as it is.
         if not isinstance(submission_id, str) or not (self.config.path.exists() or self._retired_path().exists()):
             return None
         db = None
         try:
-            db = self.connect()
+            db = self.connect_read_only() if self.config.collection_closed else self.connect()
             stored = StoredSubmission.find(db, submission_id)
         except (sqlite3.Error, OSError):
             raise storage_unavailable() from None
@@ -388,6 +419,9 @@ class StudyService:
         receipt = self.stored_receipt(submission)
         if receipt is not None:
             return receipt, False
+        if self.config.collection_closed:
+            # Refused before validation: nothing is committed under this ID and nothing is written.
+            raise collection_closed()
         submission, accepted = validate(submission, self.releases)
         body = canonical(submission)
         digest = hashlib.sha256(body.encode()).hexdigest()
