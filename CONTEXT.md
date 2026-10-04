@@ -179,6 +179,10 @@ _Avoid_: researcher mapping file, marking key
 A verified frozen public participant package that the server accepts first deliveries for. This is the installed package, plus any earlier package deliberately configured on the server. Each accepted submission is validated under, and linked to, its own release. A first delivery naming any other identities is unsupported and is not stored.
 _Avoid_: supported version, grace period, release (alone; see Release identity)
 
+**Finished release**:
+A frozen public participant package whose participant content and identity both carry the explicit finished marker, `finished: true`; the thesis compiler gives it the content version `<instrument>-final-N`. Pilot and live collection start only when the installed package and every accepted instrument release are finished. The marker does not approve collection.
+_Avoid_: final release, live release, approved release
+
 **Setup reached**:
 A historical v0.5/v0.6 outcome recording whether a usable comparison appeared; it did not confirm that the task's requested comparison was ready. v0.7 no longer collects or analyses this outcome.
 _Avoid_: task started, attempted
