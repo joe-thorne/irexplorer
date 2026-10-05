@@ -20,7 +20,7 @@ if [[ -z "${CHROME:-}" ]]; then
 fi
 [[ -n "${CHROME:-}" ]] || { echo "check_browser: no Chrome found; set CHROME" >&2; exit 2; }
 
-work=$(mktemp -d)
+work=$(mktemp -d "${TMPDIR:-/tmp}/irexplorer-browser.XXXXXX")
 server_pid=''
 chrome_pid=''
 stop_server() {
