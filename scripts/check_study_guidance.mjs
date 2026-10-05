@@ -171,7 +171,8 @@ async function journey(viewport) {
   for (const g of [served.glossary[0], served.glossary.at(-1)]) {
     await value(`document.activeElement.blur()`);
     await value(`document.querySelector('#task-instructions').open = true; [...document.querySelectorAll('#task-instructions .study-term-help')].find(t => t.textContent.toLowerCase() === ${q(g.match.toLowerCase())}).focus()`);
-    await until(`!document.querySelector('#ir-help-tooltip').hidden`);
+    // Wait for this term's text: the previous term's tooltip can still be showing when focus moves.
+    await until(`!document.querySelector('#ir-help-tooltip').hidden && document.querySelector('#ir-help-tooltip').textContent === ${q(g.text)}`);
     await check(`Keyboard focus on ${g.match} explains it with its compiled help text`, `document.activeElement.getAttribute('aria-describedby') === 'ir-help-tooltip' && document.querySelector('#ir-help-tooltip').textContent === ${q(g.text)} && document.querySelector('#ir-help-tooltip').childElementCount === 0`);
   }
   for (const g of served.glossary.filter(item => ['pass', 'optimisation-state'].includes(item.id))) {
