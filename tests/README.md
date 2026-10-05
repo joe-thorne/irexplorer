@@ -37,7 +37,7 @@ Install the development tools over the runtime environment, then run both checks
 .venv/bin/mypy
 ```
 
-GitHub Actions (`.github/workflows/ci.yml`) runs these checks, the backend suite, and the study state checks on Python 3.12 for every push to `main` and every pull request.
+GitHub Actions (`.github/workflows/ci.yml`) runs these checks, the backend suite, the study state checks and the browser regression on Python 3.12 for every push to `main` and every pull request.
 
 ## Study state
 
@@ -49,6 +49,14 @@ node scripts/check_study_submission.mjs
 ```
 
 ## Browser regression
+
+To run the whole browser regression in one step, as CI does:
+
+```sh
+scripts/check_browser.sh
+```
+
+It starts the host runner on a disposable preview store and an isolated headless Chrome, runs the three checks below with collection open, reruns `check_app.mjs` with collection closed, then stops both. `CHROME` names the browser executable if it is not found; `IRX_PYTHON` names the Python interpreter. The steps below run each check by hand.
 
 Start the application with Docker Compose, then start a separate headless Chrome instance with a temporary profile and remote debugging on port 9239. For example, on Linux:
 
@@ -80,7 +88,7 @@ Before running the regression, confirm that the isolated browser is available:
 curl -fsS http://127.0.0.1:9239/json/version
 ```
 
-The script requires Node 22 or later. It checks default Explore navigation, coordinated views, study navigation, retry/receipt behaviour, and independent browser tabs. It submits synthetic data, so use a disposable local instance and study volume. `IREXPLORER_ORIGIN` overrides the default `http://localhost:8000`. Results go to stdout; optionally set `IREXPLORER_CHECK_OUTPUT` to a directory outside the repository for JSON and screenshots.
+The script requires Node 22 or later. It checks default Explore navigation, coordinated views at narrow, desktop and wide (2560 px) widths, study navigation, retry/receipt behaviour, and independent browser tabs. It submits synthetic data, so use a disposable local instance and study volume. `IREXPLORER_ORIGIN` overrides the default `http://localhost:8000`. Results go to stdout; optionally set `IREXPLORER_CHECK_OUTPUT` to a directory outside the repository for JSON and screenshots.
 
 Run it again against an instance restarted with `IREXPLORER_COLLECTION_CLOSED=1` (and the same study store) to check closed collection. When the served content reports `submissionEnabled: false`, the script runs the same Explore checks, then, instead of the journey, checks the closed message before consent, a local draft's explicit discard, and a frozen submission that the server refuses with `410 collection_closed`, across a refresh and its discard. It also checks that a pending submission whose retry returns a receipt shows it. The closed instance stores nothing, so that receipt is supplied in the page.
 
