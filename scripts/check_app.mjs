@@ -396,6 +396,7 @@ try {
   await value('helpToken.focus()');
   await until(`!document.querySelector('#ir-help-tooltip').hidden`);
   await check('Keyboard focus exposes accessible help', `document.activeElement.getAttribute('aria-describedby') === 'ir-help-tooltip'`);
+  await check('Scrolling keeps a focused token described by its visible help', `(() => { document.dispatchEvent(new Event('scroll')); return document.activeElement === helpToken && helpToken.getAttribute('aria-describedby') === 'ir-help-tooltip' && !document.querySelector('#ir-help-tooltip').hidden; })()`);
   await value('helpToken.blur()');
   await value("document.querySelector('#left-state').focus()");
   await tabUntil(`document.activeElement.id === 'right-state'`);

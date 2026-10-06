@@ -22,12 +22,15 @@
       tooltip.textContent = target.dataset.help;
       tooltip.hidden = false;
       target.setAttribute('aria-describedby', tooltip.id);
-      const bounds = target.getBoundingClientRect();
-      const width = tooltip.offsetWidth, height = tooltip.offsetHeight;
-      tooltip.style.left = Math.max(8, Math.min(bounds.left, innerWidth - width - 8)) + 'px';
-      tooltip.style.top = Math.max(8, bounds.bottom + height + 8 < innerHeight
-        ? bounds.bottom + 8 : bounds.top - height - 8) + 'px';
+      place(target);
     }, delay);
+  }
+  function place(target) {
+    const bounds = target.getBoundingClientRect();
+    const width = tooltip.offsetWidth, height = tooltip.offsetHeight;
+    tooltip.style.left = Math.max(8, Math.min(bounds.left, innerWidth - width - 8)) + 'px';
+    tooltip.style.top = Math.max(8, bounds.bottom + height + 8 < innerHeight
+      ? bounds.bottom + 8 : bounds.top - height - 8) + 'px';
   }
   document.addEventListener('pointerover', event => {
     const target = event.target.closest('[data-help]');
@@ -50,14 +53,17 @@
   document.addEventListener('keydown', event => { if (event.key === 'Escape') hide(); });
   document.addEventListener('click', hide);
   document.addEventListener('scroll', () => {
-    // Focusing a token may scroll it into view after focusin. Reposition its
-    // help instead of cancelling the keyboard-triggered tooltip.
-    const focused = active === document.activeElement ? active : null;
-    hide();
-    if (focused) {
-      const bounds = focused.getBoundingClientRect();
-      if (bounds.bottom > 0 && bounds.top < innerHeight) show(focused, 0);
+    // Focusing a token may scroll it into view after focusin. Move its help
+    // rather than hiding it, so the token stays described throughout. If the
+    // show timer has not fired yet, it positions the tooltip when it does.
+    if (active && active === document.activeElement) {
+      const bounds = active.getBoundingClientRect();
+      if (bounds.bottom > 0 && bounds.top < innerHeight) {
+        if (!tooltip.hidden) place(active);
+        return;
+      }
     }
+    hide();
   }, true);
   window.addEventListener('resize', hide);
   new MutationObserver(() => { if (active && !active.isConnected) hide(); })
