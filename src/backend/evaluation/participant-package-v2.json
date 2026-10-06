@@ -5,15 +5,17 @@
     "algorithm": "sha256",
     "canonicalisation": "sorted-json-utf8-v1",
     "canonicalisationVersion": 1,
-    "digest": "c7c79143c2268955ec3f873b57baf3e17cf6e88fafe3d02a5e1e3b072df77608",
+    "digest": "d96793626ce679cc6dd2799c43156447e32b7272fc722795ae3790bee5d8d7cb",
     "instrumentVersion": "v0.11",
-    "contentVersion": "v0.11-preview-7",
-    "studyVersion": "v0.11-synthetic-1"
+    "contentVersion": "v0.11-final-1",
+    "studyVersion": "v0.11-study-1",
+    "finished": true
   },
   "content": {
     "instrumentVersion": "v0.11",
-    "contentVersion": "v0.11-preview-7",
-    "studyVersion": "v0.11-synthetic-1",
+    "contentVersion": "v0.11-final-1",
+    "studyVersion": "v0.11-study-1",
+    "finished": true,
     "scales": {
       "familiarity": [
         {
@@ -1371,13 +1373,13 @@
           },
           {
             "kind": "paragraph",
-            "text": "When you compile a C program, the compiler does not just translate it — it rewrites it. It deletes work it can prove is pointless, moves calculations out of loops, merges and splits branches, and reshapes the control flow, all before a single instruction of machine code is produced. Most of that happens where nobody can see it. You write the source, you get a binary, and the interesting part in between is invisible.",
+            "text": "When you compile a C program, the compiler is secretly optimising and re-writing your code! In particular, it deletes work it can prove is pointless, it moves calculations out of loops, it merges and splits branches, and it reshapes the entire control flow of your program. All of this happens before a single instruction of machine code is produced, and most of this happens where nobody can see it (and while you are tapping your fingers waiting for the binary to be produced).",
             "id": "information1.block3",
             "role": "information"
           },
           {
             "kind": "paragraph",
-            "text": "irexplorer is a web tool that makes that middle part visible. It takes a small C program, compiles it with LLVM, one optimisation pass at a time, and lets you look at the program's intermediate representation — the internal form the compiler actually works on — at each step along the way. You can put any two of those states side by side, read the textual form and the control-flow graph together, and see what a given pass changed.",
+            "text": "irexplorer is a web tool that lets us look into this \"secret life\" of a compiler. It takes a small C program, compiles it with LLVM, doing one optimisation pass at a time, and lets you examine the program's intermediate representation (that is, the internal form the compiler actually works on) at each step along the way. Then, you can put any two of those states side by side, read the textual form and the control-flow graph together, and see what the compiler has changed on any given pass.",
             "id": "information1.block4",
             "role": "information"
           },
@@ -1501,7 +1503,7 @@
         "blocks": [
           {
             "kind": "paragraph",
-            "text": "Researcher: Joe Thorne, BE (Hons) Software, School of Electrical Engineering and Computer Science — s4784727@student.uq.edu.au",
+            "text": "Researcher: Joe Thorne, BE (Hons) Software, School of Electrical Engineering and Computer Science — joseph.thorne@student.uq.edu.au",
             "id": "information6.block1",
             "role": "information"
           },

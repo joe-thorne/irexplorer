@@ -87,6 +87,14 @@ def pre_snapshot_store(path, submissions, *, version=2):
 UPGRADED = {'instrumentVersion': 'v0.12', 'contentVersion': 'v0.12-preview-1', 'studyVersion': 'v0.12-synthetic-1'}
 
 
+def unfinished_copy_of_installed_package():
+    """A copy of the installed (finished) package without its finished marker, as a basis for other releases."""
+    package = deepcopy(load_participant_package())
+    for part in ('content', 'identity'):
+        package[part].pop('finished', None)
+    return package
+
+
 @contextmanager
 def upgraded_release(identities=UPGRADED):
     """Install a synthetic later participant package, as a deployed application upgrade would.
@@ -95,7 +103,8 @@ def upgraded_release(identities=UPGRADED):
     recomputed, so the running code is the same while current-instrument validation now names
     the upgraded release. Services created inside the block model the restarted application.
     """
-    package = deepcopy(load_participant_package())
+    # The upgrade carries the finished marker only when `identities` names it.
+    package = unfinished_copy_of_installed_package()
     package['content'].update(identities)
     package['content']['fields'][0]['prompt'] += ' (upgraded synthetic wording)'
     package['identity'].update(identities)
@@ -134,7 +143,8 @@ def historical_package():
     Its identities differ, Q20 is not a member, and P1 offers an extra option, so admissibility
     under its rules is observably different from the current package's.
     """
-    package = deepcopy(load_participant_package())
+    # An earlier preview release carries no finished marker.
+    package = unfinished_copy_of_installed_package()
     content = package['content']
     content.update(HISTORICAL)
     content['fields'] = [field for field in content['fields'] if field['id'] != 'Q20']
@@ -477,9 +487,10 @@ class SubmissionTests(unittest.TestCase):
                   self.assertRaisesRegex(ValueError, 'HTTPS')):
                 Config.environment()
             config = research_config(root, mode)
-            # The installed v0.11-preview-7 package carries no finished marker.
-            with self.subTest(mode=mode, content='installed'), self.assertRaisesRegex(ValueError, 'finished marker'):
-                create_app(study_config=config)
+            # The installed package is the finished v0.11-final-1 release, so a packaged build may start with it.
+            with self.subTest(mode=mode, content='installed'):
+                identity = StudyService(config).content()['packageIdentity']
+                self.assertEqual((identity['contentVersion'], identity['finished']), ('v0.11-final-1', True))
             # The marker decides, not the label wording: an unmarked package is refused even when its
             # labels name neither preview content nor a synthetic study.
             for content_version, study_version in (('v0.12-final-1', 'v0.12-study-1'),
@@ -497,10 +508,10 @@ class SubmissionTests(unittest.TestCase):
                 self.assertEqual(StudyService(config).content()['packageIdentity']['finished'], True)
             self.assertFalse((root / mode).exists())
 
-    def test_local_and_preview_start_with_the_installed_unmarked_package(self):
+    def test_local_and_preview_start_with_the_installed_finished_package(self):
         installed = load_participant_package()
-        self.assertEqual(installed['identity']['contentVersion'], 'v0.11-preview-7')
-        self.assertNotIn('finished', installed['identity'])
+        self.assertEqual(installed['identity']['contentVersion'], 'v0.11-final-1')
+        self.assertIs(installed['identity']['finished'], True)
         # The closed-collection wording is participant content, carried by the installed package.
         self.assertLessEqual({'closed.title', 'closed.detail', 'closed.draft', 'closed.not-stored',
                               'actions.discard-closed'}, set(installed['content']['messages']))
@@ -509,7 +520,7 @@ class SubmissionTests(unittest.TestCase):
             with self.subTest(mode=mode), TestClient(create_app(study_config=config)) as client:
                 content = client.get('/api/study/content').json()
                 self.assertEqual((content['collectionMode'], content['submissionEnabled'], content['contentVersion']),
-                                 (mode, True, 'v0.11-preview-7'))
+                                 (mode, True, 'v0.11-final-1'))
                 response = client.post('/api/study/submissions', json=synthetic(content),
                                        headers={'Origin': 'http://testserver'})
                 self.assertEqual(response.status_code, 201)
@@ -646,7 +657,7 @@ class SubmissionTests(unittest.TestCase):
         self.assertEqual(canonical_content, expected)
         self.assertEqual(hashlib.sha256(canonical_content).hexdigest(), linked)
         self.assertEqual(tuple(identity), (linked, 'sha256', 1, 'sorted-json-utf8-v1', 1, 2,
-                                        'v0.11', 'v0.11-preview-7', 'v0.11-synthetic-1'))
+                                        'v0.11', 'v0.11-final-1', 'v0.11-study-1'))
         for secret in (submission['participantCode'], submission['submissionId'], b'collectionMode',
                        b'submissionEnabled'):
             self.assertNotIn(secret.encode() if isinstance(secret, str) else secret, canonical_content)
@@ -776,7 +787,7 @@ class SubmissionTests(unittest.TestCase):
         digest = self.service.snapshot.digest
         self.assertEqual(records[current['submissionId']]['contentProvenance'], {
             'status': 'snapshot', 'digest': digest, 'instrumentVersion': 'v0.11',
-            'contentVersion': 'v0.11-preview-7', 'studyVersion': 'v0.11-synthetic-1',
+            'contentVersion': 'v0.11-final-1', 'studyVersion': 'v0.11-study-1',
             'codebook': digest, 'snapshotFile': f'snapshots/{digest}.json'})
         codebook = json.loads((destination / 'codebook.json').read_text())
         self.assertEqual(list(codebook['codebooks']), [digest])
@@ -1223,7 +1234,8 @@ class ClosedCollectionTests(unittest.TestCase):
                                             'IREXPLORER_COLLECTION_CLOSED': '1'}, clear=True),
                   self.assertRaisesRegex(ValueError, 'HTTPS')):
                 Config.environment()
-            with self.subTest(mode=mode, content='installed'), self.assertRaisesRegex(ValueError, 'finished marker'):
+            with (self.subTest(mode=mode, content='unmarked'), upgraded_release(UNMARKED),
+                  self.assertRaisesRegex(ValueError, 'finished marker')):
                 StudyService(self.config(mode, True))
         self.assertEqual(list(self.root.iterdir()), [])
 

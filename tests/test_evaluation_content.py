@@ -19,7 +19,7 @@ class EvaluationContentTests(unittest.TestCase):
         content = participant_content()
         self.assertEqual(content['packageSchemaVersion'], 2)
         self.assertEqual(content['packageIdentity']['digest'],
-                         'c7c79143c2268955ec3f873b57baf3e17cf6e88fafe3d02a5e1e3b072df77608')
+                         'd96793626ce679cc6dd2799c43156447e32b7272fc722795ae3790bee5d8d7cb')
         self.assertEqual(content['membership']['consent'], ['C1', 'C2', 'C3', 'C4', 'C6'])
         self.assertEqual(content['membership']['pre'], [field_id for section in content['preSections']
                                                        for field_id in section['fields']])
@@ -31,7 +31,7 @@ class EvaluationContentTests(unittest.TestCase):
         self.assertEqual(set(content), {'packageSchemaVersion', 'packageIdentity', 'instrumentVersion',
                                         'contentVersion', 'studyVersion', 'scales', 'fields', 'preSections',
                                         'postSections', 'tasks', 'taskIntroduction', 'information', 'membership',
-                                        'journey', 'glossary', 'messages'})
+                                        'journey', 'glossary', 'messages', 'finished'})
         self.assertNotIn('[Joe/Joel to confirm', json.dumps(content))
 
     def test_revised_response_types_reject_old_codes(self):
@@ -87,7 +87,7 @@ class EvaluationContentTests(unittest.TestCase):
     def test_v011_task_copy_and_identity_match_current_runsheet(self):
         content = participant_content()
         self.assertEqual((content['instrumentVersion'], content['contentVersion'], content['studyVersion']),
-                         ('v0.11', 'v0.11-preview-7', 'v0.11-synthetic-1'))
+                         ('v0.11', 'v0.11-final-1', 'v0.11-study-1'))
         tasks = {task['id']: task for task in content['tasks']}
         introduction = '\n'.join(content['taskIntroduction'])
         self.assertIn('State 0 is the unoptimised baseline compiled with -O0', introduction)
@@ -176,7 +176,7 @@ class EvaluationContentTests(unittest.TestCase):
     def test_v011_course_selections_combine_status_and_distinguish_none_from_missing(self):
         content = participant_content()
         self.assertEqual((content['instrumentVersion'], content['contentVersion'], content['studyVersion']),
-                         ('v0.11', 'v0.11-preview-7', 'v0.11-synthetic-1'))
+                         ('v0.11', 'v0.11-final-1', 'v0.11-study-1'))
         course = next(field for field in content['fields'] if field['id'] == 'P3')
         self.assertEqual(course['type'], 'multiple')
         self.assertEqual([option['value'] for option in course['options']], list(range(1, 10)))
