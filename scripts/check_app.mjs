@@ -43,6 +43,12 @@ async function until(expression) {
   throw Error(`Timed out: ${expression}`);
 }
 async function check(name, expression) { const result = await value(expression); if (!result) throw Error(`Failed: ${name}; observed=${JSON.stringify(await value(`(() => { const e=document.activeElement,t=document.querySelector('#ir-help-tooltip'),panels=[document.querySelector('#source-panel'),document.querySelector('#left-viewer').closest('.viewer-panel'),document.querySelector('#right-viewer').closest('.viewer-panel')].map(p=>{const c=p.querySelector('.source-lines,.viewer-content'),l=p.querySelector('.source-line,.ir-line'),s=getComputedStyle(p);return {id:p.id,className:p.className,panel:p.getBoundingClientRect().height,computed:s.height,inline:p.style.height,content:c?.clientHeight,line:l?.getBoundingClientRect().height,scrollHeight:c?.scrollHeight};}); return { hash:location.hash, active:{tag:e.tagName,id:e.id,className:e.className,text:e.innerText?.slice(0,80)}, heading:document.querySelector('#route-heading')?.textContent, tooltip:{hidden:t?.hidden,text:t?.textContent,html:t?.innerHTML,children:t?.childElementCount},panels }; })()`))}`); checks.push(name); }
+// Poll the whole assertion rather than a proxy for it: help and focus settle asynchronously, so a proxy can pass
+// while the state is still changing. A timeout falls through to check, which reports what it observed.
+async function checkEventually(name, expression) {
+  await until(`(() => { try { return Boolean(${expression}); } catch { return false; } })()`).catch(() => {});
+  await check(name, expression);
+}
 async function click(selector) { await value(`document.querySelector(${JSON.stringify(selector)}).click()`); }
 async function hover(selector) {
   const point = await value(`(() => { const r = document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`);
@@ -227,18 +233,14 @@ async function openStudy() {
   await task('T0');
   await check('T0 distinguishes its orientation from tasks T1–T6 and renders help terms safely', `document.querySelector('#task-instructions').innerText.includes('T0 is the orientation; the six tasks are T1–T6') && document.querySelector('#task-instructions').querySelector('img,script') === null && [...document.querySelectorAll('#task-instructions .study-term-help')].map(term=>term.textContent).includes('-O0') && [...document.querySelectorAll('#task-instructions .study-term-help')].map(term=>term.textContent).includes('-O3')`);
   await value(`window.studyFlag = [...document.querySelectorAll('#task-instructions .study-term-help')].find(term=>term.textContent==='-O0'); studyFlag.focus()`);
-  await until(`!document.querySelector('#ir-help-tooltip').hidden`);
-  await check('T0 keyboard focus explains -O0 accessibly', `studyFlag.getAttribute('aria-describedby')==='ir-help-tooltip' && document.querySelector('#ir-help-tooltip').textContent.includes('disables optimisation')`);
+  await checkEventually('T0 keyboard focus explains -O0 accessibly', `!document.querySelector('#ir-help-tooltip').hidden && studyFlag.getAttribute('aria-describedby')==='ir-help-tooltip' && document.querySelector('#ir-help-tooltip').textContent.includes('disables optimisation')`);
   await value(`studyFlag.blur()`);
   await hover('#task-instructions .study-term-help[data-help*="disables optimisation"]');
-  await until(`!document.querySelector('#ir-help-tooltip').hidden`);
-  await check('T0 -O0 also exposes its explanation on hover using text content', `document.querySelector('#ir-help-tooltip').textContent.includes('disables optimisation') && document.querySelector('#ir-help-tooltip').childElementCount===0`);
+  await checkEventually('T0 -O0 also exposes its explanation on hover using text content', `!document.querySelector('#ir-help-tooltip').hidden && document.querySelector('#ir-help-tooltip').textContent.includes('disables optimisation') && document.querySelector('#ir-help-tooltip').childElementCount===0`);
   await value(`window.studyFlag = [...document.querySelectorAll('#task-instructions .study-term-help')].find(term=>term.textContent==='-O3'); studyFlag.focus()`);
-  await until(`!document.querySelector('#ir-help-tooltip').hidden`);
-  await check('T0 keyboard focus explains -O3 as a separate high-optimisation build', `studyFlag.getAttribute('aria-describedby')==='ir-help-tooltip' && document.querySelector('#ir-help-tooltip').textContent.includes('separately compiled state')`);
+  await checkEventually('T0 keyboard focus explains -O3 as a separate high-optimisation build', `!document.querySelector('#ir-help-tooltip').hidden && studyFlag.getAttribute('aria-describedby')==='ir-help-tooltip' && document.querySelector('#ir-help-tooltip').textContent.includes('separately compiled state')`);
   await value(`window.studyFlag = [...document.querySelectorAll('#task-instructions .study-term-help')].find(term=>term.textContent==='CFG'); studyFlag.focus()`);
-  await until(`!document.querySelector('#ir-help-tooltip').hidden`);
-  await check('T0 keyboard focus explains CFG without raw markup', `studyFlag.getAttribute('aria-describedby')==='ir-help-tooltip' && document.querySelector('#ir-help-tooltip').textContent.includes('Control-flow graph') && !document.querySelector('#ir-help-tooltip').querySelector('img,script')`);
+  await checkEventually('T0 keyboard focus explains CFG without raw markup', `!document.querySelector('#ir-help-tooltip').hidden && studyFlag.getAttribute('aria-describedby')==='ir-help-tooltip' && document.querySelector('#ir-help-tooltip').textContent.includes('Control-flow graph') && !document.querySelector('#ir-help-tooltip').querySelector('img,script')`);
   await click('[data-action="pause-task"]');
   await check('Pause disables task completion', `document.querySelector('.task-inputs').disabled`);
   await click('[data-action="pause-task"]');
@@ -394,8 +396,7 @@ try {
   await key('Escape', 'Escape', 27);
   await check('Escape dismisses help', `document.querySelector('#ir-help-tooltip').hidden`);
   await value('helpToken.focus()');
-  await until(`!document.querySelector('#ir-help-tooltip').hidden`);
-  await check('Keyboard focus exposes accessible help', `document.activeElement.getAttribute('aria-describedby') === 'ir-help-tooltip'`);
+  await checkEventually('Keyboard focus exposes accessible help', `!document.querySelector('#ir-help-tooltip').hidden && document.activeElement.getAttribute('aria-describedby') === 'ir-help-tooltip'`);
   await check('Scrolling keeps a focused token described by its visible help', `(() => { document.dispatchEvent(new Event('scroll')); return document.activeElement === helpToken && helpToken.getAttribute('aria-describedby') === 'ir-help-tooltip' && !document.querySelector('#ir-help-tooltip').hidden; })()`);
   await value('helpToken.blur()');
   await value("document.querySelector('#left-state').focus()");

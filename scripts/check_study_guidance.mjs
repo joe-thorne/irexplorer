@@ -94,6 +94,12 @@ async function check(name, expression) {
   const observed = await value(`({ failing: ${JSON.stringify(failing)}, hash: location.hash, active: document.activeElement?.outerHTML.slice(0, 160), screen: document.querySelector('#study-screen')?.innerText.slice(0, 900), responses: document.querySelector('#task-responses')?.innerText.slice(0, 400) })`);
   throw Error(`Failed: ${label}: ${name}; observed=${JSON.stringify(observed)}`);
 }
+// Poll the whole assertion rather than a proxy for it: help and focus settle asynchronously, so a proxy can pass
+// while the state is still changing. A timeout falls through to check, which reports what it observed.
+async function checkEventually(name, expression) {
+  await until(`(() => { try { return Boolean(${expression}); } catch { return false; } })()`).catch(() => {});
+  await check(name, expression);
+}
 const q = JSON.stringify;
 const click = selector => value(`document.querySelector(${q(selector)}).click()`);
 async function hover(elementExpression) {
@@ -171,18 +177,14 @@ async function journey(viewport) {
   for (const g of [served.glossary[0], served.glossary.at(-1)]) {
     await value(`document.activeElement.blur()`);
     await value(`document.querySelector('#task-instructions').open = true; [...document.querySelectorAll('#task-instructions .study-term-help')].find(t => t.textContent.toLowerCase() === ${q(g.match.toLowerCase())}).focus()`);
-    // Wait for this term's text: the previous term's tooltip can still be showing when focus moves.
-    await until(`!document.querySelector('#ir-help-tooltip').hidden && document.querySelector('#ir-help-tooltip').textContent === ${q(g.text)}`);
-    await check(`Keyboard focus on ${g.match} explains it with its compiled help text`, `document.activeElement.getAttribute('aria-describedby') === 'ir-help-tooltip' && document.querySelector('#ir-help-tooltip').textContent === ${q(g.text)} && document.querySelector('#ir-help-tooltip').childElementCount === 0`);
+    await checkEventually(`Keyboard focus on ${g.match} explains it with its compiled help text`, `!document.querySelector('#ir-help-tooltip').hidden && document.activeElement.getAttribute('aria-describedby') === 'ir-help-tooltip' && document.querySelector('#ir-help-tooltip').textContent === ${q(g.text)} && document.querySelector('#ir-help-tooltip').childElementCount === 0`);
   }
   for (const g of served.glossary.filter(item => ['pass', 'optimisation-state'].includes(item.id))) {
     await value(`document.activeElement.blur(); document.querySelector('#task-instructions').open = true; window.glossaryTerm = [...document.querySelectorAll('#task-instructions .study-term-help')].find(term => term.textContent.toLowerCase() === ${q(g.match.toLowerCase())}); glossaryTerm.focus()`);
-    await until(`!document.querySelector('#ir-help-tooltip').hidden && document.querySelector('#ir-help-tooltip').textContent === ${q(g.text)} && document.activeElement.getAttribute('aria-describedby') === 'ir-help-tooltip'`);
-    await check(`Keyboard focus on ${g.match} exposes its exact compiled help`, `document.activeElement.getAttribute('aria-describedby') === 'ir-help-tooltip' && document.querySelector('#ir-help-tooltip').textContent === ${q(g.text)}`);
+    await checkEventually(`Keyboard focus on ${g.match} exposes its exact compiled help`, `!document.querySelector('#ir-help-tooltip').hidden && document.activeElement.getAttribute('aria-describedby') === 'ir-help-tooltip' && document.querySelector('#ir-help-tooltip').textContent === ${q(g.text)}`);
     await value('glossaryTerm.blur()');
     await hover('window.glossaryTerm');
-    await until(`!document.querySelector('#ir-help-tooltip').hidden && document.querySelector('#ir-help-tooltip').textContent === ${q(g.text)} && glossaryTerm.getAttribute('aria-describedby') === 'ir-help-tooltip'`);
-    await check(`Hover on ${g.match} exposes its exact compiled help`, `!document.querySelector('#ir-help-tooltip').hidden && glossaryTerm.getAttribute('aria-describedby') === 'ir-help-tooltip' && document.querySelector('#ir-help-tooltip').textContent === ${q(g.text)} && document.querySelector('#ir-help-tooltip').childElementCount === 0`);
+    await checkEventually(`Hover on ${g.match} exposes its exact compiled help`, `!document.querySelector('#ir-help-tooltip').hidden && glossaryTerm.getAttribute('aria-describedby') === 'ir-help-tooltip' && document.querySelector('#ir-help-tooltip').textContent === ${q(g.text)} && document.querySelector('#ir-help-tooltip').childElementCount === 0`);
   }
   await value(`document.activeElement.blur()`);
   await check('T0 timing, pause and response guidance come from the catalogue', `document.querySelector('#task-timing').textContent === ${q(M('timing.active'))} && document.querySelector('#task-timing').getAttribute('role') === 'status' && document.querySelector('[data-action="pause-task"]').textContent === ${q(M('actions.pause'))} && document.querySelector('.task-responses-details > summary').textContent === ${q(M('task.responses-open'))} && ${shows(M('task.optional'), '#task-responses p')} && document.querySelector('#task-responses a[href="#route-heading"]').textContent === ${q(M('task.goal-link'))} && document.querySelector('.task-complete').textContent === ${q(M('actions.finish-orientation'))} && document.querySelector('.task-history').getAttribute('aria-label') === ${q(M('task.progress'))} && document.querySelector('.task-history a').textContent === ${q(M('task.current', { taskId: 'T0' }))}`);
