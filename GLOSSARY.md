@@ -8,7 +8,11 @@ A web application that shows how LLVM optimisation passes transform a program's 
 
 **Curated example**:
 One of the small, fixed C programs the application ships with, chosen to exhibit particular optimisations.
-_Avoid_: sample, test program, user program
+_Avoid_: sample, test program
+
+**User program**:
+C source supplied in the browser (uploaded, typed, or an edited copy of a curated example) and compiled on request; editing a curated example makes a user program and leaves the curated example unchanged.
+_Avoid_: custom example, user example, uploaded example
 
 **Pinned toolchain**:
 The exact LLVM version and container environment in which all compiler artefacts are produced, so they can be regenerated identically.
