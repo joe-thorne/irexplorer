@@ -27,13 +27,13 @@ The separate container that compiles user programs on request with the pinned to
 _Avoid_: worker, sandbox, compile server, toolchain container
 
 **Model records**:
-The processed timelines and stored correspondences derived from compiler artefacts ahead of time; the only thing the running application reads.
+The processed timelines and stored correspondences derived from compiler artefacts, from which every query is answered. A curated example's are derived ahead of time; a user program's are derived when it is compiled and lost when the application restarts.
 _Avoid_: pre-baked records, baked data
 
 ### Timeline
 
 **Optimisation timeline**:
-The ordered sequence of recorded compiler states for one curated example, joined by the steps between them.
+The ordered sequence of recorded compiler states for one curated example or user program, joined by the steps between them.
 _Avoid_: pipeline, history
 
 **State**:
@@ -75,7 +75,7 @@ The set of links relating IR elements in one state to IR elements in another, ac
 _Avoid_: mapping, overlay
 
 **Stored correspondence**:
-A correspondence for one step, produced ahead of time from the compiler artefacts.
+A correspondence for one step, derived with the model records rather than on request.
 _Avoid_: overlay, baked overlay
 
 **Composed correspondence**:
