@@ -15,12 +15,16 @@ C source supplied in the browser (uploaded, typed, or an edited copy of a curate
 _Avoid_: custom example, user example, uploaded example
 
 **Pinned toolchain**:
-The exact LLVM version and container environment in which all compiler artefacts are produced, so they can be regenerated identically.
+The exact LLVM release build and target that produce every compiler artefact, for a curated example or a user program.
 _Avoid_: environment pin, toolchain pin
 
 **Compiler artefacts**:
-The raw IR, CFG, and remark output produced by the pinned toolchain for a curated example.
+The raw IR and remark output the pinned toolchain produces for a curated example or a user program.
 _Avoid_: golden fixtures, canonical fixtures, canonical artefacts
+
+**Compiler service**:
+The separate container that compiles user programs on request with the pinned toolchain and returns only their compiler artefacts.
+_Avoid_: worker, sandbox, compile server, toolchain container
 
 **Model records**:
 The processed timelines and stored correspondences derived from compiler artefacts ahead of time; the only thing the running application reads.
