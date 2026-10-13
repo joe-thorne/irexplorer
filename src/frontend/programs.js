@@ -21,6 +21,9 @@
   // or { kind: "failed", fileName, error }, where error is the server's { code, message, … }.
   let card = null;
   let ticking = null;
+  // Whether the paste box stands in for the source lines, and the button to return focus to when it closes.
+  let pasting = false;
+  let pasteReturn = null;
 
   function h(tag, attributes = {}, ...children) {
     const element = document.createElement(tag);
@@ -34,6 +37,7 @@
   }
 
   const view = {};
+  const DRAG_EVENTS = ["dragenter", "dragover", "dragleave", "drop"];
 
   // Make the controls once; attach() and detach() put them in the page and take them out again.
   function build() {
@@ -52,16 +56,30 @@
     view.yourSelect = h("select", { id: "your-file-select", onchange: () => openUpload(view.yourSelect.value) });
     view.yourControl = h("label", { id: "your-file-control", for: "your-file-select" }, "Your file", view.yourSelect);
     view.upload = h("button", { id: "program-upload", type: "button", onclick: () => view.fileInput.click() }, "Upload…");
+    view.pasteOpen = h("button", { id: "program-paste-open", type: "button", onclick: openPaste }, "Paste…");
     view.fileInput = h("input", { id: "program-file-input", type: "file", accept: ".c", hidden: true, onchange: () => {
       const [file] = view.fileInput.files;
       view.fileInput.value = "";
       if (file) uploadFile(file);
     } });
     view.choose = h("button", { type: "button", class: "primary", onclick: () => view.fileInput.click() }, "Choose a file…");
+    view.pasteInstead = h("button", { type: "button", onclick: openPaste }, "Paste source instead");
     // Stands in for the source prompt while Your files is selected (see style.css).
     view.drop = h("div", { id: "program-drop", class: "program-drop" },
-      h("p", { class: "program-drop-title" }, "Compile one of your C files and explore it."),
-      h("p", {}, LIMITS), view.choose);
+      h("p", { class: "program-drop-title" }, "Drop a .c file here"),
+      h("p", {}, LIMITS), h("div", { class: "program-actions" }, view.choose, view.pasteInstead));
+    view.pasteName = h("input", { id: "program-paste-name", type: "text", value: "program.c", spellcheck: "false", autocomplete: "off" });
+    view.pasteSource = h("textarea", { id: "program-paste-source", rows: "16", spellcheck: "false" });
+    view.pasteCompile = h("button", { id: "program-paste-compile", type: "submit", class: "primary" }, "Compile");
+    // Stands in for the source lines while open, over any open user program (see style.css).
+    view.paste = h("form", { id: "program-paste", class: "program-paste", "aria-label": "Paste C source", onsubmit: event => {
+      event.preventDefault();
+      compile(view.pasteName.value.trim(), view.pasteSource.value);
+    }, onkeydown: event => { if (event.key === "Escape") closePaste(); } },
+      h("label", { for: "program-paste-name" }, "File name", view.pasteName),
+      h("label", { for: "program-paste-source" }, "C source", view.pasteSource),
+      h("div", { class: "program-actions" }, view.pasteCompile,
+        h("button", { id: "program-paste-cancel", type: "button", onclick: closePaste }, "Cancel")));
     view.chip = h("span", { id: "program-chip", class: "program-chip" }, "Your file");
     view.title = h("div", { class: "source-title" });
     view.card = h("section", { id: "program-card", class: "panel program-card", "aria-labelledby": "program-card-heading" });
@@ -69,11 +87,12 @@
 
   function attach() {
     view.controls.prepend(view.mode);
-    view.fileControl.after(view.yourControl, view.upload);
-    view.sourceLines.after(view.drop, view.fileInput);
+    view.fileControl.after(view.yourControl, view.upload, view.pasteOpen);
+    view.sourceLines.after(view.drop, view.paste, view.fileInput);
     view.summary.replaceWith(view.title);
     view.title.append(view.summary, view.chip);
     view.shell.append(view.card);
+    for (const type of DRAG_EVENTS) view.sourcePanel.addEventListener(type, dragFile);
     render();
   }
 
@@ -85,10 +104,16 @@
     mode = "curated";
     current = null;
     card = null;
+    pasting = false;
     clearInterval(ticking);
     ticking = null;
     view.title.replaceWith(view.summary);
-    for (const element of [view.mode, view.yourControl, view.upload, view.drop, view.fileInput, view.card]) element.remove();
+    for (const element of [view.mode, view.yourControl, view.upload, view.pasteOpen, view.drop, view.paste, view.fileInput, view.card]) {
+      element.remove();
+    }
+    for (const type of DRAG_EVENTS) view.sourcePanel.removeEventListener(type, dragFile);
+    view.sourcePanel.classList.remove("is-drop-target");
+    view.sourcePanel.removeAttribute("data-pasting");
     delete view.sourcePanel.dataset.mode;
     view.fileControl.hidden = false;
     view.shell.removeAttribute("aria-busy");
@@ -113,13 +138,16 @@
       input.disabled = compiling;
     }
     view.fileControl.hidden = yours;
-    view.yourControl.hidden = view.upload.hidden = !yours;
+    view.yourControl.hidden = view.upload.hidden = view.pasteOpen.hidden = !yours;
     const placeholder = new Option(uploads.length ? "Choose one of your files…" : "No files yet", "");
     placeholder.disabled = true;
     view.yourSelect.replaceChildren(placeholder, ...uploads.map(upload => new Option(upload.fileName, upload.programId)));
     view.yourSelect.value = current?.programId || "";
     view.yourSelect.disabled = compiling || !uploads.length;
     view.upload.disabled = view.choose.disabled = compiling;
+    view.pasteOpen.disabled = view.pasteInstead.disabled = view.pasteCompile.disabled = compiling;
+    view.paste.hidden = !pasting;
+    view.sourcePanel.toggleAttribute("data-pasting", pasting);
     // Re-enabled by the workspace once a curated example or user program can be chosen again.
     if (compiling) elements.exampleSelect.disabled = true;
     view.shell.setAttribute("aria-busy", String(compiling));
@@ -169,10 +197,27 @@
   function setMode(next) {
     mode = next;
     current = null;
+    pasting = false;
     card = null;
     closeWorkspace();
     render();
     announce(mode === "yours" ? "Upload a C file, or choose one of your files." : "Choose a curated file to compare its recorded optimisation states.");
+  }
+
+  // Dropping a file onto the C source panel uploads it, in Your files and while nothing compiles. A file
+  // dragged over the panel is never left to the browser, which would open it in place of the page.
+  function dragFile(event) {
+    if (!event.dataTransfer.types.includes("Files")) return;
+    event.preventDefault();
+    const accepted = mode === "yours" && card?.kind !== "compiling";
+    if (event.type === "dragleave" && view.sourcePanel.contains(event.relatedTarget)) return;
+    view.sourcePanel.classList.toggle("is-drop-target", accepted && (event.type === "dragenter" || event.type === "dragover"));
+    if (event.type !== "drop") {
+      event.dataTransfer.dropEffect = accepted ? "copy" : "none";
+      return;
+    }
+    const [file] = event.dataTransfer.files;
+    if (accepted && file) uploadFile(file);
   }
 
   // The one way in for a file, however it arrives: read it, then compile it.
@@ -184,6 +229,7 @@
     if (card?.kind === "compiling") return;
     mode = "yours";
     current = null;
+    pasting = false;
     closeWorkspace();
     sourceState.data = { file: fileName, text: source };
     renderSource();
@@ -231,12 +277,28 @@
     return { ok: false, error: { message: `The compile failed with status ${response.status}.`, ...body.error } };
   }
 
+  // The paste box keeps what was last typed in it, so a refused paste can be corrected.
+  function openPaste(event) {
+    pasteReturn = event.currentTarget;
+    pasting = true;
+    render();
+    view.pasteSource.focus();
+  }
+
+  function closePaste() {
+    pasting = false;
+    render();
+    // The button that opened the box, or Paste… if that one has gone with the drop zone.
+    (pasteReturn?.checkVisibility() ? pasteReturn : view.pasteOpen).focus();
+  }
+
   // A held upload opens at once: its kept source shows while the views load, and nothing is compiled.
   async function openUpload(programId) {
     const upload = uploads.find(item => item.programId === programId);
     if (!upload) return;
     current = upload;
     card = null;
+    pasting = false;
     const opened = loadProgram(upload);
     render();
     await opened;
