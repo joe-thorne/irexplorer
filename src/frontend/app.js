@@ -76,12 +76,22 @@ for (const heading of workbenchHeadings) {
 }
 syncWorkbenchHeadingHeight();
 
-async function request(path, options = {}) {
+// User programs set this (programs.js): given the programId of a request the server answered
+// unknown_program, recompile that program from the source the browser kept, and resolve true once the
+// server holds it again.
+let recompileForgottenProgram = async () => false;
+
+async function request(path, options = {}, retried = false) {
   const response = await fetch(path, {
     headers: { "Content-Type": "application/json", ...(options.headers || {}) },
     ...options,
   });
   const body = await response.json().catch(() => ({}));
+  const programId = /^\/api\/programs\/([^/?]+)\//.exec(path)?.[1];
+  if (body.error?.code === "unknown_program" && programId && !retried &&
+      await recompileForgottenProgram(decodeURIComponent(programId))) {
+    return request(path, options, true);
+  }
   if (!response.ok) {
     const message = typeof body.error === "string" ? body.error : body.error?.message;
     throw new Error(message || `Request failed with status ${response.status}.`);

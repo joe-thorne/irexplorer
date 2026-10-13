@@ -3,8 +3,9 @@
 # end to end: start the host runner on a disposable preview store and an isolated headless Chrome, run
 # every check open with user programs off, rerun check_app with collection closed, then start the
 # compiler service on loopback over the fake toolchain (no Docker, no LLVM), restart the runner with
-# user programs on and run check_user_programs, then the Study checks again unchanged (Study must not
-# change with user programs on), then stop everything. Synthetic data only.
+# user programs on and run check_user_programs (which asks for one more restart while it runs), then the
+# Study checks again unchanged (Study must not change with user programs on), then stop everything.
+# Synthetic data only.
 # Needs Node 22+, Chrome, and the Python environment from the README. CHROME overrides the browser.
 # Ports: IREXPLORER_PORT (app), IREXPLORER_CDP_PORT (Chrome) and IREXPLORER_COMPILER_PORT (compiler service).
 set -euo pipefail
@@ -30,6 +31,7 @@ cd "$APP_ROOT"
 work=$(mktemp -d "${TMPDIR:-/tmp}/irexplorer-browser.XXXXXX")
 server_pid=''
 compiler_pid=''
+checker_pid=''
 chrome_pid=''
 # Something still answering on a port would be checked in place of the code under test.
 answering() { curl -sS -o /dev/null "$1" >/dev/null 2>&1; }
@@ -46,6 +48,7 @@ stop_compiler() {
   if answering "$COMPILER_URL/"; then echo "check_browser: a compiler service still answers on port $COMPILER_PORT after stopping" >&2; return 1; fi
 }
 cleanup() {
+  if [[ -n "$checker_pid" ]]; then kill "$checker_pid" 2>/dev/null || true; wait "$checker_pid" 2>/dev/null || true; fi
   stop_server || true
   stop_compiler || true
   if [[ -n "$chrome_pid" ]]; then kill "$chrome_pid" 2>/dev/null || true; wait "$chrome_pid" 2>/dev/null || true; fi
@@ -105,7 +108,21 @@ stop_server
 
 start_compiler
 start_server 0 1
-node scripts/check_user_programs.mjs
+# check_user_programs restarts the host runner, so the server forgets every user program, by creating
+# this file; it waits until the file is gone and the runner answers again.
+export IREXPLORER_RESTART_REQUEST="$work/restart-request"
+node scripts/check_user_programs.mjs &
+checker_pid=$!
+while kill -0 "$checker_pid" 2>/dev/null; do
+  if [[ -e "$IREXPLORER_RESTART_REQUEST" ]]; then
+    stop_server
+    start_server 0 1
+    rm "$IREXPLORER_RESTART_REQUEST"
+  fi
+  sleep 0.2
+done
+wait "$checker_pid"
+checker_pid=''
 node scripts/check_study_tasks.mjs
 node scripts/check_study_guidance.mjs
 stop_server
