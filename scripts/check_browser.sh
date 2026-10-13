@@ -20,15 +20,20 @@ if [[ -z "${CHROME:-}" ]]; then
 fi
 [[ -n "${CHROME:-}" ]] || { echo "check_browser: no Chrome found; set CHROME" >&2; exit 2; }
 
+cd "$APP_ROOT"
 work=$(mktemp -d "${TMPDIR:-/tmp}/irexplorer-browser.XXXXXX")
 server_pid=''
 chrome_pid=''
+# Something still answering on a port would be checked in place of the code under test.
+answering() { curl -sS -o /dev/null "$1" >/dev/null 2>&1; }
 stop_server() {
-  if [[ -n "$server_pid" ]]; then kill "$server_pid" 2>/dev/null || true; wait "$server_pid" 2>/dev/null || true; fi
+  [[ -n "$server_pid" ]] || return 0
+  kill "$server_pid" 2>/dev/null || true; wait "$server_pid" 2>/dev/null || true
   server_pid=''
+  if answering "$IREXPLORER_ORIGIN/"; then echo "check_browser: a server still answers on port $PORT after stopping" >&2; return 1; fi
 }
 cleanup() {
-  stop_server
+  stop_server || true
   if [[ -n "$chrome_pid" ]]; then kill "$chrome_pid" 2>/dev/null || true; wait "$chrome_pid" 2>/dev/null || true; fi
   rm -rf "$work"
 }
@@ -45,9 +50,11 @@ wait_for() {
 }
 
 start_server() {
-  (cd "$APP_ROOT" && IREXPLORER_STUDY_DIR="$work/study" IREXPLORER_COLLECTION_MODE=preview \
+  if answering "$IREXPLORER_ORIGIN/"; then echo "check_browser: port $PORT is already in use" >&2; return 1; fi
+  # No subshell: $! must be the server itself, or stop_server kills only a wrapper and leaves it running.
+  IREXPLORER_STUDY_DIR="$work/study" IREXPLORER_COLLECTION_MODE=preview \
     IREXPLORER_STUDY_ORIGIN="$IREXPLORER_ORIGIN" IREXPLORER_COLLECTION_CLOSED="$1" IREXPLORER_USER_PROGRAMS=0 \
-    "$PYTHON" -c "from src.backend.api.server import run_server; run_server(port=$PORT)") \
+    "$PYTHON" -c "from src.backend.api.server import run_server; run_server(port=$PORT)" \
     >"$work/server-$1.log" 2>&1 &
   server_pid=$!
   wait_for "$IREXPLORER_ORIGIN/" || { cat "$work/server-$1.log" >&2; return 1; }
@@ -59,7 +66,6 @@ start_server() {
 chrome_pid=$!
 wait_for "http://127.0.0.1:$CDP_PORT/json/version"
 
-cd "$APP_ROOT"
 start_server 0
 node scripts/check_app.mjs
 node scripts/check_study_tasks.mjs
@@ -68,4 +74,5 @@ stop_server
 
 start_server 1
 node scripts/check_app.mjs
+stop_server
 echo "check_browser: green"
