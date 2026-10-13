@@ -357,6 +357,9 @@ class CompileCancelTests(unittest.TestCase):
                          user_programs=UserProgramsSetting(True, self.compiler.url))
         listening = socket.socket()
         listening.bind(("127.0.0.1", 0))
+        # Listening before uvicorn starts queues the test's connections until the server accepts them, so the
+        # test never races the server thread (Linux refuses a connection to a socket that is not listening).
+        listening.listen()
         self.addCleanup(listening.close)
         self.port = listening.getsockname()[1]
         server = uvicorn.Server(uvicorn.Config(app, log_level="warning"))
