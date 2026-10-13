@@ -14,6 +14,10 @@ _Avoid_: sample, test program
 C source supplied in the browser (uploaded, typed, or an edited copy of a curated example) and compiled on request; editing a curated example makes a user program and leaves the curated example unchanged.
 _Avoid_: custom example, user example, uploaded example
 
+**User programs setting**:
+The startup setting that makes user programs available in Explore; off unless deliberately turned on, never available in Study, and never combined with pilot or live collection.
+_Avoid_: feature flag, custom mode
+
 **Pinned toolchain**:
 The exact LLVM release build and target that produce every compiler artefact, for a curated example or a user program.
 _Avoid_: environment pin, toolchain pin
@@ -242,5 +246,5 @@ _Avoid_: paused, disabled, offline collection
 ### Release
 
 **Release identity**:
-The version, source fingerprint, and artefact checksum that identify exactly which build of the application is running; recorded with every submission.
+The version, source fingerprint, and artefact checksum that identify exactly which build of the application is running; recorded with every submission. Runtime settings, such as whether user programs are enabled, are not part of it.
 _Avoid_: build number, revision (alone)
