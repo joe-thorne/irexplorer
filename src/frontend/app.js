@@ -12,7 +12,9 @@ const PASS_ACTIONS = Object.freeze({
 });
 
 const appState = {
+  // The workspace shows a curated example or a user program, never both.
   exampleId: null,
+  programId: null,
   states: null,
   functionName: null,
   selection: null,
@@ -102,12 +104,20 @@ function showError(error) {
   announce(`Error: ${error.message}`, "error");
 }
 
+// What the empty workspace asks for. User programs change it while Your files is selected.
+let emptyPrompt = elements.emptyState.querySelector("h2").textContent;
+function setEmptyPrompt(text) {
+  emptyPrompt = text;
+  if (!elements.emptyState.classList.contains("error-state")) elements.emptyState.querySelector("h2").textContent = text;
+}
+
 function clearError() {
   if (!elements.emptyState.classList.contains("error-state")) return;
   const empty = document.createElement("section");
   empty.id = "empty-state";
   empty.className = "empty-state panel";
-  empty.innerHTML = "<h2>Choose a curated file to start comparing.</h2><p>Select a state and a representation in either panel, then select an IR line or CFG block to follow its recorded link.</p>";
+  empty.innerHTML = "<h2></h2><p>Select a state and a representation in either panel, then select an IR line or CFG block to follow its recorded link.</p>";
+  empty.querySelector("h2").textContent = emptyPrompt;
   elements.emptyState.replaceWith(empty);
   elements.emptyState = empty;
 }
@@ -131,32 +141,43 @@ async function loadExamples() {
 async function loadExample(workspace = null) {
   const exampleId = elements.exampleSelect.value;
   if (!exampleId) return;
+  await openWorkspace({ exampleId, programId: null, name: exampleId }, workspace);
+}
+
+// Open a user program the server holds. Its source, kept by the browser, shows while the views load.
+async function loadProgram({ programId, fileName, source }) {
+  await openWorkspace({ exampleId: null, programId, name: fileName, source: { file: fileName, text: source } });
+}
+
+// Open a curated example or a user program in the panels; both load through the same views.
+async function openWorkspace(target, workspace = null) {
   const loadId = ++appState.loadId;
   ++appState.refreshId;
   appState.ready = false;
   clearSelection();
-  sourceState.data = null;
+  sourceState.data = target.source || null;
   sourceState.sourceLocations = [];
   renderSource();
   elements.workspace.hidden = true;
   elements.exampleSelect.disabled = true;
-  announce(`Loading ${exampleId}…`);
+  announce(`Loading ${target.name}…`);
   try {
     clearError();
     const [states, source] = await Promise.all([
-      request(`${apiRoot(exampleId)}/states`), request(`${apiRoot(exampleId)}/source`),
+      request(`${apiRoot(target)}/states`), request(`${apiRoot(target)}/source`),
     ]);
     if (loadId !== appState.loadId) return;
     appState.states = states.states;
     sourceState.data = source;
     renderSource();
-    appState.exampleId = exampleId;
+    appState.exampleId = target.exampleId;
+    appState.programId = target.programId;
     appState.functionName = null;
     appState.panels.left.ordinal = 0;
     appState.panels.left.viewType = "ir";
     appState.panels.right.ordinal = Math.min(1, appState.states.length - 1);
     appState.panels.right.viewType = "ir";
-    if (workspace?.exampleId === exampleId) {
+    if (target.exampleId && workspace?.exampleId === target.exampleId) {
       for (const side of ["left", "right"]) {
         const panel = workspace.panels?.[side];
         if (Number.isInteger(panel?.ordinal) && panel.ordinal >= 0 && panel.ordinal < appState.states.length &&
@@ -200,7 +221,7 @@ async function loadExample(workspace = null) {
     if (loadId !== appState.loadId || !appState.ready) return;
     elements.emptyState.hidden = true;
     elements.workspace.hidden = false;
-    announce(`${exampleId} is ready. Configure either panel, then select an artefact to follow its recorded link.`);
+    announce(`${target.name} is ready. Configure either panel, then select an artefact to follow its recorded link.`);
     document.dispatchEvent(new Event("workspace-ready"));
   } catch (error) {
     if (loadId !== appState.loadId) return;
@@ -232,7 +253,7 @@ function stateOptionLabel(state) {
 }
 
 async function refreshWorkspace() {
-  if (!appState.exampleId || Object.values(appState.panels).some(panel => panel.ordinal === null || !panel.viewType)) return;
+  if (!(appState.exampleId || appState.programId) || Object.values(appState.panels).some(panel => panel.ordinal === null || !panel.viewType)) return;
   let selectionInput = appState.selectionInput;
   if (selectionInput?.kind === "node" && selectionInput.ordinal !== appState.panels[selectionInput.side].ordinal)
     selectionInput = sourceState.sourceLocations.length ? { kind: "source", sourceLocations: sourceState.sourceLocations } : null;
@@ -242,7 +263,7 @@ async function refreshWorkspace() {
   renderComparisonReport();
   elements.workspace.setAttribute("aria-busy", "true");
   document.querySelector("#source-status").textContent = "Loading recorded mappings…";
-  const apiBase = apiRoot(appState.exampleId);
+  const apiBase = apiRoot(appState);
   try {
     const [leftIr, rightIr, comparisonReport] = await Promise.all([
       request(`${apiBase}/states/${appState.panels.left.ordinal}/ir`),
@@ -665,8 +686,32 @@ function escapeHtml(text) {
   return String(text).replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character]);
 }
 
-function apiRoot(exampleId) {
-  return `/api/examples/${encodeURIComponent(exampleId)}`;
+// A curated example's views live under /api/examples, a user program's under /api/programs.
+function apiRoot({ exampleId, programId }) {
+  return programId ? `/api/programs/${encodeURIComponent(programId)}` : `/api/examples/${encodeURIComponent(exampleId)}`;
+}
+
+// Empty the workspace: no curated example or user program open, nothing loading.
+function closeWorkspace() {
+  ++appState.loadId;
+  ++appState.refreshId;
+  appState.ready = false;
+  appState.exampleId = null;
+  appState.programId = null;
+  appState.states = null;
+  appState.comparisonReport = null;
+  appState.functionName = null;
+  clearSelection();
+  sourceState.data = null;
+  sourceState.sourceLocations = [];
+  renderSource();
+  elements.exampleSelect.value = "";
+  elements.exampleSelect.disabled = false;
+  elements.functionControl.hidden = true;
+  elements.workspace.hidden = true;
+  elements.workspace.setAttribute("aria-busy", "false");
+  clearError();
+  elements.emptyState.hidden = false;
 }
 
 elements.exampleSelect.addEventListener("change", loadExample);
@@ -733,25 +778,8 @@ window.StudyWorkspace = {
     };
   },
   reset() {
-    ++appState.loadId;
-    ++appState.refreshId;
+    closeWorkspace();
     appState.manualSetup = true;
-    appState.ready = false;
-    appState.exampleId = null;
-    appState.states = null;
-    appState.comparisonReport = null;
-    appState.functionName = null;
-    clearSelection();
-    sourceState.data = null;
-    sourceState.sourceLocations = [];
-    renderSource();
-    elements.exampleSelect.value = "";
-    elements.exampleSelect.disabled = false;
-    elements.functionControl.hidden = true;
-    elements.workspace.hidden = true;
-    elements.workspace.setAttribute("aria-busy", "false");
-    clearError();
-    elements.emptyState.hidden = false;
     announce("Choose a source, then select the states and views in the task instructions.");
   },
 };
