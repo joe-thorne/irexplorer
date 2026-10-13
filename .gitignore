@@ -226,3 +226,6 @@ research-data/
 /release.json
 /test-results/
 /playwright-report/
+
+# macOS Finder metadata
+.DS_Store
