@@ -37,7 +37,7 @@ from threading import Lock
 from typing import Any
 
 from src.backend.toolchain.curated import PASS_STATES, PassState
-from src.backend.toolchain.generate_curated import format_command, pass_sequence_commands
+from src.backend.toolchain.generate_curated import format_command, pass_sequence_commands, version_line
 
 # The service's workspace in the compiler image, which the paths in its commands and output name.
 WORKSPACE = Path("/workspace")
@@ -51,6 +51,8 @@ POLL_INTERVAL = 0.05
 # A compile whose client has gone stops at its next poll; a request arriving meanwhile waits this long at
 # most for it, rather than being refused as busy.
 STOPPING_GRACE = 5.0
+# The compile timeout, in seconds, unless the service is started with another.
+TIMEOUT = 30.0
 # Reading the tool versions is not a compile, so the compile timeout does not bound it.
 VERSION_TIMEOUT = 30.0
 # Busy and timeout messages are shown to the student as they are.
@@ -91,7 +93,7 @@ class CompilerService:
     toolchain: Path | None = None
     workspace: Path = WORKSPACE
     # Seconds allowed for a whole program, every command included.
-    timeout: float = 30.0
+    timeout: float = TIMEOUT
     compiler_image: str = "unknown"
     libc_version: str = "unknown"
     # Held for the whole of a compile: one program at a time, and nothing queues behind it.
@@ -158,8 +160,8 @@ class CompilerService:
         """The ``clang`` and ``opt`` version lines, read once: a running service's toolchain never changes."""
 
         deadline = time.monotonic() + VERSION_TIMEOUT
-        return (self._run(["clang", "--version"], deadline).splitlines()[0].strip(),
-                self._run(["opt", "--version"], deadline).splitlines()[1].strip())
+        return (version_line("clang", self._run(["clang", "--version"], deadline)),
+                version_line("opt", self._run(["opt", "--version"], deadline)))
 
     def _state(self, state: PassState, output_dir: Path, stem: str, commands: list[list[str]]) -> dict[str, Any]:
         ir_path = output_dir / f"{stem}_{state.file_suffix}.ll"
@@ -282,7 +284,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--port", type=int, default=8080, help="0 picks a free port")
     parser.add_argument("--toolchain", type=Path, help="directory holding clang and opt (default: PATH)")
     parser.add_argument("--workspace", type=Path, default=WORKSPACE)
-    parser.add_argument("--timeout", type=float, default=30.0, help="seconds allowed for a whole program")
+    parser.add_argument("--timeout", type=float, default=TIMEOUT, help="seconds allowed for a whole program")
     parser.add_argument("--compiler-image", default=os.environ.get("IREXPLORER_COMPILER_IMAGE", "unknown"))
     parser.add_argument("--libc-version", default=os.environ.get("IREXPLORER_LIBC_VERSION", "unknown"))
     args = parser.parse_args(argv)
