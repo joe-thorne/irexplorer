@@ -43,6 +43,8 @@ Open **http://localhost:8001**. Stop it with `docker compose -f compose.user-pro
 
 The stack runs the same application image with the user programs setting on, beside a compiler service holding the pinned LLVM toolchain and the C library headers. On Apple Silicon the compiler runs `linux/amd64` under emulation, so a program takes a few seconds. The compiler service has no published port and no internet access, reaches only the application over the stack's internal network, has a read-only root file system and wipes its temporary work directory after each program. The application never gets the Docker socket and never runs `clang` or `opt` itself.
 
+With the stack up, `scripts/check_user_programs.sh` checks it against the real toolchain; see [tests/README.md](tests/README.md#real-compiler-smoke-check).
+
 ## Run with Python
 
 Python 3.12 is the container runtime baseline. From the repository root:
