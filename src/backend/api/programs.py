@@ -57,6 +57,7 @@ from src.backend.programs.compiler import (
     CompilerOutput,
 )
 from src.backend.programs.diagnostics import compile_failure
+from src.backend.programs.unsupported import UnsupportedProgram, unsupported_program
 
 # About 16 programs are held; nothing is persisted, so a restart forgets them all.
 STORE_CAPACITY = 16
@@ -136,7 +137,12 @@ def router(store: ProgramStore, compiler: CompilerClient) -> APIRouter:
 
     def compile_program(program: AcceptedProgram, request: CompileRequest) -> UserProgram:
         output = compiler.compile(program, request)
-        return UserProgram(derive_records(program, output), output.manifest)
+        try:
+            records = derive_records(program, output)
+        except ValueError as exc:
+            # Ingest and model validation fail with ValueError: the program compiled, but cannot be shown.
+            raise unsupported_program(exc) from exc
+        return UserProgram(records, output.manifest)
 
     @api.post("/api/programs", response_model=ProgramResponse, status_code=201)
     async def post_program(posted: ProgramRequest, request: Request, response: Response) -> Any:
@@ -172,6 +178,8 @@ def router(store: ProgramStore, compiler: CompilerClient) -> APIRouter:
         except CompileNotFinished as exc:
             return JSONResponse({"error": {"code": exc.code, "message": str(exc)}},
                                 status_code=exc.status_code, headers=NO_STORE)
+        except UnsupportedProgram as exc:
+            return JSONResponse({"error": exc.error()}, status_code=422, headers=NO_STORE)
         finally:
             dropping.cancel()
         store.hold(compiled)
