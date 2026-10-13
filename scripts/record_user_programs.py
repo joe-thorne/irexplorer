@@ -10,7 +10,7 @@ the stack's compiler service. The service has no published port, so it is reache
 Its answer is written to the directory named after the program's stem, in the curated file layout: each
 state's IR and remarks, the optimisation record, the -Rpass text and `manifest.json`; or, for a program
 whose compile failed, `failure.json`. Recording talks to the compiler service rather than the app, so a
-program the app cannot show yet is recorded all the same. The fake toolchain (tests/fake_toolchain) looks
+program the app cannot show is recorded all the same. The fake toolchain (tests/fake_toolchain) looks
 the recordings up by the SHA-256 of the source, and `scripts/check_user_programs.sh` checks them for drift.
 """
 
@@ -54,9 +54,6 @@ class CorpusProgram:
     file_name: str
     # How POST /api/programs answers: {"status": …} and, for a refusal, the error's code and any reason.
     outcome: dict[str, Any]
-    # The ticket that gives the program its outcome, and how the app answers it until then.
-    until: str | None = None
-    currently: dict[str, Any] | None = None
     # A bound on a fresh compile of the program through the real stack, in seconds.
     within_seconds: float | None = None
 
@@ -72,16 +69,10 @@ class CorpusProgram:
     def recording_dir(self) -> Path:
         return CORPUS_ROOT / self.stem
 
-    @property
-    def expected(self) -> dict[str, Any]:
-        """How the app answers the program today."""
-        return self.currently if self.currently is not None else self.outcome
-
 
 def corpus() -> tuple[CorpusProgram, ...]:
     listed = json.loads((CORPUS_ROOT / "corpus.json").read_text(encoding="utf-8"))["programs"]
-    return tuple(CorpusProgram(entry["fileName"], entry["outcome"], entry.get("until"), entry.get("currently"),
-                               entry.get("withinSeconds")) for entry in listed)
+    return tuple(CorpusProgram(entry["fileName"], entry["outcome"], entry.get("withinSeconds")) for entry in listed)
 
 
 class StackCompiler:

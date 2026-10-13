@@ -1,0 +1,43 @@
+/workspace/user-programs/non_ascii_name.c:7:12: remark: 'café_total' inlined into 'main' with (cost=-40, threshold=375) at callsite main:1:12; [-Rpass=inline]
+    7 |     return café_total(3, 4) == 12 ? 0 : 1;
+      |            ^
+/workspace/user-programs/non_ascii_name.c:2:1: remark: X86 DAG->DAG Instruction Selection: Function: café_total: MI Instruction count changed from 0 to 7; Delta: 7 [-Rpass-analysis=size-info]
+    2 | int café_total(int cups, int price) {
+      | ^
+/workspace/user-programs/non_ascii_name.c:2:1: remark: Two-Address instruction pass: Function: café_total: MI Instruction count changed from 7 to 8; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/non_ascii_name.c:2:1: remark: Register Coalescer: Function: café_total: MI Instruction count changed from 8 to 7; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/non_ascii_name.c:2:1: remark: Debug Variable Analysis: Function: café_total: MI Instruction count changed from 7 to 5; Delta: -2 [-Rpass-analysis=size-info]
+/workspace/user-programs/non_ascii_name.c:2:1: remark: 1 virtual registers copies 1.000000e+00 total copies cost generated in function [-Rpass-missed=regalloc]
+/workspace/user-programs/non_ascii_name.c:2:1: remark: 0 stack bytes in function 'café_total' [-Rpass-analysis=prologepilog]
+/workspace/user-programs/non_ascii_name.c:2:1: remark: 
+Function: café_total [-Rpass-analysis=stack-frame-layout]
+/workspace/user-programs/non_ascii_name.c:2:5: note: could not determine the original source location for user-programs/non_ascii_name.c:0:0
+    2 | int café_total(int cups, int price) {
+      |     ^
+/workspace/user-programs/non_ascii_name.c:2:5: remark: BasicBlock: entry
+IMUL32rr: 1
+MOV32rr: 1
+RET64: 1
+ [-Rpass-analysis=asm-printer]
+    2 | int café_total(int cups, int price) {
+      |     ^
+/workspace/user-programs/non_ascii_name.c:2:5: note: could not determine the original source location for user-programs/non_ascii_name.c:0:0
+/workspace/user-programs/non_ascii_name.c:2:1: remark: 3 instructions in function [-Rpass-analysis=asm-printer]
+    2 | int café_total(int cups, int price) {
+      | ^
+/workspace/user-programs/non_ascii_name.c:6:1: remark: X86 DAG->DAG Instruction Selection: Function: main: MI Instruction count changed from 0 to 3; Delta: 3 [-Rpass-analysis=size-info]
+    6 | int main(void) {
+      | ^
+/workspace/user-programs/non_ascii_name.c:6:1: remark: Peephole Optimizations: Function: main: MI Instruction count changed from 3 to 2; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/non_ascii_name.c:6:1: remark: 0 stack bytes in function 'main' [-Rpass-analysis=prologepilog]
+/workspace/user-programs/non_ascii_name.c:6:1: remark: 
+Function: main [-Rpass-analysis=stack-frame-layout]
+/workspace/user-programs/non_ascii_name.c:7:5: remark: BasicBlock: entry
+RET64: 1
+XOR32rr: 1
+ [-Rpass-analysis=asm-printer]
+    7 |     return café_total(3, 4) == 12 ? 0 : 1;
+      |     ^
+/workspace/user-programs/non_ascii_name.c:6:1: remark: 2 instructions in function [-Rpass-analysis=asm-printer]
+    6 | int main(void) {
+      | ^

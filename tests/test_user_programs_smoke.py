@@ -88,8 +88,7 @@ class RealCompilerSmokeTests(unittest.TestCase):
                 status, body = post_program(f"{program.stem}_{run}.c", program.source)
                 elapsed = time.monotonic() - started
                 print(f"\n  {program.file_name}: {status} in {elapsed:.1f} s", end="", file=sys.stderr)
-                self.assertEqual(answered_outcome(status, body), program.expected,
-                                 program.until and f"once {program.until} lands, drop until and currently")
+                self.assertEqual(answered_outcome(status, body), program.outcome)
                 if program.within_seconds is not None:
                     self.assertLessEqual(elapsed, program.within_seconds)
         print(file=sys.stderr)
