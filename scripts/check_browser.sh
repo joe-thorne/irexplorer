@@ -46,7 +46,7 @@ wait_for() {
 
 start_server() {
   (cd "$APP_ROOT" && IREXPLORER_STUDY_DIR="$work/study" IREXPLORER_COLLECTION_MODE=preview \
-    IREXPLORER_STUDY_ORIGIN="$IREXPLORER_ORIGIN" IREXPLORER_COLLECTION_CLOSED="$1" \
+    IREXPLORER_STUDY_ORIGIN="$IREXPLORER_ORIGIN" IREXPLORER_COLLECTION_CLOSED="$1" IREXPLORER_USER_PROGRAMS=0 \
     "$PYTHON" -c "from src.backend.api.server import run_server; run_server(port=$PORT)") \
     >"$work/server-$1.log" 2>&1 &
   server_pid=$!
