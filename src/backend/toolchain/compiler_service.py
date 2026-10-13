@@ -20,11 +20,14 @@ import contextlib
 import json
 import os
 import re
+import select
 import shutil
 import signal
+import socket
 import subprocess
 import sys
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from functools import cached_property
 from http import HTTPStatus
@@ -58,6 +61,15 @@ class CompileError(Exception):
         self.body = {"code": code, "message": message, **details}
 
 
+class ClientDisconnected(Exception):
+    """The client went away mid-compile, so nobody is waiting for the answer: the compile is stopped."""
+
+
+def never() -> bool:
+    """A client that never disconnects, for work no client waits on (such as reading the tool versions)."""
+    return False
+
+
 @dataclass(frozen=True)
 class CompilerService:
     """Runs the curated pass sequence for one program at a time in a wiped workspace."""
@@ -72,17 +84,20 @@ class CompilerService:
     # Held for the whole of a compile: one program at a time, and nothing queues behind it.
     _compiling: Lock = field(default_factory=Lock, init=False, repr=False, compare=False)
 
-    def compile(self, file_name: str, source: str) -> dict[str, Any]:
+    def compile(self, file_name: str, source: str, *,
+                disconnected: Callable[[], bool] = never) -> dict[str, Any]:
+        """Compile one program; ``disconnected`` is checked as the commands run, and stops the compile."""
+
         if not SAFE_FILE_NAME.fullmatch(file_name):
             raise CompileError(HTTPStatus.BAD_REQUEST, "invalid_request", "fileName must be a safe C file name.")
         if not self._compiling.acquire(blocking=False):
             raise CompileError(HTTPStatus.CONFLICT, "busy", BUSY)
         try:
-            return self._compile(file_name, source)
+            return self._compile(file_name, source, disconnected)
         finally:
             self._compiling.release()
 
-    def _compile(self, file_name: str, source: str) -> dict[str, Any]:
+    def _compile(self, file_name: str, source: str, disconnected: Callable[[], bool]) -> dict[str, Any]:
         deadline = time.monotonic() + self.timeout
         source_dir = self.workspace / "user-programs"
         output_dir = self.workspace / "out"
@@ -97,7 +112,7 @@ class CompilerService:
             commands = pass_sequence_commands(str(source_path), str(output_dir), stem)
             stderr = ""
             for command in commands:
-                stderr = self._run(command, deadline, output="stderr")
+                stderr = self._run(command, deadline, disconnected, output="stderr")
             return {
                 "states": [self._state(state, output_dir, stem, commands) for state in PASS_STATES],
                 "optRecord": (output_dir / f"{stem}.opt.yaml").read_text(encoding="utf-8"),
@@ -135,14 +150,15 @@ class CompilerService:
             "command": format_command(command),
         }
 
-    def _run(self, command: list[str], deadline: float, *, output: str = "stdout") -> str:
+    def _run(self, command: list[str], deadline: float, disconnected: Callable[[], bool] = never, *,
+             output: str = "stdout") -> str:
         tool = str(self.toolchain / command[0]) if self.toolchain else command[0]
         # Its own process group, so stopping it also stops every process it started (clang runs clang -cc1).
         process = subprocess.Popen([tool, *command[1:]], cwd=self.workspace, stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE, encoding="utf-8", errors="replace",
                                    start_new_session=True)
         try:
-            stdout, stderr = self._wait(process, deadline)
+            stdout, stderr = self._wait(process, deadline, disconnected)
         finally:
             self._stop(process)
         if process.returncode != 0:
@@ -151,7 +167,8 @@ class CompilerService:
                                command=format_command(command), stderr=stderr)
         return stdout if output == "stdout" else stderr
 
-    def _wait(self, process: subprocess.Popen[str], deadline: float) -> tuple[str, str]:
+    def _wait(self, process: subprocess.Popen[str], deadline: float,
+              disconnected: Callable[[], bool]) -> tuple[str, str]:
         """Wait for a command, checking every so often whether the compile must stop.
 
         Stopping raises; the command's group is then killed and the caller wipes the work directory.
@@ -163,6 +180,8 @@ class CompilerService:
             except subprocess.TimeoutExpired:
                 if time.monotonic() >= deadline:
                     raise CompileError(HTTPStatus.GATEWAY_TIMEOUT, "timeout", TIMED_OUT.format(self.timeout)) from None
+                if disconnected():
+                    raise ClientDisconnected from None
 
     @staticmethod
     def _stop(process: subprocess.Popen[str]) -> None:
@@ -199,9 +218,22 @@ def server(service: CompilerService, host: str, port: int) -> HTTPServer:
                              {"error": {"code": "invalid_request", "message": "Send {fileName, source}."}})
                 return
             try:
-                self._answer(HTTPStatus.OK, service.compile(file_name, source))
+                self._answer(HTTPStatus.OK, service.compile(file_name, source, disconnected=self._disconnected))
             except CompileError as exc:
                 self._answer(exc.status, {"error": exc.body})
+            except ClientDisconnected:
+                # The app dropped its request (the student pressed Cancel): there is nobody to answer.
+                self.close_connection = True
+
+        def _disconnected(self) -> bool:
+            """Whether the client has closed its connection: its socket is readable but has nothing to read."""
+
+            if not select.select([self.connection], [], [], 0)[0]:
+                return False
+            try:
+                return not self.connection.recv(1, socket.MSG_PEEK)
+            except OSError:
+                return True
 
         def _answer(self, status: HTTPStatus, body: dict[str, Any]) -> None:
             data = json.dumps(body).encode("utf-8")
