@@ -58,7 +58,7 @@ To run the whole browser regression in one step, as CI does:
 scripts/check_browser.sh
 ```
 
-It starts the host runner on a disposable preview store and an isolated headless Chrome, runs the three checks below with collection open and user programs off, and reruns `check_app.mjs` with collection closed. It then starts the compiler service on loopback over the fake toolchain (no Docker or LLVM), restarts the host runner with user programs on, runs `check_user_programs.mjs`, and stops everything. It fails if a port it uses already answers, or still answers after it stops a server. `CHROME` names the browser executable if it is not found; `IRX_PYTHON` names the Python interpreter; `IREXPLORER_PORT` (default 8000), `IREXPLORER_CDP_PORT` (9239) and `IREXPLORER_COMPILER_PORT` (8090) name its ports. The steps below run each check by hand.
+It starts the host runner on a disposable preview store and an isolated headless Chrome, runs the three checks below with collection open and user programs off, and reruns `check_app.mjs` with collection closed. It then starts the compiler service on loopback over the fake toolchain (no Docker or LLVM), restarts the host runner with user programs on, runs `check_user_programs.mjs`, reruns `check_study_tasks.mjs` and `check_study_guidance.mjs` unchanged (Study must not change with user programs on), and stops everything. It fails if a port it uses already answers, or still answers after it stops a server. `CHROME` names the browser executable if it is not found; `IRX_PYTHON` names the Python interpreter; `IREXPLORER_PORT` (default 8000), `IREXPLORER_CDP_PORT` (9239) and `IREXPLORER_COMPILER_PORT` (8090) name its ports. The steps below run each check by hand.
 
 Start the application with Docker Compose, then start a separate headless Chrome instance with a temporary profile and remote debugging on port 9239. For example, on Linux:
 
@@ -118,7 +118,7 @@ IREXPLORER_USER_PROGRAMS=1 IREXPLORER_COMPILER_URL=http://127.0.0.1:8090 .venv/b
 IREXPLORER_ORIGIN=http://127.0.0.1:8000 node scripts/check_user_programs.mjs
 ```
 
-It uploads the unedited curated sources, which the fake toolchain has recordings for, and checks the **Curated examples | Your files** switch, the compile card and a user program opening in the panels. Each scenario starts from a freshly loaded Explore page. `check_app.mjs` checks that no upload control is built with user programs off.
+It uploads the unedited curated sources, which the fake toolchain has recordings for, and checks the **Curated examples | Your files** switch, the compile card and a user program opening in the panels. It also checks that Study never has the upload controls, even after a compile started in Explore, and that a task inheriting its workspace opens the curated one rather than a user program on screen. Each scenario starts from a freshly loaded Explore page. `check_app.mjs` checks that no upload control is built with user programs off.
 
 All four scripts connect to the browser on port 9239 unless `IREXPLORER_CDP_PORT` names another. Close the temporary Chrome process after testing.
 

@@ -157,6 +157,36 @@ async function reload() {
   await until(`document.querySelector('#source-mode') !== null`);
 }
 
+// Study (#/study…) is unchanged by user programs: none of their controls exist there, and the source
+// panel is the curated one. `studySurface` reads what a participant's source panel is made of.
+const programControls = ['#source-mode', '#your-file-control', '#your-file-select', '#program-upload', '#program-paste-open', '#program-file-input', '#program-drop', '#program-paste', '#program-chip', '#program-card', '.source-title'];
+const noProgramControls = `${JSON.stringify(programControls)}.every(selector => !document.querySelector(selector))`;
+const curatedExamples = (await (await fetch(base + '/api/examples')).json()).examples;
+const curatedSourcePanel = `(() => { const panel = document.querySelector('#source-panel'), options = [...document.querySelectorAll('#example-select option')].map(option => option.value).filter(Boolean);
+  return !panel.hasAttribute('data-mode') && document.querySelector('#source-summary').parentElement.matches('#source-panel > .source-heading') && !document.querySelector('label[for="example-select"]').hidden
+    && !document.querySelector('#source-lines').inert && !document.querySelector('#source-lines').classList.contains('is-pending') && !document.querySelector('#workspace-shell').hasAttribute('aria-busy')
+    && document.querySelector('#empty-state h2').textContent === 'Choose a curated file to start comparing.' && options.join() === ${JSON.stringify(curatedExamples.join())}; })()`;
+const studySurface = `(() => { const heading = document.querySelector('#source-panel > .source-heading').cloneNode(true);
+  for (const select of heading.querySelectorAll('select')) select.replaceChildren();
+  const attributes = selector => [...document.querySelector(selector).attributes].map(a => a.name + '=' + a.value).sort().join(' ');
+  return [heading.outerHTML, [...document.querySelector('#source-panel').children].map(child => child.id || child.className).join(), ...['#source-panel', '#source-lines', '#empty-state', '#workspace'].map(attributes)].join('\\n'); })()`;
+const study = await (await fetch(base + '/api/study/content')).json();
+const onTask = id => until(`document.querySelector('#survey-form')?.dataset.section === '${id}' && window.StudyWorkspace.ready`);
+const fill = (name, text) => value(`(() => { const e = document.querySelector('textarea[name="${name}"]'); e.value = ${JSON.stringify(text)}; e.dispatchEvent(new Event('input', { bubbles: true })); })()`);
+// From Explore, consent, answer the pre-survey and move on to T6, which inherits T5's declared workspace.
+async function studyToT6() {
+  await value(`location.hash = '/study'`);
+  await until(`document.querySelector('#route-heading')?.textContent === 'Information and consent'`);
+  for (const id of study.membership.consent) await click('#' + id);
+  await click('[data-action="start"]');
+  await until(`document.querySelector('#route-heading')?.textContent === 'Pre-survey'`);
+  await click('input[name="P1"][value="1"]'); await fill('P13', 'Synthetic initial account');
+  await click('#survey-form button[type="submit"]');
+  await onTask('T0'); await click('#survey-form button[type="submit"]');
+  for (const id of ['T1', 'T2', 'T3', 'T4', 'T5']) { await onTask(id); await click('[data-action="skip-task"]'); }
+  await onTask('T6');
+}
+
 async function openExplore() {
   await send('Page.navigate', { url: `${base}/#/explore` });
   await until(`document.readyState === 'complete'`);
@@ -393,6 +423,61 @@ const scenarios = {
     await until(`window.StudyWorkspace.ready && Boolean(appState.programId) && appState.programId !== ${JSON.stringify(programId)}`);
     await check('A custom file name is honoured',
       `document.querySelector('#source-summary').textContent === 'C source · my_score.c' && [...document.querySelector('#your-file-select').options].filter(option => option.value).map(option => option.textContent).join('|') === 'program.c|my_score.c'`);
+  },
+
+  async 'Study never builds the upload controls, even while a compile is under way'() {
+    await click('#source-mode input[value="yours"]');
+    await holdCompiles(true);
+    await chooseFile('#program-drop button', join(curatedSources, 'score.c'));
+    await until(`document.querySelector('#program-card')?.innerText.includes('Compiling score.c')`);
+    await value(`location.hash = '/study'`);
+    await until(`document.querySelector('#route-heading')?.textContent === 'Information and consent'`);
+    await check('Leaving Explore for #/study removes every user programs control', noProgramControls);
+    await check('The source panel is the curated one: File select of curated examples only, nothing pending or busy', curatedSourcePanel);
+    const openedFrom = requests.length;
+    await releaseCompile();
+    await holdCompiles(false);
+    await until(`performance.getEntriesByType('resource').some(entry => new URL(entry.name).pathname === '/api/programs' && entry.responseEnd > 0)`);
+    await pause(500);
+    await check('A compile that finishes in Study opens nothing there',
+      `${!requests.slice(openedFrom).some(request => request.path.startsWith('/api/programs/'))} && !appState.programId && ${noProgramControls} && ${curatedSourcePanel}`);
+    await value(`location.hash = '/explore'`);
+    await until(`document.querySelector('#source-mode') !== null`);
+    await check('Back in Explore the controls return on Curated examples, with the finished upload kept in Your file',
+      `document.querySelector('#source-mode input[value="curated"]').checked && ${visible('#example-select')} && [...document.querySelector('#your-file-select').options].some(option => option.textContent === 'score.c')`);
+    await check('The tab keeps the upload in session storage', `JSON.parse(sessionStorage.getItem('irexplorer.programs.uploads')).length === 1`);
+    await value(`history.replaceState(null, '', '/#/study')`); await send('Page.reload');
+    await until(`document.readyState === 'complete' && document.querySelector('#route-heading')?.textContent === 'Information and consent'`);
+    await until(`document.querySelectorAll('#example-select option').length === ${curatedExamples.length + 1}`);
+    await pause(500);
+    await check('A page loaded on #/study with uploads in the tab never builds them', `${noProgramControls} && ${curatedSourcePanel}`);
+    await value(`location.hash = '/explore'`);
+    await until(`document.querySelector('#source-mode') !== null`);
+    await check('Explore then opens on Your files, as a tab with uploads does', `document.querySelector('#source-mode input[value="yours"]').checked && !${visible('#example-select')}`);
+    await value(`location.hash = '/study'`);
+    await until(`document.querySelector('#route-heading')?.textContent === 'Information and consent'`);
+    await check('Leaving Your files with uploads for #/study still leaves the curated source panel', `${noProgramControls} && ${curatedSourcePanel}`);
+  },
+
+  async 'An inheriting Study task opens its curated workspace, never a user program on screen'() {
+    await studyToT6();
+    await value(`location.hash = '/explore'`);
+    await until(`document.querySelector('#source-mode') !== null`);
+    await click('#source-mode input[value="yours"]');
+    await chooseFile('#program-drop button', join(curatedSources, 'score.c'));
+    await until('window.StudyWorkspace.ready && Boolean(appState.programId)');
+    await value(`location.hash = '/study/tasks/T6'`);
+    await onTask('T6');
+    await check('T6 opens the inherited curated workspace (quick_sort, State 0 IR in both panels), not the user program',
+      `(() => { const s = window.StudyWorkspace.snapshot(); return !appState.programId && s?.exampleId === 'quick_sort' && s.panels.left.ordinal === 0 && s.panels.left.viewType === 'ir' && s.panels.right.ordinal === 0 && s.panels.right.viewType === 'ir' && document.querySelector('#source-summary').textContent === 'C source · quick_sort.c'; })()`);
+    await check('The task shows no user programs control and the curated source panel', `${noProgramControls} && ${curatedSourcePanel}`);
+    await check('A file dragged over the task\'s source panel is left to the browser, as before',
+      `(() => { const files = new DataTransfer(); files.items.add(new File(['int main(void) { return 0; }'], 'program.c')); return ['dragover', 'drop'].every(type => { const event = new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: files }); document.querySelector('#source-lines').dispatchEvent(event); return !event.defaultPrevented; }) && !document.querySelector('#source-panel').classList.contains('is-drop-target') && !appState.programId; })()`);
+    const entered = await value(studySurface);
+    await send('Page.reload');
+    await onTask('T6');
+    await check('A page loaded on the task never builds the controls', noProgramControls);
+    await check('The task looks exactly as on a page that never built them', `${JSON.stringify(entered)} === ${studySurface}`);
   },
 };
 

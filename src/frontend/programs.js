@@ -1,6 +1,8 @@
 // User programs in Explore (ADR 0005): the Curated examples | Your files switch, uploading a C file, and
 // the card that stands in for the panels and the comparison while a user program compiles or after it
-// fails. Nothing here is built unless /api/release reports the user programs setting on.
+// fails. Nothing here is built unless /api/release reports the user programs setting on, and nothing
+// here exists in Study (#/study…), which shares the workspace: the controls are added on entering
+// Explore and removed on leaving it.
 (() => {
   const LIMITS = "One C file, up to 200 lines. Standard headers are allowed.";
   const WAIT = "irexplorer compiles the unoptimised -O0 state, applies the curated pass sequence one pass at a time, "
@@ -54,14 +56,17 @@
   }
 
   const view = {};
+  const DRAG_EVENTS = ["dragenter", "dragover", "dragleave", "drop"];
 
+  // Make the controls once; attach() and detach() put them in the page and take them out again.
   function build() {
     const sourcePanel = document.querySelector("#source-panel");
-    const controls = sourcePanel.querySelector(".source-controls");
     view.sourcePanel = sourcePanel;
+    view.controls = sourcePanel.querySelector(".source-controls");
     view.shell = document.querySelector("#workspace-shell");
     view.sourceLines = document.querySelector("#source-lines");
-    view.fileControl = controls.querySelector('label[for="example-select"]');
+    view.summary = document.querySelector("#source-summary");
+    view.fileControl = view.controls.querySelector('label[for="example-select"]');
     view.modes = ["curated", "yours"].map(value => h("input", {
       type: "radio", name: "source-mode", value, onchange: () => setMode(value),
     }));
@@ -71,8 +76,6 @@
     view.yourControl = h("label", { id: "your-file-control", for: "your-file-select" }, "Your file", view.yourSelect);
     view.upload = h("button", { id: "program-upload", type: "button", onclick: () => view.fileInput.click() }, "Upload…");
     view.pasteOpen = h("button", { id: "program-paste-open", type: "button", onclick: openPaste }, "Paste…");
-    controls.prepend(view.mode);
-    view.fileControl.after(view.yourControl, view.upload, view.pasteOpen);
     view.fileInput = h("input", { id: "program-file-input", type: "file", accept: ".c", hidden: true, onchange: () => {
       const [file] = view.fileInput.files;
       view.fileInput.value = "";
@@ -96,17 +99,54 @@
       h("label", { for: "program-paste-source" }, "C source", view.pasteSource),
       h("div", { class: "program-actions" }, view.pasteCompile,
         h("button", { id: "program-paste-cancel", type: "button", onclick: closePaste }, "Cancel")));
-    view.sourceLines.after(view.drop, view.paste, view.fileInput);
     view.chip = h("span", { id: "program-chip", class: "program-chip" }, "Your file");
-    const summary = document.querySelector("#source-summary");
-    const title = h("div", { class: "source-title" });
-    summary.replaceWith(title);
-    title.append(summary, view.chip);
+    view.title = h("div", { class: "source-title" });
     view.card = h("section", { id: "program-card", class: "panel program-card", "aria-labelledby": "program-card-heading" });
-    view.shell.append(view.card);
-    for (const type of ["dragenter", "dragover", "dragleave", "drop"]) sourcePanel.addEventListener(type, dragFile);
     recompileForgottenProgram = recompileForgotten;
+  }
+
+  function attach() {
+    view.controls.prepend(view.mode);
+    view.fileControl.after(view.yourControl, view.upload, view.pasteOpen);
+    view.sourceLines.after(view.drop, view.paste, view.fileInput);
+    view.summary.replaceWith(view.title);
+    view.title.append(view.summary, view.chip);
+    view.shell.append(view.card);
+    for (const type of DRAG_EVENTS) view.sourcePanel.addEventListener(type, dragFile);
     render();
+  }
+
+  // Leave the source panel and the workspace exactly as the page has them without user programs. A user
+  // program that is open, opening or compiling is closed, so Study never shows one; a compile that
+  // finishes later is kept in Your file but not opened. Explore comes back on Curated examples.
+  function detach() {
+    if (current || card) closeWorkspace();
+    mode = "curated";
+    current = null;
+    card = null;
+    pasting = false;
+    clearInterval(ticking);
+    ticking = null;
+    view.title.replaceWith(view.summary);
+    for (const element of [view.mode, view.yourControl, view.upload, view.pasteOpen, view.drop, view.paste, view.fileInput, view.card]) {
+      element.remove();
+    }
+    for (const type of DRAG_EVENTS) view.sourcePanel.removeEventListener(type, dragFile);
+    view.sourcePanel.classList.remove("is-drop-target");
+    view.sourcePanel.removeAttribute("data-pasting");
+    delete view.sourcePanel.dataset.mode;
+    view.fileControl.hidden = false;
+    view.shell.removeAttribute("aria-busy");
+    view.sourceLines.inert = false;
+    view.sourceLines.classList.remove("is-pending");
+    setEmptyPrompt(EMPTY_PROMPTS.curated);
+  }
+
+  // The route as study.js reads it: Explore is "#/explore" or no hash.
+  function followRoute() {
+    const explore = (location.hash.slice(1) || "/explore") === "/explore";
+    if (explore && !view.mode.isConnected) attach();
+    else if (!explore && view.mode.isConnected) detach();
   }
 
   function render() {
@@ -253,10 +293,16 @@
     closeWorkspace();
     sourceState.data = { file: fileName, text: source };
     renderSource();
-    card = { kind: "compiling", fileName, started: performance.now() };
+    const compiling = { kind: "compiling", fileName, started: performance.now() };
+    card = compiling;
     render();
     announce(`Compiling ${fileName}.`);
     const result = await postProgram(fileName, source);
+    // Explore was left while it compiled (see detach): keep a compiled upload, but open nothing.
+    if (card !== compiling) {
+      if (result.ok) keep(result.program);
+      return;
+    }
     if (!result.ok) {
       card = { kind: "failed", fileName, error: result.error };
       render();
@@ -264,14 +310,18 @@
       return;
     }
     const { program } = result;
-    if (!uploads.some(upload => upload.programId === program.programId)) {
-      uploads.push(program);
-      keepUploads();
-    }
+    keep(program);
     current = program;
     await loadProgram(program);
+    if (card !== compiling) return;
     card = null;
     render();
+  }
+
+  function keep(program) {
+    if (uploads.some(upload => upload.programId === program.programId)) return;
+    uploads.push(program);
+    keepUploads();
   }
 
   // POST /api/programs and wait for the compile: { ok: true, program } or { ok: false, error }.
@@ -331,10 +381,13 @@
   async function recompile(upload) {
     const { fileName, source } = upload;
     const workspaceHidden = elements.workspace.hidden, emptyStateHidden = elements.emptyState.hidden;
-    card = { kind: "compiling", fileName, started: performance.now(), forgotten: true };
+    const recompiling = { kind: "compiling", fileName, started: performance.now(), forgotten: true };
+    card = recompiling;
     render();
     announce(`Recompiling ${fileName}. The server no longer had it.`);
     const result = await postProgram(fileName, source);
+    // Explore was left while it compiled (see detach), which closed the program: show nothing again.
+    if (card !== recompiling) return false;
     if (result.ok) {
       card = null;
       render();
@@ -353,6 +406,11 @@
   }
 
   fetch("/api/release", { cache: "no-store" }).then(response => response.ok ? response.json() : null).then(release => {
-    if (release?.config?.userPrograms === true) build();
+    if (release?.config?.userPrograms !== true) return;
+    build();
+    followRoute();
   }).catch(() => {});
+  // Added now, before study.js adds its own (scripts run in order), so on leaving Explore a user program
+  // is closed before a Study task prepares its workspace.
+  window.addEventListener("hashchange", () => { if (view.mode) followRoute(); });
 })();
