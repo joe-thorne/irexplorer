@@ -4,6 +4,7 @@ The app runs in-process with user programs on, pointed at the real compiler serv
 entry point on a loopback port over the fake clang and opt in tests/fake_toolchain. No Docker or LLVM.
 """
 
+import contextlib
 import hashlib
 import json
 import socket
@@ -14,7 +15,9 @@ import threading
 import time
 import unittest
 import urllib.request
+from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.error import HTTPError
 
@@ -94,6 +97,30 @@ class LoopbackCompilerService:
         if self.process.stdout is not None:
             self.process.stdout.close()
         self.workspace.cleanup()
+
+
+@contextlib.contextmanager
+def answering(status: int, body: bytes) -> Iterator[str]:
+    """A stand-in compiler service that answers every compile with this status and body; yields its URL."""
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_POST(self) -> None:
+            self.rfile.read(int(self.headers["Content-Length"]))
+            self.send_response(status)
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *_args) -> None:
+            pass
+
+    with ThreadingHTTPServer(("127.0.0.1", 0), Handler) as http:
+        thread = threading.Thread(target=http.serve_forever, daemon=True)
+        thread.start()
+        try:
+            yield f"http://127.0.0.1:{http.server_port}"
+        finally:
+            http.shutdown()
 
 
 class UserProgramsApiTests(unittest.TestCase):
@@ -427,6 +454,15 @@ class CompilerUnavailableTests(unittest.TestCase):
             port = reserved.getsockname()[1]
         # Nothing listens on the port any more, so the connection is refused.
         self.assert_unavailable(self.start(f"http://127.0.0.1:{port}"))
+
+    def test_a_compiler_service_that_answers_in_a_way_the_app_does_not_understand_is_unavailable(self) -> None:
+        for status, body in ((500, b'{"error": {"code": "internal", "message": "Something broke."}}'),
+                             (502, b"<html><body>Bad gateway</body></html>"),
+                             (200, b"not json"),
+                             (200, b"{}")):
+            with (self.subTest(status=status, body=body), answering(status, body) as url,
+                  self.assertLogs("src.backend.programs.compiler", "WARNING")):
+                self.assert_unavailable(self.start(url))
 
     def test_a_compiler_service_that_does_not_answer_in_time_is_unavailable(self) -> None:
         # The connection is accepted (queued by the listening socket) but never answered.

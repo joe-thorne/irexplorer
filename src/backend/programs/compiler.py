@@ -5,6 +5,7 @@ from __future__ import annotations
 import contextlib
 import http.client
 import json
+import logging
 import socket
 from dataclasses import dataclass
 from threading import Lock
@@ -12,6 +13,8 @@ from typing import Any
 from urllib.parse import urlsplit
 
 from src.backend.programs.accepted import AcceptedProgram
+
+logger = logging.getLogger(__name__)
 
 UNAVAILABLE = ("The compiler service is unavailable. Check that the user programs stack is running, "
                "then try again.")
@@ -62,10 +65,6 @@ NOT_FINISHED: dict[str, type[CompileNotFinished]] = {"busy": CompilerBusy, "time
 
 class CompileDropped(Exception):
     """The app dropped its request because its own client went away (Cancel): nobody waits for an answer."""
-
-
-class CompilerServiceError(RuntimeError):
-    """The compiler service refused or could not finish a compile for any other reason."""
 
 
 @dataclass(frozen=True)
@@ -133,7 +132,7 @@ class CompilerClient:
                 headers={"Content-Type": "application/json"},
             )
             response = connection.getresponse()
-            status, body = response.status, json.loads(response.read())
+            status, reply = response.status, response.read()
         except (OSError, http.client.HTTPException) as exc:
             if request.dropped:
                 raise CompileDropped from exc
@@ -141,16 +140,28 @@ class CompilerClient:
             raise CompilerUnavailable(UNAVAILABLE) from exc
         finally:
             connection.close()
-        if status != 200:
-            error = body["error"]
-            if error["code"] == "command_failed":
-                raise CompileFailed(error["command"], error["stderr"])
-            if error["code"] in NOT_FINISHED:
-                raise NOT_FINISHED[error["code"]](error["message"])
-            raise CompilerServiceError(f"compiler service refused the compile: {error}")
-        return CompilerOutput(
-            states=tuple(CompiledState(state["stateId"], state["ir"], state["remarks"], state["command"])
-                         for state in body["states"]),
-            opt_record=body["optRecord"],
-            manifest=body["manifest"],
-        )
+        try:
+            return _output(status, json.loads(reply))
+        except (ValueError, KeyError, TypeError) as exc:
+            # Not an answer the service gives: a proxy's error page, say, or a service of another version.
+            logger.warning("The compiler service answered %s with a reply the app does not understand: %.200r",
+                           status, reply)
+            raise CompilerUnavailable(UNAVAILABLE) from exc
+
+
+def _output(status: int, body: Any) -> CompilerOutput:
+    """The compiler output in a compiler service reply, or its error raised as the app's exception."""
+
+    if status != 200:
+        error = body["error"]
+        if error["code"] == "command_failed":
+            raise CompileFailed(error["command"], error["stderr"])
+        if error["code"] in NOT_FINISHED:
+            raise NOT_FINISHED[error["code"]](error["message"])
+        raise ValueError(f"compiler service refused the compile: {error}")
+    return CompilerOutput(
+        states=tuple(CompiledState(state["stateId"], state["ir"], state["remarks"], state["command"])
+                     for state in body["states"]),
+        opt_record=body["optRecord"],
+        manifest=body["manifest"],
+    )
