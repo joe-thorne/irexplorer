@@ -397,11 +397,18 @@ const scenarios = {
     await until(`document.querySelector('#source-mode') !== null`);
     await check('Back in Explore the controls return on Curated examples, with the finished upload kept in Your file',
       `document.querySelector('#source-mode input[value="curated"]').checked && ${visible('#example-select')} && [...document.querySelector('#your-file-select').options].some(option => option.textContent === 'score.c')`);
+    await check('The tab keeps the upload in session storage', `JSON.parse(sessionStorage.getItem('irexplorer.programs.uploads')).length === 1`);
     await value(`history.replaceState(null, '', '/#/study')`); await send('Page.reload');
     await until(`document.readyState === 'complete' && document.querySelector('#route-heading')?.textContent === 'Information and consent'`);
     await until(`document.querySelectorAll('#example-select option').length === ${curatedExamples.length + 1}`);
     await pause(500);
-    await check('A page loaded on #/study never builds them', `${noProgramControls} && ${curatedSourcePanel}`);
+    await check('A page loaded on #/study with uploads in the tab never builds them', `${noProgramControls} && ${curatedSourcePanel}`);
+    await value(`location.hash = '/explore'`);
+    await until(`document.querySelector('#source-mode') !== null`);
+    await check('Explore then opens on Your files, as a tab with uploads does', `document.querySelector('#source-mode input[value="yours"]').checked && !${visible('#example-select')}`);
+    await value(`location.hash = '/study'`);
+    await until(`document.querySelector('#route-heading')?.textContent === 'Information and consent'`);
+    await check('Leaving Your files with uploads for #/study still leaves the curated source panel', `${noProgramControls} && ${curatedSourcePanel}`);
   },
 
   async 'An inheriting Study task opens its curated workspace, never a user program on screen'() {
