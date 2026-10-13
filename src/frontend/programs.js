@@ -256,6 +256,9 @@
       h("p", { class: "program-failure-message" }, error.message),
       ...(refused ? [h("p", {}, "Nothing was sent to the compiler.")] : []),
       ...(error.code === "compile_failed" ? compileFailure(error) : []),
+      // A program irexplorer cannot show says why in its message; a parser failure adds the parser's own words.
+      ...(error.parserMessage ? [h("details", { class: "program-parser-message" },
+        h("summary", {}, "Parser message"), h("pre", {}, error.parserMessage))] : []),
       // Compiled again under the name it was chosen as, so a renamed file still says so.
       programActions(RETRYABLE.has(error.code) && (() => compile(renamedFrom ?? fileName, source))),
     ];

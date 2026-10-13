@@ -509,8 +509,10 @@ details p { margin: .8rem 0 0; }
 .program-diagnostic-severity { color: var(--muted); flex: 0 0 5.5rem; font-size: .75rem; font-weight: 800; text-transform: uppercase; }
 .program-diagnostics li[data-severity$="error"] .program-diagnostic-severity { color: #991b1b; }
 .program-diagnostics button { overflow-wrap: anywhere; padding: .25rem .5rem; text-align: left; }
-.program-output { margin-bottom: 1rem; }
-.program-output pre { background: var(--code-bg); max-height: 20rem; overflow: auto; padding: .7rem; white-space: pre; }
+.program-output, .program-parser-message { margin-bottom: 1rem; }
+.program-output pre, .program-parser-message pre { background: var(--code-bg); max-height: 20rem; overflow: auto; padding: .7rem; white-space: pre; }
+/* One message, often quoting a long IR line: wrapped rather than scrolled sideways. */
+.program-parser-message pre { overflow-wrap: anywhere; white-space: pre-wrap; }
 @media (forced-colors: active) {
   .source-line.is-error { box-shadow: inset 3px 0 0 Mark; }
   .source-line.is-outlined { outline-color: Highlight; }

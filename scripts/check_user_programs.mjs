@@ -1,6 +1,7 @@
 // User programs acceptance. Node 22+ and an isolated headless Chrome CDP, against a host runner with the
 // user programs setting on and a compiler service on loopback over the fake toolchain (check_browser.sh
-// phase 3). Uploads are the unedited curated sources, which the fake toolchain has recordings for.
+// phase 3). Uploads are the unedited curated sources and the recorded corpus in tests/data/user-programs,
+// which the fake toolchain has recordings for.
 // Each scenario starts from a freshly loaded Explore page with empty session storage; add a scenario
 // to `scenarios` for each new behaviour. Optional IREXPLORER_CHECK_OUTPUT directory for screenshots.
 // IREXPLORER_COMPILER_PID is the compiler service's process, which a scenario pauses to make it unavailable.
@@ -14,6 +15,8 @@ const cdp = `http://127.0.0.1:${process.env.IREXPLORER_CDP_PORT || '9239'}`;
 const captures = process.env.IREXPLORER_CHECK_OUTPUT;
 if (captures) await mkdir(captures, { recursive: true });
 const curatedSources = join(import.meta.dirname, '..', 'examples', 'curated');
+// The recorded user-program corpus, which the fake toolchain replays as the real toolchain answered it.
+const userProgramSources = join(import.meta.dirname, '..', 'tests', 'data', 'user-programs');
 // The acceptance cases the server is tested against too (tests/test_accepted_programs.py).
 const acceptance = JSON.parse(await readFile(join(import.meta.dirname, '..', 'tests', 'data', 'user-program-acceptance.json'), 'utf8'));
 const expand = text => typeof text === 'string' ? text : text.map(part => typeof part === 'string' ? part : part[0].repeat(part[1])).join('');
@@ -337,6 +340,34 @@ const scenarios = {
     await until(`document.querySelector('#program-card')?.innerText.includes('crash.c could not be opened')`);
     await check('An opt failure lists no diagnostics and marks no lines, only its output',
       `!document.querySelector('#program-card .program-diagnostics') && !document.querySelector('#source-lines .is-error, #source-lines .is-outlined') && document.querySelector('#program-card details.program-output pre').textContent.includes('Stack dump:')`);
+  },
+
+  async 'A program irexplorer cannot show says why, with the parser message for a parser failure'() {
+    await upload('score.c');
+    await check('An earlier comparison is open before the unsupported upload', `${visible('#left-panel')} && ${visible('.comparison-status')}`);
+    // Recorded from the real toolchain (tests/data/user-programs): a computed goto compiles to indirectbr.
+    await chooseFile('#program-upload', join(userProgramSources, 'computed_goto.c'));
+    await until(`document.querySelector('#program-card')?.innerText.includes('computed_goto.c could not be opened')`);
+    await check('The unsupported card replaces the comparison and opens no program',
+      `${visible('#program-card')} && !${visible('#left-panel')} && !${visible('.comparison-status')} && !appState.programId && !appState.exampleId`);
+    await check("The card says what irexplorer can't display, with no compiler output, diagnostics or parser message",
+      `document.querySelector('#program-card .program-failure-message').textContent === "This program uses a computed goto (goto *pointer), which compiles to LLVM's indirectbr. irexplorer can't display indirectbr control flow." && !document.querySelector('#program-card details') && !document.querySelector('#program-card .program-diagnostics') && !document.querySelector('#source-lines .is-error')`);
+    await check('It offers Choose another file… and no Try again',
+      `[...document.querySelectorAll('#program-card button')].map(button => button.textContent).join('|') === 'Choose another file…'`);
+    await check('The unsupported upload is not added to Your file', `${uploadOptions}.join('|') === 'score.c'`);
+    await snap('user-programs-unsupported.png');
+
+    // A function LLVM names in quotes, which the parser cannot read: a generic failure with the parser's message.
+    await chooseFile('#program-card .program-actions button', join(userProgramSources, 'non_ascii_name.c'));
+    await until(`document.querySelector('#program-card')?.innerText.includes('non_ascii_name.c could not be opened')`);
+    await check("A parser failure says irexplorer can't display the program",
+      `document.querySelector('#program-card .program-failure-message').textContent === "irexplorer can't display this program."`);
+    await check("The parser's message is in a closed Parser message disclosure",
+      `(() => { const details = document.querySelectorAll('#program-card details'); return details.length === 1 && details[0].matches('.program-parser-message') && !details[0].open && details[0].querySelector('summary').textContent === 'Parser message' && details[0].querySelector('pre').textContent.startsWith('unrecognised function definition at line 7: define dso_local i32 @"caf\\\\C3\\\\A9_total"('); })()`);
+    await check('Choose another file… is offered, and the failed upload is not added to Your file',
+      `[...document.querySelectorAll('#program-card button')].map(button => button.textContent).join('|') === 'Choose another file…' && ${uploadOptions}.join('|') === 'score.c'`);
+    await value(`document.querySelector('#program-card details.program-parser-message').open = true`);
+    await snap('user-programs-parser-message.png');
   },
 
   async 'Uploads survive a reload in this tab, and a fresh tab starts on Curated examples'() {
