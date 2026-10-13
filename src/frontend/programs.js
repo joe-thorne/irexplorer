@@ -172,11 +172,35 @@
     if (compiling) elements.exampleSelect.disabled = true;
     view.shell.setAttribute("aria-busy", String(compiling));
     view.chip.hidden = !(yours && sourceState.data);
-    // The source of a program that is compiling, or that failed, is shown dimmed and read-only.
+    // The source of a program that is compiling, or that failed, is read-only. It is dimmed unless it
+    // carries the compile errors to read.
+    const errorLines = new Set(sourceDiagnostics().filter(diagnostic => diagnostic.severity.includes("error"))
+      .map(diagnostic => diagnostic.line));
     view.sourceLines.inert = Boolean(card);
-    view.sourceLines.classList.toggle("is-pending", Boolean(card));
+    view.sourceLines.classList.toggle("is-pending", Boolean(card) && !errorLines.size);
+    for (const line of view.sourceLines.querySelectorAll(".source-line")) {
+      line.classList.toggle("is-error", errorLines.has(Number(line.dataset.line)));
+      line.classList.remove("is-outlined");
+    }
     setEmptyPrompt(EMPTY_PROMPTS[mode]);
     renderCard();
+  }
+
+  // The upload is the only file in the server's user-programs directory, whose path the server trims, so a
+  // diagnostic against the upload names a bare file; one in a header keeps its path.
+  const inUpload = diagnostic => !diagnostic.file.includes("/");
+
+  // The failed compile's diagnostics against the upload, if any.
+  function sourceDiagnostics() {
+    return (card?.kind === "failed" && card.error.diagnostics || []).filter(inUpload);
+  }
+
+  function showSourceLine(number) {
+    const line = view.sourceLines.querySelector(`.source-line[data-line="${number}"]`);
+    for (const outlined of view.sourceLines.querySelectorAll(".is-outlined")) outlined.classList.remove("is-outlined");
+    if (!line) return;
+    line.classList.add("is-outlined");
+    scrollWithin(view.sourceLines, line);
   }
 
   // The card for each state; failure kinds add their own content in failureContent.
@@ -210,8 +234,23 @@
     return [
       h("h2", { id: "program-card-heading" }, `${fileName} could not be opened`),
       h("p", { class: "program-failure-message" }, error.message),
+      ...(error.code === "compile_failed" ? compileFailure(error) : []),
       h("div", { class: "program-actions" },
         h("button", { type: "button", onclick: () => view.fileInput.click() }, "Choose another file…")),
+    ];
+  }
+
+  // Each diagnostic in order; one against the upload is a button that shows its line in the source.
+  function compileFailure({ diagnostics, output }) {
+    const items = diagnostics.map(diagnostic => {
+      const { file, line, column, severity, message } = diagnostic;
+      const text = inUpload(diagnostic) ? `Line ${line}, column ${column}: ${message}` : `${file}, line ${line}, column ${column}: ${message}`;
+      return h("li", { "data-severity": severity }, h("span", { class: "program-diagnostic-severity" }, severity),
+        inUpload(diagnostic) ? h("button", { type: "button", onclick: () => showSourceLine(line) }, text) : h("span", {}, text));
+    });
+    return [
+      ...(items.length ? [h("ul", { class: "program-diagnostics", "aria-label": "Compiler diagnostics" }, ...items)] : []),
+      h("details", { class: "program-output" }, h("summary", {}, "Full compiler output"), h("pre", {}, output)),
     ];
   }
 
