@@ -4,8 +4,10 @@ The app's view of the compiler service is covered in test_user_programs_api.py.
 """
 
 import json
+import socket
 import tempfile
 import threading
+import time
 import unittest
 import urllib.request
 from pathlib import Path
@@ -27,7 +29,8 @@ class CompilerServiceTests(unittest.TestCase):
         thread.start()
         self.addCleanup(http.server_close)
         self.addCleanup(http.shutdown)
-        self.url = f"http://127.0.0.1:{http.server_port}/compile"
+        self.port = http.server_port
+        self.url = f"http://127.0.0.1:{self.port}/compile"
         self.opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
     def compile(self, file_name: str, source: str) -> tuple[int, dict]:
@@ -41,6 +44,41 @@ class CompilerServiceTests(unittest.TestCase):
         except HTTPError as exc:
             with exc:
                 return exc.code, json.loads(exc.read())
+
+    def wait_until(self, condition, what: str) -> None:
+        deadline = time.monotonic() + 5
+        while not condition():
+            if time.monotonic() > deadline:
+                raise AssertionError(f"timed out waiting until {what}")
+            time.sleep(0.02)
+
+    def start_hanging_compile_then_disconnect(self) -> None:
+        # The fake clang hangs in a child process that keeps writing into the work directory, so files
+        # reappear unless the whole command, child included, is killed.
+        body = json.dumps({"fileName": "hang.c", "source": "int main(void) { return 0; }\n// irx-fake: hang\n"})
+        with socket.create_connection(("127.0.0.1", self.port)) as client:
+            client.sendall(f"POST /compile HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: application/json\r\n"
+                           f"Content-Length: {len(body)}\r\n\r\n{body}".encode())
+            self.wait_until(lambda: (self.workspace / "out" / "hang_O0.ll").exists(), "clang is running")
+
+    def test_a_client_that_disconnects_mid_compile_stops_the_commands_and_frees_the_service(self) -> None:
+        self.start_hanging_compile_then_disconnect()
+        # The client has gone: the service stops the compile at once, well inside its 30 s timeout.
+        self.wait_until(lambda: list(self.workspace.iterdir()) == [], "the work directory is wiped")
+        time.sleep(0.2)
+        self.assertEqual(list(self.workspace.iterdir()), [])
+        # Free again: the next program compiles rather than being refused as busy.
+        score = (curated.EXAMPLES_ROOT / "score.c").read_text(encoding="utf-8")
+        self.assertEqual(self.compile("score.c", score)[0], 200)
+
+    def test_a_program_sent_the_moment_a_client_disconnects_is_compiled_not_refused_as_busy(self) -> None:
+        # Cancel, then upload again at once: the cancelled compile is still stopping when the next arrives.
+        self.start_hanging_compile_then_disconnect()
+        score = (curated.EXAMPLES_ROOT / "score.c").read_text(encoding="utf-8")
+
+        self.assertEqual(self.compile("score.c", score)[0], 200)
+        time.sleep(0.2)
+        self.assertEqual(list(self.workspace.iterdir()), [])
 
     def test_the_work_directory_is_wiped_after_every_program(self) -> None:
         score = (curated.EXAMPLES_ROOT / "score.c").read_text(encoding="utf-8")

@@ -6,12 +6,13 @@ store, as the curated routes resolve only curated examples, so neither ever answ
 
 from __future__ import annotations
 
+import asyncio
 from collections import OrderedDict
 from dataclasses import dataclass
 from threading import Lock
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Query, Response
+from fastapi import APIRouter, Query, Request, Response
 from fastapi import Path as ApiPath
 from fastapi.responses import JSONResponse
 from starlette.concurrency import run_in_threadpool
@@ -47,7 +48,14 @@ from src.backend.model import (
     serialise_timeline,
 )
 from src.backend.programs.accepted import AcceptedProgram, RefusedProgram, accept_program
-from src.backend.programs.compiler import CompileFailed, CompileNotFinished, CompilerClient, CompilerOutput
+from src.backend.programs.compiler import (
+    CompileDropped,
+    CompileFailed,
+    CompileNotFinished,
+    CompilerClient,
+    CompileRequest,
+    CompilerOutput,
+)
 from src.backend.programs.diagnostics import compile_failure
 
 # About 16 programs are held; nothing is persisted, so a restart forgets them all.
@@ -126,14 +134,14 @@ def derive_records(program: AcceptedProgram, output: CompilerOutput) -> ModelRec
 def router(store: ProgramStore, compiler: CompilerClient) -> APIRouter:
     api = APIRouter()
 
-    def compile_program(program: AcceptedProgram) -> UserProgram:
-        output = compiler.compile(program)
+    def compile_program(program: AcceptedProgram, request: CompileRequest) -> UserProgram:
+        output = compiler.compile(program, request)
         return UserProgram(derive_records(program, output), output.manifest)
 
     @api.post("/api/programs", response_model=ProgramResponse, status_code=201)
-    async def post_program(request: ProgramRequest, response: Response) -> Any:
+    async def post_program(posted: ProgramRequest, request: Request, response: Response) -> Any:
         try:
-            program = accept_program(request.fileName, request.source)
+            program = accept_program(posted.fileName, posted.source)
         except RefusedProgram as exc:
             return JSONResponse(
                 {"error": {"code": "invalid_program", "message": exc.message, "reason": exc.reason}},
@@ -147,8 +155,15 @@ def router(store: ProgramStore, compiler: CompilerClient) -> APIRouter:
         else:
             response.status_code = 200
             return _program_view(held)
+        compile_request = CompileRequest()
+        # Cancel in the browser closes its connection; the request to the compiler service is dropped with
+        # it, so the compile stops and the compiler is free for the student's next upload at once.
+        dropping = asyncio.ensure_future(_drop_on_disconnect(request, compile_request))
         try:
-            compiled = await run_in_threadpool(compile_program, program)
+            compiled = await run_in_threadpool(compile_program, program, compile_request)
+        except CompileDropped:
+            # Nobody is left to read the answer; 499 is the conventional log status for a closed request.
+            return Response(status_code=499)
         except CompileFailed as exc:
             message = ("The C source did not compile." if exc.tool == "clang"
                        else f"{exc.tool} failed while optimising the program.")
@@ -157,6 +172,8 @@ def router(store: ProgramStore, compiler: CompilerClient) -> APIRouter:
         except CompileNotFinished as exc:
             return JSONResponse({"error": {"code": exc.code, "message": str(exc)}},
                                 status_code=exc.status_code, headers=NO_STORE)
+        finally:
+            dropping.cancel()
         store.hold(compiled)
         return _program_view(compiled)
 
@@ -195,6 +212,15 @@ def router(store: ProgramStore, compiler: CompilerClient) -> APIRouter:
         return store.resolve(program_id).records
 
     return api
+
+
+async def _drop_on_disconnect(request: Request, compile_request: CompileRequest) -> None:
+    """Drop the compile request once the client disconnects. The body has been read, so the next message
+    the server sends is the disconnect."""
+
+    while (await request.receive())["type"] != "http.disconnect":
+        pass
+    compile_request.drop()
 
 
 def _program_view(program: UserProgram) -> dict[str, Any]:

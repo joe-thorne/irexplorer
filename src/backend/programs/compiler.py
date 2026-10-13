@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import contextlib
+import http.client
 import json
-import urllib.request
+import socket
 from dataclasses import dataclass
+from threading import Lock
 from typing import Any
-from urllib.error import HTTPError
+from urllib.parse import urlsplit
 
 from src.backend.programs.accepted import AcceptedProgram
 
@@ -57,6 +60,10 @@ class CompilerUnavailable(CompileNotFinished):
 NOT_FINISHED: dict[str, type[CompileNotFinished]] = {"busy": CompilerBusy, "timeout": CompileTimeout}
 
 
+class CompileDropped(Exception):
+    """The app dropped its request because its own client went away (Cancel): nobody waits for an answer."""
+
+
 class CompilerServiceError(RuntimeError):
     """The compiler service refused or could not finish a compile for any other reason."""
 
@@ -77,34 +84,70 @@ class CompilerOutput:
     manifest: dict[str, Any]
 
 
+class CompileRequest:
+    """One request to the compiler service, which the app can drop from another thread.
+
+    Dropping closes the connection, and the compiler service stops a compile whose client has gone.
+    """
+
+    def __init__(self) -> None:
+        self._lock = Lock()
+        self._connection: http.client.HTTPConnection | None = None
+        self.dropped = False
+
+    def drop(self) -> None:
+        with self._lock:
+            self.dropped = True
+            if self._connection is not None and self._connection.sock is not None:
+                # Wakes the thread waiting on the answer, and tells the compiler service at once.
+                with contextlib.suppress(OSError):
+                    self._connection.sock.shutdown(socket.SHUT_RDWR)
+
+    def attach(self, connection: http.client.HTTPConnection) -> None:
+        """Send this request on ``connection``, unless it has already been dropped."""
+
+        with self._lock:
+            if self.dropped:
+                raise CompileDropped
+            self._connection = connection
+
+
 class CompilerClient:
     def __init__(self, url: str, *, timeout: float) -> None:
-        self._url = url.rstrip("/") + "/compile"
+        # http.client ignores any environment proxy, so the compiler service is always reached directly.
+        address = urlsplit(url)
+        self._host = address.hostname or ""
+        self._port = address.port
+        self._path = address.path.rstrip("/") + "/compile"
         self._timeout = timeout
-        # The compiler service is always reached directly, never through an environment proxy.
-        self._opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
-    def compile(self, program: AcceptedProgram) -> CompilerOutput:
-        request = urllib.request.Request(
-            self._url,
-            data=json.dumps({"fileName": program.file_name, "source": program.source}).encode("utf-8"),
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
+    def compile(self, program: AcceptedProgram, request: CompileRequest | None = None) -> CompilerOutput:
+        request = request or CompileRequest()
+        connection = http.client.HTTPConnection(self._host, self._port, timeout=self._timeout)
         try:
-            with self._opener.open(request, timeout=self._timeout) as response:
-                body = json.loads(response.read())
-        except HTTPError as exc:
-            with exc:
-                error = json.loads(exc.read())["error"]
-            if error["code"] == "command_failed":
-                raise CompileFailed(error["command"], error["stderr"]) from exc
-            if error["code"] in NOT_FINISHED:
-                raise NOT_FINISHED[error["code"]](error["message"]) from exc
-            raise CompilerServiceError(f"compiler service refused the compile: {error}") from exc
-        except OSError as exc:
+            connection.connect()
+            request.attach(connection)
+            connection.request(
+                "POST", self._path,
+                body=json.dumps({"fileName": program.file_name, "source": program.source}).encode("utf-8"),
+                headers={"Content-Type": "application/json"},
+            )
+            response = connection.getresponse()
+            status, body = response.status, json.loads(response.read())
+        except (OSError, http.client.HTTPException) as exc:
+            if request.dropped:
+                raise CompileDropped from exc
             # Refused, dropped, or silent for longer than the timeout: the service is down or stuck.
             raise CompilerUnavailable(UNAVAILABLE) from exc
+        finally:
+            connection.close()
+        if status != 200:
+            error = body["error"]
+            if error["code"] == "command_failed":
+                raise CompileFailed(error["command"], error["stderr"])
+            if error["code"] in NOT_FINISHED:
+                raise NOT_FINISHED[error["code"]](error["message"])
+            raise CompilerServiceError(f"compiler service refused the compile: {error}")
         return CompilerOutput(
             states=tuple(CompiledState(state["stateId"], state["ir"], state["remarks"], state["command"])
                          for state in body["states"]),
