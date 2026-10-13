@@ -21,6 +21,11 @@ class CompileFailed(Exception):
         self.command = command
         self.output = output
 
+    @property
+    def tool(self) -> str:
+        """The failed command's tool, ``clang`` or ``opt``."""
+        return self.command.split(" ", 1)[0]
+
 
 class CompilerServiceError(RuntimeError):
     """The compiler service refused or could not finish a compile for any other reason."""
