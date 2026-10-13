@@ -199,13 +199,18 @@ class CompilerService:
 
     @staticmethod
     def _stop(process: subprocess.Popen[str]) -> None:
-        """Kill a command's whole process group if it is still running, and reap it."""
+        """Kill a command's whole process group if it is still running, and reap it.
 
-        if process.returncode is None:
+        The group is killed again until it has gone: a process forked as the first kill was sent can miss
+        it (macOS does not restart such a fork, as Linux does), and would hold the output open.
+        """
+
+        while process.returncode is None:
             with contextlib.suppress(ProcessLookupError):
                 os.killpg(process.pid, signal.SIGKILL)
             # Returns once every process in the group has exited and closed its output.
-            process.communicate()
+            with contextlib.suppress(subprocess.TimeoutExpired):
+                process.communicate(timeout=POLL_INTERVAL)
 
     @staticmethod
     def _wipe(*directories: Path) -> None:
