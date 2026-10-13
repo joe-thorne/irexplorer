@@ -6,10 +6,13 @@ entry point on a loopback port over the fake clang and opt in tests/fake_toolcha
 
 import hashlib
 import json
+import socket
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -57,11 +60,11 @@ def program_id(file_name: str, source: str) -> str:
 class LoopbackCompilerService:
     """The compiler service as a separate process on a loopback port, wiping its own temporary workspace."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, timeout: float = 30) -> None:
         self.workspace = tempfile.TemporaryDirectory()
         self.process = subprocess.Popen(
             [sys.executable, "-m", "src.backend.toolchain.compiler_service", "--host", "127.0.0.1", "--port", "0",
-             "--toolchain", str(FAKE_TOOLCHAIN), "--workspace", self.workspace.name, "--timeout", "30",
+             "--toolchain", str(FAKE_TOOLCHAIN), "--workspace", self.workspace.name, "--timeout", str(timeout),
              "--compiler-image", "sha256:fake-compiler-image", "--libc-version", "2.39-0ubuntu8.fake"],
             cwd=curated.REPO_ROOT, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
         )
@@ -71,6 +74,15 @@ class LoopbackCompilerService:
             self.stop()
             raise RuntimeError(f"compiler service did not start: {ready!r}")
         self.url = ready.removeprefix("Compiler service listening on ").strip()
+
+    def wait_until_compiling(self) -> None:
+        """Return once a program's source is in the work directory, so a compile is under way."""
+        programs = Path(self.workspace.name) / "user-programs"
+        deadline = time.monotonic() + 10
+        while not (programs.is_dir() and any(programs.iterdir())):
+            if time.monotonic() > deadline:
+                raise AssertionError("no compile started")
+            time.sleep(0.02)
 
     def stop(self) -> None:
         self.process.terminate()
@@ -211,6 +223,30 @@ class UserProgramsApiTests(unittest.TestCase):
         program = program_id("unrecorded.c", "int unrecorded(void) { return 0; }\n")
         self.assertEqual(self.client.get(f"/api/programs/{program}").json()["error"]["code"], "unknown_program")
 
+    def test_a_compile_during_another_is_refused_as_busy_while_held_programs_still_answer(self) -> None:
+        held = self.post("binary_search.c", curated_source("binary_search")).json()
+        # The fake clang takes a couple of seconds over a source carrying the slow marker.
+        slow_source = curated_source("score") + "// irx-fake: slow\n"
+        with ThreadPoolExecutor(max_workers=1) as background:
+            slow = background.submit(self.post, "slow.c", slow_source)
+            self.compiler.wait_until_compiling()
+
+            busy = self.post("score.c", curated_source("score"))
+            held_again = self.post("binary_search.c", curated_source("binary_search"))
+            held_view = self.client.get(f"/api/programs/{held['programId']}/states")
+
+            self.assertEqual(slow.result().status_code, 201, slow.result().text)
+        self.assertEqual(busy.status_code, 409, busy.text)
+        self.assertEqual(busy.json()["error"]["code"], "compiler_busy")
+        self.assertIn("busy", busy.json()["error"]["message"])
+        self.assertEqual(busy.headers["cache-control"], "no-store")
+        self.assertEqual((held_again.status_code, held_again.json()), (200, held))
+        self.assertEqual(held_view.status_code, 200)
+        refused = self.client.get(f"/api/programs/{program_id('score.c', curated_source('score'))}")
+        self.assertEqual(refused.json()["error"]["code"], "unknown_program")
+        # Nothing queued: once the slow compile is over, the same program compiles.
+        self.assertEqual(self.post("score.c", curated_source("score")).status_code, 201)
+
     def test_a_malformed_post_is_an_invalid_request(self) -> None:
         source = curated_source("score")
         for body in ({}, {"fileName": "score.c"}, {"source": source}, {"fileName": 1, "source": source},
@@ -257,6 +293,86 @@ class UserProgramsApiTests(unittest.TestCase):
                 # The safe name posted as it is names the same program.
                 again = self.post(safe, source)
                 self.assertEqual((again.status_code, again.json()), (200, body))
+
+
+class CompilerTimeoutTests(unittest.TestCase):
+    """A compile that runs past the compiler service's timeout, shortened here so it takes half a second."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.compiler = LoopbackCompilerService(timeout=0.5)
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls.compiler.stop()
+
+    def setUp(self) -> None:
+        study = tempfile.TemporaryDirectory()
+        self.addCleanup(study.cleanup)
+        app = create_app(study_config=Config(Path(study.name), collection_mode="local"),
+                         user_programs=UserProgramsSetting(True, self.compiler.url))
+        self.client = TestClient(app)
+        self.addCleanup(self.client.close)
+
+    def test_a_compile_past_the_timeout_is_stopped_and_its_work_directory_wiped(self) -> None:
+        # The fake clang hangs in a child process that keeps writing into the work directory, as clang's
+        # own -cc1 child would, so a compile that kills only its direct child leaves files behind.
+        source = "int main(void) { return 0; }\n// irx-fake: hang\n"
+        workspace = Path(self.compiler.workspace.name)
+        for attempt in range(2):
+            with self.subTest(attempt=attempt):
+                response = self.client.post("/api/programs", json={"fileName": "hang.c", "source": source})
+
+                self.assertEqual(response.status_code, 504, response.text)
+                self.assertEqual(response.json()["error"]["code"], "compile_timeout")
+                self.assertIn("0.5 s", response.json()["error"]["message"])
+                self.assertEqual(response.headers["cache-control"], "no-store")
+                time.sleep(0.3)
+                self.assertEqual(list(workspace.iterdir()), [])
+                # Nothing is held, and the compiler is free again: the second attempt times out too, not busy.
+                held = self.client.get(f"/api/programs/{program_id('hang.c', source)}")
+                self.assertEqual(held.json()["error"]["code"], "unknown_program")
+
+
+class CompilerUnavailableTests(unittest.TestCase):
+    """A compiler service that cannot be reached, or that never answers: no compiler service runs here."""
+
+    def start(self, compiler_url: str, **setting) -> TestClient:
+        study = tempfile.TemporaryDirectory()
+        self.addCleanup(study.cleanup)
+        app = create_app(study_config=Config(Path(study.name), collection_mode="local"),
+                         user_programs=UserProgramsSetting(True, compiler_url, **setting))
+        client = TestClient(app)
+        self.addCleanup(client.close)
+        return client
+
+    def assert_unavailable(self, client: TestClient) -> None:
+        source = curated_source("score")
+        response = client.post("/api/programs", json={"fileName": "score.c", "source": source})
+
+        self.assertEqual(response.status_code, 503, response.text)
+        self.assertEqual(response.json()["error"]["code"], "compiler_unavailable")
+        self.assertIn("compiler service", response.json()["error"]["message"])
+        self.assertEqual(response.headers["cache-control"], "no-store")
+        held = client.get(f"/api/programs/{program_id('score.c', source)}")
+        self.assertEqual(held.json()["error"]["code"], "unknown_program")
+
+    def test_a_compiler_service_that_cannot_be_reached_is_unavailable(self) -> None:
+        with socket.socket() as reserved:
+            reserved.bind(("127.0.0.1", 0))
+            port = reserved.getsockname()[1]
+        # Nothing listens on the port any more, so the connection is refused.
+        self.assert_unavailable(self.start(f"http://127.0.0.1:{port}"))
+
+    def test_a_compiler_service_that_does_not_answer_in_time_is_unavailable(self) -> None:
+        # The connection is accepted (queued by the listening socket) but never answered.
+        with socket.socket() as silent:
+            silent.bind(("127.0.0.1", 0))
+            silent.listen()
+            client = self.start(f"http://127.0.0.1:{silent.getsockname()[1]}", compiler_timeout=0.3)
+            started = time.monotonic()
+            self.assert_unavailable(client)
+            self.assertLess(time.monotonic() - started, 5)
 
 
 if __name__ == "__main__":

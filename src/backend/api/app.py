@@ -206,7 +206,8 @@ def create_app(
     if programs.enabled:
         # With the setting off, /api/programs is never mounted, so every path under it is an unknown route.
         assert programs.compiler_url is not None  # the setting refuses to turn on without one
-        app.include_router(programs_router(ProgramStore(), CompilerClient(programs.compiler_url)))
+        compiler = CompilerClient(programs.compiler_url, timeout=programs.compiler_timeout)
+        app.include_router(programs_router(ProgramStore(), compiler))
 
     app.mount("/", AppStaticFiles(directory=FRONTEND_ROOT, html=True), name="frontend")
     return app

@@ -9,19 +9,24 @@ The recordings are the committed curated artefacts of the three unedited curated
 A source with no recording fails with a distinct "no recording" message and exit status, so a mistake
 in a test never looks like a compile failure.
 
-A marker line, `// irx-fake: <marker>`, chooses a failure instead of a replay. Marked sources have no
-recording, since the marker changes the source:
+A marker line, `// irx-fake: <marker>`, chooses a failure instead of a replay:
 
 - `error`: clang fails as the pinned clang does on each call to an undeclared `abss` (a typo for `abs`),
   with a note in the system header and the `/workspace` paths the compiler image would print.
 - `crash`: clang succeeds and opt crashes on the first pass, as an LLVM crash reports itself.
+- `hang`: clang never finishes, in a child process that keeps writing its output, as clang's own
+  `-cc1` child would.
+- `slow`: clang spends a couple of seconds in the first command, then the rest of the source (without
+  its marker line) replays as recorded, so a marker can be added to a recorded source.
 """
 
 from __future__ import annotations
 
 import hashlib
 import re
+import subprocess
 import sys
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -38,6 +43,19 @@ IMAGE_WORKSPACE = Path("/workspace")
 ERROR_LIMIT = 20
 # The stand-in IR a crash-marked source compiles to, which the fake opt crashes on.
 CRASH_IR = "; irx-fake: crash\n"
+# A slow program spends this long in its first command, then compiles as its recording says.
+SLOW_SECONDS = 2.0
+# A hanging clang's child keeps writing its output until it is stopped. It gives up after a minute, so a
+# compiler service that fails to stop it leaks nothing for long.
+HANG = """
+import sys, time
+from pathlib import Path
+output = Path(sys.argv[1])
+for _ in range(3000):
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_bytes(b"hanging\\n")
+    time.sleep(0.02)
+"""
 
 
 @dataclass(frozen=True)
@@ -80,15 +98,22 @@ def clang(args: list[str]) -> int:
         return 0
     source = Path(next(arg for arg in args if arg.endswith(".c")))
     output = Path(_after(args, "-o"))
-    failure = _marker(source.read_text(encoding="utf-8"))
+    text = source.read_bytes().decode("utf-8")
+    failure = _marker(text)
     if failure == "error":
         return _undeclared_abss(source)
     if failure == "crash":
         output.write_text(CRASH_IR, encoding="utf-8")
         return 0
-    recording = recordings().get(_digest(source.read_bytes()))
+    if failure == "hang":
+        return subprocess.run([sys.executable, "-c", HANG, str(output)], check=False).returncode
+    if failure == "slow" and "-O0" in args and "-S" in args:
+        time.sleep(SLOW_SECONDS)
+    digest = _digest("".join(line for line in text.splitlines(keepends=True)
+                             if not MARKER.fullmatch(line.rstrip("\r\n"))).encode("utf-8"))
+    recording = recordings().get(digest)
     if recording is None:
-        return _no_recording(f"source sha256 {_digest(source.read_bytes())}")
+        return _no_recording(f"source sha256 {digest}")
     level = curated.PASS_STATES[0] if "-O0" in args else curated.PASS_STATES[-1]
     if "-S" in args:
         output.write_text(recording.ir(level), encoding="utf-8")
