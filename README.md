@@ -2,7 +2,7 @@
 
 Explore how LLVM optimisation passes transform C programs through coordinated source, intermediate representation (IR), and control-flow graph (CFG) views.
 
-Choose a curated program, select two optimisation states, and follow corresponding instructions or blocks between them. The application ships with verified compiler outputs; running it does not require LLVM or compile user-supplied code.
+Choose a curated program, select two optimisation states, and follow corresponding instructions or blocks between them. The application ships with verified compiler outputs; running it does not require LLVM or compile user-supplied code unless you start the separate [user-programs stack](#run-with-user-programs).
 
 ## Project status
 
@@ -29,6 +29,19 @@ docker compose down       # Remove container; retain local submissions.
 ```
 
 Only localhost port 8000 is published. The application runs as a non-root user with read-only application files. Local submissions live in the named `study-data` volume, at `/data/local/submissions.sqlite3`; the database is created on the first submission. A legacy `/data/local/responses.sqlite3` store is moved and migrated on first use. Use `localhost` consistently because submission validation checks the exact origin.
+
+## Run with user programs
+
+User programs let you open one small C file of your own in **Explore** and follow it through the same states, panels and comparison report as a curated example. They are for local use only and run in a separate Compose stack, on port 8001, beside the study stack above. Build the pinned toolchain image once (it downloads about 1.7 GB of LLVM), then start the stack:
+
+```sh
+docker compose --profile toolchain build toolchain
+docker compose -f compose.user-programs.yaml up -d --build --wait
+```
+
+Open **http://localhost:8001**. Stop it with `docker compose -f compose.user-programs.yaml down`; add `--volumes` to remove its own local study store as well.
+
+The stack runs the same application image with the user programs setting on, beside a compiler service holding the pinned LLVM toolchain and the C library headers. On Apple Silicon the compiler runs `linux/amd64` under emulation, so a program takes a few seconds. The compiler service has no published port and no internet access, reaches only the application over the stack's internal network, has a read-only root file system and wipes its temporary work directory after each program. The application never gets the Docker socket and never runs `clang` or `opt` itself.
 
 ## Run with Python
 

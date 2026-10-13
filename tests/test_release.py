@@ -39,3 +39,10 @@ class ImageDefaultsTests(unittest.TestCase):
     def test_image_leaves_user_programs_off(self):
         self.assertIn('IREXPLORER_USER_PROGRAMS=0', self.dockerfile)
         self.assertNotIn('IREXPLORER_COMPILER_URL', self.dockerfile)
+
+    def test_the_user_programs_stack_defaults_to_the_dockerfile_version(self):
+        # Both stacks build the same app image, so the user-programs stack must not fall back to another version.
+        default = re.search(r'^ARG APP_VERSION=(\S+)$', self.dockerfile, re.MULTILINE).group(1)
+        compose = (ROOT / 'compose.user-programs.yaml').read_text()
+        self.assertIn(f'APP_VERSION: ${{IREXPLORER_VERSION:-{default}}}', compose)
+
