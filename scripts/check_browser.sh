@@ -3,8 +3,9 @@
 # end to end: start the host runner on a disposable preview store and an isolated headless Chrome, run
 # every check open with user programs off, rerun check_app with collection closed, then start the
 # compiler service on loopback over the fake toolchain (no Docker, no LLVM), restart the runner with
-# user programs on and run check_user_programs (which asks for one more restart while it runs), then stop
-# everything. Synthetic data only.
+# user programs on and run check_user_programs (which asks for one more restart while it runs), then the
+# Study checks again unchanged (Study must not change with user programs on), then stop everything.
+# Synthetic data only.
 # Needs Node 22+, Chrome, and the Python environment from the README. CHROME overrides the browser.
 # Ports: IREXPLORER_PORT (app), IREXPLORER_CDP_PORT (Chrome) and IREXPLORER_COMPILER_PORT (compiler service).
 set -euo pipefail
@@ -122,6 +123,8 @@ while kill -0 "$checker_pid" 2>/dev/null; do
 done
 wait "$checker_pid"
 checker_pid=''
+node scripts/check_study_tasks.mjs
+node scripts/check_study_guidance.mjs
 stop_server
 stop_compiler
 echo "check_browser: green"
