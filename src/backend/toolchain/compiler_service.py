@@ -73,6 +73,13 @@ def never() -> bool:
     return False
 
 
+@dataclass
+class RunningCompile:
+    """The running compile's check for whether its client has gone; ``never`` while no compile runs."""
+
+    disconnected: Callable[[], bool] = never
+
+
 @dataclass(frozen=True)
 class CompilerService:
     """Runs the curated pass sequence for one program at a time in a wiped workspace."""
@@ -86,9 +93,8 @@ class CompilerService:
     libc_version: str = "unknown"
     # Held for the whole of a compile: one program at a time, and nothing queues behind it.
     _compiling: Lock = field(default_factory=Lock, init=False, repr=False, compare=False)
-    # The running compile's check for whether its client has gone: one entry, set for each compile.
-    _running: list[Callable[[], bool]] = field(default_factory=lambda: [never], init=False, repr=False,
-                                               compare=False)
+    # The service is frozen, but which compile is running changes, so it is held in its own mutable record.
+    _running: RunningCompile = field(default_factory=RunningCompile, init=False, repr=False, compare=False)
 
     def compile(self, file_name: str, source: str, *,
                 disconnected: Callable[[], bool] = never) -> dict[str, Any]:
@@ -98,18 +104,18 @@ class CompilerService:
             raise CompileError(HTTPStatus.BAD_REQUEST, "invalid_request", "fileName must be a safe C file name.")
         if not self._compiling.acquire(blocking=False) and not self._after_abandoned_compile():
             raise CompileError(HTTPStatus.CONFLICT, "busy", BUSY)
-        self._running[0] = disconnected
+        self._running.disconnected = disconnected
         try:
             return self._compile(file_name, source, disconnected)
         finally:
-            self._running[0] = never
+            self._running.disconnected = never
             self._compiling.release()
 
     def _after_abandoned_compile(self) -> bool:
         """Take the compile slot once the running compile stops, if its client has gone (the student
         cancelled and uploaded again at once); otherwise the service is busy."""
 
-        return self._running[0]() and self._compiling.acquire(timeout=STOPPING_GRACE)
+        return self._running.disconnected() and self._compiling.acquire(timeout=STOPPING_GRACE)
 
     def _compile(self, file_name: str, source: str, disconnected: Callable[[], bool]) -> dict[str, Any]:
         deadline = time.monotonic() + self.timeout

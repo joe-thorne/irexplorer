@@ -59,7 +59,7 @@ from src.backend.programs.compiler import (
 from src.backend.programs.diagnostics import compile_failure
 from src.backend.programs.unsupported import UnsupportedProgram, unsupported_program
 
-# About 16 programs are held; nothing is persisted, so a restart forgets them all.
+# At most 16 programs are held; nothing is persisted, so a restart forgets them all.
 STORE_CAPACITY = 16
 # No pattern constraint: a malformed id is simply not held, so it answers unknown_program, not invalid_request.
 ProgramId = Annotated[str, ApiPath(min_length=1)]
