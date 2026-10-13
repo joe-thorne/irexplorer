@@ -1,4 +1,4 @@
-"""Read-only, stateless queries over curated model records."""
+"""Read-only, stateless views over resolved model records, and the curated resolver."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ from src.backend.toolchain import curated
 
 
 class QueryError(ValueError):
-    """Raised when a curated query cannot be satisfied."""
+    """Raised when a query cannot be satisfied."""
 
     status_code = 404
     code = "not_found"
@@ -38,20 +38,24 @@ class DataUnavailableError(RuntimeError):
 
 
 @dataclass(frozen=True)
-class LoadedExample:
-    """Immutable model records for one curated example."""
+class ModelRecords:
+    """Validated model records for one timeline, resolved before any view reads them."""
 
-    example_id: str
+    timeline_id: str
     timeline: OptimisationTimeline
     correspondences: tuple[Correspondence, ...]
     source: SourceRecord
 
 
 class QueryService:
-    """The stateless model-query boundary consumed by browser API clients."""
+    """The stateless model-query boundary consumed by browser API clients.
+
+    Its cache is the curated resolver: it resolves only curated example ids to
+    model records, which the views then answer from.
+    """
 
     def __init__(self, *, preload: bool = True) -> None:
-        self._examples: dict[str, LoadedExample] = {}
+        self._examples: dict[str, ModelRecords] = {}
         self._cache_lock = RLock()
         if preload:
             for example_id in curated.list_examples():
@@ -61,101 +65,24 @@ class QueryService:
         return {"examples": list(curated.list_examples())}
 
     def list_states(self, example_id: str) -> dict[str, Any]:
-        loaded = self._example(example_id)
-        return {"states": [_state_view(loaded, state) for state in loaded.timeline.states]}
+        return states_view(self._example(example_id))
 
     def source(self, example_id: str) -> dict[str, Any]:
-        source = self._example(example_id).source
-        return {"exampleId": example_id, "file": source.file, "text": source.text,
-                "sha256": source.sha256}
+        return source_view(self._example(example_id))
 
     def source_mappings(self, example_id: str, ordinal: int, function_id: str) -> dict[str, Any]:
-        state = self._state(example_id, ordinal)
-        function = self._node(state, function_id)
-        if function.kind != "Function":
-            raise QueryError(f"unknown function in state {ordinal}: {function_id}")
-        blocks = set(state.contains_children.get(function_id, ()))
-        mappings = []
-        for edge in state.edges:
-            if edge.relation != "sourceMap":
-                continue
-            block_id = state.contains_parent.get(edge.from_id)
-            if block_id not in blocks:
-                continue
-            location = state.by_id[edge.from_id].attributes.get("source")
-            if location is None:
-                continue
-            mappings.append({"instructionId": edge.from_id, "blockId": block_id,
-                             "location": {"file": PurePosixPath(location.file).name,
-                                          "line": location.line, "column": location.column},
-                             "evidence": "debugLoc"})
-        return {"exampleId": example_id, "ordinal": ordinal, "stateId": state.state_id,
-                "functionId": function_id, "mappings": mappings}
+        return source_mappings_view(self._example(example_id), ordinal, function_id)
 
     def ir(self, example_id: str, ordinal: int) -> dict[str, Any]:
-        state = self._state(example_id, ordinal)
-        functions = []
-        for function_id in state.contains_children.get("module", ()):
-            function = state.by_id[function_id]
-            if function.kind != "Function":
-                continue
-            blocks = []
-            for block_id in state.contains_children.get(function_id, ()):
-                block = state.by_id[block_id]
-                blocks.append(
-                    {
-                        "id": block_id,
-                        "label": block.display_name,
-                        "instructions": [
-                            _instruction_view(state.by_id[instruction_id])
-                            for instruction_id in state.contains_children.get(block_id, ())
-                        ],
-                    }
-                )
-            functions.append(
-                {
-                    "id": function_id,
-                    "name": function.display_name,
-                    "signature": function.attributes.get("signature"),
-                    "blocks": blocks,
-                }
-            )
-        return {"ordinal": state.ordinal, "stateId": state.state_id, "functions": functions}
+        return ir_view(self._example(example_id), ordinal)
 
     def cfg(self, example_id: str, ordinal: int, function_id: str) -> dict[str, Any]:
-        state = self._state(example_id, ordinal)
-        function = state.by_id.get(function_id)
-        if function is None or function.kind != "Function":
-            raise QueryError(f"unknown function in state {ordinal}: {function_id}")
-        block_ids = state.contains_children.get(function_id, ())
-        block_set = set(block_ids)
-        return {
-            "ordinal": ordinal,
-            "functionId": function_id,
-            "blocks": [
-                {"id": block_id, "label": state.by_id[block_id].display_name}
-                for block_id in block_ids
-            ],
-            "edges": [
-                {"fromId": edge.from_id, "toId": edge.to_id, "label": edge.label}
-                for block_id in block_ids
-                for edge in state.cfg_successors.get(block_id, ())
-                if edge.to_id in block_set
-            ],
-        }
+        return cfg_view(self._example(example_id), ordinal, function_id)
 
     def comparison_report(self, example_id: str, from_ordinal: int, to_ordinal: int) -> dict[str, Any]:
-        """Whole-example outcomes in timeline order, with resolvable evidence indices."""
-        loaded = self._example(example_id)
-        for ordinal in sorted((from_ordinal, to_ordinal)):
-            self._state(example_id, ordinal)
-        try:
-            report = describe_comparison(loaded.timeline, loaded.correspondences, from_ordinal, to_ordinal)
-        except (IndexError, ValueError) as exc:
-            raise DataUnavailableError(example_id) from exc
-        return _comparison_report_view(loaded, report)
+        return comparison_report_view(self._example(example_id), from_ordinal, to_ordinal)
 
-    def _example(self, example_id: str) -> LoadedExample:
+    def _example(self, example_id: str) -> ModelRecords:
         if example_id not in curated.list_examples():
             raise QueryError(f"unknown curated example: {example_id}")
         try:
@@ -176,22 +103,125 @@ class QueryService:
                 source = load_curated_source_record(example_id)
             except (OSError, ValueError, RuntimeError) as exc:
                 raise DataUnavailableError(example_id) from exc
-            loaded = LoadedExample(example_id, timeline, correspondences, source)
-            self._examples[example_id] = loaded
-            return loaded
+            records = ModelRecords(example_id, timeline, correspondences, source)
+            self._examples[example_id] = records
+            return records
 
     def _state(self, example_id: str, ordinal: int) -> StateGraph:
-        try:
-            return self._example(example_id).timeline.state(ordinal)
-        except ValueError as exc:
-            raise QueryError(str(exc)) from exc
+        return _state(self._example(example_id), ordinal)
 
-    @staticmethod
-    def _node(state: StateGraph, node_id: str) -> Node:
-        try:
-            return state.by_id[node_id]
-        except KeyError as exc:
-            raise QueryError(f"unknown node in state {state.ordinal}: {node_id}") from exc
+
+def states_view(records: ModelRecords) -> dict[str, Any]:
+    return {"states": [_state_view(records, state) for state in records.timeline.states]}
+
+
+def source_view(records: ModelRecords) -> dict[str, Any]:
+    source = records.source
+    return {"exampleId": records.timeline_id, "file": source.file, "text": source.text,
+            "sha256": source.sha256}
+
+
+def source_mappings_view(records: ModelRecords, ordinal: int, function_id: str) -> dict[str, Any]:
+    state = _state(records, ordinal)
+    function = _node(state, function_id)
+    if function.kind != "Function":
+        raise QueryError(f"unknown function in state {ordinal}: {function_id}")
+    blocks = set(state.contains_children.get(function_id, ()))
+    mappings = []
+    for edge in state.edges:
+        if edge.relation != "sourceMap":
+            continue
+        block_id = state.contains_parent.get(edge.from_id)
+        if block_id not in blocks:
+            continue
+        location = state.by_id[edge.from_id].attributes.get("source")
+        if location is None:
+            continue
+        mappings.append({"instructionId": edge.from_id, "blockId": block_id,
+                         "location": {"file": PurePosixPath(location.file).name,
+                                      "line": location.line, "column": location.column},
+                         "evidence": "debugLoc"})
+    return {"exampleId": records.timeline_id, "ordinal": ordinal, "stateId": state.state_id,
+            "functionId": function_id, "mappings": mappings}
+
+
+def ir_view(records: ModelRecords, ordinal: int) -> dict[str, Any]:
+    state = _state(records, ordinal)
+    functions = []
+    for function_id in state.contains_children.get("module", ()):
+        function = state.by_id[function_id]
+        if function.kind != "Function":
+            continue
+        blocks = []
+        for block_id in state.contains_children.get(function_id, ()):
+            block = state.by_id[block_id]
+            blocks.append(
+                {
+                    "id": block_id,
+                    "label": block.display_name,
+                    "instructions": [
+                        _instruction_view(state.by_id[instruction_id])
+                        for instruction_id in state.contains_children.get(block_id, ())
+                    ],
+                }
+            )
+        functions.append(
+            {
+                "id": function_id,
+                "name": function.display_name,
+                "signature": function.attributes.get("signature"),
+                "blocks": blocks,
+            }
+        )
+    return {"ordinal": state.ordinal, "stateId": state.state_id, "functions": functions}
+
+
+def cfg_view(records: ModelRecords, ordinal: int, function_id: str) -> dict[str, Any]:
+    state = _state(records, ordinal)
+    function = state.by_id.get(function_id)
+    if function is None or function.kind != "Function":
+        raise QueryError(f"unknown function in state {ordinal}: {function_id}")
+    block_ids = state.contains_children.get(function_id, ())
+    block_set = set(block_ids)
+    return {
+        "ordinal": ordinal,
+        "functionId": function_id,
+        "blocks": [
+            {"id": block_id, "label": state.by_id[block_id].display_name}
+            for block_id in block_ids
+        ],
+        "edges": [
+            {"fromId": edge.from_id, "toId": edge.to_id, "label": edge.label}
+            for block_id in block_ids
+            for edge in state.cfg_successors.get(block_id, ())
+            if edge.to_id in block_set
+        ],
+    }
+
+
+def comparison_report_view(records: ModelRecords, from_ordinal: int, to_ordinal: int) -> dict[str, Any]:
+    """Whole-timeline outcomes in timeline order, with resolvable evidence indices."""
+    for ordinal in sorted((from_ordinal, to_ordinal)):
+        _state(records, ordinal)
+    try:
+        report = describe_comparison(records.timeline, records.correspondences, from_ordinal, to_ordinal)
+    except (IndexError, ValueError) as exc:
+        raise DataUnavailableError(records.timeline_id) from exc
+    return _comparison_report_view(records, report)
+
+
+def _state(records: ModelRecords, ordinal: int) -> StateGraph:
+    try:
+        return records.timeline.state(ordinal)
+    except ValueError as exc:
+        raise QueryError(str(exc)) from exc
+
+
+def _node(state: StateGraph, node_id: str) -> Node:
+    try:
+        return state.by_id[node_id]
+    except KeyError as exc:
+        raise QueryError(f"unknown node in state {state.ordinal}: {node_id}") from exc
 
 
 def _instruction_view(node: Node) -> dict[str, Any]:
@@ -206,31 +236,31 @@ def _node_view(node: Node) -> dict[str, Any]:
     return {"id": node.stable_id, "kind": node.kind, "displayName": node.display_name}
 
 
-def _state_view(loaded: LoadedExample, state: StateGraph) -> dict[str, Any]:
+def _state_view(records: ModelRecords, state: StateGraph) -> dict[str, Any]:
     return {
         "ordinal": state.ordinal,
         "stateId": state.state_id,
         "originCommand": state.origin_command,
-        "step": _step_view(loaded, state.ordinal),
+        "step": _step_view(records, state.ordinal),
     }
 
 
-def _step_view(loaded: LoadedExample, ordinal: int) -> dict[str, Any] | None:
+def _step_view(records: ModelRecords, ordinal: int) -> dict[str, Any] | None:
     if ordinal == 0:
         return None
-    step = loaded.timeline.steps[ordinal - 1]
+    step = records.timeline.steps[ordinal - 1]
     return {
         "kind": step.kind,
         "passName": step.origin.pass_name,
         "level": step.origin.level,
-        "noOp": is_identity_correspondence(loaded.correspondences[ordinal - 1]),
+        "noOp": is_identity_correspondence(records.correspondences[ordinal - 1]),
         "remarkCount": len(step.remarks),
     }
 
 
-def _comparison_report_view(loaded: LoadedExample, report: ComparisonReport) -> dict[str, Any]:
+def _comparison_report_view(records: ModelRecords, report: ComparisonReport) -> dict[str, Any]:
     return {
-        "exampleId": loaded.example_id,
+        "exampleId": records.timeline_id,
         "fromOrdinal": report.from_ordinal,
         "toOrdinal": report.to_ordinal,
         "scope": "whole example",
@@ -244,7 +274,7 @@ def _comparison_report_view(loaded: LoadedExample, report: ComparisonReport) -> 
                    "command": s.origin.command, "remarks": [_remark_view(r) for r in s.remarks]}
                   for s in report.steps],
         "optimisations": list(report.optimisations),
-        "states": [_state_view(loaded, state) for state in report.states],
+        "states": [_state_view(records, state) for state in report.states],
         "context": report.context,
     }
 
