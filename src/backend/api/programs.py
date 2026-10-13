@@ -49,6 +49,7 @@ from src.backend.model import (
 )
 from src.backend.programs.accepted import AcceptedProgram, RefusedProgram, accept_program
 from src.backend.programs.compiler import CompileFailed, CompilerClient, CompilerOutput
+from src.backend.programs.diagnostics import compile_failure
 
 # About 16 programs are held; nothing is persisted, so a restart forgets them all.
 STORE_CAPACITY = 16
@@ -147,11 +148,10 @@ def router(store: ProgramStore, compiler: CompilerClient) -> APIRouter:
         try:
             compiled = await run_in_threadpool(compile_program, program)
         except CompileFailed as exc:
-            return JSONResponse(
-                {"error": {"code": "compile_failed", "message": "The C source did not compile.",
-                           "diagnostics": [], "output": exc.output}},
-                status_code=422, headers=NO_STORE,
-            )
+            message = ("The C source did not compile." if exc.tool == "clang"
+                       else f"{exc.tool} failed while optimising the program.")
+            return JSONResponse({"error": {"code": "compile_failed", "message": message, **compile_failure(exc)}},
+                                status_code=422, headers=NO_STORE)
         store.hold(compiled)
         return _program_view(compiled)
 
