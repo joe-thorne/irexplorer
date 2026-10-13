@@ -1,6 +1,6 @@
 FROM python:3.12.12-slim-bookworm@sha256:593bd06efe90efa80dc4eee3948be7c0fde4134606dd40d8dd8dbcade98e669c AS runtime
 
-ARG APP_VERSION=0.1.0
+ARG APP_VERSION=0.6.0-dev.1
 LABEL org.opencontainers.image.title="irexplorer" \
       org.opencontainers.image.version="${APP_VERSION}"
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
