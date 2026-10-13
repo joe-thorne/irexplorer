@@ -144,10 +144,7 @@ def router(store: ProgramStore, compiler: CompilerClient) -> APIRouter:
         try:
             program = accept_program(posted.fileName, posted.source)
         except RefusedProgram as exc:
-            return JSONResponse(
-                {"error": {"code": "invalid_program", "message": exc.message, "reason": exc.reason}},
-                status_code=400, headers=NO_STORE,
-            )
+            return _error(exc.status_code, exc.error())
         response.headers.update(NO_STORE)
         try:
             held = store.resolve(program.program_id)
@@ -168,13 +165,11 @@ def router(store: ProgramStore, compiler: CompilerClient) -> APIRouter:
         except CompileFailed as exc:
             message = ("The C source did not compile." if exc.tool == "clang"
                        else f"{exc.tool} failed while optimising the program.")
-            return JSONResponse({"error": {"code": "compile_failed", "message": message, **compile_failure(exc)}},
-                                status_code=422, headers=NO_STORE)
+            return _error(422, {"code": "compile_failed", "message": message, **compile_failure(exc)})
         except CompileNotFinished as exc:
-            return JSONResponse({"error": {"code": exc.code, "message": str(exc)}},
-                                status_code=exc.status_code, headers=NO_STORE)
+            return _error(exc.status_code, {"code": exc.code, "message": str(exc)})
         except UnsupportedProgram as exc:
-            return JSONResponse({"error": exc.error()}, status_code=422, headers=NO_STORE)
+            return _error(exc.status_code, exc.error())
         finally:
             dropping.cancel()
         store.hold(compiled)
@@ -224,6 +219,12 @@ async def _drop_on_disconnect(request: Request, compile_request: CompileRequest)
     while (await request.receive())["type"] != "http.disconnect":
         pass
     compile_request.drop()
+
+
+def _error(status_code: int, error: dict[str, Any]) -> JSONResponse:
+    """A programs route's error answer, in the app's ``{"error": {"code", "message", …}}`` shape, never cached."""
+
+    return JSONResponse({"error": error}, status_code=status_code, headers=NO_STORE)
 
 
 def _program_view(program: UserProgram) -> dict[str, Any]:

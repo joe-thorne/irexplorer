@@ -11,6 +11,8 @@ import re
 from dataclasses import dataclass
 from hashlib import sha256
 
+from src.backend.programs.errors import ProgramError
+
 MAX_LINES = 200
 MAX_BYTES = 16 * 1024
 STEM_LENGTH = 64
@@ -21,13 +23,11 @@ WHITESPACE_ONLY = re.compile(r"[ \t\n\v\f]*")
 BOM = "﻿"
 
 
-class RefusedProgram(ValueError):
+class RefusedProgram(ProgramError, ValueError):
     """Raised when a posted program is refused before anything is sent to the compiler service."""
 
-    def __init__(self, reason: str, message: str) -> None:
-        super().__init__(message)
-        self.reason = reason
-        self.message = message
+    code = "invalid_program"
+    status_code = 400
 
 
 @dataclass(frozen=True)
