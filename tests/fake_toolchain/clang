@@ -1,0 +1,8 @@
+#!/usr/bin/env python3
+"""Fake clang for tests: replays recorded compiler artefacts (see replay.py)."""
+
+import sys
+
+from replay import clang
+
+sys.exit(clang(sys.argv[1:]))

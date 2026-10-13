@@ -1,0 +1,196 @@
+"""The compiler service: compiles one user program on request with the pinned toolchain.
+
+It runs in its own container beside the app, and is a small standard-library HTTP server so that it
+needs nothing installed there but Python. It runs exactly the curated commands on
+``<workspace>/user-programs/<fileName>``, from the workspace, writing outputs to ``<workspace>/out``,
+and wipes both after every program. It returns only text: each state's IR and remarks, the ``-Rpass``
+text, the optimisation record and the manifest. Bitcode and object files never leave it, and
+interpreting a failure (such as parsing diagnostics) is the app's job.
+
+Tests run the same code on loopback, pointed at a fake toolchain with ``--toolchain``:
+
+    python -m src.backend.toolchain.compiler_service --port 7560 --toolchain tests/fake_toolchain \\
+        --workspace "$(mktemp -d)"
+"""
+
+from __future__ import annotations
+
+import argparse
+import contextlib
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import time
+from dataclasses import dataclass
+from functools import cached_property
+from http import HTTPStatus
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from pathlib import Path
+from typing import Any
+
+from src.backend.toolchain.curated import PASS_STATES, PassState
+from src.backend.toolchain.generate_curated import format_command, pass_sequence_commands
+
+WORKSPACE = Path("/workspace")
+TARGET_TRIPLE = "x86_64-unknown-linux-gnu"
+# The app sends only safe file names; the service refuses anything else, so no name leaves the workspace.
+SAFE_FILE_NAME = re.compile(r"[A-Za-z0-9_-]{1,64}\.c")
+
+
+class CompileError(Exception):
+    """A compile the service refused or could not finish, answered as ``{"error": {...}}``."""
+
+    def __init__(self, status: HTTPStatus, code: str, message: str, **details: str) -> None:
+        super().__init__(message)
+        self.status = status
+        self.body = {"code": code, "message": message, **details}
+
+
+@dataclass(frozen=True)
+class CompilerService:
+    """Runs the curated pass sequence for one program at a time in a wiped workspace."""
+
+    # Directory holding ``clang`` and ``opt``; None finds them on PATH, as in the compiler image.
+    toolchain: Path | None = None
+    workspace: Path = WORKSPACE
+    # Seconds allowed for a whole program, every command included.
+    timeout: float = 30.0
+    compiler_image: str = "unknown"
+    libc_version: str = "unknown"
+
+    def compile(self, file_name: str, source: str) -> dict[str, Any]:
+        if not SAFE_FILE_NAME.fullmatch(file_name):
+            raise CompileError(HTTPStatus.BAD_REQUEST, "invalid_request", "fileName must be a safe C file name.")
+        deadline = time.monotonic() + self.timeout
+        source_dir = self.workspace / "user-programs"
+        output_dir = self.workspace / "out"
+        self._wipe(source_dir, output_dir)
+        try:
+            source_dir.mkdir()
+            output_dir.mkdir()
+            source_path = source_dir / file_name
+            source_path.write_text(source, encoding="utf-8", newline="")
+            stem = source_path.stem
+            clang, opt = self.tool_versions
+            commands = pass_sequence_commands(str(source_path), str(output_dir), stem)
+            stderr = ""
+            for command in commands:
+                stderr = self._run(command, deadline, output="stderr")
+            return {
+                "states": [self._state(state, output_dir, stem, commands) for state in PASS_STATES],
+                "optRecord": (output_dir / f"{stem}.opt.yaml").read_text(encoding="utf-8"),
+                # The last command is the -O3 object compile, whose stderr is the -Rpass text.
+                "rpass": stderr,
+                "manifest": {
+                    "clang": clang,
+                    "opt": opt,
+                    "targetTriple": TARGET_TRIPLE,
+                    "compilerImage": self.compiler_image,
+                    "libcVersion": self.libc_version,
+                    "commands": [format_command(command) for command in commands],
+                },
+            }
+        finally:
+            self._wipe(source_dir, output_dir)
+
+    @cached_property
+    def tool_versions(self) -> tuple[str, str]:
+        """The ``clang`` and ``opt`` version lines, read once: a running service's toolchain never changes."""
+
+        deadline = time.monotonic() + self.timeout
+        return (self._run(["clang", "--version"], deadline).splitlines()[0].strip(),
+                self._run(["opt", "--version"], deadline).splitlines()[1].strip())
+
+    def _state(self, state: PassState, output_dir: Path, stem: str, commands: list[list[str]]) -> dict[str, Any]:
+        ir_path = output_dir / f"{stem}_{state.file_suffix}.ll"
+        remarks_path = output_dir / f"{stem}_{state.file_suffix}_remarks.yaml"
+        # A state's origin is the command that wrote its IR, matched by -o target as the curated manifest is.
+        (command,) = [command for command in commands if command[command.index("-o") + 1] == str(ir_path)]
+        return {
+            "stateId": state.state_id,
+            "ir": ir_path.read_text(encoding="utf-8"),
+            "remarks": remarks_path.read_text(encoding="utf-8") if state.pass_pipeline else None,
+            "command": format_command(command),
+        }
+
+    def _run(self, command: list[str], deadline: float, *, output: str = "stdout") -> str:
+        tool = str(self.toolchain / command[0]) if self.toolchain else command[0]
+        try:
+            result = subprocess.run(
+                [tool, *command[1:]], cwd=self.workspace, capture_output=True, encoding="utf-8",
+                errors="replace", timeout=max(deadline - time.monotonic(), 0), check=False,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise CompileError(HTTPStatus.GATEWAY_TIMEOUT, "timeout",
+                               f"The compile took longer than {self.timeout:g} s.") from exc
+        if result.returncode != 0:
+            raise CompileError(HTTPStatus.UNPROCESSABLE_ENTITY, "command_failed",
+                               f"{command[0]} exited with status {result.returncode}.",
+                               command=format_command(command), stderr=result.stderr)
+        return result.stdout if output == "stdout" else result.stderr
+
+    @staticmethod
+    def _wipe(*directories: Path) -> None:
+        for directory in directories:
+            shutil.rmtree(directory, ignore_errors=True)
+
+
+def server(service: CompilerService, host: str, port: int) -> HTTPServer:
+    """Bind the service's HTTP server; it handles one request, so one compile, at a time."""
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_POST(self) -> None:
+            if self.path != "/compile":
+                self._answer(HTTPStatus.NOT_FOUND, {"error": {"code": "not_found", "message": "Unknown path."}})
+                return
+            try:
+                request = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))
+                file_name, source = request["fileName"], request["source"]
+                if not isinstance(file_name, str) or not isinstance(source, str):
+                    raise TypeError("fileName and source must be strings")
+            except (ValueError, KeyError, TypeError):
+                self._answer(HTTPStatus.BAD_REQUEST,
+                             {"error": {"code": "invalid_request", "message": "Send {fileName, source}."}})
+                return
+            try:
+                self._answer(HTTPStatus.OK, service.compile(file_name, source))
+            except CompileError as exc:
+                self._answer(exc.status, {"error": exc.body})
+
+        def _answer(self, status: HTTPStatus, body: dict[str, Any]) -> None:
+            data = json.dumps(body).encode("utf-8")
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+
+    return HTTPServer((host, port), Handler)
+
+
+def main(argv: list[str] | None = None) -> None:
+    parser = argparse.ArgumentParser(description="Compile user programs with the pinned toolchain.")
+    parser.add_argument("--host", default="127.0.0.1")
+    parser.add_argument("--port", type=int, default=8080, help="0 picks a free port")
+    parser.add_argument("--toolchain", type=Path, help="directory holding clang and opt (default: PATH)")
+    parser.add_argument("--workspace", type=Path, default=WORKSPACE)
+    parser.add_argument("--timeout", type=float, default=30.0, help="seconds allowed for a whole program")
+    parser.add_argument("--compiler-image", default=os.environ.get("IREXPLORER_COMPILER_IMAGE", "unknown"))
+    parser.add_argument("--libc-version", default=os.environ.get("IREXPLORER_LIBC_VERSION", "unknown"))
+    args = parser.parse_args(argv)
+    service = CompilerService(toolchain=args.toolchain.resolve() if args.toolchain else None,
+                              workspace=args.workspace.resolve(), timeout=args.timeout,
+                              compiler_image=args.compiler_image, libc_version=args.libc_version)
+    # Fail at startup, not at the first program, if the toolchain cannot be run.
+    print(f"Toolchain: {' · '.join(service.tool_versions)}", file=sys.stderr)
+    with server(service, args.host, args.port) as http:
+        print(f"Compiler service listening on http://{args.host}:{http.server_port}", flush=True)
+        with contextlib.suppress(KeyboardInterrupt):
+            http.serve_forever()
+
+
+if __name__ == "__main__":
+    main()

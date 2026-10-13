@@ -13,6 +13,8 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHttpException
 
+from src.backend.api.programs import ProgramStore
+from src.backend.api.programs import router as programs_router
 from src.backend.api.query import DataUnavailableError, QueryError, QueryService
 from src.backend.api.schemas import (
     CfgResponse,
@@ -29,6 +31,7 @@ from src.backend.api.schemas import (
 from src.backend.evaluation.router import router as study_router
 from src.backend.evaluation.service import Config, StudyService
 from src.backend.programs import UserProgramsSetting
+from src.backend.programs.compiler import CompilerClient
 from src.backend.release import metadata
 
 FRONTEND_ROOT = Path(__file__).resolve().parents[2] / "frontend"
@@ -201,9 +204,9 @@ def create_app(
 
     app.include_router(study_router(StudyService(study)))
     if programs.enabled:
-        # The user programs router (/api/programs) is mounted here, and only here, once it is built.
-        # With the setting off it is never mounted, so every /api/programs path is an unknown route.
-        pass
+        # With the setting off, /api/programs is never mounted, so every path under it is an unknown route.
+        assert programs.compiler_url is not None  # the setting refuses to turn on without one
+        app.include_router(programs_router(ProgramStore(), CompilerClient(programs.compiler_url)))
 
     app.mount("/", AppStaticFiles(directory=FRONTEND_ROOT, html=True), name="frontend")
     return app

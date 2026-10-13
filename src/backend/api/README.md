@@ -1,6 +1,6 @@
 # Query API boundary
 
-FastAPI serves the static browser application and stateless queries over included compiler artefacts. Every query names its example; the browser owns panel and selection state. The immutable per-example cache contains no participant responses. No runtime source upload or compiler execution is supported.
+FastAPI serves the static browser application and stateless queries over included compiler artefacts. Every query names its example; the browser owns panel and selection state. The immutable per-example cache contains no participant responses. The application never runs a compiler: user programs (below) are compiled by the separate compiler service.
 
 Run `.venv/bin/python -m src.backend.api.server` from the repository root and open `http://127.0.0.1:8000`. The interactive API docs and OpenAPI schema are not exposed by development or packaged releases; both `/docs` and `/openapi.json` return a controlled `404 not_found` response.
 
@@ -29,3 +29,12 @@ The [study API](../../../docs/evaluation-api-contract.md) supplies participant c
 ## User programs setting
 
 `IREXPLORER_USER_PROGRAMS` is read once at startup. Unset or `0` leaves user programs off, and the `/api/programs` routes are not mounted at all. `1` turns them on and requires `IREXPLORER_COMPILER_URL`, the compiler service's address; the address alone never turns them on. Any other value, `1` without an address, or `1` with `pilot` or `live` collection stops startup with an error that names the problem. The image, the study Compose file and the host runner all leave the setting off.
+
+## User programs
+
+With the setting on, a separate router serves user programs. It resolves ids only through its own in-memory store, and the curated routes never resolve a `programId`.
+
+- `POST /api/programs` with `{"fileName": ..., "source": ...}` compiles the program through the compiler service and answers `201`, or `200` at once if the program is already held. The body, also returned by `GET /api/programs/{programId}`, is `{programId, fileName, sha256, manifest}`; the manifest records the `clang` and `opt` version lines, the target triple, the compiler image ID, the `libc6-dev` version and every command.
+- `GET /api/programs/{programId}/states`, `/source`, `/states/{ordinal}/ir`, `/states/{ordinal}/cfg?functionId=...`, `/states/{ordinal}/source-mappings?functionId=...` and `/comparison-report?fromOrdinal=...&toOrdinal=...` answer exactly as the curated routes do, with `programId` in place of `exampleId`.
+
+`programId` is the SHA-256 of the file name, a NUL byte and the source. About 16 programs are held, least recently used out first, and nothing is persisted. An id that is not held returns `404 unknown_program`; a failed compile returns `422 compile_failed` with the compiler's `output`.

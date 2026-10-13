@@ -1,0 +1,8 @@
+#!/usr/bin/env python3
+"""Fake opt for tests: replays recorded compiler artefacts (see replay.py)."""
+
+import sys
+
+from replay import opt
+
+sys.exit(opt(sys.argv[1:]))

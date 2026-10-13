@@ -27,6 +27,8 @@ are asserted against fresh analysis and served correspondences. This is AI-assis
 manual artefact evidence; independent human sign-off and fresh Docker
 regeneration are separate verification steps.
 
+User programs are tested without LLVM. `test_user_programs_api.py` drives the app in-process with user programs on, pointed at the real compiler service on a loopback port. The service runs the fake `clang` and `opt` in `fake_toolchain/`, which replay the committed curated artefacts of the three unedited curated sources, looked up by the SHA-256 of the source, and fail with "no recording" for any other source.
+
 ## Lint and type checks
 
 Install the development tools over the runtime environment, then run both checks from the repository root. Their configuration is in `pyproject.toml`.
