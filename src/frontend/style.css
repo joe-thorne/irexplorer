@@ -473,7 +473,7 @@ details p { margin: .8rem 0 0; }
 .source-mode label:has(input:checked) { background: var(--accent); color: #fff; }
 .source-mode label:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: -3px; }
 .source-controls .source-mode label:has(input:disabled) { cursor: not-allowed; opacity: .6; }
-#program-upload { align-self: end; min-height: 2.25rem; padding: .28rem .6rem; }
+#program-upload, #program-paste-open { align-self: end; min-height: 2.25rem; padding: .28rem .6rem; }
 .source-title { align-items: center; display: flex; flex-wrap: wrap; gap: .5rem; }
 .program-chip { background: var(--linked-soft); border-radius: 1rem; color: var(--linked); font-size: .75rem; font-weight: 800; padding: .1rem .5rem; }
 /* In Your files the drop zone stands in for the source prompt: it shows while no source is open. */
@@ -482,9 +482,19 @@ details p { margin: .8rem 0 0; }
 .program-drop-title { font-weight: 800; }
 .program-drop button { padding: .45rem .8rem; }
 #source-panel[data-mode="yours"] > #source-prompt { display: none; }
-#source-panel[data-mode="yours"]:has(> #source-prompt:not([hidden])) > .program-drop { display: grid; }
+#source-panel[data-mode="yours"]:not([data-pasting]):has(> #source-prompt:not([hidden])) > .program-drop { display: grid; }
 #source-panel[data-mode="yours"]:has(> #source-prompt:not([hidden])) > #source-lines { display: none; }
 .source-lines.is-pending { opacity: .55; }
+#source-panel.is-drop-target { outline: 3px dashed var(--accent); outline-offset: -3px; }
+#source-panel.is-drop-target .program-drop { background: var(--accent-soft); border-color: var(--accent); }
+/* The paste box stands in for the source lines, or the drop zone, while it is open. */
+#source-panel[data-pasting] > #source-lines { display: none; }
+.program-paste:not([hidden]) { display: grid; gap: .5rem; min-height: 0; overflow: auto; }
+.program-paste label { color: var(--ink); display: grid; font-size: .82rem; font-weight: 750; gap: .2rem; }
+.program-paste input, .program-paste textarea { background: #fff; border: 1px solid #9fb3c8; border-radius: .35rem; color: var(--code); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .82rem; padding: .35rem .45rem; }
+.program-paste textarea { min-height: 8rem; resize: vertical; }
+/* Inset, as the box scrolls and would clip an outer outline. */
+.program-paste :is(input, textarea):focus-visible { outline-offset: -1px; }
 .program-card { grid-area: empty; padding: 1.5rem; }
 .program-card h2 { font-size: 1.25rem; }
 .program-elapsed { font-variant-numeric: tabular-nums; }
