@@ -10,11 +10,15 @@ import socket
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import unittest
+import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from urllib.error import HTTPError
 
+import uvicorn
 from fastapi.testclient import TestClient
 
 from src.backend.api.app import create_app
@@ -294,6 +298,63 @@ class CompilerTimeoutTests(unittest.TestCase):
                 # Nothing is held, and the compiler is free again: the second attempt times out too, not busy.
                 held = self.client.get(f"/api/programs/{program_id('hang.c', source)}")
                 self.assertEqual(held.json()["error"]["code"], "unknown_program")
+
+
+class CompileCancelTests(unittest.TestCase):
+    """A browser that drops its POST mid-compile (Cancel). The app runs under a real HTTP server here,
+    since the in-process test client cannot drop a request."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.compiler = LoopbackCompilerService()
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls.compiler.stop()
+
+    def setUp(self) -> None:
+        study = tempfile.TemporaryDirectory()
+        self.addCleanup(study.cleanup)
+        app = create_app(study_config=Config(Path(study.name), collection_mode="local"),
+                         user_programs=UserProgramsSetting(True, self.compiler.url))
+        listening = socket.socket()
+        listening.bind(("127.0.0.1", 0))
+        self.addCleanup(listening.close)
+        self.port = listening.getsockname()[1]
+        server = uvicorn.Server(uvicorn.Config(app, log_level="warning"))
+        thread = threading.Thread(target=server.run, kwargs={"sockets": [listening]}, daemon=True)
+        thread.start()
+        self.addCleanup(thread.join, 10)
+        self.addCleanup(setattr, server, "should_exit", True)
+
+    def post(self, file_name: str, source: str) -> tuple[int, dict]:
+        request = urllib.request.Request(
+            f"http://127.0.0.1:{self.port}/api/programs", method="POST",
+            data=json.dumps({"fileName": file_name, "source": source}).encode(),
+            headers={"Content-Type": "application/json"})
+        try:
+            with urllib.request.build_opener(urllib.request.ProxyHandler({})).open(request, timeout=30) as response:
+                return response.status, json.loads(response.read())
+        except HTTPError as exc:
+            with exc:
+                return exc.code, json.loads(exc.read())
+
+    def test_dropping_a_compile_request_frees_the_compiler(self) -> None:
+        body = json.dumps({"fileName": "hang.c", "source": "int main(void) { return 0; }\n// irx-fake: hang\n"})
+        with socket.create_connection(("127.0.0.1", self.port)) as browser:
+            browser.sendall(f"POST /api/programs HTTP/1.1\r\nHost: 127.0.0.1\r\n"
+                            f"Content-Type: application/json\r\nContent-Length: {len(body)}\r\n\r\n{body}".encode())
+            self.compiler.wait_until_compiling()
+        dropped = time.monotonic()
+
+        # The app drops its own request, so the compiler service stops the hanging compile and wipes its
+        # work directory at once rather than at its 30 s timeout.
+        workspace = Path(self.compiler.workspace.name)
+        while list(workspace.iterdir()):
+            self.assertLess(time.monotonic() - dropped, 3, "the compile was not stopped")
+            time.sleep(0.02)
+        status, created = self.post("score.c", curated_source("score"))
+        self.assertEqual(status, 201, created)
 
 
 class CompilerUnavailableTests(unittest.TestCase):
