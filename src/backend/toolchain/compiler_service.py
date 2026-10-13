@@ -21,14 +21,16 @@ import json
 import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import cached_property
 from http import HTTPStatus
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, HTTPServer, ThreadingHTTPServer
 from pathlib import Path
+from threading import Lock
 from typing import Any
 
 from src.backend.toolchain.curated import PASS_STATES, PassState
@@ -38,6 +40,13 @@ WORKSPACE = Path("/workspace")
 TARGET_TRIPLE = "x86_64-unknown-linux-gnu"
 # The app sends only safe file names; the service refuses anything else, so no name leaves the workspace.
 SAFE_FILE_NAME = re.compile(r"[A-Za-z0-9_-]{1,64}\.c")
+# How often a running command is checked against the deadline.
+POLL_INTERVAL = 0.05
+# Reading the tool versions is not a compile, so the compile timeout does not bound it.
+VERSION_TIMEOUT = 30.0
+# Busy and timeout messages are shown to the student as they are.
+BUSY = "The compiler is busy with another program. Try again in a moment."
+TIMED_OUT = "The compile took longer than {:g} s and was stopped."
 
 
 class CompileError(Exception):
@@ -60,10 +69,20 @@ class CompilerService:
     timeout: float = 30.0
     compiler_image: str = "unknown"
     libc_version: str = "unknown"
+    # Held for the whole of a compile: one program at a time, and nothing queues behind it.
+    _compiling: Lock = field(default_factory=Lock, init=False, repr=False, compare=False)
 
     def compile(self, file_name: str, source: str) -> dict[str, Any]:
         if not SAFE_FILE_NAME.fullmatch(file_name):
             raise CompileError(HTTPStatus.BAD_REQUEST, "invalid_request", "fileName must be a safe C file name.")
+        if not self._compiling.acquire(blocking=False):
+            raise CompileError(HTTPStatus.CONFLICT, "busy", BUSY)
+        try:
+            return self._compile(file_name, source)
+        finally:
+            self._compiling.release()
+
+    def _compile(self, file_name: str, source: str) -> dict[str, Any]:
         deadline = time.monotonic() + self.timeout
         source_dir = self.workspace / "user-programs"
         output_dir = self.workspace / "out"
@@ -100,7 +119,7 @@ class CompilerService:
     def tool_versions(self) -> tuple[str, str]:
         """The ``clang`` and ``opt`` version lines, read once: a running service's toolchain never changes."""
 
-        deadline = time.monotonic() + self.timeout
+        deadline = time.monotonic() + VERSION_TIMEOUT
         return (self._run(["clang", "--version"], deadline).splitlines()[0].strip(),
                 self._run(["opt", "--version"], deadline).splitlines()[1].strip())
 
@@ -118,19 +137,42 @@ class CompilerService:
 
     def _run(self, command: list[str], deadline: float, *, output: str = "stdout") -> str:
         tool = str(self.toolchain / command[0]) if self.toolchain else command[0]
+        # Its own process group, so stopping it also stops every process it started (clang runs clang -cc1).
+        process = subprocess.Popen([tool, *command[1:]], cwd=self.workspace, stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE, encoding="utf-8", errors="replace",
+                                   start_new_session=True)
         try:
-            result = subprocess.run(
-                [tool, *command[1:]], cwd=self.workspace, capture_output=True, encoding="utf-8",
-                errors="replace", timeout=max(deadline - time.monotonic(), 0), check=False,
-            )
-        except subprocess.TimeoutExpired as exc:
-            raise CompileError(HTTPStatus.GATEWAY_TIMEOUT, "timeout",
-                               f"The compile took longer than {self.timeout:g} s.") from exc
-        if result.returncode != 0:
+            stdout, stderr = self._wait(process, deadline)
+        finally:
+            self._stop(process)
+        if process.returncode != 0:
             raise CompileError(HTTPStatus.UNPROCESSABLE_ENTITY, "command_failed",
-                               f"{command[0]} exited with status {result.returncode}.",
-                               command=format_command(command), stderr=result.stderr)
-        return result.stdout if output == "stdout" else result.stderr
+                               f"{command[0]} exited with status {process.returncode}.",
+                               command=format_command(command), stderr=stderr)
+        return stdout if output == "stdout" else stderr
+
+    def _wait(self, process: subprocess.Popen[str], deadline: float) -> tuple[str, str]:
+        """Wait for a command, checking every so often whether the compile must stop.
+
+        Stopping raises; the command's group is then killed and the caller wipes the work directory.
+        """
+
+        while True:
+            try:
+                return process.communicate(timeout=POLL_INTERVAL)
+            except subprocess.TimeoutExpired:
+                if time.monotonic() >= deadline:
+                    raise CompileError(HTTPStatus.GATEWAY_TIMEOUT, "timeout", TIMED_OUT.format(self.timeout)) from None
+
+    @staticmethod
+    def _stop(process: subprocess.Popen[str]) -> None:
+        """Kill a command's whole process group if it is still running, and reap it."""
+
+        if process.returncode is None:
+            with contextlib.suppress(ProcessLookupError):
+                os.killpg(process.pid, signal.SIGKILL)
+            # Returns once every process in the group has exited and closed its output.
+            process.communicate()
 
     @staticmethod
     def _wipe(*directories: Path) -> None:
@@ -139,7 +181,8 @@ class CompilerService:
 
 
 def server(service: CompilerService, host: str, port: int) -> HTTPServer:
-    """Bind the service's HTTP server; it handles one request, so one compile, at a time."""
+    """Bind the service's HTTP server. Each request has its own thread, so a request that arrives during a
+    compile is answered at once, as busy, rather than waiting for it."""
 
     class Handler(BaseHTTPRequestHandler):
         def do_POST(self) -> None:
@@ -168,7 +211,9 @@ def server(service: CompilerService, host: str, port: int) -> HTTPServer:
             self.end_headers()
             self.wfile.write(data)
 
-    return HTTPServer((host, port), Handler)
+    http = ThreadingHTTPServer((host, port), Handler)
+    http.daemon_threads = True
+    return http
 
 
 def main(argv: list[str] | None = None) -> None:

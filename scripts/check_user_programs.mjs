@@ -3,6 +3,7 @@
 // phase 3). Uploads are the unedited curated sources, which the fake toolchain has recordings for.
 // Each scenario starts from a freshly loaded Explore page with empty session storage; add a scenario
 // to `scenarios` for each new behaviour. Optional IREXPLORER_CHECK_OUTPUT directory for screenshots.
+// IREXPLORER_COMPILER_PID is the compiler service's process, which a scenario pauses to make it unavailable.
 import { existsSync } from 'node:fs';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -15,6 +16,12 @@ if (captures) await mkdir(captures, { recursive: true });
 const curatedSources = join(import.meta.dirname, '..', 'examples', 'curated');
 // Sources written for a scenario, such as ones carrying a fake toolchain marker (tests/fake_toolchain).
 const writtenSources = await mkdtemp(join(tmpdir(), 'irexplorer-user-programs-'));
+// A curated source under another name: the same recording, but a programId the server does not hold yet.
+async function renamedCopy(example, fileName) {
+  const path = join(writtenSources, fileName);
+  await writeFile(path, await readFile(join(curatedSources, `${example}.c`)));
+  return path;
+}
 const release = await (await fetch(base + '/api/release')).json();
 if (release.config?.userPrograms !== true) throw Error(`Failed: /api/release reports user programs on; observed=${JSON.stringify(release.config)}`);
 
@@ -77,6 +84,22 @@ async function snap(name) {
   await writeFile(join(captures, name), Buffer.from(data, 'base64'));
 }
 const posts = () => requests.filter(request => request.method === 'POST' && request.path === '/api/programs').length;
+// Clicks the failure card's button with exactly this text.
+const cardButton = text => value(`[...document.querySelectorAll('#program-card button')].find(button => button.textContent === ${JSON.stringify(text)}).click()`);
+const cardButtons = `[...document.querySelectorAll('#program-card button')].map(button => button.textContent).join('|')`;
+// A POST from outside this page, as another tab's would be.
+function postElsewhere(fileName, source) {
+  return fetch(base + '/api/programs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName, source }) });
+}
+// Waits until the compiler takes a program again: a source with no recording then fails to compile, not busy.
+async function compilerFree() {
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    const response = await postElsewhere('probe.c', 'int probe(void) { return 0; }\n');
+    if (response.status !== 409) return;
+    await pause(100);
+  }
+  throw Error('The compiler service stayed busy');
+}
 
 // Click a button that opens the file chooser, then pick `file` in it, as a person would.
 async function chooseFile(buttonSelector, file) {
@@ -478,6 +501,50 @@ const scenarios = {
     await onTask('T6');
     await check('A page loaded on the task never builds the controls', noProgramControls);
     await check('The task looks exactly as on a page that never built them', `${JSON.stringify(entered)} === ${studySurface}`);
+  },
+
+  async 'A busy compiler is reported with Try again, which compiles the file once the other compile is over'() {
+    const slow = postElsewhere('slow.c', await readFile(join(curatedSources, 'score.c'), 'utf8') + '// irx-fake: slow\n');
+    await pause(300);
+    await click('#source-mode input[value="yours"]');
+    await chooseFile('#program-drop button', await renamedCopy('score', 'busy_score.c'));
+    await until(`document.querySelector('#program-card')?.innerText.includes('could not be opened')`);
+    await check('The busy card shows the server\'s message, with Try again and Choose another file…',
+      `(() => { const text = document.querySelector('#program-card').innerText; return text.includes('busy_score.c could not be opened') && text.includes('The compiler is busy with another program. Try again in a moment.') && ${cardButtons} === 'Try again|Choose another file…'; })()`);
+    await check('The busy file is not added to Your file and the workbench is not busy',
+      `${uploadOptions}.join('|') === '' && document.querySelector('#workspace-shell').getAttribute('aria-busy') !== 'true' && !appState.programId`);
+    await snap('user-programs-busy.png');
+    if ((await slow).status !== 201) throw Error(`Failed: the other compile finished; observed=${(await slow).status}`);
+
+    const before = posts();
+    await cardButton('Try again');
+    await until('window.StudyWorkspace.ready && Boolean(appState.programId)');
+    await check('Try again posts the same file once and opens it', `${posts() - before === 1} && !${visible('#program-card')} && document.querySelector('#source-summary').textContent === 'C source · busy_score.c'`);
+    await check('Only the file that compiled is listed in Your file', `${uploadOptions}.join('|') === 'busy_score.c'`);
+  },
+
+  async 'An unavailable compiler is reported with Try again, which compiles the file once the compiler answers'() {
+    const compiler = Number(process.env.IREXPLORER_COMPILER_PID);
+    if (!compiler) throw Error('IREXPLORER_COMPILER_PID is not set');
+    await click('#source-mode input[value="yours"]');
+    // A paused compiler service accepts the connection and never answers, until the app gives up on it.
+    process.kill(compiler, 'SIGSTOP');
+    try {
+      await chooseFile('#program-drop button', await renamedCopy('binary_search', 'unavailable_search.c'));
+      await until(`document.querySelector('#program-card')?.innerText.includes('could not be opened')`);
+    } finally {
+      process.kill(compiler, 'SIGCONT');
+    }
+    await check('The unavailable card shows the server\'s message, with Try again and Choose another file…',
+      `(() => { const text = document.querySelector('#program-card').innerText; return text.includes('unavailable_search.c could not be opened') && text.includes('The compiler service is unavailable.') && ${cardButtons} === 'Try again|Choose another file…'; })()`);
+    await check('The unavailable file is not added to Your file', `${uploadOptions}.join('|') === '' && !appState.programId`);
+    await snap('user-programs-unavailable.png');
+
+    // The compiler finishes the request the app gave up on before it takes another.
+    await compilerFree();
+    await cardButton('Try again');
+    await until('window.StudyWorkspace.ready && Boolean(appState.programId)');
+    await check('Try again opens the file once the compiler answers', `!${visible('#program-card')} && document.querySelector('#source-summary').textContent === 'C source · unavailable_search.c' && ${uploadOptions}.join('|') === 'unavailable_search.c'`);
   },
 };
 
