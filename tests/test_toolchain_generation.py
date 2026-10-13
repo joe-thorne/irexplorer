@@ -7,7 +7,7 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from src.backend import bake
-from src.backend.toolchain import generate_curated
+from src.backend.toolchain import curated, generate_curated
 from src.backend.toolchain.curated import ToolchainError
 
 TOOLCHAIN_PACKAGE = "src.backend.toolchain"
@@ -178,6 +178,21 @@ class CuratedGenerationTests(unittest.TestCase):
             )
             self.assertFalse((live_root / "new.txt").exists())
             self.assertEqual(list(Path(temporary).iterdir()), [live_root])
+
+    def test_pass_sequence_commands_are_those_recorded_in_every_curated_manifest(self) -> None:
+        for example in curated.list_examples():
+            with self.subTest(example=example):
+                commands = generate_curated.pass_sequence_commands(
+                    f"/workspace/examples/curated/{example}.c",
+                    f"/workspace/artefacts/curated/{example}",
+                    example,
+                )
+                manifest = curated.manifest_path(example).read_text(encoding="utf-8")
+                recorded = [line.removeprefix("  - ") for line in manifest.splitlines()
+                            if line.startswith("  - ")]
+                self.assertEqual(
+                    [generate_curated.format_command(command) for command in commands], recorded
+                )
 
     def test_staging_directory_overlays_the_canonical_container_path(self) -> None:
         staging_root = Path("/tmp/staged-curated")

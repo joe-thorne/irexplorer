@@ -46,11 +46,33 @@ def _generate_example(example: str, *, artefacts_root: Path) -> None:
     manifest = out_dir / "manifest.txt"
     _write_manifest_header(manifest, example, source, artefacts_root)
 
-    baseline_ll = canonical_out_dir / f"{example}_O0.ll"
-    baseline_bc = canonical_out_dir / f"{example}_O0.bc"
-
+    commands = pass_sequence_commands(
+        _container_path(source), _container_path(canonical_out_dir), example
+    )
+    for command in commands[:-1]:
+        _run_and_record(manifest, command, artefacts_root=artefacts_root)
     _run_and_record(
         manifest,
+        commands[-1],
+        artefacts_root=artefacts_root,
+        stderr_path=out_dir / f"{example}_remarks.txt",
+    )
+
+
+def pass_sequence_commands(source: str, output_dir: str, stem: str) -> list[list[str]]:
+    """Return the sixteen commands that compile one C source through the curated pass sequence.
+
+    Two ``clang -O0`` compiles (IR and bitcode), the twelve ``opt`` steps one pass at a time, then two
+    ``clang -O3`` compiles: the recompiled IR, and an object whose stderr is the ``-Rpass`` text and
+    beside which ``-fsave-optimization-record`` writes ``<stem>.opt.yaml``. Outputs are named
+    ``<stem>_<file suffix>.ll`` in ``output_dir``. The curated generator and the compiler service both
+    run exactly these, so a user program is compiled as a curated example is.
+    """
+
+    def output(name: str) -> str:
+        return f"{output_dir}/{name}"
+
+    commands = [
         [
             "clang",
             "-O0",
@@ -60,14 +82,10 @@ def _generate_example(example: str, *, artefacts_root: Path) -> None:
             "-fno-discard-value-names",
             "-S",
             "-emit-llvm",
-            _container_path(source),
+            source,
             "-o",
-            _container_path(baseline_ll),
+            output(f"{stem}_O0.ll"),
         ],
-        artefacts_root=artefacts_root,
-    )
-    _run_and_record(
-        manifest,
         [
             "clang",
             "-O0",
@@ -77,39 +95,32 @@ def _generate_example(example: str, *, artefacts_root: Path) -> None:
             "-fno-discard-value-names",
             "-emit-llvm",
             "-c",
-            _container_path(source),
+            source,
             "-o",
-            _container_path(baseline_bc),
+            output(f"{stem}_O0.bc"),
         ],
-        artefacts_root=artefacts_root,
-    )
-
-    previous = baseline_bc
+    ]
+    previous = output(f"{stem}_O0.bc")
     for state in PASS_STATES[1:-1]:
         if state.pass_pipeline is None:
             raise ToolchainError(f"Pass state '{state.state_id}' has no pass pipeline")
-        output = canonical_out_dir / f"{example}_{state.file_suffix}.ll"
-        remarks_output = canonical_out_dir / f"{example}_{state.file_suffix}_remarks.yaml"
-        _run_and_record(
-            manifest,
+        ir_output = output(f"{stem}_{state.file_suffix}.ll")
+        commands.append(
             [
                 "opt",
                 f"-passes={state.pass_pipeline}",
                 "-pass-remarks=.*",
                 "-pass-remarks-missed=.*",
                 "-pass-remarks-analysis=.*",
-                f"-pass-remarks-output={_container_path(remarks_output)}",
-                _container_path(previous),
+                f"-pass-remarks-output={output(f'{stem}_{state.file_suffix}_remarks.yaml')}",
+                previous,
                 "-S",
                 "-o",
-                _container_path(output),
-            ],
-            artefacts_root=artefacts_root,
+                ir_output,
+            ]
         )
-        previous = output
-
-    _run_and_record(
-        manifest,
+        previous = ir_output
+    commands.append(
         [
             "clang",
             "-O3",
@@ -117,14 +128,12 @@ def _generate_example(example: str, *, artefacts_root: Path) -> None:
             "-fno-discard-value-names",
             "-S",
             "-emit-llvm",
-            _container_path(source),
+            source,
             "-o",
-            _container_path(canonical_out_dir / f"{example}_O3.ll"),
-        ],
-        artefacts_root=artefacts_root,
+            output(f"{stem}_O3.ll"),
+        ]
     )
-    _run_and_record(
-        manifest,
+    commands.append(
         [
             "clang",
             "-O3",
@@ -134,14 +143,13 @@ def _generate_example(example: str, *, artefacts_root: Path) -> None:
             "-Rpass-missed=.*",
             "-Rpass-analysis=.*",
             "-fsave-optimization-record",
-            _container_path(source),
+            source,
             "-c",
             "-o",
-            _container_path(canonical_out_dir / f"{example}.o"),
-        ],
-        artefacts_root=artefacts_root,
-        stderr_path=out_dir / f"{example}_remarks.txt",
+            output(f"{stem}.o"),
+        ]
     )
+    return commands
 
 
 def _write_manifest_header(
@@ -183,7 +191,7 @@ def _run_and_record(
     stderr_path: Path | None = None,
 ) -> None:
     with manifest.open("a", encoding="utf-8") as manifest_file:
-        manifest_file.write(f"  - {_format_command(command)}\n")
+        manifest_file.write(f"  - {format_command(command)}\n")
 
     result = subprocess.run(
         _docker_command(command, artefacts_root),
@@ -218,11 +226,11 @@ def _tool_version(
     )
     if result.returncode != 0:
         raise ToolchainError(
-            f"Could not read tool version with '{_format_command(command)}': {result.stderr.strip()}"
+            f"Could not read tool version with '{format_command(command)}': {result.stderr.strip()}"
         )
     lines = result.stdout.splitlines()
     if len(lines) <= line_index:
-        raise ToolchainError(f"Unexpected version output from '{_format_command(command)}'")
+        raise ToolchainError(f"Unexpected version output from '{format_command(command)}'")
     return lines[line_index].strip()
 
 
@@ -245,7 +253,7 @@ def _container_path(path: Path) -> str:
     return str(WORKSPACE_ROOT / path.relative_to(REPO_ROOT))
 
 
-def _format_command(command: list[str]) -> str:
+def format_command(command: list[str]) -> str:
     return " ".join(_quote(arg) for arg in command)
 
 
