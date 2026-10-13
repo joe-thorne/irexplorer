@@ -3,6 +3,7 @@
 // phase 3). Uploads are the unedited curated sources, which the fake toolchain has recordings for.
 // Each scenario starts from a freshly loaded Explore page with empty session storage; add a scenario
 // to `scenarios` for each new behaviour. Optional IREXPLORER_CHECK_OUTPUT directory for screenshots.
+import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
@@ -18,7 +19,7 @@ const page = await (await fetch(`${cdp}/json/new?about:blank`, { method: 'PUT' }
 const ws = new WebSocket(page.webSocketDebuggerUrl);
 await new Promise(resolve => ws.addEventListener('open', resolve, { once: true }));
 let sequence = 0, fileChooser = null;
-const waiting = new Map(), exceptions = [], consoleErrors = [], checks = [], requests = [], held = [];
+const waiting = new Map(), exceptions = [], consoleErrors = [], checks = [], requests = [], responses = [], held = [];
 ws.addEventListener('message', ({ data }) => {
   const message = JSON.parse(data);
   if (message.method === 'Runtime.exceptionThrown') exceptions.push(message.params.exceptionDetails);
@@ -29,6 +30,10 @@ ws.addEventListener('message', ({ data }) => {
   if (message.method === 'Network.requestWillBeSent') {
     const { method, url } = message.params.request;
     requests.push({ method, path: new URL(url).pathname });
+  }
+  if (message.method === 'Network.responseReceived') {
+    const { status, url } = message.params.response;
+    responses.push({ status, path: new URL(url).pathname });
   }
   if (message.method === 'Page.fileChooserOpened') fileChooser = message.params.backendNodeId;
   // POST /api/programs is held here until the scenario releases it, so the compile state can be checked.
@@ -92,13 +97,62 @@ async function releaseCompile() {
   await send('Fetch.continueRequest', { requestId: held.shift() });
 }
 
+// Ask check_browser.sh to restart the host runner, so the server forgets every user program it held.
+async function restartServer() {
+  const requestFile = process.env.IREXPLORER_RESTART_REQUEST;
+  if (!requestFile) throw Error('Restarting the host runner needs IREXPLORER_RESTART_REQUEST; run this through check_browser.sh');
+  await writeFile(requestFile, '');
+  for (let attempt = 0; existsSync(requestFile); attempt += 1) {
+    if (attempt === 600) throw Error('The host runner was not restarted');
+    await pause(100);
+  }
+}
+// Open Explore in a tab of its own (not opened from this one, so its session storage starts empty), wait
+// until `ready` holds there, and return the value of `expression` in it.
+async function inFreshTab(ready, expression) {
+  const tab = await (await fetch(`${cdp}/json/new?${base}/#/explore`, { method: 'PUT' })).json();
+  const socket = new WebSocket(tab.webSocketDebuggerUrl);
+  await new Promise(resolve => socket.addEventListener('open', resolve, { once: true }));
+  let id = 0;
+  const evaluate = text => new Promise(resolve => {
+    const sent = ++id;
+    socket.addEventListener('message', function reply({ data }) {
+      const message = JSON.parse(data);
+      if (message.id !== sent) return;
+      socket.removeEventListener('message', reply);
+      resolve(message.result?.result?.value);
+    });
+    socket.send(JSON.stringify({ id: sent, method: 'Runtime.evaluate', params: { expression: text, returnByValue: true } }));
+  });
+  try {
+    for (let attempt = 0; !(await evaluate(ready)); attempt += 1) {
+      if (attempt === 200) throw Error(`Timed out in a fresh tab: ${ready}`);
+      await pause(75);
+    }
+    return await evaluate(expression);
+  } finally {
+    socket.close();
+    await fetch(`${cdp}/json/close/${tab.id}`);
+  }
+}
+const uploadOptions = `[...document.querySelector('#your-file-select').options].filter(option => option.value).map(option => option.textContent)`;
+// Upload `name` from the curated sources through Your files and wait until it is open.
+async function upload(name) {
+  await click('#source-mode input[value="yours"]');
+  await chooseFile('#program-drop button', join(curatedSources, name));
+  await until(`window.StudyWorkspace.ready && Boolean(appState.programId) && !${visible('#program-card')}`);
+}
+async function reload() {
+  await send('Page.reload');
+  await until(`document.readyState === 'complete' && document.querySelectorAll('#example-select option').length === 4`);
+  await until(`document.querySelector('#source-mode') !== null`);
+}
+
 async function openExplore() {
   await send('Page.navigate', { url: `${base}/#/explore` });
   await until(`document.readyState === 'complete'`);
   await value('sessionStorage.clear()');
-  await send('Page.reload');
-  await until(`document.readyState === 'complete' && document.querySelectorAll('#example-select option').length === 4`);
-  await until(`document.querySelector('#source-mode') !== null`);
+  await reload();
 }
 
 const scenarios = {
@@ -169,6 +223,49 @@ const scenarios = {
     await check('Reopening an upload shows its source at once', `document.querySelector('#source-summary').textContent === 'C source · score.c' && ${visible('#program-chip')} && !${visible('#program-card')}`);
     await until(`window.StudyWorkspace.ready && appState.programId === ${JSON.stringify(programId)}`);
     await check('Reopening an upload sends no POST', `${posts() === postsBefore && requests.slice(reopenedFrom).some(request => request.path === `/api/programs/${programId}/states`)}`);
+  },
+
+  async 'Uploads survive a reload in this tab, and a fresh tab starts on Curated examples'() {
+    await upload('score.c');
+    await upload('binary_search.c');
+    await reload();
+    await check('After a reload the uploads are listed, oldest first', `JSON.stringify(${uploadOptions}) === '["score.c","binary_search.c"]'`);
+    await check('After a reload with uploads the page opens in Your files', `document.querySelector('#source-mode input[value="yours"]').checked && ${visible('#your-file-select')} && !${visible('#example-select')}`);
+    await check('After a reload nothing reopens by itself',
+      `!appState.programId && !appState.exampleId && document.querySelector('#your-file-select').value === '' && ${visible('#program-drop')} && !${visible('#program-card')} && !${visible('#left-panel')}`);
+    await snap('user-programs-reloaded.png');
+    const fresh = await inFreshTab(`document.querySelector('#source-mode') !== null`,
+      `({ curated: document.querySelector('#source-mode input[value="curated"]').checked, uploads: ${uploadOptions} })`);
+    if (!fresh.curated || fresh.uploads.length) throw Error(`Failed: a fresh tab starts in Curated examples with an empty list; observed=${JSON.stringify(fresh)}`);
+    checks.push('A fresh tab starts in Curated examples with an empty list');
+  },
+
+  async 'A program the server forgot is recompiled from the source this tab kept'() {
+    await upload('score.c');
+    const programId = await value('appState.programId');
+    await reload();
+    await restartServer();
+    await holdCompiles(true);
+    const from = responses.length, before = posts();
+    await select('#your-file-select', programId);
+    await until(`document.querySelector('#program-card')?.innerText.includes('Recompiling score.c')`);
+    await check('The card says the server no longer had the program and replaces the panels',
+      `${visible('#program-card')} && /no longer had/.test(document.querySelector('#program-card').innerText) && !${visible('#left-panel')} && document.querySelector('#workspace-shell').getAttribute('aria-busy') === 'true'`);
+    await snap('user-programs-recompiling.png');
+    await releaseCompile();
+    await holdCompiles(false);
+    await until(`window.StudyWorkspace.ready && appState.programId === ${JSON.stringify(programId)} && !${visible('#program-card')}`);
+    await check('The program opens again with its panels and comparison', `${visible('#left-panel')} && ${visible('.comparison-status')} && document.querySelectorAll('#left-viewer .ir-line').length > 0 && ${visible('#program-chip')}`);
+    const forgotten = responses.slice(from).filter(response => response.status === 404 && response.path.startsWith(`/api/programs/${programId}/`));
+    await check('Parallel requests found the program gone and shared one recompile: one POST /api/programs',
+      `${forgotten.length >= 2 && posts() - before === 1}`);
+
+    await restartServer();
+    const postsBeforeChange = posts();
+    await select('#right-state', '3');
+    await until(`window.StudyWorkspace.ready && document.querySelector('#right-state').value === '3' && !${visible('#program-card')}`);
+    await check('A program forgotten while it is open is recompiled when a panel changes, and the panels come back',
+      `${posts() - postsBeforeChange === 1} && ${visible('#left-panel')} && ${visible('#right-panel')} && ${visible('.comparison-status')} && !${visible('#empty-state')} && document.querySelectorAll('#right-viewer .ir-line').length > 0`);
   },
 };
 

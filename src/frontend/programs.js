@@ -5,20 +5,39 @@
   const LIMITS = "One C file, up to 200 lines. Standard headers are allowed.";
   const WAIT = "irexplorer compiles the unoptimised -O0 state, applies the curated pass sequence one pass at a time, "
     + "and compiles the recompiled O3 state separately. This usually takes about 5 s.";
+  const FORGOTTEN = "The server no longer had this program, so irexplorer is compiling it again from the source this tab kept.";
   const EMPTY_PROMPTS = {
     curated: "Choose a curated file to start comparing.",
     yours: "Upload a C file, or choose one of your files, to start comparing.",
   };
 
-  // This tab's uploads, oldest first: { programId, fileName, source }. A failed upload is never kept.
-  const uploads = [];
-  let mode = "curated";
+  // This tab's uploads, oldest first: { programId, fileName, source }. A failed upload is never kept. They
+  // survive a reload in this tab (session storage), not across tabs.
+  const UPLOADS_KEY = "irexplorer.programs.uploads";
+  const uploads = readUploads();
+  // After a reload nothing reopens by itself, but a tab with uploads opens in Your files.
+  let mode = uploads.length ? "yours" : "curated";
   // The user program on screen or being opened, if any.
   let current = null;
-  // What the card shows in place of the panels: null (no card), { kind: "compiling", fileName, started }
-  // or { kind: "failed", fileName, error }, where error is the server's { code, message, … }.
+  // What the card shows in place of the panels: null (no card), { kind: "compiling", fileName, started,
+  // forgotten } (forgotten: recompiling a program the server no longer had) or { kind: "failed", fileName,
+  // error }, where error is the server's { code, message, … }.
   let card = null;
   let ticking = null;
+
+  function readUploads() {
+    try {
+      const stored = JSON.parse(sessionStorage.getItem(UPLOADS_KEY) || "[]");
+      if (!Array.isArray(stored)) return [];
+      return stored.filter(upload => ["programId", "fileName", "source"].every(key => typeof upload?.[key] === "string"));
+    } catch {
+      return [];
+    }
+  }
+
+  function keepUploads() {
+    try { sessionStorage.setItem(UPLOADS_KEY, JSON.stringify(uploads)); } catch { /* kept for this page only */ }
+  }
 
   function h(tag, attributes = {}, ...children) {
     const element = document.createElement(tag);
@@ -68,6 +87,7 @@
     title.append(summary, view.chip);
     view.card = h("section", { id: "program-card", class: "panel program-card", "aria-labelledby": "program-card-heading" });
     view.shell.append(view.card);
+    recompileForgottenProgram = recompileForgotten;
     render();
   }
 
@@ -117,7 +137,8 @@
       tick();
       ticking = setInterval(tick, 250);
       view.card.replaceChildren(
-        h("h2", { id: "program-card-heading" }, `Compiling ${card.fileName} · `, elapsed),
+        h("h2", { id: "program-card-heading" }, `${card.forgotten ? "Recompiling" : "Compiling"} ${card.fileName} · `, elapsed),
+        ...(card.forgotten ? [h("p", {}, FORGOTTEN)] : []),
         h("p", {}, WAIT));
     } else {
       view.card.replaceChildren(...failureContent(card));
@@ -165,7 +186,10 @@
       return;
     }
     const { program } = result;
-    if (!uploads.some(upload => upload.programId === program.programId)) uploads.push(program);
+    if (!uploads.some(upload => upload.programId === program.programId)) {
+      uploads.push(program);
+      keepUploads();
+    }
     current = program;
     await loadProgram(program);
     card = null;
@@ -196,6 +220,42 @@
     const opened = loadProgram(upload);
     render();
     await opened;
+  }
+
+  // A program the server has forgotten (it restarted, or dropped the program from its store) is compiled
+  // again from the source this tab kept. Parallel requests that find it gone share one recompile.
+  const recompiles = new Map();
+  function recompileForgotten(programId) {
+    const upload = uploads.find(item => item.programId === programId);
+    if (!upload) return Promise.resolve(false);
+    if (!recompiles.has(programId)) recompiles.set(programId, recompile(upload).finally(() => recompiles.delete(programId)));
+    return recompiles.get(programId);
+  }
+
+  // Resolves true once the server holds the program again. The card stands in for whatever was on
+  // screen until then; on a failure the program is closed and the card says why.
+  async function recompile(upload) {
+    const { fileName, source } = upload;
+    const workspaceHidden = elements.workspace.hidden, emptyStateHidden = elements.emptyState.hidden;
+    card = { kind: "compiling", fileName, started: performance.now(), forgotten: true };
+    render();
+    announce(`Recompiling ${fileName}. The server no longer had it.`);
+    const result = await postProgram(fileName, source);
+    if (result.ok) {
+      card = null;
+      render();
+      elements.workspace.hidden = workspaceHidden;
+      elements.emptyState.hidden = emptyStateHidden;
+      return true;
+    }
+    current = null;
+    closeWorkspace();
+    sourceState.data = { file: fileName, text: source };
+    renderSource();
+    card = { kind: "failed", fileName, error: result.error };
+    render();
+    announce(`Error: ${result.error.message}`, "error");
+    return false;
   }
 
   fetch("/api/release", { cache: "no-store" }).then(response => response.ok ? response.json() : null).then(release => {
