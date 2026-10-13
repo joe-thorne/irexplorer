@@ -39,7 +39,10 @@ from typing import Any
 from src.backend.toolchain.curated import PASS_STATES, PassState
 from src.backend.toolchain.generate_curated import format_command, pass_sequence_commands
 
+# The service's workspace in the compiler image, which the paths in its commands and output name.
 WORKSPACE = Path("/workspace")
+# The workspace directory a program's source is written to.
+SOURCE_DIRECTORY = "user-programs"
 TARGET_TRIPLE = "x86_64-unknown-linux-gnu"
 # The app sends only safe file names; the service refuses anything else, so no name leaves the workspace.
 SAFE_FILE_NAME = re.compile(r"[A-Za-z0-9_-]{1,64}\.c")
@@ -119,7 +122,7 @@ class CompilerService:
 
     def _compile(self, file_name: str, source: str, disconnected: Callable[[], bool]) -> dict[str, Any]:
         deadline = time.monotonic() + self.timeout
-        source_dir = self.workspace / "user-programs"
+        source_dir = self.workspace / SOURCE_DIRECTORY
         output_dir = self.workspace / "out"
         self._wipe(source_dir, output_dir)
         try:

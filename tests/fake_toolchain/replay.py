@@ -37,12 +37,13 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
 from src.backend.toolchain import curated  # noqa: E402
+from src.backend.toolchain.compiler_service import SOURCE_DIRECTORY, WORKSPACE  # noqa: E402
 from src.backend.toolchain.generate_curated import format_command  # noqa: E402
 
 NO_RECORDING = 86
 MARKER = re.compile(r"^[ \t]*// irx-fake: (\w+)[ \t]*$", re.MULTILINE)
 # The compiler service's workspace in the compiler image, where a failure's printed paths start.
-IMAGE_WORKSPACE = Path("/workspace")
+IMAGE_WORKSPACE = WORKSPACE
 USER_PROGRAMS = REPO_ROOT / "tests" / "data" / "user-programs"
 # clang's default -ferror-limit.
 ERROR_LIMIT = 20
@@ -72,7 +73,7 @@ class Recording:
 
     def text(self, name: str) -> str:
         text = (self.directory / name).read_text(encoding="utf-8")
-        return text.replace("examples/curated", "user-programs")
+        return text.replace("examples/curated", SOURCE_DIRECTORY)
 
     def ir(self, state: curated.PassState) -> str:
         return self.text(f"{self.stem}_{state.file_suffix}.ll")

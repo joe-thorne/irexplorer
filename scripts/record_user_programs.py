@@ -27,12 +27,14 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from src.backend.programs.accepted import accept_program  # noqa: E402 - needs ROOT on sys.path
+from src.backend.toolchain.compiler_service import WORKSPACE  # noqa: E402
 from src.backend.toolchain.curated import PASS_STATES  # noqa: E402
 
 CORPUS_ROOT = ROOT / "tests" / "data" / "user-programs"
+# compose.user-programs.yaml's project and compiler service; scripts/check_user_programs.sh names it too.
 COMPILER_CONTAINER = "irexplorer-user-programs-compiler-1"
 # The compiler service's workspace in the compiler image, which every recorded command names.
-IMAGE_WORKSPACE = "/workspace"
+IMAGE_WORKSPACE = str(WORKSPACE)
 # Posts the request on stdin to the service from inside its container; prints the status, then the body.
 RELAY = """
 import sys, urllib.error, urllib.request
