@@ -107,13 +107,8 @@ class ProgramStore:
 def derive_records(program: AcceptedProgram, output: CompilerOutput) -> ModelRecords:
     """Build a user program's model records from its compiler artefacts, as a curated example's are built."""
 
-    artefacts = {
-        # O3's remarks are its optimisation record, as for a curated example.
-        state.state_id: StateArtefacts(state.ir, state.command,
-                                       output.opt_record if state.state_id == "O3" else state.remarks)
-        for state in output.states
-    }
-    timeline = build_timeline(program.program_id, artefacts)
+    artefacts = {state.state_id: StateArtefacts(state.ir, state.command, state.remarks) for state in output.states}
+    timeline = build_timeline(program.program_id, artefacts, output.opt_record)
     correspondences = [compare_timeline_step(timeline, ordinal) for ordinal in range(len(timeline.steps))]
     # Once through model-record serialisation, so a user program is validated exactly as a curated record is.
     timeline = deserialise_timeline(deserialise_json(serialise_json(serialise_timeline(timeline))))

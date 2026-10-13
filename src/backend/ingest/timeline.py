@@ -15,23 +15,25 @@ from src.backend.toolchain.curated import PASS_STATES, PassState
 class StateArtefacts:
     """The compiler artefacts that record one state of the curated pass sequence.
 
-    ``remarks`` is the per-pass remark YAML for a derived state, the ``.opt.yaml``
-    record for the recompiled O3 state, and ``None`` for O0.
+    ``pass_remarks`` is the per-pass remark YAML of a derived state, and ``None``
+    for O0 and O3.
     """
 
     ir: str
     command: str
-    remarks: str | None = None
+    pass_remarks: str | None = None
 
 
 def build_timeline(
-    timeline_id: str, artefacts: Mapping[str, StateArtefacts]
+    timeline_id: str, artefacts: Mapping[str, StateArtefacts], opt_record: str
 ) -> OptimisationTimeline:
     """Build and validate a timeline from texts already read, keyed by state id.
 
     Every state in the curated pass sequence is retained, so derivation is
     claimed only for the ``opt`` steps that actually produced their target
-    artefact; the final step leads to the recompiled O3 state.
+    artefact; the final step leads to the recompiled O3 state. A derived state
+    carries its pass remarks, O3 the ``.opt.yaml`` optimisation record
+    (``opt_record``), and O0 none.
     """
 
     expected = [state.state_id for state in PASS_STATES]
@@ -48,7 +50,7 @@ def build_timeline(
             ordinal=ordinal,
             state_id=state.state_id,
             origin_command=artefacts[state.state_id].command,
-            opt_yaml_text=artefacts[state.state_id].remarks,
+            opt_yaml_text=opt_record if state.state_id == "O3" else artefacts[state.state_id].pass_remarks,
         )
         for ordinal, state in enumerate(PASS_STATES)
     )
