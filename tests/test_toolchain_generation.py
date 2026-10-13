@@ -41,6 +41,34 @@ def higher_layer_imports(source: str) -> list[str]:
     return [f"{line}: {module}" for line, module in sorted(violations)]
 
 
+PROCESS_MODULES = {"subprocess", "multiprocessing", "pty"}
+
+
+def starts_a_process(module: str, name: str) -> bool:
+    if module == "os":
+        return name in {"system", "popen", "posix_spawn", "posix_spawnp"} or name.startswith(("spawn", "exec"))
+    return module == "asyncio" and name.startswith("create_subprocess")
+
+
+def process_starts(source: str) -> list[str]:
+    """Return ``line: name`` for each way of starting a process that the source imports or calls."""
+
+    found: set[tuple[int, str]] = set()
+    for node in ast.walk(ast.parse(source)):
+        if isinstance(node, ast.Import):
+            found.update((node.lineno, alias.name) for alias in node.names
+                         if alias.name.split(".")[0] in PROCESS_MODULES)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            if node.module.split(".")[0] in PROCESS_MODULES:
+                found.add((node.lineno, node.module))
+            found.update((node.lineno, f"{node.module}.{alias.name}") for alias in node.names
+                         if starts_a_process(node.module, alias.name))
+        elif (isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name)
+              and starts_a_process(node.value.id, node.attr)):
+            found.add((node.lineno, f"{node.value.id}.{node.attr}"))
+    return [f"{line}: {name}" for line, name in sorted(found)]
+
+
 class CuratedGenerationTests(unittest.TestCase):
     def test_importing_generator_does_not_load_ingestion_or_analysis_layers(self) -> None:
         probe = (
@@ -73,6 +101,22 @@ class CuratedGenerationTests(unittest.TestCase):
             ["2: src.backend.ingest"],
         )
         self.assertEqual(higher_layer_imports("from . import integrity\n"), [])
+
+    def test_only_the_toolchain_layer_starts_processes(self) -> None:
+        # The app never runs clang or opt itself: user programs are compiled by the compiler service.
+        self.assertEqual(process_starts("import subprocess\nos.posix_spawn(p)\nos.execv(p, a)\n"),
+                         ["1: subprocess", "2: os.posix_spawn", "3: os.execv"])
+        self.assertEqual(process_starts("cursor.execute(q)\nfrom os import system\n"), ["2: os.system"])
+        backend_root = generate_curated.REPO_ROOT / "src" / "backend"
+        toolchain_root = backend_root / "toolchain"
+        violations = [
+            f"{path.relative_to(backend_root)}:{start}"
+            for path in sorted(backend_root.rglob("*.py"))
+            if toolchain_root not in path.parents
+            for start in process_starts(path.read_text(encoding="utf-8"))
+        ]
+
+        self.assertEqual(violations, [])
 
     def test_toolchain_source_never_imports_higher_layers(self) -> None:
         # The import probe above cannot see imports deferred into function bodies.

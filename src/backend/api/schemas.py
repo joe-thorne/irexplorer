@@ -1,4 +1,4 @@
-"""Pydantic HTTP schemas for the read-only curated query API."""
+"""Pydantic HTTP schemas for the read-only query API over curated examples and user programs."""
 
 from __future__ import annotations
 
@@ -11,6 +11,16 @@ class ApiModel(BaseModel):
     """Reject unexpected fields in public API records."""
 
     model_config = ConfigDict(extra="forbid")
+
+
+class ExampleIdField(ApiModel):
+    exampleId: str
+
+
+class ProgramIdField(ApiModel):
+    """A user program's routes answer with ``programId`` where a curated example's carry ``exampleId``."""
+
+    programId: str
 
 
 class ErrorDetail(ApiModel):
@@ -97,8 +107,7 @@ class CfgResponse(ApiModel):
     edges: list[CfgEdgeResponse]
 
 
-class SourceResponse(ApiModel):
-    exampleId: str
+class SourceFields(ApiModel):
     file: str
     text: str
     sha256: str
@@ -117,8 +126,7 @@ class SourceMappingResponse(ApiModel):
     evidence: Literal["debugLoc"]
 
 
-class SourceMappingsResponse(ApiModel):
-    exampleId: str
+class SourceMappingsFields(ApiModel):
     ordinal: int
     stateId: str
     functionId: str
@@ -174,8 +182,7 @@ class OptimisationResponse(ApiModel):
     linkIndices: list[int]
 
 
-class ComparisonReportResponse(ApiModel):
-    exampleId: str
+class ComparisonReportFields(ApiModel):
     fromOrdinal: int
     toOrdinal: int
     scope: Literal["whole example"]
@@ -185,3 +192,49 @@ class ComparisonReportResponse(ApiModel):
     links: list[LinkResponse]
     steps: list[ComparisonStepResponse]
     states: list[StateResponse]
+
+
+# The id field is the second base, so it stays the first key of each response.
+class SourceResponse(SourceFields, ExampleIdField):
+    pass
+
+
+class SourceMappingsResponse(SourceMappingsFields, ExampleIdField):
+    pass
+
+
+class ComparisonReportResponse(ComparisonReportFields, ExampleIdField):
+    pass
+
+
+class ProgramSourceResponse(SourceFields, ProgramIdField):
+    pass
+
+
+class ProgramSourceMappingsResponse(SourceMappingsFields, ProgramIdField):
+    pass
+
+
+class ProgramComparisonReportResponse(ComparisonReportFields, ProgramIdField):
+    pass
+
+
+class ProgramRequest(ApiModel):
+    fileName: str
+    source: str
+
+
+class ProgramManifestResponse(ApiModel):
+    clang: str
+    opt: str
+    targetTriple: str
+    compilerImage: str
+    libcVersion: str
+    commands: list[str]
+
+
+class ProgramResponse(ApiModel):
+    programId: str
+    fileName: str
+    sha256: str
+    manifest: ProgramManifestResponse
