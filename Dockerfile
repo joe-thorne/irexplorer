@@ -15,7 +15,7 @@ COPY src ./src
 COPY examples/curated ./examples/curated
 COPY artefacts/curated ./artefacts/curated
 COPY docs/curated-artefacts.sha256 ./docs/curated-artefacts.sha256
-COPY Dockerfile docker-compose.yml .dockerignore ./
+COPY Dockerfile docker-compose.yml compose.user-programs.yaml Dockerfile.compiler .dockerignore ./
 COPY scripts/build_release.py ./scripts/build_release.py
 RUN python scripts/build_release.py "${APP_VERSION}"
 USER app

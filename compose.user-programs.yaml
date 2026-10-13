@@ -1,0 +1,64 @@
+# User programs: the same app image as docker-compose.yml with the user programs setting on, beside a
+# compiler service. A separate project on its own port, so it runs beside the study stack without touching it.
+#   docker compose -f compose.user-programs.yaml up -d --build --wait
+# The app image keeps Compose's own name, so building this stack never replaces an image tagged for the study
+# stack. Its version default is the Dockerfile's.
+name: irexplorer-user-programs
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: app
+      args:
+        APP_VERSION: ${IREXPLORER_VERSION:-0.6.0-dev.1}
+    ports:
+      - "127.0.0.1:8001:8000"
+    environment:
+      IREXPLORER_STUDY_ORIGIN: http://localhost:8001
+      IREXPLORER_COLLECTION_MODE: local
+      IREXPLORER_STUDY_DIR: /data
+      IREXPLORER_USER_PROGRAMS: "1"
+      IREXPLORER_COMPILER_URL: http://compiler:8080
+    networks:
+      - default
+      - compiler
+    depends_on:
+      compiler:
+        condition: service_healthy
+    volumes:
+      - study-data:/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    restart: unless-stopped
+  compiler:
+    build:
+      context: .
+      dockerfile: Dockerfile.compiler
+    platform: linux/amd64
+    # No published port, and only the internal network: the app is all it can reach.
+    networks:
+      - compiler
+    read_only: true
+    # The service wipes its work directory after every program.
+    tmpfs:
+      - /workspace:uid=10001,gid=10001,mode=0700,size=64m
+      - /tmp:size=16m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    restart: unless-stopped
+
+networks:
+  compiler:
+    internal: true
+
+volumes:
+  study-data:

@@ -1,0 +1,32 @@
+# The compiler service for user programs: the pinned toolchain plus libc6-dev, so standard headers
+# compile for x86_64-unknown-linux-gnu, and Python 3 for the standard-library server.
+# Build the pinned toolchain image first: docker compose --profile toolchain build toolchain
+ARG TOOLCHAIN_IMAGE=irexplorer-toolchain:llvm-22.1.8-ubuntu24.04
+FROM ${TOOLCHAIN_IMAGE}
+
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        libc6-dev \
+        python3 \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --uid 10001 --no-create-home --shell /usr/sbin/nologin compiler
+
+WORKDIR /opt/irexplorer-compiler
+COPY src/backend/__init__.py ./src/backend/__init__.py
+COPY src/backend/toolchain ./src/backend/toolchain
+
+# A container cannot read its own Docker image ID without the Docker socket, which nothing in the stack gets.
+# The manifest's compilerImage is therefore this image's content ID: a digest of everything that decides the
+# compiler's output (the toolchain, the headers, every installed package version and the service code), so
+# identical inputs give the same ID on every rebuild. It and the libc6-dev version are recorded once, here.
+RUN mkdir identity \
+    && digest="$({ find /opt/llvm /usr/include src -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum; \
+                   dpkg-query -W; } | sha256sum)" \
+    && printf 'content-sha256:%s' "${digest%% *}" > identity/compiler-image \
+    && dpkg-query -W -f='${Version}' libc6-dev > identity/libc-version
+
+USER compiler
+HEALTHCHECK --interval=10s --timeout=3s --start-period=30s --retries=3 \
+    CMD python3 -c "import socket; socket.create_connection(('127.0.0.1', 8080), timeout=2).close()"
+CMD ["sh", "-c", "exec python3 -m src.backend.toolchain.compiler_service --host 0.0.0.0 --port 8080 --compiler-image \"$(cat identity/compiler-image)\" --libc-version \"$(cat identity/libc-version)\""]
