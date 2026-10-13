@@ -554,6 +554,35 @@ const scenarios = {
     await check('Try again opens the file once the compiler answers', `!${visible('#program-card')} && document.querySelector('#source-summary').textContent === 'C source · unavailable_search.c' && ${uploadOptions}.join('|') === 'unavailable_search.c'`);
   },
 
+  async 'Cancel stops the compile, and another file uploaded at once compiles rather than finding the compiler busy'() {
+    // The fake clang never finishes a source carrying the hang marker; only stopping the compile frees the compiler.
+    const hangFile = join(writtenSources, 'hang.c');
+    await writeFile(hangFile, 'int main(void) { return 0; }\n// irx-fake: hang\n');
+    await click('#source-mode input[value="yours"]');
+    await chooseFile('#program-drop button', hangFile);
+    await until(`document.querySelector('#program-card')?.innerText.includes('Compiling hang.c')`);
+    await check('The compile card offers Cancel', `${cardButtons} === 'Cancel'`);
+    await cardButton('Cancel');
+    await until(`document.querySelector('#program-card')?.innerText.includes('Compiling cancelled')`);
+    await check('The cancelled card offers Try again and Choose another file…, with the cancelled source still shown',
+      `${cardButtons} === 'Try again|Choose another file…' && document.querySelector('#source-summary').textContent === 'C source · hang.c' && document.querySelector('#workspace-shell').getAttribute('aria-busy') !== 'true'`);
+    await check('The cancelled file is not added to Your file', `${uploadOptions}.join('|') === '' && !appState.programId`);
+    await snap('user-programs-cancelled.png');
+
+    const before = posts();
+    await cardButton('Try again');
+    await until(`document.querySelector('#program-card')?.innerText.includes('Compiling hang.c')`);
+    await check('Try again posts the cancelled file again', `${posts() - before === 1}`);
+    await cardButton('Cancel');
+    await until(`document.querySelector('#program-card')?.innerText.includes('Compiling cancelled')`);
+
+    const answered = responses.length;
+    await chooseFile('#program-card .program-actions button:last-child', await renamedCopy('quick_sort', 'after_cancel.c'));
+    await until(`window.StudyWorkspace.ready && Boolean(appState.programId) || document.querySelector('#program-card')?.innerText.includes('could not be opened')`);
+    await check('The next file, uploaded at once, compiles: the compiler was not left busy',
+      `${JSON.stringify(responses.slice(answered).filter(response => response.path === '/api/programs').map(response => response.status))}.join() === '201' && !${visible('#program-card')} && document.querySelector('#source-summary').textContent === 'C source · after_cancel.c' && ${uploadOptions}.join('|') === 'after_cancel.c'`);
+  },
+
   async 'The browser accepts and refuses exactly the shared acceptance cases'() {
     const cases = acceptance.cases.map(({ name, fileName, source, accepted, refused }) => ({
       name, fileName: expand(fileName), source: expand(source),
