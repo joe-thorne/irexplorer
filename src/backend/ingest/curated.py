@@ -6,15 +6,15 @@ import shutil
 from dataclasses import dataclass
 from hashlib import sha256
 
-from src.backend.ingest.llvm_ir import parse_ir_state
-from src.backend.model.graph import ModelValidationError, Remark
+from src.backend.ingest.timeline import StateArtefacts, build_timeline
+from src.backend.model.graph import ModelValidationError
 from src.backend.model.serialisation import (
     deserialise_json,
     deserialise_timeline,
     serialise_json,
     serialise_timeline,
 )
-from src.backend.model.timeline import OptimisationTimeline, PassStep, StepOrigin
+from src.backend.model.timeline import OptimisationTimeline
 from src.backend.toolchain import curated
 
 SOURCE_RECORD_FORMAT_VERSION = 1
@@ -30,50 +30,12 @@ class SourceRecord:
 
 
 def load_curated_timeline(example: str) -> OptimisationTimeline:
-    """Load a curated example's optimisation timeline from its compiler artefacts.
+    """Read a curated example's compiler artefacts, then build its timeline."""
 
-    Every state in the curated pass sequence is retained, so derivation is
-    claimed only for the ``opt`` steps that actually produced their target
-    artefact; the final step leads to the recompiled O3 state.
-    """
-
-    states = tuple(
-        parse_ir_state(
-            curated.read_ir(example, state.state_id),
-            ordinal=ordinal,
-            state_id=state.state_id,
-            origin_command=curated.origin_command(example, state.state_id),
-            opt_yaml_text=(
-                curated.opt_record_path(example).read_text(encoding="utf-8")
-                if state.state_id == "O3"
-                else (
-                    curated.step_remarks_path(example, state.state_id).read_text(
-                        encoding="utf-8"
-                    )
-                    if state.pass_pipeline is not None
-                    else None
-                )
-            ),
-        )
-        for ordinal, state in enumerate(curated.PASS_STATES)
+    return build_timeline(
+        example,
+        {state.state_id: _state_artefacts(example, state) for state in curated.PASS_STATES},
     )
-    steps = tuple(
-        _step_for_target(
-            ordinal,
-            state,
-            states[ordinal].origin_command,
-            states[ordinal].remarks,
-        )
-        for ordinal, state in enumerate(curated.PASS_STATES[1:], start=1)
-    )
-    timeline = OptimisationTimeline(
-        example_id=example,
-        config_id="curated-pass-sequence",
-        states=states,
-        steps=steps,
-    )
-    timeline.validate()
-    return timeline
 
 
 def bake_curated_model_records() -> None:
@@ -139,28 +101,15 @@ def _write_timeline_record(timeline: OptimisationTimeline) -> None:
     )
 
 
-def _step_for_target(
-    ordinal: int,
-    state: curated.PassState,
-    command: str | None,
-    remarks: tuple[Remark, ...],
-) -> PassStep:
-    if command is None:
-        raise ValueError(f"missing origin command for curated state {state.state_id}")
+def _state_artefacts(example: str, state: curated.PassState) -> StateArtefacts:
     if state.state_id == "O3":
-        return PassStep(
-            from_ordinal=ordinal - 1,
-            to_ordinal=ordinal,
-            kind="recompiled",
-            origin=StepOrigin(command=command, level="-O3"),
-            remarks=remarks,
-        )
-    if state.pass_pipeline is None:
-        raise ValueError(f"derived curated state has no pass pipeline: {state.state_id}")
-    return PassStep(
-        from_ordinal=ordinal - 1,
-        to_ordinal=ordinal,
-        kind="derived",
-        origin=StepOrigin(command=command, pass_name=state.pass_pipeline),
+        remarks: str | None = curated.opt_record_path(example).read_text(encoding="utf-8")
+    elif state.pass_pipeline is not None:
+        remarks = curated.step_remarks_path(example, state.state_id).read_text(encoding="utf-8")
+    else:
+        remarks = None
+    return StateArtefacts(
+        ir=curated.read_ir(example, state.state_id),
+        command=curated.origin_command(example, state.state_id),
         remarks=remarks,
     )
