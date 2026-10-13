@@ -666,6 +666,8 @@ function escapeHtml(text) {
 }
 
 function apiRoot(exampleId) {
+  // PROTOTYPE (irexplorer#47): a user program is served by the same routes under /api/programs.
+  if (exampleId.startsWith("program:")) return `/api/programs/${encodeURIComponent(exampleId.slice(8))}`;
   return `/api/examples/${encodeURIComponent(exampleId)}`;
 }
 

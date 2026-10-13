@@ -1,0 +1,93 @@
+/* PROTOTYPE ONLY (irexplorer#47): upload-flow variants and the floating switcher. */
+
+/* Shared bits used by more than one variant. */
+.proto-spinner { animation: proto-spin .9s linear infinite; border: 2px solid var(--accent-soft); border-top-color: var(--accent); border-radius: 50%; display: inline-block; flex-shrink: 0; height: 1rem; vertical-align: -.15rem; width: 1rem; }
+@keyframes proto-spin { to { transform: rotate(360deg); } }
+.proto-timer { font-variant-numeric: tabular-nums; font-weight: 700; }
+.proto-muted { color: var(--muted); font-size: .85rem; }
+.proto-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .6rem; }
+.proto-actions button, .pb-buttons button, .pc-open { padding: .4rem .7rem; }
+.proto-failure-message { color: #991b1b; font-weight: 700; margin: .3rem 0; }
+.proto-diagnostics { margin: .4rem 0; padding-left: 1.2rem; }
+.proto-diagnostics li { margin: .25rem 0; }
+.proto-excerpt, .proto-output { background: var(--code-bg); border: 1px solid #dce5ef; border-radius: .35rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .78rem; margin: .25rem 0; overflow: auto; padding: .35rem .5rem; }
+.proto-output { max-height: 12rem; }
+.proto-link { background: none; border: 0; color: var(--accent); cursor: pointer; padding: 0; text-align: left; text-decoration: underline; }
+
+/* A: File selector. */
+.pa-status { align-items: center; color: var(--muted); display: flex; font-size: .85rem; gap: .45rem; margin: 0; min-height: 0; }
+.pa-status:empty { display: none; }
+.pa-status.is-busy { background: var(--accent-soft); border-radius: .35rem; color: var(--ink); padding: .35rem .5rem; }
+.pa-failure { background: #fef2f2; border: 1px solid #fca5a5; border-radius: .45rem; flex-shrink: 0; font-size: .88rem; max-height: 55%; overflow: auto; padding: .55rem .7rem; }
+.pa-failure h3 { font-size: .95rem; margin: 0 0 .2rem; }
+
+/* B: Source drop zone. */
+.pb-mode { border: 1px solid #9fb3c8; border-radius: .4rem; display: grid; grid-template-columns: 1fr 1fr; overflow: hidden; }
+.pb-mode label { cursor: pointer; font-size: .82rem; font-weight: 700; padding: .3rem .5rem; text-align: center; }
+.pb-mode input { position: absolute; opacity: 0; pointer-events: none; }
+.pb-mode label:has(input:checked) { background: var(--accent); color: #fff; }
+.pb-mode label:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: -3px; }
+.pb-yours { display: grid; gap: .35rem; }
+.pb-yours label { display: grid; font-size: .82rem; font-weight: 750; gap: .2rem; }
+.pb-buttons { display: flex; gap: .4rem; }
+.pb-chip { background: var(--linked-soft); border-radius: 1rem; color: var(--linked); font-size: .75rem; font-weight: 800; margin-left: .4rem; padding: .1rem .5rem; vertical-align: .15rem; }
+.source-heading h2 + .pb-chip { align-self: start; margin: 0; }
+.pb-renamed { margin: 0; }
+.pb-drop { align-content: center; border: 2px dashed #9fb3c8; border-radius: .5rem; display: grid; flex: 1 1 auto; justify-items: center; min-height: 0; overflow: auto; padding: 1rem; text-align: center; }
+.source-panel.is-dragging .pb-drop, .source-panel.is-dragging .source-lines { background: var(--accent-soft); border-color: var(--accent); }
+.pb-drop-title { font-size: 1.05rem; font-weight: 800; margin: 0; }
+.pb-paste { display: grid; gap: .4rem; margin-top: .8rem; text-align: left; width: 100%; }
+.pb-paste label { display: grid; font-size: .82rem; font-weight: 750; gap: .2rem; }
+.pb-paste input, .pb-paste textarea, .pc-paste input, .pc-paste textarea { background: #fff; border: 1px solid #9fb3c8; border-radius: .35rem; color: var(--ink); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .82rem; padding: .35rem .45rem; }
+.pb-preview { opacity: .75; }
+.pb-preview-line { display: flex; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .82rem; gap: .75rem; min-width: max-content; padding: .15rem .4rem; white-space: pre; }
+.pb-preview-line.is-error { background: #fee2e2; box-shadow: inset 3px 0 0 #dc2626; opacity: 1; }
+.pb-preview-line.is-focus { outline: 2px solid #dc2626; outline-offset: -2px; }
+.pb-card { grid-column: 2 / 4; grid-row: 2; overflow: auto; }
+.pb-card h2 { font-size: 1.15rem; margin-bottom: .4rem; }
+.pb-progress { align-items: center; display: flex; gap: .6rem; }
+.pb-progress h2 { margin: 0; }
+@media (max-width: 1100px) { .pb-card { grid-column: 1 / -1; grid-row: auto; } }
+
+/* C: Dialog. */
+.pc-open { grid-area: heading; justify-self: end; align-self: center; }
+.pc-banner { align-items: center; background: var(--accent-soft); border-radius: .4rem; display: flex; gap: .45rem; grid-column: 1 / -1; margin: 0; padding: .4rem .6rem; }
+.pc-dialog { border: 1px solid var(--line); border-radius: .7rem; box-shadow: 0 20px 50px rgb(15 23 42 / 30%); color: var(--ink); max-width: min(40rem, calc(100vw - 2rem)); padding: 1.25rem; width: 100%; }
+.pc-dialog::backdrop { background: rgb(15 23 42 / 45%); }
+.pc-dialog h2 { font-size: 1.2rem; }
+.pc-tabs { border-bottom: 1px solid var(--line); display: flex; gap: .25rem; margin: .6rem 0; }
+.pc-tabs button { border: 0; border-bottom: 3px solid transparent; border-radius: 0; padding: .35rem .6rem; }
+.pc-tabs button[aria-selected="true"] { border-bottom-color: var(--accent); font-weight: 800; }
+.pc-file { align-items: center; display: flex; gap: .6rem; padding: .4rem 0; }
+.pc-file button { padding: .4rem .7rem; }
+.pc-file-name { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.pc-paste { display: grid; gap: .4rem; }
+.pc-paste label { display: grid; font-size: .82rem; font-weight: 750; gap: .2rem; }
+.pc-checks ul { list-style: none; margin: .6rem 0; padding: 0; }
+.pc-checks li { font-size: .88rem; }
+.pc-checks .is-ok { color: #166534; }
+.pc-checks .is-bad { color: #991b1b; font-weight: 700; }
+.pc-progress { align-items: center; display: flex; gap: .6rem; }
+.pc-progress p { margin: 0; }
+.pc-failure-title { margin: .4rem 0 .2rem; }
+
+/* Floating switcher: deliberately not part of the design being judged. */
+body.has-prototype-switcher { padding-bottom: 4.5rem; }
+.proto-switcher { align-items: center; background: #111827; border-radius: 2rem; bottom: 1rem; box-shadow: 0 8px 24px rgb(0 0 0 / 35%); color: #f9fafb; display: flex; font: 600 .85rem/1 ui-sans-serif, system-ui, sans-serif; gap: .4rem; left: 50%; padding: .35rem .5rem; position: fixed; transform: translateX(-50%); z-index: 50; }
+.proto-switcher button { background: #374151; border: 0; border-radius: 1rem; color: #f9fafb; padding: .35rem .65rem; }
+.proto-switcher button:hover { background: #4b5563; }
+.proto-switcher-label { min-width: 10rem; text-align: center; }
+.proto-tray { background: #111827; border-radius: .8rem; bottom: 4rem; box-shadow: 0 8px 24px rgb(0 0 0 / 35%); color: #e5e7eb; font: .8rem/1.35 ui-sans-serif, system-ui, sans-serif; left: 50%; max-height: 60vh; max-width: calc(100vw - 2rem); overflow: auto; padding: .8rem; position: fixed; transform: translateX(-50%); width: 46rem; z-index: 50; }
+.proto-tray-title { font-weight: 800; margin: 0 0 .4rem; }
+.proto-samples { display: grid; gap: .35rem; grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); }
+.proto-samples button, .proto-settings button { background: #374151; border: 0; border-radius: .4rem; color: #f9fafb; display: grid; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .78rem; gap: .1rem; padding: .35rem .45rem; text-align: left; }
+.proto-samples small { color: #9ca3af; font-family: ui-sans-serif, system-ui, sans-serif; }
+.proto-settings { align-items: end; display: flex; flex-wrap: wrap; gap: .6rem; margin: .7rem 0; }
+.proto-settings label { display: grid; gap: .15rem; }
+.proto-settings select { background: #1f2937; border-color: #4b5563; color: #f9fafb; min-height: 1.9rem; }
+.proto-settings .proto-check { align-items: center; display: flex; gap: .35rem; }
+.proto-settings button { font-family: inherit; }
+.proto-readout { display: grid; gap: .15rem .6rem; grid-template-columns: max-content 1fr; margin: 0; }
+.proto-readout dt { color: #9ca3af; }
+.proto-readout dd { margin: 0; overflow-wrap: anywhere; }
+@media (prefers-reduced-motion: reduce) { .proto-spinner { animation: none; border-top-color: var(--accent); } }
