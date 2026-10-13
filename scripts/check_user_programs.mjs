@@ -3,7 +3,8 @@
 // phase 3). Uploads are the unedited curated sources, which the fake toolchain has recordings for.
 // Each scenario starts from a freshly loaded Explore page with empty session storage; add a scenario
 // to `scenarios` for each new behaviour. Optional IREXPLORER_CHECK_OUTPUT directory for screenshots.
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const base = process.env.IREXPLORER_ORIGIN || 'http://localhost:8000';
@@ -11,6 +12,16 @@ const cdp = `http://127.0.0.1:${process.env.IREXPLORER_CDP_PORT || '9239'}`;
 const captures = process.env.IREXPLORER_CHECK_OUTPUT;
 if (captures) await mkdir(captures, { recursive: true });
 const curatedSources = join(import.meta.dirname, '..', 'examples', 'curated');
+// The acceptance cases the server is tested against too (tests/test_accepted_programs.py).
+const acceptance = JSON.parse(await readFile(join(import.meta.dirname, '..', 'tests', 'data', 'user-program-acceptance.json'), 'utf8'));
+const expand = text => typeof text === 'string' ? text : text.map(part => typeof part === 'string' ? part : part[0].repeat(part[1])).join('');
+// Files written for a scenario to choose, removed at the end of the run.
+const files = await mkdtemp(join(tmpdir(), 'irexplorer-user-programs.'));
+async function file(name, contents) {
+  const directory = await mkdtemp(join(files, 'file.'));
+  await writeFile(join(directory, name), contents);
+  return join(directory, name);
+}
 const release = await (await fetch(base + '/api/release')).json();
 if (release.config?.userPrograms !== true) throw Error(`Failed: /api/release reports user programs on; observed=${JSON.stringify(release.config)}`);
 
@@ -170,6 +181,73 @@ const scenarios = {
     await until(`window.StudyWorkspace.ready && appState.programId === ${JSON.stringify(programId)}`);
     await check('Reopening an upload sends no POST', `${posts() === postsBefore && requests.slice(reopenedFrom).some(request => request.path === `/api/programs/${programId}/states`)}`);
   },
+
+  async 'The browser accepts and refuses exactly the shared acceptance cases'() {
+    const cases = acceptance.cases.map(({ name, fileName, source, accepted, refused }) => ({
+      name, fileName: expand(fileName), source: expand(source),
+      expected: accepted ? { ok: true, fileName: expand(accepted.fileName), source: expand(accepted.source) } : { ok: false, ...refused },
+    }));
+    const mismatches = await value(`${JSON.stringify(cases)}.map(c => ({ name: c.name, expected: c.expected, observed: AcceptedProgram.accept(c.fileName, c.source) }))
+      .filter(c => JSON.stringify(c.observed) !== JSON.stringify(c.expected))`);
+    if (mismatches.length) throw Error(`Failed: the shared acceptance cases; mismatches=${JSON.stringify(mismatches)}`);
+    checks.push(`All ${cases.length} shared acceptance cases match the server's`);
+  },
+
+  async 'A file that fails the checks is refused in the browser and nothing is sent'() {
+    await click('#source-mode input[value="yours"]');
+    const refusals = [
+      ['not_c_file', 'notes.txt', 'int main(void) { return 0; }\n', 'Only C files can be compiled: the file name must end in .c.'],
+      ['empty', 'empty.c', ' \r\n\t\n', 'The file is empty or contains only whitespace.'],
+      // Latin-1 é: a byte that is not UTF-8, which only a file (never pasted text) can contain.
+      ['invalid_utf8', 'latin1.c', Buffer.from([0x2f, 0x2f, 0x20, 0xe9, 0x0a, ...Buffer.from('int main(void) { return 0; }\n')]), 'The file is not UTF-8 text.'],
+      ['nul_character', 'nul.c', 'int main(void) { return 0; }\n\0', 'The file contains a NUL character.'],
+      ['too_many_lines', 'long.c', 'int x;\r\n'.repeat(201), 'The file has 201 lines; up to 200 are allowed.'],
+      ['too_large', 'large.c', `${'/'.repeat(99)}\n`.repeat(164) + '\n', 'The file is 16401 bytes of UTF-8 text; up to 16 KiB (16384 bytes) is allowed.'],
+    ];
+    const before = posts();
+    for (const [reason, name, contents, message] of refusals) {
+      // Choose another file… on the previous card, then Upload…, so each way to choose a file is used.
+      await chooseFile(reason === 'not_c_file' ? '#program-drop button' : reason === 'empty' ? '#program-card button' : '#program-upload', await file(name, contents));
+      await until(`document.querySelector('#program-card')?.innerText.includes(${JSON.stringify(message)})`);
+      await check(`${reason}: a card in place of the panels gives the reason and says nothing was sent`,
+        `(() => { const text = document.querySelector('#program-card').innerText; return ${visible('#program-card')} && !${visible('#left-panel')} && !${visible('.comparison-status')} && !${visible('#empty-state')} && text.includes(${JSON.stringify(`${name} could not be opened`)}) && text.includes('Nothing was sent to the compiler.') && ${visible('#program-card button')}; })()`);
+      await check(`${reason}: the refusal is announced`, `document.querySelector('#notice').textContent === ${JSON.stringify(`Error: ${message} Nothing was sent to the compiler.`)}`);
+      await check(`${reason}: no POST /api/programs was sent`, `${posts() === before}`);
+      await check(`${reason}: no user program is open, listed or renamed`,
+        `!appState.programId && ![...document.querySelector('#your-file-select').options].some(option => option.value) && !${visible('#program-renamed')} && !document.querySelector('#source-mode input[value="yours"]').disabled`);
+      if (reason === 'too_many_lines') await snap('user-programs-refused.png');
+    }
+  },
+
+  async 'An unsafe file name is renamed and CRLF and a BOM are normalised before compiling'() {
+    const score = await readFile(join(curatedSources, 'score.c'), 'utf8');
+    await click('#source-mode input[value="yours"]');
+    await holdCompiles(true);
+    const before = posts();
+    await chooseFile('#program-drop button', await file('My Program (2).c', `\ufeff${score.replaceAll('\n', '\r\n')}`));
+    await until(`document.querySelector('#program-card')?.innerText.includes('Compiling My_Program_2_.c')`);
+    await check('The renamed file says so under the controls while it compiles',
+      `${visible('#program-renamed')} && document.querySelector('#program-renamed').textContent === 'Renamed from “My Program (2).c”.' && Boolean(document.querySelector('.source-controls').compareDocumentPosition(document.querySelector('#program-renamed')) & Node.DOCUMENT_POSITION_FOLLOWING)`);
+    await check('The source is shown normalised under its safe name',
+      `document.querySelector('#source-summary').textContent === 'C source · My_Program_2_.c' && sourceState.data.text === ${JSON.stringify(score)}`);
+    await releaseCompile();
+    await holdCompiles(false);
+    await until('window.StudyWorkspace.ready && Boolean(appState.programId)');
+    await check('Exactly one POST /api/programs was sent', `${posts() - before === 1}`);
+    await check('It opens as My_Program_2_.c, still saying it was renamed',
+      `document.querySelector('#source-summary').textContent === 'C source · My_Program_2_.c' && ${visible('#program-chip')} && document.querySelector('#program-renamed').textContent === 'Renamed from “My Program (2).c”.' && [...document.querySelector('#your-file-select').options].filter(option => option.value).map(option => option.textContent).join() === 'My_Program_2_.c'`);
+    await check('The source the server holds is the normalised source',
+      `fetch('/api/programs/' + appState.programId + '/source').then(r => r.json()).then(body => body.file === 'My_Program_2_.c' && body.text === ${JSON.stringify(score)})`);
+    await snap('user-programs-renamed.png');
+    await chooseFile('#program-upload', join(curatedSources, 'score.c'));
+    await until(`window.StudyWorkspace.ready && document.querySelector('#source-summary').textContent === 'C source · score.c'`);
+    await check('A file that keeps its name shows no rename notice', `!${visible('#program-renamed')}`);
+    await select('#your-file-select', await value(`[...document.querySelector('#your-file-select').options].find(option => option.textContent === 'My_Program_2_.c').value`));
+    await until(`window.StudyWorkspace.ready && document.querySelector('#source-summary').textContent === 'C source · My_Program_2_.c'`);
+    await check('Reopening the renamed upload shows the notice again', `${visible('#program-renamed')}`);
+    await click('#source-mode input[value="curated"]');
+    await check('Curated examples shows no rename notice', `!${visible('#program-renamed')}`);
+  },
 };
 
 try {
@@ -186,6 +264,7 @@ try {
   if (cspViolations.length) throw Error(`Browser Content Security Policy violations: ${JSON.stringify(cspViolations)}`);
   console.log(JSON.stringify({ release, assertions: checks.length, checks, runtimeExceptions: exceptions.length, consoleErrors, cspViolations }));
 } finally {
+  await rm(files, { recursive: true, force: true });
   ws.close();
   await fetch(`${cdp}/json/close/${page.id}`);
 }

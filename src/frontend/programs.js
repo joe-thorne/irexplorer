@@ -10,13 +10,16 @@
     yours: "Upload a C file, or choose one of your files, to start comparing.",
   };
 
-  // This tab's uploads, oldest first: { programId, fileName, source }. A failed upload is never kept.
+  // This tab's uploads, oldest first: { programId, fileName, source, renamedFrom }, with the safe name and the
+  // normalised source that were sent, and the name as chosen if it was not safe (else null). A failed upload
+  // is never kept.
   const uploads = [];
   let mode = "curated";
   // The user program on screen or being opened, if any.
   let current = null;
-  // What the card shows in place of the panels: null (no card), { kind: "compiling", fileName, started }
-  // or { kind: "failed", fileName, error }, where error is the server's { code, message, … }.
+  // What the card shows in place of the panels: null (no card), { kind: "compiling", fileName, renamedFrom,
+  // started } or { kind: "failed", fileName, renamedFrom, error }, where error is the server's { code, message, … }.
+  // A file the browser refuses before sending fails with the server's invalid_program error.
   let card = null;
   let ticking = null;
 
@@ -50,6 +53,8 @@
     view.upload = h("button", { id: "program-upload", type: "button", onclick: () => view.fileInput.click() }, "Upload…");
     controls.prepend(view.mode);
     view.fileControl.after(view.yourControl, view.upload);
+    view.renamed = h("p", { id: "program-renamed", class: "program-renamed" });
+    controls.after(view.renamed);
     view.fileInput = h("input", { id: "program-file-input", type: "file", accept: ".c", hidden: true, onchange: () => {
       const [file] = view.fileInput.files;
       view.fileInput.value = "";
@@ -91,6 +96,9 @@
     if (compiling) elements.exampleSelect.disabled = true;
     view.shell.setAttribute("aria-busy", String(compiling));
     view.chip.hidden = !(yours && sourceState.data);
+    const renamedFrom = card ? card.renamedFrom : current?.renamedFrom;
+    view.renamed.hidden = !renamedFrom;
+    view.renamed.textContent = renamedFrom ? `Renamed from “${renamedFrom}”.` : "";
     // The source of a program that is compiling, or that failed, is shown dimmed and read-only.
     view.sourceLines.inert = Boolean(card);
     view.sourceLines.classList.toggle("is-pending", Boolean(card));
@@ -125,9 +133,11 @@
   }
 
   function failureContent({ fileName, error }) {
+    const refused = error.code === "invalid_program";
     return [
       h("h2", { id: "program-card-heading" }, `${fileName} could not be opened`),
       h("p", { class: "program-failure-message" }, error.message),
+      ...(refused ? [h("p", {}, "Nothing was sent to the compiler.")] : []),
       h("div", { class: "program-actions" },
         h("button", { type: "button", onclick: () => view.fileInput.click() }, "Choose another file…")),
     ];
@@ -144,28 +154,41 @@
 
   // The one way in for a file, however it arrives: read it, then compile it.
   async function uploadFile(file) {
-    await compile(file.name, await file.text());
+    await compile(file.name, await AcceptedProgram.read(file));
   }
 
-  async function compile(fileName, source) {
+  // Check a file name and its text as the server will, then send the safe name and normalised source,
+  // which the server accepts unchanged. `text` is null if the file is not UTF-8.
+  async function compile(fileName, text) {
     if (card?.kind === "compiling") return;
     mode = "yours";
     current = null;
     closeWorkspace();
-    sourceState.data = { file: fileName, text: source };
+    const accepted = AcceptedProgram.accept(fileName, text);
+    if (!accepted.ok) {
+      const { reason, message } = accepted;
+      card = { kind: "failed", fileName, renamedFrom: null, error: { code: "invalid_program", reason, message } };
+      render();
+      announce(`Error: ${message} Nothing was sent to the compiler.`, "error");
+      return;
+    }
+    const renamedFrom = accepted.fileName === fileName ? null : fileName;
+    sourceState.data = { file: accepted.fileName, text: accepted.source };
     renderSource();
-    card = { kind: "compiling", fileName, started: performance.now() };
+    card = { kind: "compiling", fileName: accepted.fileName, renamedFrom, started: performance.now() };
     render();
-    announce(`Compiling ${fileName}.`);
-    const result = await postProgram(fileName, source);
+    announce(`Compiling ${accepted.fileName}.`);
+    const result = await postProgram(accepted.fileName, accepted.source);
     if (!result.ok) {
-      card = { kind: "failed", fileName, error: result.error };
+      card = { kind: "failed", fileName: accepted.fileName, renamedFrom, error: result.error };
       render();
       announce(`Error: ${result.error.message}`, "error");
       return;
     }
-    const { program } = result;
-    if (!uploads.some(upload => upload.programId === program.programId)) uploads.push(program);
+    const program = { ...result.program, renamedFrom };
+    const held = uploads.findIndex(upload => upload.programId === program.programId);
+    if (held < 0) uploads.push(program);
+    else uploads[held] = program;
     current = program;
     await loadProgram(program);
     card = null;
