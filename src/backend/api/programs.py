@@ -48,7 +48,7 @@ from src.backend.model import (
     serialise_timeline,
 )
 from src.backend.programs.accepted import AcceptedProgram, RefusedProgram, accept_program
-from src.backend.programs.compiler import CompileFailed, CompilerClient, CompilerOutput
+from src.backend.programs.compiler import CompileFailed, CompileNotFinished, CompilerClient, CompilerOutput
 
 # About 16 programs are held; nothing is persisted, so a restart forgets them all.
 STORE_CAPACITY = 16
@@ -152,6 +152,9 @@ def router(store: ProgramStore, compiler: CompilerClient) -> APIRouter:
                            "diagnostics": [], "output": exc.output}},
                 status_code=422, headers=NO_STORE,
             )
+        except CompileNotFinished as exc:
+            return JSONResponse({"error": {"code": exc.code, "message": str(exc)}},
+                                status_code=exc.status_code, headers=NO_STORE)
         store.hold(compiled)
         return _program_view(compiled)
 

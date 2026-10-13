@@ -8,12 +8,18 @@ The recordings are the committed curated artefacts of the three unedited curated
 `examples/curated` paths rewritten to `user-programs`, as the compiler service would have written them.
 A source with no recording fails with a distinct "no recording" message and exit status, so a mistake
 in a test never looks like a compile failure.
+
+A marker line in the source, ``// irx-fake: <marker>``, chooses a failure; the rest of the source is
+looked up as usual, so a marker can be added to a recorded source.
 """
 
 from __future__ import annotations
 
 import hashlib
+import re
+import subprocess
 import sys
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -23,6 +29,20 @@ sys.path.insert(0, str(REPO_ROOT))
 from src.backend.toolchain import curated  # noqa: E402
 
 NO_RECORDING = 86
+MARKER = re.compile(r"^// irx-fake: (\w+)$\n?", re.MULTILINE)
+# A slow program spends this long in its first command, then compiles as its recording says.
+SLOW_SECONDS = 2.0
+# A hanging clang's child, as clang's own -cc1 child would, keeps writing its output until it is stopped.
+# It gives up after a minute, so a compiler service that fails to stop it leaks nothing for long.
+HANG = """
+import sys, time
+from pathlib import Path
+output = Path(sys.argv[1])
+for _ in range(3000):
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_bytes(b"hanging\\n")
+    time.sleep(0.02)
+"""
 
 
 @dataclass(frozen=True)
@@ -65,9 +85,16 @@ def clang(args: list[str]) -> int:
         return 0
     source = Path(next(arg for arg in args if arg.endswith(".c")))
     output = Path(_after(args, "-o"))
-    recording = recordings().get(_digest(source.read_bytes()))
+    text = source.read_text(encoding="utf-8")
+    markers = MARKER.findall(text)
+    if "hang" in markers:
+        return subprocess.run([sys.executable, "-c", HANG, str(output)], check=False).returncode
+    if "slow" in markers and "-O0" in args and "-S" in args:
+        time.sleep(SLOW_SECONDS)
+    digest = _digest(MARKER.sub("", text).encode("utf-8"))
+    recording = recordings().get(digest)
     if recording is None:
-        return _no_recording(f"source sha256 {_digest(source.read_bytes())}")
+        return _no_recording(f"source sha256 {digest}")
     level = curated.PASS_STATES[0] if "-O0" in args else curated.PASS_STATES[-1]
     if "-S" in args:
         output.write_text(recording.ir(level), encoding="utf-8")

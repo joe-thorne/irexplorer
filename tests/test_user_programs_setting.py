@@ -1,5 +1,7 @@
 """The user programs setting: read once at startup, off by default, refused in every unsafe combination."""
+import socket
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -60,6 +62,25 @@ class UserProgramsSettingTests(unittest.TestCase):
             with self.subTest(settings=settings):
                 client = self.start(IREXPLORER_COMPILER_URL=COMPILER_URL, **settings)
                 self.assertEqual(client.get('/api/release').json()['config'], {'userPrograms': False})
+
+    def test_the_compiler_timeout_is_a_positive_number_of_seconds(self):
+        for value in ('', '0', '-1', 'soon', 'nan'):
+            with (self.subTest(value=value),
+                  self.assertRaisesRegex(ValueError, 'IREXPLORER_COMPILER_TIMEOUT must be a positive number')):
+                self.start(**ON, IREXPLORER_COMPILER_TIMEOUT=value)
+
+    def test_the_app_waits_the_compiler_timeout_for_an_answer(self):
+        # A compiler service that accepts the connection and never answers.
+        with socket.socket() as silent:
+            silent.bind(('127.0.0.1', 0))
+            silent.listen()
+            client = self.start(IREXPLORER_USER_PROGRAMS='1', IREXPLORER_COMPILER_TIMEOUT='0.3',
+                                IREXPLORER_COMPILER_URL=f'http://127.0.0.1:{silent.getsockname()[1]}')
+            started = time.monotonic()
+            response = client.post('/api/programs', json={'fileName': 'main.c', 'source': 'int main(void) {}\n'})
+
+            self.assertEqual((response.status_code, response.json()['error']['code']), (503, 'compiler_unavailable'))
+            self.assertLess(time.monotonic() - started, 5)
 
     def test_with_the_setting_off_programs_routes_are_not_mounted(self):
         # An unmounted route answers exactly as a path that was never routed: a plain 404 not_found for
