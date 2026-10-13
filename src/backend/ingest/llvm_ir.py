@@ -465,7 +465,9 @@ def _normalise_opcode(body: str) -> str:
         raise IngestError("empty instruction")
     if len(words) >= 2 and words[0] in {"tail", "musttail", "notail"} and words[1] == "call":
         return "call"
-    return words[0]
+    # An operandless instruction meets its metadata with no space between:
+    # ``unreachable, !dbg !9`` must still read as ``unreachable``.
+    return words[0].rstrip(",")
 
 
 def _debug_ref(text: str) -> str | None:
