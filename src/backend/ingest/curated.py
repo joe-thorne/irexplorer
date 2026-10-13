@@ -35,6 +35,7 @@ def load_curated_timeline(example: str) -> OptimisationTimeline:
     return build_timeline(
         example,
         {state.state_id: _state_artefacts(example, state) for state in curated.PASS_STATES},
+        curated.opt_record_path(example).read_text(encoding="utf-8"),
     )
 
 
@@ -102,14 +103,10 @@ def _write_timeline_record(timeline: OptimisationTimeline) -> None:
 
 
 def _state_artefacts(example: str, state: curated.PassState) -> StateArtefacts:
-    if state.state_id == "O3":
-        remarks: str | None = curated.opt_record_path(example).read_text(encoding="utf-8")
-    elif state.pass_pipeline is not None:
-        remarks = curated.step_remarks_path(example, state.state_id).read_text(encoding="utf-8")
-    else:
-        remarks = None
+    # Only a derived state, run by one opt pass pipeline, writes per-pass remarks.
     return StateArtefacts(
         ir=curated.read_ir(example, state.state_id),
         command=curated.origin_command(example, state.state_id),
-        remarks=remarks,
+        pass_remarks=(curated.step_remarks_path(example, state.state_id).read_text(encoding="utf-8")
+                      if state.pass_pipeline is not None else None),
     )

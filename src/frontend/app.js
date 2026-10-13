@@ -81,16 +81,16 @@ syncWorkbenchHeadingHeight();
 // server holds it again.
 let recompileForgottenProgram = async () => false;
 
-async function request(path, options = {}, retried = false) {
+// `programId` names the user program a request is for, if any; a program the server has forgotten is
+// recompiled and the request sent once more.
+async function request(path, options = {}, programId = null) {
   const response = await fetch(path, {
     headers: { "Content-Type": "application/json", ...(options.headers || {}) },
     ...options,
   });
   const body = await response.json().catch(() => ({}));
-  const programId = /^\/api\/programs\/([^/?]+)\//.exec(path)?.[1];
-  if (body.error?.code === "unknown_program" && programId && !retried &&
-      await recompileForgottenProgram(decodeURIComponent(programId))) {
-    return request(path, options, true);
+  if (body.error?.code === "unknown_program" && programId && await recompileForgottenProgram(programId)) {
+    return request(path, options);
   }
   if (!response.ok) {
     const message = typeof body.error === "string" ? body.error : body.error?.message;
@@ -174,7 +174,7 @@ async function openWorkspace(target, workspace = null) {
   try {
     clearError();
     const [states, source] = await Promise.all([
-      request(`${apiRoot(target)}/states`), request(`${apiRoot(target)}/source`),
+      viewRequest(target, "/states"), viewRequest(target, "/source"),
     ]);
     if (loadId !== appState.loadId) return;
     appState.states = states.states;
@@ -273,12 +273,12 @@ async function refreshWorkspace() {
   renderComparisonReport();
   elements.workspace.setAttribute("aria-busy", "true");
   document.querySelector("#source-status").textContent = "Loading recorded mappings…";
-  const apiBase = apiRoot(appState);
+  const target = { exampleId: appState.exampleId, programId: appState.programId };
   try {
     const [leftIr, rightIr, comparisonReport] = await Promise.all([
-      request(`${apiBase}/states/${appState.panels.left.ordinal}/ir`),
-      request(`${apiBase}/states/${appState.panels.right.ordinal}/ir`),
-      request(`${apiBase}/comparison-report?fromOrdinal=${appState.panels.left.ordinal}&toOrdinal=${appState.panels.right.ordinal}`),
+      viewRequest(target, `/states/${appState.panels.left.ordinal}/ir`),
+      viewRequest(target, `/states/${appState.panels.right.ordinal}/ir`),
+      viewRequest(target, `/comparison-report?fromOrdinal=${appState.panels.left.ordinal}&toOrdinal=${appState.panels.right.ordinal}`),
     ]);
     if (refreshId !== appState.refreshId) return;
     appState.panels.left.ir = leftIr;
@@ -294,11 +294,11 @@ async function refreshWorkspace() {
     }
     const views = await Promise.all(["left", "right"].map(async (side) => {
       const panel = appState.panels[side];
-      const base = `${apiBase}/states/${panel.ordinal}`;
+      const base = `/states/${panel.ordinal}`;
       const query = `?functionId=${encodeURIComponent(panel.function.id)}`;
       const [cfg, mappings] = await Promise.all([
-        panel.viewType === "cfg" ? request(`${base}/cfg${query}`) : Promise.resolve(null),
-        request(`${base}/source-mappings${query}`),
+        panel.viewType === "cfg" ? viewRequest(target, `${base}/cfg${query}`) : Promise.resolve(null),
+        viewRequest(target, `${base}/source-mappings${query}`),
       ]);
       return { side, cfg, mappings: mappings.mappings };
     }));
@@ -699,6 +699,11 @@ function escapeHtml(text) {
 // A curated example's views live under /api/examples, a user program's under /api/programs.
 function apiRoot({ exampleId, programId }) {
   return programId ? `/api/programs/${encodeURIComponent(programId)}` : `/api/examples/${encodeURIComponent(exampleId)}`;
+}
+
+// GET one of a curated example's or user program's views, `path` below its apiRoot.
+function viewRequest(target, path) {
+  return request(`${apiRoot(target)}${path}`, {}, target.programId);
 }
 
 // Empty the workspace: no curated example or user program open, nothing loading.

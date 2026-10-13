@@ -10,6 +10,7 @@ set -euo pipefail
 
 APP_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 PYTHON=${IRX_PYTHON:-"$APP_ROOT/.venv/bin/python"}
+# compose.user-programs.yaml's project and services; scripts/record_user_programs.py's COMPILER_CONTAINER.
 COMPILER=irexplorer-user-programs-compiler-1
 APP=irexplorer-user-programs-app-1
 UP="docker compose -f compose.user-programs.yaml up -d --build --wait"

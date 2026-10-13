@@ -8,6 +8,7 @@ that is known, and otherwise with the parser's own message.
 from __future__ import annotations
 
 from src.backend.ingest import NoFunctionDefinitions, UnsupportedTerminator
+from src.backend.programs.errors import ProgramError
 
 # The C each LLVM terminator irexplorer cannot show comes from.
 TERMINATORS = {
@@ -23,21 +24,14 @@ NO_FUNCTIONS = ("The compiled program defines no functions, so there is nothing 
 UNPARSABLE = "irexplorer can't display this program."
 
 
-class UnsupportedProgram(Exception):
-    """Raised when a program compiled but its artefacts cannot be read into irexplorer's model."""
+class UnsupportedProgram(ProgramError):
+    """Raised when a program compiled but its artefacts cannot be read into irexplorer's model.
 
-    def __init__(self, reason: str, message: str, parser_message: str | None = None) -> None:
-        super().__init__(message)
-        self.reason = reason
-        self.message = message
-        self.parser_message = parser_message
+    Only a parser failure carries the parser's message, as ``parserMessage``.
+    """
 
-    def error(self) -> dict[str, str]:
-        """The ``unsupported_program`` error body; only a parser failure carries the parser's message."""
-        error = {"code": "unsupported_program", "message": self.message, "reason": self.reason}
-        if self.parser_message is not None:
-            error["parserMessage"] = self.parser_message
-        return error
+    code = "unsupported_program"
+    status_code = 422
 
 
 def unsupported_program(failure: ValueError) -> UnsupportedProgram:
@@ -47,4 +41,4 @@ def unsupported_program(failure: ValueError) -> UnsupportedProgram:
         return UnsupportedProgram(*TERMINATORS[failure.opcode])
     if isinstance(failure, NoFunctionDefinitions):
         return UnsupportedProgram("no_functions", NO_FUNCTIONS)
-    return UnsupportedProgram("unparsable", UNPARSABLE, str(failure))
+    return UnsupportedProgram("unparsable", UNPARSABLE, parserMessage=str(failure))

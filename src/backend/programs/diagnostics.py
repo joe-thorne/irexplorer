@@ -9,9 +9,10 @@ import re
 from typing import Any
 
 from src.backend.programs.compiler import CompileFailed
+from src.backend.toolchain.compiler_service import SOURCE_DIRECTORY, WORKSPACE
 
 # Where the compiler service puts the upload, so every diagnostic against it names only the file.
-USER_PROGRAMS = "/workspace/user-programs/"
+USER_PROGRAMS = f"{WORKSPACE / SOURCE_DIRECTORY}/"
 MAX_DIAGNOSTICS = 20
 MAX_OUTPUT_BYTES = 64 * 1024
 # clang's `file:line:col: severity: message` lines. Source snippets and carets are indented, so they never match.

@@ -16,6 +16,8 @@ from src.backend.toolchain.curated import (
 )
 
 WORKSPACE_ROOT = Path("/workspace")
+# The line of each tool's --version output that names its version.
+VERSION_LINE = {"clang": 0, "opt": 1}
 
 
 def generate_snapshot(staging_root: Path) -> None:
@@ -163,18 +165,8 @@ def _write_manifest_header(
             [
                 f"example: {example}",
                 f"source: {source.relative_to(REPO_ROOT)}",
-                "clang: "
-                + _tool_version(
-                    ["clang", "--version"],
-                    line_index=0,
-                    artefacts_root=artefacts_root,
-                ),
-                "opt: "
-                + _tool_version(
-                    ["opt", "--version"],
-                    line_index=1,
-                    artefacts_root=artefacts_root,
-                ),
+                "clang: " + _tool_version("clang", artefacts_root),
+                "opt: " + _tool_version("opt", artefacts_root),
                 "targetTriple: x86_64-unknown-linux-gnu",
                 "commands:",
             ]
@@ -212,11 +204,17 @@ def _run_and_record(
         )
 
 
-def _tool_version(
-    command: list[str],
-    line_index: int,
-    artefacts_root: Path,
-) -> str:
+def version_line(tool: str, output: str) -> str:
+    """The line of ``tool --version`` output that names the version: clang's first, opt's second."""
+
+    lines = output.splitlines()
+    if len(lines) <= VERSION_LINE[tool]:
+        raise ToolchainError(f"Unexpected version output from '{tool} --version'")
+    return lines[VERSION_LINE[tool]].strip()
+
+
+def _tool_version(tool: str, artefacts_root: Path) -> str:
+    command = [tool, "--version"]
     result = subprocess.run(
         _docker_command(command, artefacts_root),
         cwd=REPO_ROOT,
@@ -228,10 +226,7 @@ def _tool_version(
         raise ToolchainError(
             f"Could not read tool version with '{format_command(command)}': {result.stderr.strip()}"
         )
-    lines = result.stdout.splitlines()
-    if len(lines) <= line_index:
-        raise ToolchainError(f"Unexpected version output from '{format_command(command)}'")
-    return lines[line_index].strip()
+    return version_line(tool, result.stdout)
 
 
 def _docker_command(command: list[str], artefacts_root: Path) -> list[str]:

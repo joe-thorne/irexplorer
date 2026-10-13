@@ -37,9 +37,12 @@ from threading import Lock
 from typing import Any
 
 from src.backend.toolchain.curated import PASS_STATES, PassState
-from src.backend.toolchain.generate_curated import format_command, pass_sequence_commands
+from src.backend.toolchain.generate_curated import format_command, pass_sequence_commands, version_line
 
+# The service's workspace in the compiler image, which the paths in its commands and output name.
 WORKSPACE = Path("/workspace")
+# The workspace directory a program's source is written to.
+SOURCE_DIRECTORY = "user-programs"
 TARGET_TRIPLE = "x86_64-unknown-linux-gnu"
 # The app sends only safe file names; the service refuses anything else, so no name leaves the workspace.
 SAFE_FILE_NAME = re.compile(r"[A-Za-z0-9_-]{1,64}\.c")
@@ -48,6 +51,8 @@ POLL_INTERVAL = 0.05
 # A compile whose client has gone stops at its next poll; a request arriving meanwhile waits this long at
 # most for it, rather than being refused as busy.
 STOPPING_GRACE = 5.0
+# The compile timeout, in seconds, unless the service is started with another.
+TIMEOUT = 30.0
 # Reading the tool versions is not a compile, so the compile timeout does not bound it.
 VERSION_TIMEOUT = 30.0
 # Busy and timeout messages are shown to the student as they are.
@@ -73,6 +78,13 @@ def never() -> bool:
     return False
 
 
+@dataclass
+class RunningCompile:
+    """The running compile's check for whether its client has gone; ``never`` while no compile runs."""
+
+    disconnected: Callable[[], bool] = never
+
+
 @dataclass(frozen=True)
 class CompilerService:
     """Runs the curated pass sequence for one program at a time in a wiped workspace."""
@@ -81,14 +93,13 @@ class CompilerService:
     toolchain: Path | None = None
     workspace: Path = WORKSPACE
     # Seconds allowed for a whole program, every command included.
-    timeout: float = 30.0
+    timeout: float = TIMEOUT
     compiler_image: str = "unknown"
     libc_version: str = "unknown"
     # Held for the whole of a compile: one program at a time, and nothing queues behind it.
     _compiling: Lock = field(default_factory=Lock, init=False, repr=False, compare=False)
-    # The running compile's check for whether its client has gone: one entry, set for each compile.
-    _running: list[Callable[[], bool]] = field(default_factory=lambda: [never], init=False, repr=False,
-                                               compare=False)
+    # The service is frozen, but which compile is running changes, so it is held in its own mutable record.
+    _running: RunningCompile = field(default_factory=RunningCompile, init=False, repr=False, compare=False)
 
     def compile(self, file_name: str, source: str, *,
                 disconnected: Callable[[], bool] = never) -> dict[str, Any]:
@@ -98,22 +109,22 @@ class CompilerService:
             raise CompileError(HTTPStatus.BAD_REQUEST, "invalid_request", "fileName must be a safe C file name.")
         if not self._compiling.acquire(blocking=False) and not self._after_abandoned_compile():
             raise CompileError(HTTPStatus.CONFLICT, "busy", BUSY)
-        self._running[0] = disconnected
+        self._running.disconnected = disconnected
         try:
             return self._compile(file_name, source, disconnected)
         finally:
-            self._running[0] = never
+            self._running.disconnected = never
             self._compiling.release()
 
     def _after_abandoned_compile(self) -> bool:
         """Take the compile slot once the running compile stops, if its client has gone (the student
         cancelled and uploaded again at once); otherwise the service is busy."""
 
-        return self._running[0]() and self._compiling.acquire(timeout=STOPPING_GRACE)
+        return self._running.disconnected() and self._compiling.acquire(timeout=STOPPING_GRACE)
 
     def _compile(self, file_name: str, source: str, disconnected: Callable[[], bool]) -> dict[str, Any]:
         deadline = time.monotonic() + self.timeout
-        source_dir = self.workspace / "user-programs"
+        source_dir = self.workspace / SOURCE_DIRECTORY
         output_dir = self.workspace / "out"
         self._wipe(source_dir, output_dir)
         try:
@@ -149,8 +160,8 @@ class CompilerService:
         """The ``clang`` and ``opt`` version lines, read once: a running service's toolchain never changes."""
 
         deadline = time.monotonic() + VERSION_TIMEOUT
-        return (self._run(["clang", "--version"], deadline).splitlines()[0].strip(),
-                self._run(["opt", "--version"], deadline).splitlines()[1].strip())
+        return (version_line("clang", self._run(["clang", "--version"], deadline)),
+                version_line("opt", self._run(["opt", "--version"], deadline)))
 
     def _state(self, state: PassState, output_dir: Path, stem: str, commands: list[list[str]]) -> dict[str, Any]:
         ir_path = output_dir / f"{stem}_{state.file_suffix}.ll"
@@ -199,13 +210,18 @@ class CompilerService:
 
     @staticmethod
     def _stop(process: subprocess.Popen[str]) -> None:
-        """Kill a command's whole process group if it is still running, and reap it."""
+        """Kill a command's whole process group if it is still running, and reap it.
 
-        if process.returncode is None:
+        The group is killed again until it has gone: a process forked as the first kill was sent can miss
+        it (macOS does not restart such a fork, as Linux does), and would hold the output open.
+        """
+
+        while process.returncode is None:
             with contextlib.suppress(ProcessLookupError):
                 os.killpg(process.pid, signal.SIGKILL)
             # Returns once every process in the group has exited and closed its output.
-            process.communicate()
+            with contextlib.suppress(subprocess.TimeoutExpired):
+                process.communicate(timeout=POLL_INTERVAL)
 
     @staticmethod
     def _wipe(*directories: Path) -> None:
@@ -268,7 +284,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--port", type=int, default=8080, help="0 picks a free port")
     parser.add_argument("--toolchain", type=Path, help="directory holding clang and opt (default: PATH)")
     parser.add_argument("--workspace", type=Path, default=WORKSPACE)
-    parser.add_argument("--timeout", type=float, default=30.0, help="seconds allowed for a whole program")
+    parser.add_argument("--timeout", type=float, default=TIMEOUT, help="seconds allowed for a whole program")
     parser.add_argument("--compiler-image", default=os.environ.get("IREXPLORER_COMPILER_IMAGE", "unknown"))
     parser.add_argument("--libc-version", default=os.environ.get("IREXPLORER_LIBC_VERSION", "unknown"))
     args = parser.parse_args(argv)
