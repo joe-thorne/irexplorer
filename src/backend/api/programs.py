@@ -13,7 +13,6 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Query, Response
 from fastapi import Path as ApiPath
-from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.concurrency import run_in_threadpool
 
@@ -136,7 +135,10 @@ def router(store: ProgramStore, compiler: CompilerClient) -> APIRouter:
         try:
             program = accept_program(request.fileName, request.source)
         except RefusedProgram as exc:
-            raise RequestValidationError([]) from exc
+            return JSONResponse(
+                {"error": {"code": "invalid_program", "message": exc.message, "reason": exc.reason}},
+                status_code=400, headers=NO_STORE,
+            )
         response.headers.update(NO_STORE)
         try:
             held = store.resolve(program.program_id)

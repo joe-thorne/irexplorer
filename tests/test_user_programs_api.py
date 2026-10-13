@@ -16,6 +16,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from fastapi.testclient import TestClient
+from test_accepted_programs import CASES, expand
 
 from src.backend.api.app import create_app
 from src.backend.evaluation.service import Config
@@ -249,12 +250,49 @@ class UserProgramsApiTests(unittest.TestCase):
     def test_a_malformed_post_is_an_invalid_request(self) -> None:
         source = curated_source("score")
         for body in ({}, {"fileName": "score.c"}, {"source": source}, {"fileName": 1, "source": source},
-                     {"fileName": "score.c", "source": None}, {"fileName": "score.c", "source": source, "x": 1},
-                     # Until names are rewritten to safe ones, a name that is not already safe is refused.
-                     {"fileName": "../score.c", "source": source}):
+                     {"fileName": "score.c", "source": None}, {"fileName": "score.c", "source": source, "x": 1}):
             with self.subTest(body=body):
                 response = self.client.post("/api/programs", json=body)
                 self.assertEqual((response.status_code, response.json()["error"]["code"]), (422, "invalid_request"))
+
+    def test_each_refusal_is_an_invalid_program_with_its_reason_and_message(self) -> None:
+        refused = [case for case in CASES if "refused" in case]
+        self.assertEqual({case["refused"]["reason"] for case in refused},
+                         {"not_c_file", "empty", "invalid_utf8", "nul_character", "too_many_lines", "too_large"})
+        for case in refused:
+            with self.subTest(case["name"]):
+                # json.dumps escapes a lone surrogate as \u, as a browser's JSON.stringify does.
+                response = self.client.post(
+                    "/api/programs", headers={"Content-Type": "application/json"},
+                    content=json.dumps({"fileName": expand(case["fileName"]), "source": expand(case["source"])}))
+                self.assertEqual(response.status_code, 400, response.text)
+                self.assertEqual(response.json(), {"error": {"code": "invalid_program", **case["refused"]}})
+                self.assertEqual(response.headers["cache-control"], "no-store")
+
+    def test_normalising_the_source_preserves_the_program_id(self) -> None:
+        source = curated_source("score")
+        created = self.post("score.c", source).json()
+        for name, variant in (("CRLF", source.replace("\n", "\r\n")), ("CR", source.replace("\n", "\r")),
+                              ("BOM", "\ufeff" + source), ("BOM and CRLF", "\ufeff" + source.replace("\n", "\r\n"))):
+            with self.subTest(name):
+                response = self.post("score.c", variant)
+                self.assertEqual((response.status_code, response.json()), (200, created))
+        self.assertEqual(self.client.get(f"/api/programs/{created['programId']}/source").json()["text"], source)
+
+    def test_a_rewritten_name_is_the_saved_name_and_changes_the_program_id(self) -> None:
+        source = curated_source("score")
+        score = self.post("score.c", source).json()["programId"]
+        for posted, safe in (("My Program (2).c", "My_Program_2_.c"), ("SCORE.C", "SCORE.c")):
+            with self.subTest(posted):
+                created = self.post(posted, source)
+                self.assertEqual(created.status_code, 201, created.text)
+                body = created.json()
+                self.assertEqual((body["fileName"], body["programId"]), (safe, program_id(safe, source)))
+                self.assertNotEqual(body["programId"], score)
+                self.assertEqual(self.client.get(f"/api/programs/{body['programId']}/source").json()["file"], safe)
+                # The safe name posted as it is names the same program.
+                again = self.post(safe, source)
+                self.assertEqual((again.status_code, again.json()), (200, body))
 
 
 class CompilerTimeoutTests(unittest.TestCase):

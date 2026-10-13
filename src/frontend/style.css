@@ -476,6 +476,7 @@ details p { margin: .8rem 0 0; }
 #program-upload, #program-paste-open { align-self: end; min-height: 2.25rem; padding: .28rem .6rem; }
 .source-title { align-items: center; display: flex; flex-wrap: wrap; gap: .5rem; }
 .program-chip { background: var(--linked-soft); border-radius: 1rem; color: var(--linked); font-size: .75rem; font-weight: 800; padding: .1rem .5rem; }
+.program-renamed { color: var(--muted); font-size: .82rem; margin: .4rem 0 0; }
 /* In Your files the drop zone stands in for the source prompt: it shows while no source is open. */
 .program-drop { align-content: center; border: 2px dashed #9fb3c8; border-radius: .5rem; display: none; flex: 1 1 auto; gap: .5rem; justify-items: center; min-height: 0; overflow: auto; padding: 1rem; text-align: center; }
 .program-drop p { margin: 0; }
