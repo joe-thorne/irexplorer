@@ -1,0 +1,444 @@
+--- !Passed
+Pass:            inline
+Name:            Inlined
+DebugLoc:        { File: 'user-programs/asm_goto.c', Line: 9, Column: 12 }
+Function:        main
+Args:
+  - String:          ''''
+  - Callee:          is_positive
+    DebugLoc:        { File: 'user-programs/asm_goto.c', Line: 1, Column: 0 }
+  - String:          ''' inlined into '''
+  - Caller:          main
+    DebugLoc:        { File: 'user-programs/asm_goto.c', Line: 8, Column: 0 }
+  - String:          ''''
+  - String:          ' with '
+  - String:          '(cost='
+  - Cost:            '-25'
+  - String:          ', threshold='
+  - Threshold:       '250'
+  - String:          ')'
+  - String:          ' at callsite '
+  - String:          main
+  - String:          ':'
+  - Line:            '1'
+  - String:          ':'
+  - Column:          '12'
+  - String:          ';'
+...
+--- !Passed
+Pass:            inline
+Name:            Inlined
+DebugLoc:        { File: 'user-programs/asm_goto.c', Line: 9, Column: 31 }
+Function:        main
+Args:
+  - String:          ''''
+  - Callee:          is_positive
+    DebugLoc:        { File: 'user-programs/asm_goto.c', Line: 1, Column: 0 }
+  - String:          ''' inlined into '''
+  - Caller:          main
+    DebugLoc:        { File: 'user-programs/asm_goto.c', Line: 8, Column: 0 }
+  - String:          ''''
+  - String:          ' with '
+  - String:          '(cost='
+  - Cost:            '-25'
+  - String:          ', threshold='
+  - Threshold:       '250'
+  - String:          ')'
+  - String:          ' at callsite '
+  - String:          main
+  - String:          ':'
+  - Line:            '1'
+  - String:          ':'
+  - Column:          '31'
+  - String:          ';'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/asm_goto.c', Line: 1, Column: 0 }
+Function:        is_positive
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        is_positive
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '10'
+  - String:          '; Delta: '
+  - Delta:           '10'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/asm_goto.c', Line: 1, Column: 0 }
+Function:        is_positive
+Args:
+  - Pass:            Eliminate PHI nodes for register allocation
+  - String:          ': Function: '
+  - Function:        is_positive
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '10'
+  - String:          ' to '
+  - MIInstrsAfter:   '12'
+  - String:          '; Delta: '
+  - Delta:           '2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/asm_goto.c', Line: 1, Column: 0 }
+Function:        is_positive
+Args:
+  - Pass:            Register Coalescer
+  - String:          ': Function: '
+  - Function:        is_positive
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '12'
+  - String:          ' to '
+  - MIInstrsAfter:   '8'
+  - String:          '; Delta: '
+  - Delta:           '-4'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/asm_goto.c', Line: 1, Column: 0 }
+Function:        is_positive
+Args:
+  - Pass:            Debug Variable Analysis
+  - String:          ': Function: '
+  - Function:        is_positive
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '8'
+  - String:          ' to '
+  - MIInstrsAfter:   '7'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/asm_goto.c', Line: 1, Column: 0 }
+Function:        is_positive
+Args:
+  - Pass:            Virtual Register Rewriter
+  - String:          ': Function: '
+  - Function:        is_positive
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '7'
+  - String:          ' to '
+  - MIInstrsAfter:   '6'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: 'user-programs/asm_goto.c', Line: 1, Column: 0 }
+Function:        is_positive
+Args:
+  - NumStackBytes:   '0'
+  - String:          ' stack bytes in function '''
+  - Function:        is_positive
+  - String:          ''''
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/asm_goto.c', Line: 1, Column: 0 }
+Function:        is_positive
+Args:
+  - Pass:            Live DEBUG_VALUE analysis
+  - String:          ': Function: '
+  - Function:        is_positive
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '6'
+  - String:          ' to '
+  - MIInstrsAfter:   '8'
+  - String:          '; Delta: '
+  - Delta:           '2'
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: 'user-programs/asm_goto.c', Line: 1, Column: 0 }
+Function:        is_positive
+Args:
+  - String:          "\nFunction: is_positive"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/asm_goto.c', Line: 0, Column: 0 }
+Function:        is_positive
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      entry
+  - String:          "\n"
+  - String:          XOR32rr
+  - String:          ': '
+  - INST_XOR32rr:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/asm_goto.c', Line: 0, Column: 0 }
+Function:        is_positive
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      return
+  - String:          "\n"
+  - String:          RET64
+  - String:          ': '
+  - INST_RET64:      '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/asm_goto.c', Line: 0, Column: 0 }
+Function:        is_positive
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      positive
+  - String:          "\n"
+  - String:          MOV32ri
+  - String:          ': '
+  - INST_MOV32ri:    '1'
+  - String:          "\n"
+  - String:          RET64
+  - String:          ': '
+  - INST_RET64:      '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: 'user-programs/asm_goto.c', Line: 1, Column: 0 }
+Function:        is_positive
+Args:
+  - NumInstructions: '4'
+  - String:          ' instructions in function'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/asm_goto.c', Line: 8, Column: 0 }
+Function:        main
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        main
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '17'
+  - String:          '; Delta: '
+  - Delta:           '17'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/asm_goto.c', Line: 8, Column: 0 }
+Function:        main
+Args:
+  - Pass:            Machine Common Subexpression Elimination
+  - String:          ': Function: '
+  - Function:        main
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '17'
+  - String:          ' to '
+  - MIInstrsAfter:   '16'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/asm_goto.c', Line: 8, Column: 0 }
+Function:        main
+Args:
+  - Pass:            Peephole Optimizations
+  - String:          ': Function: '
+  - Function:        main
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '16'
+  - String:          ' to '
+  - MIInstrsAfter:   '14'
+  - String:          '; Delta: '
+  - Delta:           '-2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/asm_goto.c', Line: 8, Column: 0 }
+Function:        main
+Args:
+  - Pass:            Eliminate PHI nodes for register allocation
+  - String:          ': Function: '
+  - Function:        main
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '14'
+  - String:          ' to '
+  - MIInstrsAfter:   '17'
+  - String:          '; Delta: '
+  - Delta:           '3'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/asm_goto.c', Line: 8, Column: 0 }
+Function:        main
+Args:
+  - Pass:            Register Coalescer
+  - String:          ': Function: '
+  - Function:        main
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '17'
+  - String:          ' to '
+  - MIInstrsAfter:   '14'
+  - String:          '; Delta: '
+  - Delta:           '-3'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/asm_goto.c', Line: 8, Column: 0 }
+Function:        main
+Args:
+  - Pass:            Debug Variable Analysis
+  - String:          ': Function: '
+  - Function:        main
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '14'
+  - String:          ' to '
+  - MIInstrsAfter:   '11'
+  - String:          '; Delta: '
+  - Delta:           '-3'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/asm_goto.c', Line: 8, Column: 0 }
+Function:        main
+Args:
+  - Pass:            Virtual Register Rewriter
+  - String:          ': Function: '
+  - Function:        main
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '11'
+  - String:          ' to '
+  - MIInstrsAfter:   '13'
+  - String:          '; Delta: '
+  - Delta:           '2'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: 'user-programs/asm_goto.c', Line: 8, Column: 0 }
+Function:        main
+Args:
+  - NumStackBytes:   '0'
+  - String:          ' stack bytes in function '''
+  - Function:        main
+  - String:          ''''
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: 'user-programs/asm_goto.c', Line: 8, Column: 0 }
+Function:        main
+Args:
+  - String:          "\nFunction: main"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/asm_goto.c', Line: 0, Column: 0 }
+Function:        main
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      entry
+  - String:          "\n"
+  - String:          MOV32ri
+  - String:          ': '
+  - INST_MOV32ri:    '2'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/asm_goto.c', Line: 9, Column: 5 }
+Function:        main
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      land.end
+  - String:          "\n"
+  - String:          RET64
+  - String:          ': '
+  - INST_RET64:      '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/asm_goto.c', Line: 4, Column: 1 }
+Function:        main
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      land.rhs
+  - String:          "\n"
+  - String:          JMP_1
+  - String:          ': '
+  - INST_JMP_1:      '1'
+  - String:          "\n"
+  - String:          MOV32ri
+  - String:          ': '
+  - INST_MOV32ri:    '1'
+  - String:          "\n"
+  - String:          XOR32rr
+  - String:          ': '
+  - INST_XOR32rr:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+Function:        main
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      positive.i3
+  - String:          "\n"
+  - String:          MOV32ri
+  - String:          ': '
+  - INST_MOV32ri:    '1'
+  - String:          "\n"
+  - String:          RET64
+  - String:          ': '
+  - INST_RET64:      '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: 'user-programs/asm_goto.c', Line: 8, Column: 0 }
+Function:        main
+Args:
+  - NumInstructions: '8'
+  - String:          ' instructions in function'
+...

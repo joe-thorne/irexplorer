@@ -12,6 +12,8 @@ build
 *.opt.yaml
 !artefacts/curated/**/*.ll
 !artefacts/curated/**/*.opt.yaml
+!tests/data/user-programs/**/*.ll
+!tests/data/user-programs/**/*.opt.yaml
 .env*
 *.sqlite3*
 research-data

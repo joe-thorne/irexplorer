@@ -1,0 +1,14 @@
+--- !Passed
+Pass:            gvn
+Name:            LoadElim
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 19, Column: 42 }
+Function:        main
+Args:
+  - String:          'load of type '
+  - Type:            i8
+  - String:          ' eliminated'
+  - String:          ' in favor of '
+  - InfavorOfValue:  load
+    DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 18, 
+                       Column: 34 }
+...

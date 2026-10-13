@@ -1,0 +1,286 @@
+--- !Missed
+Pass:            gvn
+Name:            LoadClobbered
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 189, Column: 37 }
+Function:        main
+Args:
+  - String:          'load of type '
+  - Type:            ptr
+  - String:          ' not eliminated'
+  - String:          ' because it is clobbered by '
+  - ClobberedBy:     call
+    DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 188, 
+                       Column: 5 }
+...
+--- !Missed
+Pass:            gvn
+Name:            LoadClobbered
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 102, Column: 21 }
+Function:        count_words
+Args:
+  - String:          'load of type '
+  - Type:            ptr
+  - String:          ' not eliminated'
+  - String:          ' because it is clobbered by '
+  - ClobberedBy:     call
+    DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 101, 
+                       Column: 13 }
+...
+--- !Missed
+Pass:            gvn
+Name:            LoadClobbered
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 175, Column: 30 }
+Function:        report
+Args:
+  - String:          'load of type '
+  - Type:            i32
+  - String:          ' not eliminated'
+  - String:          ' in favor of '
+  - OtherAccess:     load
+    DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 174, 
+                       Column: 58 }
+  - String:          ' because it is clobbered by '
+  - ClobberedBy:     call
+    DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 174, 
+                       Column: 9 }
+...
+--- !Missed
+Pass:            gvn
+Name:            LoadClobbered
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 175, Column: 48 }
+Function:        report
+Args:
+  - String:          'load of type '
+  - Type:            i32
+  - String:          ' not eliminated'
+  - String:          ' because it is clobbered by '
+  - ClobberedBy:     call
+    DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 174, 
+                       Column: 9 }
+...
+--- !Missed
+Pass:            gvn
+Name:            LoadClobbered
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 175, Column: 30 }
+Function:        report
+Args:
+  - String:          'load of type '
+  - Type:            i32
+  - String:          ' not eliminated'
+  - String:          ' in favor of '
+  - OtherAccess:     load
+    DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 174, 
+                       Column: 58 }
+  - String:          ' because it is clobbered by '
+  - ClobberedBy:     call
+    DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 174, 
+                       Column: 9 }
+...
+--- !Missed
+Pass:            gvn
+Name:            LoadClobbered
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 175, Column: 48 }
+Function:        report
+Args:
+  - String:          'load of type '
+  - Type:            i32
+  - String:          ' not eliminated'
+  - String:          ' because it is clobbered by '
+  - ClobberedBy:     call
+    DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 174, 
+                       Column: 9 }
+...
+--- !Passed
+Pass:            gvn
+Name:            LoadElim
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 72, Column: 26 }
+Function:        table_lookup
+Args:
+  - String:          'load of type '
+  - Type:            i32
+  - String:          ' eliminated'
+  - String:          ' in favor of '
+  - InfavorOfValue:  load
+    DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 68, 
+                       Column: 19 }
+...
+--- !Passed
+Pass:            gvn
+Name:            LoadElim
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 82, Column: 50 }
+Function:        next_word
+Args:
+  - String:          'load of type '
+  - Type:            i8
+  - String:          ' eliminated'
+  - String:          ' in favor of '
+  - InfavorOfValue:  load
+    DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 82, 
+                       Column: 12 }
+...
+--- !Missed
+Pass:            gvn
+Name:            LoadClobbered
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 86, Column: 35 }
+Function:        next_word
+Args:
+  - String:          'load of type '
+  - Type:            i8
+  - String:          ' not eliminated'
+  - String:          ' in favor of '
+  - OtherAccess:     load
+    DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 88, 
+                       Column: 59 }
+  - String:          ' because it is clobbered by '
+  - ClobberedBy:     store
+    DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 88, 
+                       Column: 28 }
+...
+--- !Passed
+Pass:            gvn
+Name:            LoadPRE
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 86, Column: 35 }
+Function:        next_word
+Args:
+  - String:          load eliminated by PRE
+...
+--- !Passed
+Pass:            gvn
+Name:            LoadElim
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 88, Column: 59 }
+Function:        next_word
+Args:
+  - String:          'load of type '
+  - Type:            i8
+  - String:          ' eliminated'
+  - String:          ' in favor of '
+  - InfavorOfValue:  phi
+    DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 86, 
+                       Column: 35 }
+...
+--- !Missed
+Pass:            gvn
+Name:            LoadClobbered
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 86, Column: 35 }
+Function:        next_word
+Args:
+  - String:          'load of type '
+  - Type:            i8
+  - String:          ' not eliminated'
+  - String:          ' because it is clobbered by '
+  - ClobberedBy:     store
+    DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 88, 
+                       Column: 28 }
+...
+--- !Missed
+Pass:            gvn
+Name:            LoadClobbered
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 86, Column: 35 }
+Function:        next_word
+Args:
+  - String:          'load of type '
+  - Type:            i8
+  - String:          ' not eliminated'
+  - String:          ' because it is clobbered by '
+  - ClobberedBy:     store
+    DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 88, 
+                       Column: 28 }
+...
+--- !Passed
+Pass:            gvn
+Name:            LoadElim
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 56, Column: 24 }
+Function:        table_add
+Args:
+  - String:          'load of type '
+  - Type:            i32
+  - String:          ' eliminated'
+  - String:          ' in favor of '
+  - InfavorOfValue:  load
+    DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 48, 
+                       Column: 19 }
+...
+--- !Missed
+Pass:            gvn
+Name:            LoadClobbered
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 52, Column: 24 }
+Function:        table_add
+Args:
+  - String:          'load of type '
+  - Type:            i32
+  - String:          ' not eliminated'
+  - String:          ' because it is clobbered by '
+  - ClobberedBy:     call
+    DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 49, 
+                       Column: 13 }
+...
+--- !Missed
+Pass:            gvn
+Name:            LoadClobbered
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 52, Column: 24 }
+Function:        table_add
+Args:
+  - String:          'load of type '
+  - Type:            i32
+  - String:          ' not eliminated'
+  - String:          ' because it is clobbered by '
+  - ClobberedBy:     call
+    DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 49, 
+                       Column: 13 }
+...
+--- !Passed
+Pass:            gvn
+Name:            LoadElim
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 33, Column: 32 }
+Function:        hash_word
+Args:
+  - String:          'load of type '
+  - Type:            i8
+  - String:          ' eliminated'
+  - String:          ' in favor of '
+  - InfavorOfValue:  load
+    DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 32, 
+                       Column: 32 }
+...
+--- !Passed
+Pass:            gvn
+Name:            LoadElim
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 115, Column: 19 }
+Function:        by_count
+Args:
+  - String:          'load of type '
+  - Type:            i32
+  - String:          ' eliminated'
+  - String:          ' in favor of '
+  - InfavorOfValue:  load
+    DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 114, 
+                       Column: 24 }
+...
+--- !Passed
+Pass:            gvn
+Name:            LoadElim
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 115, Column: 30 }
+Function:        by_count
+Args:
+  - String:          'load of type '
+  - Type:            i32
+  - String:          ' eliminated'
+  - String:          ' in favor of '
+  - InfavorOfValue:  load
+    DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 114, 
+                       Column: 12 }
+...
+--- !Passed
+Pass:            gvn
+Name:            LoadElim
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 135, Column: 63 }
+Function:        mean_length
+Args:
+  - String:          'load of type '
+  - Type:            i32
+  - String:          ' eliminated'
+  - String:          ' in favor of '
+  - InfavorOfValue:  load
+    DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 136, 
+                       Column: 29 }
+...

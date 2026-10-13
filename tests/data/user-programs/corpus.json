@@ -1,0 +1,47 @@
+{
+  "about": "User programs recorded from the real toolchain by scripts/record_user_programs.py. Each source is stored as the app sends it (a safe file name, normalised text); its recording is the directory of the same stem. outcome is how POST /api/programs answers it; a program with until does not answer so before that ticket, and currently is how it answers meanwhile. withinSeconds bounds a fresh compile through the real stack.",
+  "programs": [
+    {
+      "fileName": "ends_in_abort.c",
+      "about": "A block ending in abort(), whose IR is unreachable with a debug location.",
+      "outcome": {"status": 201}
+    },
+    {
+      "fileName": "ends_in_exit.c",
+      "about": "A block ending in exit(), whose IR is unreachable with a debug location.",
+      "outcome": {"status": 201}
+    },
+    {
+      "fileName": "computed_goto.c",
+      "about": "A computed goto, compiled to indirectbr.",
+      "outcome": {"status": 422, "code": "unsupported_program", "reason": "computed_goto"},
+      "until": "#67",
+      "currently": {"status": 500, "code": "internal_error"}
+    },
+    {
+      "fileName": "asm_goto.c",
+      "about": "An asm goto, compiled to callbr.",
+      "outcome": {"status": 422, "code": "unsupported_program", "reason": "asm_goto"},
+      "until": "#67",
+      "currently": {"status": 500, "code": "internal_error"}
+    },
+    {
+      "fileName": "only_static_inline.c",
+      "about": "Only static and inline functions, so the IR defines no function.",
+      "outcome": {"status": 422, "code": "unsupported_program", "reason": "no_functions"},
+      "until": "#67",
+      "currently": {"status": 500, "code": "internal_error"}
+    },
+    {
+      "fileName": "compile_error.c",
+      "about": "A missing semicolon and an undeclared identifier.",
+      "outcome": {"status": 422, "code": "compile_failed"}
+    },
+    {
+      "fileName": "word_frequency.c",
+      "about": "A realistic program of about 200 lines.",
+      "outcome": {"status": 201},
+      "withinSeconds": 15
+    }
+  ]
+}

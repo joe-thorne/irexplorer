@@ -26,6 +26,7 @@ CMD ["python", "-m", "uvicorn", "src.backend.api.app:app", "--host", "0.0.0.0", 
 
 FROM runtime AS test
 COPY tests ./tests
+COPY scripts/record_user_programs.py ./scripts/record_user_programs.py
 COPY Dockerfile.toolchain ./Dockerfile.toolchain
 CMD ["python", "-m", "unittest", "discover", "-s", "tests", "-v"]
 

@@ -1,0 +1,456 @@
+--- !Analysis
+Pass:            loop-vectorize
+Name:            CantVectorizeLibcall
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 101, Column: 13 }
+Function:        count_words
+Args:
+  - String:          'loop not vectorized: '
+  - String:          call instruction cannot be vectorized
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            CantVectorizeLibcall
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 100, Column: 12 }
+Function:        count_words
+Args:
+  - String:          'loop not vectorized: '
+  - String:          call instruction cannot be vectorized
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            TooManyUncountableEarlyExits
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 100, Column: 5 }
+Function:        count_words
+Args:
+  - String:          'loop not vectorized: '
+  - String:          Cannot vectorize early exit loop with more than one early exit
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            CantComputeNumberOfIterations
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 100, Column: 5 }
+Function:        count_words
+Args:
+  - String:          'loop not vectorized: '
+  - String:          could not determine number of loop iterations
+...
+--- !Missed
+Pass:            loop-vectorize
+Name:            MissedDetails
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 100, Column: 5 }
+Function:        count_words
+Args:
+  - String:          loop not vectorized
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            NoCFGForSelect
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 125, Column: 9 }
+Function:        collect
+Args:
+  - String:          'loop not vectorized: '
+  - String:          Control flow cannot be substituted for a select
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            NonReductionValueUsedOutsideLoop
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 122, Column: 5 }
+Function:        collect
+Args:
+  - String:          'loop not vectorized: '
+  - String:          value that could not be identified as reduction is used outside the loop
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            CantVectorizeLibcall
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 124, Column: 24 }
+Function:        collect
+Args:
+  - String:          'loop not vectorized: '
+  - String:          call instruction cannot be vectorized
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            CantVectorizeInstruction
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 122, Column: 5 }
+Function:        collect
+Args:
+  - String:          'loop not vectorized: '
+  - String:          instruction cannot be vectorized
+...
+--- !Missed
+Pass:            loop-vectorize
+Name:            MissedDetails
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 122, Column: 5 }
+Function:        collect
+Args:
+  - String:          loop not vectorized
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            CantVectorizeLibcall
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 174, Column: 9 }
+Function:        report
+Args:
+  - String:          'loop not vectorized: '
+  - String:          call instruction cannot be vectorized
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            CantVectorizeLibcall
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 175, Column: 9 }
+Function:        report
+Args:
+  - String:          'loop not vectorized: '
+  - String:          call instruction cannot be vectorized
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            CantVectorizeInstruction
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 173, Column: 5 }
+Function:        report
+Args:
+  - String:          'loop not vectorized: '
+  - String:          instruction cannot be vectorized
+...
+--- !Missed
+Pass:            loop-vectorize
+Name:            MissedDetails
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 173, Column: 5 }
+Function:        report
+Args:
+  - String:          loop not vectorized
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            ValueUsedOutsideLoop
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 68, Column: 19 }
+Function:        table_lookup
+Args:
+  - String:          'loop not vectorized: '
+  - String:          Value cannot be used outside the loop
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            CantVectorizeLibcall
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 71, Column: 13 }
+Function:        table_lookup
+Args:
+  - String:          'loop not vectorized: '
+  - String:          call instruction cannot be vectorized
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            TooManyUncountableEarlyExits
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 66, Column: 5 }
+Function:        table_lookup
+Args:
+  - String:          'loop not vectorized: '
+  - String:          Cannot vectorize early exit loop with more than one early exit
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            CantVectorizeInstruction
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 66, Column: 5 }
+Function:        table_lookup
+Args:
+  - String:          'loop not vectorized: '
+  - String:          instruction cannot be vectorized
+...
+--- !Missed
+Pass:            loop-vectorize
+Name:            MissedDetails
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 66, Column: 5 }
+Function:        table_lookup
+Args:
+  - String:          loop not vectorized
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            NonReductionValueUsedOutsideLoop
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 82, Column: 5 }
+Function:        next_word
+Args:
+  - String:          'loop not vectorized: '
+  - String:          value that could not be identified as reduction is used outside the loop
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            TooManyUncountableEarlyExits
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 82, Column: 5 }
+Function:        next_word
+Args:
+  - String:          'loop not vectorized: '
+  - String:          Cannot vectorize early exit loop with more than one early exit
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            CantComputeNumberOfIterations
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 82, Column: 5 }
+Function:        next_word
+Args:
+  - String:          'loop not vectorized: '
+  - String:          could not determine number of loop iterations
+...
+--- !Missed
+Pass:            loop-vectorize
+Name:            MissedDetails
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 82, Column: 5 }
+Function:        next_word
+Args:
+  - String:          loop not vectorized
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            NoCFGForSelect
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 89, Column: 9 }
+Function:        next_word
+Args:
+  - String:          'loop not vectorized: '
+  - String:          Control flow cannot be substituted for a select
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            NonReductionValueUsedOutsideLoop
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 86, Column: 5 }
+Function:        next_word
+Args:
+  - String:          'loop not vectorized: '
+  - String:          value that could not be identified as reduction is used outside the loop
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            NonReductionValueUsedOutsideLoop
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 86, Column: 5 }
+Function:        next_word
+Args:
+  - String:          'loop not vectorized: '
+  - String:          value that could not be identified as reduction is used outside the loop
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            CantVectorizeLibcall
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 88, Column: 36 }
+Function:        next_word
+Args:
+  - String:          'loop not vectorized: '
+  - String:          call instruction cannot be vectorized
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            UnsupportedUncountableLoop
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 86, Column: 5 }
+Function:        next_word
+Args:
+  - String:          'loop not vectorized: '
+  - String:          Cannot vectorize uncountable loop
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            CantComputeNumberOfIterations
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 86, Column: 5 }
+Function:        next_word
+Args:
+  - String:          'loop not vectorized: '
+  - String:          could not determine number of loop iterations
+...
+--- !Missed
+Pass:            loop-vectorize
+Name:            MissedDetails
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 86, Column: 5 }
+Function:        next_word
+Args:
+  - String:          loop not vectorized
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            ValueUsedOutsideLoop
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 47, Column: 31 }
+Function:        table_add
+Args:
+  - String:          'loop not vectorized: '
+  - String:          Value cannot be used outside the loop
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            ValueUsedOutsideLoop
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 48, Column: 19 }
+Function:        table_add
+Args:
+  - String:          'loop not vectorized: '
+  - String:          Value cannot be used outside the loop
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            CantVectorizeLibcall
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 55, Column: 13 }
+Function:        table_add
+Args:
+  - String:          'loop not vectorized: '
+  - String:          call instruction cannot be vectorized
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            TooManyUncountableEarlyExits
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 46, Column: 5 }
+Function:        table_add
+Args:
+  - String:          'loop not vectorized: '
+  - String:          Cannot vectorize early exit loop with more than one early exit
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            CantVectorizeInstruction
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 46, Column: 5 }
+Function:        table_add
+Args:
+  - String:          'loop not vectorized: '
+  - String:          instruction cannot be vectorized
+...
+--- !Missed
+Pass:            loop-vectorize
+Name:            MissedDetails
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 46, Column: 5 }
+Function:        table_add
+Args:
+  - String:          loop not vectorized
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            NonReductionValueUsedOutsideLoop
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 32, Column: 5 }
+Function:        hash_word
+Args:
+  - String:          'loop not vectorized: '
+  - String:          value that could not be identified as reduction is used outside the loop
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            UnsupportedUncountableLoop
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 32, Column: 5 }
+Function:        hash_word
+Args:
+  - String:          'loop not vectorized: '
+  - String:          Cannot vectorize uncountable loop
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            CantComputeNumberOfIterations
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 32, Column: 5 }
+Function:        hash_word
+Args:
+  - String:          'loop not vectorized: '
+  - String:          could not determine number of loop iterations
+...
+--- !Missed
+Pass:            loop-vectorize
+Name:            MissedDetails
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 32, Column: 5 }
+Function:        hash_word
+Args:
+  - String:          loop not vectorized
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            CantVectorizeLibcall
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 165, Column: 9 }
+Function:        print_bar
+Args:
+  - String:          'loop not vectorized: '
+  - String:          call instruction cannot be vectorized
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            CantVectorizeInstruction
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 164, Column: 5 }
+Function:        print_bar
+Args:
+  - String:          'loop not vectorized: '
+  - String:          instruction cannot be vectorized
+...
+--- !Missed
+Pass:            loop-vectorize
+Name:            MissedDetails
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 164, Column: 5 }
+Function:        print_bar
+Args:
+  - String:          loop not vectorized
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            NonReductionValueUsedOutsideLoop
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 144, Column: 5 }
+Function:        longest
+Args:
+  - String:          'loop not vectorized: '
+  - String:          value that could not be identified as reduction is used outside the loop
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            CantVectorizeLibcall
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 145, Column: 25 }
+Function:        longest
+Args:
+  - String:          'loop not vectorized: '
+  - String:          call instruction cannot be vectorized
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            CantVectorizeInstruction
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 144, Column: 5 }
+Function:        longest
+Args:
+  - String:          'loop not vectorized: '
+  - String:          instruction cannot be vectorized
+...
+--- !Missed
+Pass:            loop-vectorize
+Name:            MissedDetails
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 144, Column: 5 }
+Function:        longest
+Args:
+  - String:          loop not vectorized
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            CantVectorizeLibcall
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 135, Column: 26 }
+Function:        mean_length
+Args:
+  - String:          'loop not vectorized: '
+  - String:          call instruction cannot be vectorized
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            CantVectorizeInstruction
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 134, Column: 5 }
+Function:        mean_length
+Args:
+  - String:          'loop not vectorized: '
+  - String:          instruction cannot be vectorized
+...
+--- !Missed
+Pass:            loop-vectorize
+Name:            MissedDetails
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 134, Column: 5 }
+Function:        mean_length
+Args:
+  - String:          loop not vectorized
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            EarlyExitLoopWithStridedFaultOnlyFirstLoad
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 156, Column: 5 }
+Function:        singletons
+Args:
+  - String:          'loop not vectorized: '
+  - String:          Cannot vectorize early exit loop with strided fault-only-first load
+...
+--- !Missed
+Pass:            loop-vectorize
+Name:            MissedDetails
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 156, Column: 5 }
+Function:        singletons
+Args:
+  - String:          loop not vectorized
+...

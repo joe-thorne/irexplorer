@@ -1,0 +1,583 @@
+--- !Missed
+Pass:            inline
+Name:            NoDefinition
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 5, Column: 5 }
+Function:        fail
+Args:
+  - Callee:          fprintf
+    DebugLoc:        { File: '/usr/include/stdio.h', Line: 0, Column: 0 }
+  - String:          ' will not be inlined into '
+  - Caller:          fail
+    DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 4, Column: 0 }
+  - String:          ' because its definition is unavailable'
+...
+--- !Missed
+Pass:            inline
+Name:            NoDefinition
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 6, Column: 5 }
+Function:        fail
+Args:
+  - Callee:          exit
+  - String:          ' will not be inlined into '
+  - Caller:          fail
+    DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 4, Column: 0 }
+  - String:          ' because its definition is unavailable'
+...
+--- !Passed
+Pass:            argpromotion
+Name:            ArgumentRemoved
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 4, Column: 0 }
+Function:        fail
+Args:
+  - String:          'eliminating argument '
+  - ArgName:         message
+  - String:          '('
+  - ArgIndex:        '0'
+  - String:          ')'
+...
+--- !Missed
+Pass:            inline
+Name:            TooCostly
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 11, Column: 9 }
+Function:        parse_digit
+Args:
+  - String:          ''''
+  - Callee:          fail
+    DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 4, Column: 0 }
+  - String:          ''' not inlined into '''
+  - Caller:          parse_digit
+    DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 9, Column: 0 }
+  - String:          ''' because too costly to inline '
+  - String:          '(cost='
+  - Cost:            '55'
+  - String:          ', threshold='
+  - Threshold:       '45'
+  - String:          ')'
+...
+--- !Passed
+Pass:            inline
+Name:            Inlined
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 19, Column: 30 }
+Function:        main
+Args:
+  - String:          ''''
+  - Callee:          parse_digit
+    DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 9, Column: 0 }
+  - String:          ''' inlined into '''
+  - Caller:          main
+    DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 16, 
+                       Column: 0 }
+  - String:          ''''
+  - String:          ' with '
+  - String:          '(cost='
+  - Cost:            '20'
+  - String:          ', threshold='
+  - Threshold:       '250'
+  - String:          ')'
+  - String:          ' at callsite '
+  - String:          main
+  - String:          ':'
+  - Line:            '3'
+  - String:          ':'
+  - Column:          '30'
+  - String:          ';'
+...
+--- !Missed
+Pass:            inline
+Name:            TooCostly
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 11, Column: 9 }
+Function:        main
+Args:
+  - String:          ''''
+  - Callee:          fail
+    DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 4, Column: 0 }
+  - String:          ''' not inlined into '''
+  - Caller:          main
+    DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 16, 
+                       Column: 0 }
+  - String:          ''' because too costly to inline '
+  - String:          '(cost='
+  - Cost:            '55'
+  - String:          ', threshold='
+  - Threshold:       '0'
+  - String:          ')'
+...
+--- !Passed
+Pass:            loop-unroll
+Name:            FullyUnrolled
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 18, Column: 5 }
+Function:        main
+Args:
+  - String:          'completely unrolled loop with '
+  - UnrollCount:     '4'
+  - String:          ' iterations'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 9, Column: 0 }
+Function:        parse_digit
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        parse_digit
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '14'
+  - String:          '; Delta: '
+  - Delta:           '14'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 9, Column: 0 }
+Function:        parse_digit
+Args:
+  - Pass:            Two-Address instruction pass
+  - String:          ': Function: '
+  - Function:        parse_digit
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '14'
+  - String:          ' to '
+  - MIInstrsAfter:   '18'
+  - String:          '; Delta: '
+  - Delta:           '4'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 9, Column: 0 }
+Function:        parse_digit
+Args:
+  - Pass:            Register Coalescer
+  - String:          ': Function: '
+  - Function:        parse_digit
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '18'
+  - String:          ' to '
+  - MIInstrsAfter:   '13'
+  - String:          '; Delta: '
+  - Delta:           '-5'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 9, Column: 0 }
+Function:        parse_digit
+Args:
+  - Pass:            Debug Variable Analysis
+  - String:          ': Function: '
+  - Function:        parse_digit
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '13'
+  - String:          ' to '
+  - MIInstrsAfter:   '12'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 9, Column: 0 }
+Function:        parse_digit
+Args:
+  - NumStackBytes:   '8'
+  - String:          ' stack bytes in function '''
+  - Function:        parse_digit
+  - String:          ''''
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 9, Column: 0 }
+Function:        parse_digit
+Args:
+  - Pass:            Control Flow Optimizer
+  - String:          ': Function: '
+  - Function:        parse_digit
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '12'
+  - String:          ' to '
+  - MIInstrsAfter:   '11'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 9, Column: 0 }
+Function:        parse_digit
+Args:
+  - Pass:            Live DEBUG_VALUE analysis
+  - String:          ': Function: '
+  - Function:        parse_digit
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '11'
+  - String:          ' to '
+  - MIInstrsAfter:   '14'
+  - String:          '; Delta: '
+  - Delta:           '3'
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 9, Column: 0 }
+Function:        parse_digit
+Args:
+  - String:          "\nFunction: parse_digit"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 0, Column: 0 }
+Function:        parse_digit
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      entry
+  - String:          "\n"
+  - String:          CMP8ri
+  - String:          ': '
+  - INST_CMP8ri:     '1'
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+  - String:          LEA64_32r
+  - String:          ': '
+  - INST_LEA64_32r:  '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 0, Column: 0 }
+Function:        parse_digit
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      if.end
+  - String:          "\n"
+  - String:          ADD32ri
+  - String:          ': '
+  - INST_ADD32ri:    '1'
+  - String:          "\n"
+  - String:          MOVZX32rr8
+  - String:          ': '
+  - INST_MOVZX32rr8: '1'
+  - String:          "\n"
+  - String:          RET64
+  - String:          ': '
+  - INST_RET64:      '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 0, Column: 0 }
+Function:        parse_digit
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      if.then
+  - String:          "\n"
+  - String:          CALL64pcrel32
+  - String:          ': '
+  - INST_CALL64pcrel32: '1'
+  - String:          "\n"
+  - String:          PUSH64r
+  - String:          ': '
+  - INST_PUSH64r:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 9, Column: 0 }
+Function:        parse_digit
+Args:
+  - NumInstructions: '8'
+  - String:          ' instructions in function'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 4, Column: 0 }
+Function:        fail
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        fail
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '20'
+  - String:          '; Delta: '
+  - Delta:           '20'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 4, Column: 0 }
+Function:        fail
+Args:
+  - Pass:            Remove dead machine instructions
+  - String:          ': Function: '
+  - Function:        fail
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '20'
+  - String:          ' to '
+  - MIInstrsAfter:   '19'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 4, Column: 0 }
+Function:        fail
+Args:
+  - Pass:            Peephole Optimizations
+  - String:          ': Function: '
+  - Function:        fail
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '19'
+  - String:          ' to '
+  - MIInstrsAfter:   '18'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 4, Column: 0 }
+Function:        fail
+Args:
+  - Pass:            Register Coalescer
+  - String:          ': Function: '
+  - Function:        fail
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '18'
+  - String:          ' to '
+  - MIInstrsAfter:   '16'
+  - String:          '; Delta: '
+  - Delta:           '-2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 4, Column: 0 }
+Function:        fail
+Args:
+  - Pass:            Debug Variable Analysis
+  - String:          ': Function: '
+  - Function:        fail
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '16'
+  - String:          ' to '
+  - MIInstrsAfter:   '15'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 4, Column: 0 }
+Function:        fail
+Args:
+  - Pass:            Virtual Register Rewriter
+  - String:          ': Function: '
+  - Function:        fail
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '15'
+  - String:          ' to '
+  - MIInstrsAfter:   '13'
+  - String:          '; Delta: '
+  - Delta:           '-2'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 4, Column: 0 }
+Function:        fail
+Args:
+  - NumStackBytes:   '8'
+  - String:          ' stack bytes in function '''
+  - Function:        fail
+  - String:          ''''
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 4, Column: 0 }
+Function:        fail
+Args:
+  - Pass:            'Prologue/Epilogue Insertion & Frame Finalization'
+  - String:          ': Function: '
+  - Function:        fail
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '13'
+  - String:          ' to '
+  - MIInstrsAfter:   '11'
+  - String:          '; Delta: '
+  - Delta:           '-2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 4, Column: 0 }
+Function:        fail
+Args:
+  - Pass:            Live DEBUG_VALUE analysis
+  - String:          ': Function: '
+  - Function:        fail
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '11'
+  - String:          ' to '
+  - MIInstrsAfter:   '12'
+  - String:          '; Delta: '
+  - Delta:           '1'
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 4, Column: 0 }
+Function:        fail
+Args:
+  - String:          "\nFunction: fail"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+Function:        fail
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      entry
+  - String:          "\n"
+  - String:          CALL64pcrel32
+  - String:          ': '
+  - INST_CALL64pcrel32: '2'
+  - String:          "\n"
+  - String:          LEA64r
+  - String:          ': '
+  - INST_LEA64r:     '2'
+  - String:          "\n"
+  - String:          MOV64rm
+  - String:          ': '
+  - INST_MOV64rm:    '2'
+  - String:          "\n"
+  - String:          MOV32ri
+  - String:          ': '
+  - INST_MOV32ri:    '1'
+  - String:          "\n"
+  - String:          PUSH64r
+  - String:          ': '
+  - INST_PUSH64r:    '1'
+  - String:          "\n"
+  - String:          XOR32rr
+  - String:          ': '
+  - INST_XOR32rr:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 4, Column: 0 }
+Function:        fail
+Args:
+  - NumInstructions: '9'
+  - String:          ' instructions in function'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 16, Column: 0 }
+Function:        main
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        main
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '3'
+  - String:          '; Delta: '
+  - Delta:           '3'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 16, Column: 0 }
+Function:        main
+Args:
+  - Pass:            Peephole Optimizations
+  - String:          ': Function: '
+  - Function:        main
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '3'
+  - String:          ' to '
+  - MIInstrsAfter:   '2'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 16, Column: 0 }
+Function:        main
+Args:
+  - NumStackBytes:   '0'
+  - String:          ' stack bytes in function '''
+  - Function:        main
+  - String:          ''''
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 16, Column: 0 }
+Function:        main
+Args:
+  - String:          "\nFunction: main"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 21, Column: 5 }
+Function:        main
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      parse_digit.exit.3
+  - String:          "\n"
+  - String:          RET64
+  - String:          ': '
+  - INST_RET64:      '1'
+  - String:          "\n"
+  - String:          XOR32rr
+  - String:          ': '
+  - INST_XOR32rr:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: 'user-programs/ends_in_exit.c', Line: 16, Column: 0 }
+Function:        main
+Args:
+  - NumInstructions: '2'
+  - String:          ' instructions in function'
+...
