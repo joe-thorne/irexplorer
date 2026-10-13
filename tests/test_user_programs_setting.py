@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 
 from src.backend.api.app import create_app
 from src.backend.evaluation.service import Config
+from src.backend.release import metadata
 
 COMPILER_URL = 'http://127.0.0.1:9'
 ON = {'IREXPLORER_USER_PROGRAMS': '1', 'IREXPLORER_COMPILER_URL': COMPILER_URL}
@@ -42,8 +43,8 @@ class UserProgramsSettingTests(unittest.TestCase):
                 release = self.start(**settings).get('/api/release')
                 self.assertEqual(release.status_code, 200)
                 self.assertEqual(release.headers['cache-control'], 'no-store')
-                self.assertEqual(release.json(), {'version': 'development', 'revision': 'development',
-                                                  'config': {'userPrograms': enabled}})
+                # The identity is the build's own, as a checkout or the baked release.json reports it.
+                self.assertEqual(release.json(), {**metadata(), 'config': {'userPrograms': enabled}})
 
     def test_any_other_value_stops_startup(self):
         for value in ('', 'true', 'True', 'yes', 'on', '01', ' 1', '1 ', '2', '-1'):
