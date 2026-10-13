@@ -3,7 +3,8 @@
 // phase 3). Uploads are the unedited curated sources, which the fake toolchain has recordings for.
 // Each scenario starts from a freshly loaded Explore page with empty session storage; add a scenario
 // to `scenarios` for each new behaviour. Optional IREXPLORER_CHECK_OUTPUT directory for screenshots.
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const base = process.env.IREXPLORER_ORIGIN || 'http://localhost:8000';
@@ -11,6 +12,8 @@ const cdp = `http://127.0.0.1:${process.env.IREXPLORER_CDP_PORT || '9239'}`;
 const captures = process.env.IREXPLORER_CHECK_OUTPUT;
 if (captures) await mkdir(captures, { recursive: true });
 const curatedSources = join(import.meta.dirname, '..', 'examples', 'curated');
+// Sources written for a scenario, such as ones carrying a fake toolchain marker (tests/fake_toolchain).
+const writtenSources = await mkdtemp(join(tmpdir(), 'irexplorer-user-programs-'));
 const release = await (await fetch(base + '/api/release')).json();
 if (release.config?.userPrograms !== true) throw Error(`Failed: /api/release reports user programs on; observed=${JSON.stringify(release.config)}`);
 
@@ -170,6 +173,51 @@ const scenarios = {
     await until(`window.StudyWorkspace.ready && appState.programId === ${JSON.stringify(programId)}`);
     await check('Reopening an upload sends no POST', `${posts() === postsBefore && requests.slice(reopenedFrom).some(request => request.path === `/api/programs/${programId}/states`)}`);
   },
+  async 'A compile error marks its lines in the source and replaces the comparison'() {
+    await click('#source-mode input[value="yours"]');
+    await chooseFile('#program-drop button', join(curatedSources, 'score.c'));
+    await until('window.StudyWorkspace.ready && Boolean(appState.programId)');
+    await check('An earlier comparison is open before the failing upload', `${visible('#left-panel')} && ${visible('.comparison-status')}`);
+    // The fake clang fails as clang does on each call to an undeclared abss, with a note in stdlib.h.
+    const filler = Array.from({ length: 36 }, (_, index) => `int filler_${index}(int value) { return value + ${index}; }`);
+    const broken = ['// irx-fake: error', '#include <stdlib.h>', '', ...filler, '', 'int distance(int from, int to) {',
+      '  return abss(to - from);', '}', '', ...filler.map(line => line.replace('filler_', 'more_')), '',
+      'int gap(int from, int to) {', '  int difference = to - from;', '  return abss(difference);', '}', ''].join('\n');
+    const brokenFile = join(writtenSources, 'broken.c');
+    await writeFile(brokenFile, broken);
+    const lineOf = text => broken.split('\n').indexOf(text) + 1;
+    const [first, second] = [lineOf('  return abss(to - from);'), lineOf('  return abss(difference);')];
+    await chooseFile('#program-upload', brokenFile);
+    await until(`document.querySelector('#program-card')?.innerText.includes('broken.c could not be opened')`);
+
+    await check('The failure card replaces the earlier comparison: no panels, no comparison, no program open',
+      `${visible('#program-card')} && !${visible('#left-panel')} && !${visible('#right-panel')} && !${visible('.comparison-status')} && !appState.programId && !appState.exampleId`);
+    await check('The failed upload is not added to Your file',
+      `[...document.querySelectorAll('#your-file-select option')].filter(option => option.value).map(option => option.textContent).join('|') === 'score.c'`);
+    await check('The failed source is shown with its failing lines marked',
+      `document.querySelector('#source-summary').textContent === 'C source · broken.c' && [...document.querySelectorAll('#source-lines .source-line.is-error')].map(line => Number(line.dataset.line)).join(',') === '${first},${second}'`);
+    await check('Each diagnostic in the file is a button reading "Line L, column C: message"',
+      `(() => { const buttons = [...document.querySelectorAll('#program-card .program-diagnostics button')].map(button => button.textContent); return buttons.length === 4 && buttons[0] === "Line ${first}, column 10: call to undeclared function 'abss'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]" && buttons[1] === "Line ${first}, column 10: did you mean 'abs'?" && buttons[2].startsWith('Line ${second}, column 10: '); })()`);
+    await check('A diagnostic in a system header is listed with its path, not as a button',
+      `[...document.querySelectorAll('#program-card .program-diagnostics li:not(:has(button))')].some(item => item.textContent.includes("/usr/include/stdlib.h, line 980, column 12: 'abs' declared here"))`);
+    const secondLine = `document.querySelector('#source-lines .source-line[data-line="${second}"]')`;
+    const inView = `(() => { const viewer = document.querySelector('#source-lines').getBoundingClientRect(), line = ${secondLine}.getBoundingClientRect(); return line.top >= viewer.top && line.bottom <= viewer.bottom; })()`;
+    await check('The second failing line starts out of view', `!${inView}`);
+    await value(`[...document.querySelectorAll('#program-card .program-diagnostics button')].find(button => button.textContent.startsWith('Line ${second},')).click()`);
+    await check('A diagnostic button scrolls to its line and outlines it, and only it',
+      `${inView} && ${secondLine}.classList.contains('is-outlined') && document.querySelectorAll('#source-lines .is-outlined').length === 1 && getComputedStyle(${secondLine}).outlineStyle !== 'none'`);
+    await check("clang's full output is in a closed Full compiler output disclosure",
+      `(() => { const details = document.querySelector('#program-card details.program-output'); return Boolean(details) && !details.open && details.querySelector('summary').textContent === 'Full compiler output' && details.querySelector('pre').textContent.startsWith('broken.c:${first}:10: error: ') && details.querySelector('pre').textContent.includes('2 errors generated.'); })()`);
+    await check('Choose another file… is offered', `[...document.querySelectorAll('#program-card button')].some(button => button.textContent === 'Choose another file…')`);
+    await snap('user-programs-compile-error.png');
+
+    const crashFile = join(writtenSources, 'crash.c');
+    await writeFile(crashFile, '// irx-fake: crash\nint answer(void) { return 42; }\n');
+    await chooseFile('#program-card .program-actions button', crashFile);
+    await until(`document.querySelector('#program-card')?.innerText.includes('crash.c could not be opened')`);
+    await check('An opt failure lists no diagnostics and marks no lines, only its output',
+      `!document.querySelector('#program-card .program-diagnostics') && !document.querySelector('#source-lines .is-error, #source-lines .is-outlined') && document.querySelector('#program-card details.program-output pre').textContent.includes('Stack dump:')`);
+  },
 };
 
 try {
@@ -188,4 +236,5 @@ try {
 } finally {
   ws.close();
   await fetch(`${cdp}/json/close/${page.id}`);
+  await rm(writtenSources, { recursive: true, force: true });
 }
