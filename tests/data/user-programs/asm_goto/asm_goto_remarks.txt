@@ -1,0 +1,86 @@
+/workspace/user-programs/asm_goto.c:9:12: remark: 'is_positive' inlined into 'main' with (cost=-25, threshold=250) at callsite main:1:12; [-Rpass=inline]
+    9 |     return is_positive(5) && !is_positive(-5) ? 0 : 1;
+      |            ^
+/workspace/user-programs/asm_goto.c:9:31: remark: 'is_positive' inlined into 'main' with (cost=-25, threshold=250) at callsite main:1:31; [-Rpass=inline]
+    9 |     return is_positive(5) && !is_positive(-5) ? 0 : 1;
+      |                               ^
+/workspace/user-programs/asm_goto.c:1:1: remark: X86 DAG->DAG Instruction Selection: Function: is_positive: MI Instruction count changed from 0 to 10; Delta: 10 [-Rpass-analysis=size-info]
+    1 | int is_positive(int x) {
+      | ^
+/workspace/user-programs/asm_goto.c:1:1: remark: Eliminate PHI nodes for register allocation: Function: is_positive: MI Instruction count changed from 10 to 12; Delta: 2 [-Rpass-analysis=size-info]
+/workspace/user-programs/asm_goto.c:1:1: remark: Register Coalescer: Function: is_positive: MI Instruction count changed from 12 to 8; Delta: -4 [-Rpass-analysis=size-info]
+/workspace/user-programs/asm_goto.c:1:1: remark: Debug Variable Analysis: Function: is_positive: MI Instruction count changed from 8 to 7; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/asm_goto.c:1:1: remark: Virtual Register Rewriter: Function: is_positive: MI Instruction count changed from 7 to 6; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/asm_goto.c:1:1: remark: 0 stack bytes in function 'is_positive' [-Rpass-analysis=prologepilog]
+/workspace/user-programs/asm_goto.c:1:1: remark: Live DEBUG_VALUE analysis: Function: is_positive: MI Instruction count changed from 6 to 8; Delta: 2 [-Rpass-analysis=size-info]
+/workspace/user-programs/asm_goto.c:1:1: remark: 
+Function: is_positive [-Rpass-analysis=stack-frame-layout]
+/workspace/user-programs/asm_goto.c:1:5: note: could not determine the original source location for user-programs/asm_goto.c:0:0
+    1 | int is_positive(int x) {
+      |     ^
+/workspace/user-programs/asm_goto.c:1:5: remark: BasicBlock: entry
+XOR32rr: 1
+ [-Rpass-analysis=asm-printer]
+    1 | int is_positive(int x) {
+      |     ^
+/workspace/user-programs/asm_goto.c:1:5: note: could not determine the original source location for user-programs/asm_goto.c:0:0
+/workspace/user-programs/asm_goto.c:1:5: note: could not determine the original source location for user-programs/asm_goto.c:0:0
+/workspace/user-programs/asm_goto.c:1:5: remark: BasicBlock: return
+RET64: 1
+ [-Rpass-analysis=asm-printer]
+    1 | int is_positive(int x) {
+      |     ^
+/workspace/user-programs/asm_goto.c:1:5: note: could not determine the original source location for user-programs/asm_goto.c:0:0
+/workspace/user-programs/asm_goto.c:1:5: note: could not determine the original source location for user-programs/asm_goto.c:0:0
+/workspace/user-programs/asm_goto.c:1:5: remark: BasicBlock: positive
+MOV32ri: 1
+RET64: 1
+ [-Rpass-analysis=asm-printer]
+    1 | int is_positive(int x) {
+      |     ^
+/workspace/user-programs/asm_goto.c:1:5: note: could not determine the original source location for user-programs/asm_goto.c:0:0
+/workspace/user-programs/asm_goto.c:1:1: remark: 4 instructions in function [-Rpass-analysis=asm-printer]
+    1 | int is_positive(int x) {
+      | ^
+/workspace/user-programs/asm_goto.c:8:1: remark: X86 DAG->DAG Instruction Selection: Function: main: MI Instruction count changed from 0 to 17; Delta: 17 [-Rpass-analysis=size-info]
+    8 | int main(void) {
+      | ^
+/workspace/user-programs/asm_goto.c:8:1: remark: Machine Common Subexpression Elimination: Function: main: MI Instruction count changed from 17 to 16; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/asm_goto.c:8:1: remark: Peephole Optimizations: Function: main: MI Instruction count changed from 16 to 14; Delta: -2 [-Rpass-analysis=size-info]
+/workspace/user-programs/asm_goto.c:8:1: remark: Eliminate PHI nodes for register allocation: Function: main: MI Instruction count changed from 14 to 17; Delta: 3 [-Rpass-analysis=size-info]
+/workspace/user-programs/asm_goto.c:8:1: remark: Register Coalescer: Function: main: MI Instruction count changed from 17 to 14; Delta: -3 [-Rpass-analysis=size-info]
+/workspace/user-programs/asm_goto.c:8:1: remark: Debug Variable Analysis: Function: main: MI Instruction count changed from 14 to 11; Delta: -3 [-Rpass-analysis=size-info]
+/workspace/user-programs/asm_goto.c:8:1: remark: Virtual Register Rewriter: Function: main: MI Instruction count changed from 11 to 13; Delta: 2 [-Rpass-analysis=size-info]
+/workspace/user-programs/asm_goto.c:8:1: remark: 0 stack bytes in function 'main' [-Rpass-analysis=prologepilog]
+/workspace/user-programs/asm_goto.c:8:1: remark: 
+Function: main [-Rpass-analysis=stack-frame-layout]
+/workspace/user-programs/asm_goto.c:8:5: note: could not determine the original source location for user-programs/asm_goto.c:0:0
+    8 | int main(void) {
+      |     ^
+/workspace/user-programs/asm_goto.c:8:5: remark: BasicBlock: entry
+MOV32ri: 2
+ [-Rpass-analysis=asm-printer]
+    8 | int main(void) {
+      |     ^
+/workspace/user-programs/asm_goto.c:8:5: note: could not determine the original source location for user-programs/asm_goto.c:0:0
+/workspace/user-programs/asm_goto.c:9:5: remark: BasicBlock: land.end
+RET64: 1
+ [-Rpass-analysis=asm-printer]
+    9 |     return is_positive(5) && !is_positive(-5) ? 0 : 1;
+      |     ^
+/workspace/user-programs/asm_goto.c:4:1: remark: BasicBlock: land.rhs
+JMP_1: 1
+MOV32ri: 1
+XOR32rr: 1
+ [-Rpass-analysis=asm-printer]
+    4 | positive:
+      | ^
+/workspace/user-programs/asm_goto.c:8:5: remark: BasicBlock: positive.i3
+MOV32ri: 1
+RET64: 1
+ [-Rpass-analysis=asm-printer]
+    8 | int main(void) {
+      |     ^
+/workspace/user-programs/asm_goto.c:8:1: remark: 8 instructions in function [-Rpass-analysis=asm-printer]
+    8 | int main(void) {
+      | ^

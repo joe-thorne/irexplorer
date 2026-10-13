@@ -1,0 +1,53 @@
+--- !Analysis
+Pass:            loop-vectorize
+Name:            LoopContainsUnsupportedTerminator
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 5, Column: 5 }
+Function:        run
+Args:
+  - String:          'loop not vectorized: '
+  - String:          Loop contains an unsupported terminator
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            NonReductionValueUsedOutsideLoop
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 0, Column: 0 }
+Function:        run
+Args:
+  - String:          'loop not vectorized: '
+  - String:          value that could not be identified as reduction is used outside the loop
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            NonReductionValueUsedOutsideLoop
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 5, Column: 5 }
+Function:        run
+Args:
+  - String:          'loop not vectorized: '
+  - String:          value that could not be identified as reduction is used outside the loop
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            EarlyExitTooManySuccessors
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 5, Column: 5 }
+Function:        run
+Args:
+  - String:          'loop not vectorized: '
+  - String:          Incorrect number of successors from early exiting block
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            CantComputeNumberOfIterations
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 5, Column: 5 }
+Function:        run
+Args:
+  - String:          'loop not vectorized: '
+  - String:          could not determine number of loop iterations
+...
+--- !Missed
+Pass:            loop-vectorize
+Name:            MissedDetails
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 5, Column: 5 }
+Function:        run
+Args:
+  - String:          loop not vectorized
+...

@@ -1,0 +1,1441 @@
+/workspace/user-programs/word_frequency.c:39:1: remark: eliminating argument table(0) [-Rpass=argpromotion]
+   39 | static void table_init(struct table *table) {
+      | ^
+/workspace/user-programs/word_frequency.c:82:27: remark: marked as tail call candidate (readnone) [-Rpass=tailcallelim]
+   82 |     while (*p != '\0' && !isalpha((unsigned char)*p)) {
+      |                           ^
+/workspace/user-programs/word_frequency.c:86:12: remark: marked as tail call candidate (readnone) [-Rpass=tailcallelim]
+   86 |     while (isalpha((unsigned char)*p)) {
+      |            ^
+/workspace/user-programs/word_frequency.c:88:36: remark: marked as tail call candidate (readnone) [-Rpass=tailcallelim]
+   88 |             word[length++] = (char)tolower((unsigned char)*p);
+      |                                    ^
+/workspace/user-programs/word_frequency.c:82:27: remark: hoisting call [-Rpass=licm]
+   82 |     while (*p != '\0' && !isalpha((unsigned char)*p)) {
+      |                           ^
+/workspace/user-programs/word_frequency.c:82:27: remark: hoisting load [-Rpass=licm]
+/workspace/user-programs/word_frequency.c:86:12: remark: hoisting call [-Rpass=licm]
+   86 |     while (isalpha((unsigned char)*p)) {
+      |            ^
+/workspace/user-programs/word_frequency.c:86:12: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+/workspace/user-programs/word_frequency.c:86:12: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+/workspace/user-programs/word_frequency.c:86:5: remark: advising against unrolling the loop because it contains a call [-Rpass=TTI]
+   86 |     while (isalpha((unsigned char)*p)) {
+      |     ^
+/workspace/user-programs/word_frequency.c:86:35: remark: load of type i8 eliminated [-Rpass=gvn]
+   86 |     while (isalpha((unsigned char)*p)) {
+      |                                   ^
+/workspace/user-programs/word_frequency.c:86:12: remark: load of type ptr not eliminated [-Rpass-missed=gvn]
+   86 |     while (isalpha((unsigned char)*p)) {
+      |            ^
+/workspace/user-programs/word_frequency.c:86:12: remark: load eliminated by PRE [-Rpass=gvn]
+/workspace/user-programs/word_frequency.c:86:35: remark: load of type i8 not eliminated [-Rpass-missed=gvn]
+   86 |     while (isalpha((unsigned char)*p)) {
+      |                                   ^
+/workspace/user-programs/word_frequency.c:86:12: remark: load of type ptr not eliminated [-Rpass-missed=gvn]
+   86 |     while (isalpha((unsigned char)*p)) {
+      |            ^
+/workspace/user-programs/word_frequency.c:86:35: remark: load of type i8 not eliminated [-Rpass-missed=gvn]
+   86 |     while (isalpha((unsigned char)*p)) {
+      |                                   ^
+/workspace/user-programs/word_frequency.c:86:12: remark: load of type ptr not eliminated [-Rpass-missed=gvn]
+   86 |     while (isalpha((unsigned char)*p)) {
+      |            ^
+/workspace/user-programs/word_frequency.c:86:35: remark: load of type i8 not eliminated [-Rpass-missed=gvn]
+   86 |     while (isalpha((unsigned char)*p)) {
+      |                                   ^
+/workspace/user-programs/word_frequency.c:86:12: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   86 |     while (isalpha((unsigned char)*p)) {
+      |            ^
+/workspace/user-programs/word_frequency.c:45:26: remark: 'hash_word' inlined into 'table_add' with (cost=10, threshold=250) at callsite table_add:1:26; [-Rpass=inline]
+   45 |     unsigned int index = hash_word(word) % TABLE_SIZE;
+      |                          ^
+/workspace/user-programs/word_frequency.c:44:1: remark: eliminating argument table(0) [-Rpass=argpromotion]
+   44 | static int table_add(struct table *table, const char *word, int position) {
+      | ^
+/workspace/user-programs/word_frequency.c:48:19: remark: sinking getelementptr [-Rpass=licm]
+   48 |         if (slot->count == 0) {
+      |                   ^
+/workspace/user-programs/word_frequency.c:46:5: remark: advising against unrolling the loop because it contains a call [-Rpass=TTI]
+   46 |     for (int probe = 0; probe < TABLE_SIZE; probe++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:48:19: remark: sinking getelementptr [-Rpass=licm]
+   48 |         if (slot->count == 0) {
+      |                   ^
+/workspace/user-programs/word_frequency.c:100:12: remark: 'next_word' inlined into 'count_words' with (cost=-14815, threshold=250) at callsite count_words:3:12; [-Rpass=inline]
+  100 |     while (next_word(&text, word) > 0) {
+      |            ^
+/workspace/user-programs/word_frequency.c:101:13: remark: 'table_add' inlined into 'count_words' with (cost=-14820, threshold=250) at callsite count_words:4:13; [-Rpass=inline]
+  101 |         if (table_add(table, word, position) < 0) {
+      |             ^
+/workspace/user-programs/word_frequency.c:97:1: remark: eliminating argument table(0) [-Rpass=argpromotion]
+   97 | static int count_words(struct table *table, const char *text) {
+      | ^
+/workspace/user-programs/word_frequency.c:97:1: remark: eliminating argument text(1) [-Rpass=argpromotion]
+/workspace/user-programs/word_frequency.c:97:12: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+   97 | static int count_words(struct table *table, const char *text) {
+      |            ^
+/workspace/user-programs/word_frequency.c:97:12: remark: marked as tail call candidate (readnone) [-Rpass=tailcallelim]
+   97 | static int count_words(struct table *table, const char *text) {
+      |            ^
+/workspace/user-programs/word_frequency.c:97:12: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:88:36: remark: marked as tail call candidate (readnone) [-Rpass=tailcallelim]
+   88 |             word[length++] = (char)tolower((unsigned char)*p);
+      |                                    ^
+/workspace/user-programs/word_frequency.c:48:19: remark: sinking getelementptr [-Rpass=licm]
+   48 |         if (slot->count == 0) {
+      |                   ^
+/workspace/user-programs/word_frequency.c:97:12: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+   97 | static int count_words(struct table *table, const char *text) {
+      |            ^
+/workspace/user-programs/word_frequency.c:97:12: remark: hoisting call [-Rpass=licm]
+   97 | static int count_words(struct table *table, const char *text) {
+      |            ^
+/workspace/user-programs/word_frequency.c:97:12: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:97:12: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   97 | static int count_words(struct table *table, const char *text) {
+      |            ^
+/workspace/user-programs/word_frequency.c:86:12: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   86 |     while (isalpha((unsigned char)*p)) {
+      |            ^
+/workspace/user-programs/word_frequency.c:32:32: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   32 |     for (const char *p = word; *p != '\0'; p++) {
+      |                                ^
+/workspace/user-programs/word_frequency.c:52:24: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   52 |             table->used++;
+      |                        ^
+/workspace/user-programs/word_frequency.c:52:24: remark: failed to hoist load with loop-invariant address because load is conditionally executed [-Rpass-missed=licm]
+/workspace/user-programs/word_frequency.c:52:24: remark: Moving accesses to memory location out of the loop [-Rpass=licm]
+/workspace/user-programs/word_frequency.c:97:12: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   97 | static int count_words(struct table *table, const char *text) {
+      |            ^
+/workspace/user-programs/word_frequency.c:86:12: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   86 |     while (isalpha((unsigned char)*p)) {
+      |            ^
+/workspace/user-programs/word_frequency.c:32:32: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   32 |     for (const char *p = word; *p != '\0'; p++) {
+      |                                ^
+/workspace/user-programs/word_frequency.c:86:5: remark: advising against unrolling the loop because it contains a call [-Rpass=TTI]
+   86 |     while (isalpha((unsigned char)*p)) {
+      |     ^
+/workspace/user-programs/word_frequency.c:46:5: remark: advising against unrolling the loop because it contains a call [-Rpass=TTI]
+   46 |     for (int probe = 0; probe < TABLE_SIZE; probe++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:100:5: remark: advising against unrolling the loop because it contains a call [-Rpass=TTI]
+  100 |     while (next_word(&text, word) > 0) {
+      |     ^
+/workspace/user-programs/word_frequency.c:82:12: remark: load of type i8 not eliminated [-Rpass-missed=gvn]
+   82 |     while (*p != '\0' && !isalpha((unsigned char)*p)) {
+      |            ^
+/workspace/user-programs/word_frequency.c:82:12: remark: load of type i8 not eliminated [-Rpass-missed=gvn]
+/workspace/user-programs/word_frequency.c:97:12: remark: load of type ptr not eliminated [-Rpass-missed=gvn]
+   97 | static int count_words(struct table *table, const char *text) {
+      |            ^
+/workspace/user-programs/word_frequency.c:86:12: remark: load of type ptr not eliminated [-Rpass-missed=gvn]
+   86 |     while (isalpha((unsigned char)*p)) {
+      |            ^
+/workspace/user-programs/word_frequency.c:86:12: remark: load eliminated by PRE [-Rpass=gvn]
+/workspace/user-programs/word_frequency.c:86:35: remark: load of type i8 not eliminated [-Rpass-missed=gvn]
+   86 |     while (isalpha((unsigned char)*p)) {
+      |                                   ^
+/workspace/user-programs/word_frequency.c:32:32: remark: load of type i8 not eliminated [-Rpass-missed=gvn]
+   32 |     for (const char *p = word; *p != '\0'; p++) {
+      |                                ^
+/workspace/user-programs/word_frequency.c:82:12: remark: load of type i8 not eliminated [-Rpass-missed=gvn]
+   82 |     while (*p != '\0' && !isalpha((unsigned char)*p)) {
+      |            ^
+/workspace/user-programs/word_frequency.c:82:12: remark: load of type i8 not eliminated [-Rpass-missed=gvn]
+/workspace/user-programs/word_frequency.c:86:12: remark: load of type ptr not eliminated [-Rpass-missed=gvn]
+   86 |     while (isalpha((unsigned char)*p)) {
+      |            ^
+/workspace/user-programs/word_frequency.c:86:35: remark: load of type i8 not eliminated [-Rpass-missed=gvn]
+   86 |     while (isalpha((unsigned char)*p)) {
+      |                                   ^
+/workspace/user-programs/word_frequency.c:32:32: remark: load of type i8 not eliminated [-Rpass-missed=gvn]
+   32 |     for (const char *p = word; *p != '\0'; p++) {
+      |                                ^
+/workspace/user-programs/word_frequency.c:48:19: remark: sinking getelementptr [-Rpass=licm]
+   48 |         if (slot->count == 0) {
+      |                   ^
+/workspace/user-programs/word_frequency.c:86:12: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   86 |     while (isalpha((unsigned char)*p)) {
+      |            ^
+/workspace/user-programs/word_frequency.c:32:32: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   32 |     for (const char *p = word; *p != '\0'; p++) {
+      |                                ^
+/workspace/user-programs/word_frequency.c:120:1: remark: eliminating argument table(0) [-Rpass=argpromotion]
+  120 | static int collect(const struct table *table, struct entry *out) {
+      | ^
+/workspace/user-programs/word_frequency.c:120:1: remark: eliminating argument out(1) [-Rpass=argpromotion]
+/workspace/user-programs/word_frequency.c:141:1: remark: eliminating argument entries(0) [-Rpass=argpromotion]
+  141 | static const struct entry *longest(const struct entry *entries, int n) {
+      | ^
+/workspace/user-programs/word_frequency.c:144:5: remark: advising against unrolling the loop because it contains a call [-Rpass=TTI]
+  144 |     for (int i = 0; i < n; i++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:167:5: remark: 'putchar' inlined into 'print_bar' with (cost=10, threshold=487) at callsite print_bar:5:5; [-Rpass=inline]
+  167 |     putchar('\n');
+      |     ^
+/workspace/user-programs/word_frequency.c:165:9: remark: 'putchar' inlined into 'print_bar' with (cost=10, threshold=487) at callsite print_bar:3:9; [-Rpass=inline]
+  165 |         putchar('#');
+      |         ^
+In file included from /workspace/user-programs/word_frequency.c:4:
+In file included from /usr/include/stdio.h:976:
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   84 |   return putc (__c, stdout);
+      |                     ^
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+/workspace/user-programs/word_frequency.c:164:5: remark: advising against unrolling the loop because it contains a call [-Rpass=TTI]
+  164 |     for (int i = 0; i < width; i++) {
+      |     ^
+In file included from /workspace/user-programs/word_frequency.c:4:
+In file included from /usr/include/stdio.h:976:
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: load of type ptr not eliminated [-Rpass-missed=gvn]
+   84 |   return putc (__c, stdout);
+      |                     ^
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: load of type ptr not eliminated [-Rpass-missed=gvn]
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+/workspace/user-programs/word_frequency.c:131:1: remark: eliminating argument entries(0) [-Rpass=argpromotion]
+  131 | static double mean_length(const struct entry *entries, int n) {
+      | ^
+/workspace/user-programs/word_frequency.c:134:5: remark: advising against unrolling the loop because it contains a call [-Rpass=TTI]
+  134 |     for (int i = 0; i < n; i++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:154:1: remark: eliminating argument entries(0) [-Rpass=argpromotion]
+  154 | static int singletons(const struct entry *entries, int n) {
+      | ^
+/workspace/user-programs/word_frequency.c:177:32: remark: 'longest' inlined into 'report' with (cost=-14955, threshold=250) at callsite report:7:32; [-Rpass=inline]
+  177 |     const struct entry *word = longest(entries, n);
+      |                                ^
+/workspace/user-programs/word_frequency.c:175:9: remark: 'print_bar' inlined into 'report' with (cost=-14905, threshold=250) at callsite report:5:9; [-Rpass=inline]
+  175 |         print_bar(entries[i].count, entries[0].count);
+      |         ^
+/workspace/user-programs/word_frequency.c:181:43: remark: 'mean_length' inlined into 'report' with (cost=-14920, threshold=250) at callsite report:11:43; [-Rpass=inline]
+  181 |     printf("mean length: %.2f letters\n", mean_length(entries, n));
+      |                                           ^
+/workspace/user-programs/word_frequency.c:182:37: remark: 'singletons' inlined into 'report' with (cost=-14985, threshold=250) at callsite report:12:37; [-Rpass=inline]
+  182 |     printf("words seen once: %d\n", singletons(entries, n));
+      |                                     ^
+/workspace/user-programs/word_frequency.c:170:1: remark: eliminating argument entries(0) [-Rpass=argpromotion]
+  170 | static void report(const struct entry *entries, int n, int total) {
+      | ^
+In file included from /workspace/user-programs/word_frequency.c:4:
+In file included from /usr/include/stdio.h:976:
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   84 |   return putc (__c, stdout);
+      |                     ^
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+/workspace/user-programs/word_frequency.c:175:48: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+  175 |         print_bar(entries[i].count, entries[0].count);
+      |                                                ^
+In file included from /workspace/user-programs/word_frequency.c:4:
+In file included from /usr/include/stdio.h:976:
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   84 |   return putc (__c, stdout);
+      |                     ^
+/workspace/user-programs/word_frequency.c:175:48: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+  175 |         print_bar(entries[i].count, entries[0].count);
+      |                                                ^
+In file included from /workspace/user-programs/word_frequency.c:4:
+In file included from /usr/include/stdio.h:976:
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   84 |   return putc (__c, stdout);
+      |                     ^
+/workspace/user-programs/word_frequency.c:164:5: remark: advising against unrolling the loop because it contains a call [-Rpass=TTI]
+  164 |     for (int i = 0; i < width; i++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:173:5: remark: advising against unrolling the loop because it contains a call [-Rpass=TTI]
+  173 |     for (int i = 0; i < shown; i++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:144:5: remark: advising against unrolling the loop because it contains a call [-Rpass=TTI]
+  144 |     for (int i = 0; i < n; i++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:134:5: remark: advising against unrolling the loop because it contains a call [-Rpass=TTI]
+  134 |     for (int i = 0; i < n; i++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:174:58: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+  174 |         printf("%-10s %3d ", entries[i].word, entries[i].count);
+      |                                                          ^
+/workspace/user-programs/word_frequency.c:175:48: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+  175 |         print_bar(entries[i].count, entries[0].count);
+      |                                                ^
+/workspace/user-programs/word_frequency.c:175:30: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+  175 |         print_bar(entries[i].count, entries[0].count);
+      |                              ^
+In file included from /workspace/user-programs/word_frequency.c:4:
+In file included from /usr/include/stdio.h:976:
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: load of type ptr not eliminated [-Rpass-missed=gvn]
+   84 |   return putc (__c, stdout);
+      |                     ^
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: load of type ptr not eliminated [-Rpass-missed=gvn]
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: load of type ptr not eliminated [-Rpass-missed=gvn]
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: load of type ptr not eliminated [-Rpass-missed=gvn]
+/workspace/user-programs/word_frequency.c:135:63: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+  135 |         letters += (long)strlen(entries[i].word) * entries[i].count;
+      |                                                               ^
+/workspace/user-programs/word_frequency.c:135:63: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+/workspace/user-programs/word_frequency.c:135:63: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+/workspace/user-programs/word_frequency.c:174:58: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+  174 |         printf("%-10s %3d ", entries[i].word, entries[i].count);
+      |                                                          ^
+/workspace/user-programs/word_frequency.c:175:48: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+  175 |         print_bar(entries[i].count, entries[0].count);
+      |                                                ^
+/workspace/user-programs/word_frequency.c:175:30: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+  175 |         print_bar(entries[i].count, entries[0].count);
+      |                              ^
+In file included from /workspace/user-programs/word_frequency.c:4:
+In file included from /usr/include/stdio.h:976:
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: load of type ptr not eliminated [-Rpass-missed=gvn]
+   84 |   return putc (__c, stdout);
+      |                     ^
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: load of type ptr not eliminated [-Rpass-missed=gvn]
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: load of type ptr not eliminated [-Rpass-missed=gvn]
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: load of type ptr not eliminated [-Rpass-missed=gvn]
+/workspace/user-programs/word_frequency.c:135:63: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+  135 |         letters += (long)strlen(entries[i].word) * entries[i].count;
+      |                                                               ^
+/workspace/user-programs/word_frequency.c:135:63: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+/workspace/user-programs/word_frequency.c:135:63: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+In file included from /workspace/user-programs/word_frequency.c:4:
+In file included from /usr/include/stdio.h:976:
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   84 |   return putc (__c, stdout);
+      |                     ^
+/workspace/user-programs/word_frequency.c:175:48: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+  175 |         print_bar(entries[i].count, entries[0].count);
+      |                                                ^
+In file included from /workspace/user-programs/word_frequency.c:4:
+In file included from /usr/include/stdio.h:976:
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   84 |   return putc (__c, stdout);
+      |                     ^
+/workspace/user-programs/word_frequency.c:65:26: remark: 'hash_word' inlined into 'table_lookup' with (cost=-14990, threshold=250) at callsite table_lookup:1:26; [-Rpass=inline]
+   65 |     unsigned int index = hash_word(word) % TABLE_SIZE;
+      |                          ^
+/workspace/user-programs/word_frequency.c:64:1: remark: eliminating argument table(0) [-Rpass=argpromotion]
+   64 | static int table_lookup(const struct table *table, const char *word) {
+      | ^
+/workspace/user-programs/word_frequency.c:66:5: remark: advising against unrolling the loop because it contains a call [-Rpass=TTI]
+   66 |     for (int probe = 0; probe < TABLE_SIZE; probe++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:188:5: remark: 'table_init' inlined into 'main' with (cost=-15025, threshold=375) at callsite main:3:5; [-Rpass=inline]
+  188 |     table_init(&table);
+      |     ^
+/workspace/user-programs/word_frequency.c:189:17: remark: 'count_words' inlined into 'main' with (cost=-14525, threshold=250) at callsite main:4:17; [-Rpass=inline]
+  189 |     int total = count_words(&table, passage);
+      |                 ^
+/workspace/user-programs/word_frequency.c:190:13: remark: 'collect' inlined into 'main' with (cost=-14920, threshold=250) at callsite main:5:13; [-Rpass=inline]
+  190 |     int n = collect(&table, entries);
+      |             ^
+/workspace/user-programs/word_frequency.c:191:5: remark: 'report' inlined into 'main' with (cost=-14380, threshold=250) at callsite main:6:5; [-Rpass=inline]
+  191 |     report(entries, n, total);
+      |     ^
+/workspace/user-programs/word_frequency.c:192:17: remark: 'table_lookup' inlined into 'main' with (cost=105, threshold=250) at callsite main:7:17; [-Rpass=inline]
+  192 |     int foxes = table_lookup(&table, "fox");
+      |                 ^
+/workspace/user-programs/word_frequency.c:193:16: remark: 'table_lookup' inlined into 'main' with (cost=-14895, threshold=250) at callsite main:8:16; [-Rpass=inline]
+  193 |     int cats = table_lookup(&table, "cat");
+      |                ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: remark: marked as tail call candidate (readnone) [-Rpass=tailcallelim]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:88:36: remark: marked as tail call candidate (readnone) [-Rpass=tailcallelim]
+   88 |             word[length++] = (char)tolower((unsigned char)*p);
+      |                                    ^
+/workspace/user-programs/word_frequency.c:48:19: remark: sinking getelementptr [-Rpass=licm]
+   48 |         if (slot->count == 0) {
+      |                   ^
+/workspace/user-programs/word_frequency.c:86:12: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   86 |     while (isalpha((unsigned char)*p)) {
+      |            ^
+/workspace/user-programs/word_frequency.c:32:32: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   32 |     for (const char *p = word; *p != '\0'; p++) {
+      |                                ^
+/workspace/user-programs/word_frequency.c:86:12: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   86 |     while (isalpha((unsigned char)*p)) {
+      |            ^
+/workspace/user-programs/word_frequency.c:32:32: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   32 |     for (const char *p = word; *p != '\0'; p++) {
+      |                                ^
+In file included from /workspace/user-programs/word_frequency.c:4:
+In file included from /usr/include/stdio.h:976:
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   84 |   return putc (__c, stdout);
+      |                     ^
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+/workspace/user-programs/word_frequency.c:175:48: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+  175 |         print_bar(entries[i].count, entries[0].count);
+      |                                                ^
+In file included from /workspace/user-programs/word_frequency.c:4:
+In file included from /usr/include/stdio.h:976:
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   84 |   return putc (__c, stdout);
+      |                     ^
+/workspace/user-programs/word_frequency.c:175:48: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+  175 |         print_bar(entries[i].count, entries[0].count);
+      |                                                ^
+In file included from /workspace/user-programs/word_frequency.c:4:
+In file included from /usr/include/stdio.h:976:
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   84 |   return putc (__c, stdout);
+      |                     ^
+/workspace/user-programs/word_frequency.c:86:5: remark: advising against unrolling the loop because it contains a call [-Rpass=TTI]
+   86 |     while (isalpha((unsigned char)*p)) {
+      |     ^
+/workspace/user-programs/word_frequency.c:46:5: remark: advising against unrolling the loop because it contains a call [-Rpass=TTI]
+   46 |     for (int probe = 0; probe < TABLE_SIZE; probe++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:100:5: remark: advising against unrolling the loop because it contains a call [-Rpass=TTI]
+  100 |     while (next_word(&text, word) > 0) {
+      |     ^
+/workspace/user-programs/word_frequency.c:164:5: remark: advising against unrolling the loop because it contains a call [-Rpass=TTI]
+  164 |     for (int i = 0; i < width; i++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:173:5: remark: advising against unrolling the loop because it contains a call [-Rpass=TTI]
+  173 |     for (int i = 0; i < shown; i++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:144:5: remark: advising against unrolling the loop because it contains a call [-Rpass=TTI]
+  144 |     for (int i = 0; i < n; i++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:134:5: remark: advising against unrolling the loop because it contains a call [-Rpass=TTI]
+  134 |     for (int i = 0; i < n; i++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:32:5: remark: Loop deleted because it is invariant [-Rpass=loop-delete]
+   32 |     for (const char *p = word; *p != '\0'; p++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:66:5: remark: advising against unrolling the loop because it contains a call [-Rpass=TTI]
+   66 |     for (int probe = 0; probe < TABLE_SIZE; probe++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:32:5: remark: Loop deleted because it is invariant [-Rpass=loop-delete]
+   32 |     for (const char *p = word; *p != '\0'; p++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:66:5: remark: advising against unrolling the loop because it contains a call [-Rpass=TTI]
+   66 |     for (int probe = 0; probe < TABLE_SIZE; probe++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:82:12: remark: load of type i8 not eliminated [-Rpass-missed=gvn]
+   82 |     while (*p != '\0' && !isalpha((unsigned char)*p)) {
+      |            ^
+/workspace/user-programs/word_frequency.c:82:12: remark: load of type i8 not eliminated [-Rpass-missed=gvn]
+/workspace/user-programs/word_frequency.c:86:12: remark: load of type ptr not eliminated [-Rpass-missed=gvn]
+   86 |     while (isalpha((unsigned char)*p)) {
+      |            ^
+/workspace/user-programs/word_frequency.c:86:12: remark: load of type ptr not eliminated [-Rpass-missed=gvn]
+/workspace/user-programs/word_frequency.c:86:35: remark: load of type i8 not eliminated [-Rpass-missed=gvn]
+   86 |     while (isalpha((unsigned char)*p)) {
+      |                                   ^
+/workspace/user-programs/word_frequency.c:32:32: remark: load of type i8 not eliminated [-Rpass-missed=gvn]
+   32 |     for (const char *p = word; *p != '\0'; p++) {
+      |                                ^
+/workspace/user-programs/word_frequency.c:123:29: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+  123 |         if (table->slots[i].count > 0) {
+      |                             ^
+/workspace/user-programs/word_frequency.c:123:29: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+/workspace/user-programs/word_frequency.c:123:29: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+/workspace/user-programs/word_frequency.c:174:58: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+  174 |         printf("%-10s %3d ", entries[i].word, entries[i].count);
+      |                                                          ^
+/workspace/user-programs/word_frequency.c:175:48: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+  175 |         print_bar(entries[i].count, entries[0].count);
+      |                                                ^
+/workspace/user-programs/word_frequency.c:175:30: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+  175 |         print_bar(entries[i].count, entries[0].count);
+      |                              ^
+In file included from /workspace/user-programs/word_frequency.c:4:
+In file included from /usr/include/stdio.h:976:
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: load of type ptr not eliminated [-Rpass-missed=gvn]
+   84 |   return putc (__c, stdout);
+      |                     ^
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: load of type ptr not eliminated [-Rpass-missed=gvn]
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: load of type ptr not eliminated [-Rpass-missed=gvn]
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: load of type ptr not eliminated [-Rpass-missed=gvn]
+/workspace/user-programs/word_frequency.c:135:63: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+  135 |         letters += (long)strlen(entries[i].word) * entries[i].count;
+      |                                                               ^
+/workspace/user-programs/word_frequency.c:135:63: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+/workspace/user-programs/word_frequency.c:82:12: remark: load of type i8 not eliminated [-Rpass-missed=gvn]
+   82 |     while (*p != '\0' && !isalpha((unsigned char)*p)) {
+      |            ^
+/workspace/user-programs/word_frequency.c:82:12: remark: load of type i8 not eliminated [-Rpass-missed=gvn]
+/workspace/user-programs/word_frequency.c:86:12: remark: load of type ptr not eliminated [-Rpass-missed=gvn]
+   86 |     while (isalpha((unsigned char)*p)) {
+      |            ^
+/workspace/user-programs/word_frequency.c:86:12: remark: load of type ptr not eliminated [-Rpass-missed=gvn]
+/workspace/user-programs/word_frequency.c:86:35: remark: load of type i8 not eliminated [-Rpass-missed=gvn]
+   86 |     while (isalpha((unsigned char)*p)) {
+      |                                   ^
+/workspace/user-programs/word_frequency.c:32:32: remark: load of type i8 not eliminated [-Rpass-missed=gvn]
+   32 |     for (const char *p = word; *p != '\0'; p++) {
+      |                                ^
+/workspace/user-programs/word_frequency.c:123:29: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+  123 |         if (table->slots[i].count > 0) {
+      |                             ^
+/workspace/user-programs/word_frequency.c:123:29: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+/workspace/user-programs/word_frequency.c:123:29: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+/workspace/user-programs/word_frequency.c:174:58: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+  174 |         printf("%-10s %3d ", entries[i].word, entries[i].count);
+      |                                                          ^
+/workspace/user-programs/word_frequency.c:175:48: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+  175 |         print_bar(entries[i].count, entries[0].count);
+      |                                                ^
+/workspace/user-programs/word_frequency.c:175:30: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+  175 |         print_bar(entries[i].count, entries[0].count);
+      |                              ^
+In file included from /workspace/user-programs/word_frequency.c:4:
+In file included from /usr/include/stdio.h:976:
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: load of type ptr not eliminated [-Rpass-missed=gvn]
+   84 |   return putc (__c, stdout);
+      |                     ^
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: load of type ptr not eliminated [-Rpass-missed=gvn]
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: load of type ptr not eliminated [-Rpass-missed=gvn]
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: load of type ptr not eliminated [-Rpass-missed=gvn]
+/workspace/user-programs/word_frequency.c:135:63: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+  135 |         letters += (long)strlen(entries[i].word) * entries[i].count;
+      |                                                               ^
+/workspace/user-programs/word_frequency.c:135:63: remark: load of type i32 not eliminated [-Rpass-missed=gvn]
+/workspace/user-programs/word_frequency.c:48:19: remark: sinking getelementptr [-Rpass=licm]
+   48 |         if (slot->count == 0) {
+      |                   ^
+/workspace/user-programs/word_frequency.c:86:12: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   86 |     while (isalpha((unsigned char)*p)) {
+      |            ^
+/workspace/user-programs/word_frequency.c:32:32: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   32 |     for (const char *p = word; *p != '\0'; p++) {
+      |                                ^
+In file included from /workspace/user-programs/word_frequency.c:4:
+In file included from /usr/include/stdio.h:976:
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   84 |   return putc (__c, stdout);
+      |                     ^
+/workspace/user-programs/word_frequency.c:175:48: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+  175 |         print_bar(entries[i].count, entries[0].count);
+      |                                                ^
+In file included from /workspace/user-programs/word_frequency.c:4:
+In file included from /usr/include/stdio.h:976:
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   84 |   return putc (__c, stdout);
+      |                     ^
+/workspace/user-programs/word_frequency.c:47:31: remark: loop not vectorized: Value cannot be used outside the loop [-Rpass-analysis=loop-vectorize]
+   47 |         struct entry *slot = &table->slots[index];
+      |                               ^
+/workspace/user-programs/word_frequency.c:48:19: remark: loop not vectorized: Value cannot be used outside the loop [-Rpass-analysis=loop-vectorize]
+   48 |         if (slot->count == 0) {
+      |                   ^
+/workspace/user-programs/word_frequency.c:55:13: remark: loop not vectorized: call instruction cannot be vectorized [-Rpass-analysis=loop-vectorize]
+   55 |         if (strcmp(slot->word, word) == 0) {
+      |             ^
+/workspace/user-programs/word_frequency.c:46:5: remark: loop not vectorized: Cannot vectorize early exit loop with more than one early exit [-Rpass-analysis=loop-vectorize]
+   46 |     for (int probe = 0; probe < TABLE_SIZE; probe++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:46:5: remark: loop not vectorized: instruction cannot be vectorized [-Rpass-analysis=loop-vectorize]
+/workspace/user-programs/word_frequency.c:46:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+/workspace/user-programs/word_frequency.c:32:5: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+   32 |     for (const char *p = word; *p != '\0'; p++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:32:5: remark: loop not vectorized: Cannot vectorize uncountable loop [-Rpass-analysis=loop-vectorize]
+/workspace/user-programs/word_frequency.c:32:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+/workspace/user-programs/word_frequency.c:32:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+/workspace/user-programs/word_frequency.c:86:5: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+   86 |     while (isalpha((unsigned char)*p)) {
+      |     ^
+/workspace/user-programs/word_frequency.c:86:5: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+/workspace/user-programs/word_frequency.c:88:36: remark: loop not vectorized: call instruction cannot be vectorized [-Rpass-analysis=loop-vectorize]
+   88 |             word[length++] = (char)tolower((unsigned char)*p);
+      |                                    ^
+/workspace/user-programs/word_frequency.c:86:5: remark: loop not vectorized: Cannot vectorize uncountable loop [-Rpass-analysis=loop-vectorize]
+   86 |     while (isalpha((unsigned char)*p)) {
+      |     ^
+/workspace/user-programs/word_frequency.c:86:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+/workspace/user-programs/word_frequency.c:86:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+/workspace/user-programs/word_frequency.c:82:5: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+   82 |     while (*p != '\0' && !isalpha((unsigned char)*p)) {
+      |     ^
+/workspace/user-programs/word_frequency.c:82:5: remark: loop not vectorized: Cannot vectorize early exit loop with more than one early exit [-Rpass-analysis=loop-vectorize]
+/workspace/user-programs/word_frequency.c:82:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+/workspace/user-programs/word_frequency.c:82:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+/workspace/user-programs/word_frequency.c:125:9: remark: loop not vectorized: Control flow cannot be substituted for a select [-Rpass-analysis=loop-vectorize]
+  125 |         }
+      |         ^
+/workspace/user-programs/word_frequency.c:122:5: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+  122 |     for (int i = 0; i < TABLE_SIZE; i++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:124:24: remark: loop not vectorized: call instruction cannot be vectorized [-Rpass-analysis=loop-vectorize]
+  124 |             out[n++] = table->slots[i];
+      |                        ^
+/workspace/user-programs/word_frequency.c:122:5: remark: loop not vectorized: instruction cannot be vectorized [-Rpass-analysis=loop-vectorize]
+  122 |     for (int i = 0; i < TABLE_SIZE; i++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:122:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+In file included from /workspace/user-programs/word_frequency.c:4:
+In file included from /usr/include/stdio.h:976:
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:10: remark: loop not vectorized: call instruction cannot be vectorized [-Rpass-analysis=loop-vectorize]
+   84 |   return putc (__c, stdout);
+      |          ^
+/workspace/user-programs/word_frequency.c:164:5: remark: loop not vectorized: instruction cannot be vectorized [-Rpass-analysis=loop-vectorize]
+  164 |     for (int i = 0; i < width; i++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:164:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+/workspace/user-programs/word_frequency.c:144:5: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+  144 |     for (int i = 0; i < n; i++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:145:25: remark: loop not vectorized: call instruction cannot be vectorized [-Rpass-analysis=loop-vectorize]
+  145 |         size_t length = strlen(entries[i].word);
+      |                         ^
+/workspace/user-programs/word_frequency.c:144:5: remark: loop not vectorized: instruction cannot be vectorized [-Rpass-analysis=loop-vectorize]
+  144 |     for (int i = 0; i < n; i++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:144:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+/workspace/user-programs/word_frequency.c:135:26: remark: loop not vectorized: call instruction cannot be vectorized [-Rpass-analysis=loop-vectorize]
+  135 |         letters += (long)strlen(entries[i].word) * entries[i].count;
+      |                          ^
+/workspace/user-programs/word_frequency.c:134:5: remark: loop not vectorized: instruction cannot be vectorized [-Rpass-analysis=loop-vectorize]
+  134 |     for (int i = 0; i < n; i++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:134:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+/workspace/user-programs/word_frequency.c:156:5: remark: loop not vectorized: Cannot vectorize early exit loop with strided fault-only-first load [-Rpass-analysis=loop-vectorize]
+  156 |     for (int i = n - 1; i >= 0 && entries[i].count == 1; i--) {
+      |     ^
+/workspace/user-programs/word_frequency.c:156:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+/workspace/user-programs/word_frequency.c:66:5: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+   66 |     for (int probe = 0; probe < TABLE_SIZE; probe++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:71:13: remark: loop not vectorized: call instruction cannot be vectorized [-Rpass-analysis=loop-vectorize]
+   71 |         if (strcmp(slot->word, word) == 0) {
+      |             ^
+/workspace/user-programs/word_frequency.c:66:5: remark: loop not vectorized: Cannot vectorize early exit loop with more than one early exit [-Rpass-analysis=loop-vectorize]
+   66 |     for (int probe = 0; probe < TABLE_SIZE; probe++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:66:5: remark: loop not vectorized: instruction cannot be vectorized [-Rpass-analysis=loop-vectorize]
+/workspace/user-programs/word_frequency.c:66:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+/workspace/user-programs/word_frequency.c:66:5: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+/workspace/user-programs/word_frequency.c:71:13: remark: loop not vectorized: call instruction cannot be vectorized [-Rpass-analysis=loop-vectorize]
+   71 |         if (strcmp(slot->word, word) == 0) {
+      |             ^
+/workspace/user-programs/word_frequency.c:66:5: remark: loop not vectorized: Cannot vectorize early exit loop with more than one early exit [-Rpass-analysis=loop-vectorize]
+   66 |     for (int probe = 0; probe < TABLE_SIZE; probe++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:66:5: remark: loop not vectorized: instruction cannot be vectorized [-Rpass-analysis=loop-vectorize]
+/workspace/user-programs/word_frequency.c:66:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+/workspace/user-programs/word_frequency.c:195:18: remark: Cannot SLP vectorize list: vectorization was impossible with available vectorization factors [-Rpass-missed=slp-vectorizer]
+  195 |     return foxes > 0 && cats == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
+      |                  ^
+/workspace/user-programs/word_frequency.c:195:22: remark: Cannot SLP vectorize list: vectorization was impossible with available vectorization factors [-Rpass-missed=slp-vectorizer]
+  195 |     return foxes > 0 && cats == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
+      |                      ^
+/workspace/user-programs/word_frequency.c:185:5: remark: Cannot SLP vectorize list: vectorization was impossible with available vectorization factors [-Rpass-missed=slp-vectorizer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: remark: List vectorization was possible but not beneficial with cost 0 >= 0 [-Rpass-missed=slp-vectorizer]
+/workspace/user-programs/word_frequency.c:185:5: remark: List vectorization was possible but not beneficial with cost 0 >= 0 [-Rpass-missed=slp-vectorizer]
+/workspace/user-programs/word_frequency.c:185:5: remark: Cannot SLP vectorize list: vectorization was impossible with available vectorization factors [-Rpass-missed=slp-vectorizer]
+/workspace/user-programs/word_frequency.c:185:5: remark: List vectorization was possible but not beneficial with cost 0 >= 0 [-Rpass-missed=slp-vectorizer]
+/workspace/user-programs/word_frequency.c:185:5: remark: List vectorization was possible but not beneficial with cost 0 >= 0 [-Rpass-missed=slp-vectorizer]
+/workspace/user-programs/word_frequency.c:138:12: remark: List vectorization was possible but not beneficial with cost 0 >= 0 [-Rpass-missed=slp-vectorizer]
+  138 |     return words > 0 ? (double)letters / (double)words : 0.0;
+      |            ^
+/workspace/user-programs/word_frequency.c:185:5: remark: List vectorization was possible but not beneficial with cost 0 >= 0 [-Rpass-missed=slp-vectorizer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: remark: Cannot SLP vectorize list: vectorization was impossible with available vectorization factors [-Rpass-missed=slp-vectorizer]
+/workspace/user-programs/word_frequency.c:144:23: remark: Cannot SLP vectorize list: vectorization was impossible with available vectorization factors [-Rpass-missed=slp-vectorizer]
+  144 |     for (int i = 0; i < n; i++) {
+      |                       ^
+/workspace/user-programs/word_frequency.c:185:5: remark: List vectorization was possible but not beneficial with cost 0 >= 0 [-Rpass-missed=slp-vectorizer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: remark: Cannot SLP vectorize list: vectorization was impossible with available vectorization factors [-Rpass-missed=slp-vectorizer]
+/workspace/user-programs/word_frequency.c:86:5: remark: advising against unrolling the loop because it contains a call [-Rpass=TTI]
+   86 |     while (isalpha((unsigned char)*p)) {
+      |     ^
+/workspace/user-programs/word_frequency.c:46:5: remark: advising against unrolling the loop because it contains a call [-Rpass=TTI]
+   46 |     for (int probe = 0; probe < TABLE_SIZE; probe++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:100:5: remark: advising against unrolling the loop because it contains a call [-Rpass=TTI]
+  100 |     while (next_word(&text, word) > 0) {
+      |     ^
+/workspace/user-programs/word_frequency.c:122:5: remark: unrolled loop by a factor of 2 [-Rpass=loop-unroll]
+  122 |     for (int i = 0; i < TABLE_SIZE; i++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:164:5: remark: advising against unrolling the loop because it contains a call [-Rpass=TTI]
+  164 |     for (int i = 0; i < width; i++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:173:5: remark: advising against unrolling the loop because it contains a call [-Rpass=TTI]
+  173 |     for (int i = 0; i < shown; i++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:144:5: remark: advising against unrolling the loop because it contains a call [-Rpass=TTI]
+  144 |     for (int i = 0; i < n; i++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:134:5: remark: advising against unrolling the loop because it contains a call [-Rpass=TTI]
+  134 |     for (int i = 0; i < n; i++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:66:5: remark: advising against unrolling the loop because it contains a call [-Rpass=TTI]
+   66 |     for (int probe = 0; probe < TABLE_SIZE; probe++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:66:5: remark: advising against unrolling the loop because it contains a call [-Rpass=TTI]
+/workspace/user-programs/word_frequency.c:86:12: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   86 |     while (isalpha((unsigned char)*p)) {
+      |            ^
+/workspace/user-programs/word_frequency.c:32:32: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   32 |     for (const char *p = word; *p != '\0'; p++) {
+      |                                ^
+In file included from /workspace/user-programs/word_frequency.c:4:
+In file included from /usr/include/stdio.h:976:
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   84 |   return putc (__c, stdout);
+      |                     ^
+/workspace/user-programs/word_frequency.c:175:48: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+  175 |         print_bar(entries[i].count, entries[0].count);
+      |                                                ^
+In file included from /workspace/user-programs/word_frequency.c:4:
+In file included from /usr/include/stdio.h:976:
+/usr/include/x86_64-linux-gnu/bits/stdio.h:84:21: remark: failed to move load with loop-invariant address because the loop may invalidate its value [-Rpass-missed=licm]
+   84 |   return putc (__c, stdout);
+      |                     ^
+/workspace/user-programs/word_frequency.c:117:15: remark: Cannot SLP vectorize list: vectorization was impossible with available vectorization factors [-Rpass-missed=slp-vectorizer]
+  117 |     return x->first_seen - y->first_seen;
+      |               ^
+/workspace/user-programs/word_frequency.c:114:12: remark: Cannot SLP vectorize list: vectorization was impossible with available vectorization factors [-Rpass-missed=slp-vectorizer]
+  114 |     if (x->count != y->count) {
+      |            ^
+/workspace/user-programs/word_frequency.c:185:5: remark: Canonicalize natural loops: IR instruction count changed from 285 to 295; Delta: 10 [-Rpass-analysis=size-info]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: remark: Canonicalize natural loops: Function: main: IR instruction count changed from 269 to 279; Delta: 10 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:5: remark: Loop Strength Reduction: IR instruction count changed from 295 to 298; Delta: 3 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:5: remark: Loop Strength Reduction: Function: main: IR instruction count changed from 279 to 282; Delta: 3 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:5: remark: Loop Strength Reduction: IR instruction count changed from 298 to 299; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:5: remark: Loop Strength Reduction: Function: main: IR instruction count changed from 282 to 283; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:5: remark: Loop Strength Reduction: IR instruction count changed from 299 to 300; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:5: remark: Loop Strength Reduction: Function: main: IR instruction count changed from 283 to 284; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:5: remark: Loop Strength Reduction: IR instruction count changed from 300 to 301; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:5: remark: Loop Strength Reduction: Function: main: IR instruction count changed from 284 to 285; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:5: remark: Loop Strength Reduction: IR instruction count changed from 301 to 303; Delta: 2 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:5: remark: Loop Strength Reduction: Function: main: IR instruction count changed from 285 to 287; Delta: 2 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:5: remark: Loop Strength Reduction: IR instruction count changed from 303 to 304; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:5: remark: Loop Strength Reduction: Function: main: IR instruction count changed from 287 to 288; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:5: remark: Loop Strength Reduction: IR instruction count changed from 304 to 305; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:5: remark: Loop Strength Reduction: Function: main: IR instruction count changed from 288 to 289; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:5: remark: CodeGen Prepare: IR instruction count changed from 305 to 296; Delta: -9 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:5: remark: CodeGen Prepare: Function: main: IR instruction count changed from 279 to 280; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:1: remark: X86 DAG->DAG Instruction Selection: Function: main: MI Instruction count changed from 0 to 595; Delta: 595 [-Rpass-analysis=size-info]
+  185 | int main(void) {
+      | ^
+/workspace/user-programs/word_frequency.c:185:1: remark: Early Tail Duplication: Function: main: MI Instruction count changed from 595 to 597; Delta: 2 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:1: remark: Merge disjoint stack slots: Function: main: MI Instruction count changed from 597 to 595; Delta: -2 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:1: remark: Remove dead machine instructions: Function: main: MI Instruction count changed from 595 to 583; Delta: -12 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:1: remark: Early Machine Loop Invariant Code Motion: Function: main: MI Instruction count changed from 583 to 574; Delta: -9 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:1: remark: Machine Common Subexpression Elimination: Function: main: MI Instruction count changed from 574 to 564; Delta: -10 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:1: remark: Machine code sinking: Function: main: MI Instruction count changed from 564 to 563; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:1: remark: Peephole Optimizations: Function: main: MI Instruction count changed from 563 to 559; Delta: -4 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:1: remark: Eliminate PHI nodes for register allocation: Function: main: MI Instruction count changed from 559 to 647; Delta: 88 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:1: remark: Two-Address instruction pass: Function: main: MI Instruction count changed from 647 to 693; Delta: 46 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:1: remark: Register Coalescer: Function: main: MI Instruction count changed from 693 to 496; Delta: -197 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:1: remark: Debug Variable Analysis: Function: main: MI Instruction count changed from 496 to 377; Delta: -119 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:66:5: remark: 2 virtual registers copies 2.167014e+01 total copies cost generated in loop [-Rpass-missed=regalloc]
+   66 |     for (int probe = 0; probe < TABLE_SIZE; probe++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:66:5: remark: 2 virtual registers copies 2.167014e+01 total copies cost generated in loop [-Rpass-missed=regalloc]
+/workspace/user-programs/word_frequency.c:134:5: remark: 1 virtual registers copies 2.000000e+01 total copies cost generated in loop [-Rpass-missed=regalloc]
+  134 |     for (int i = 0; i < n; i++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:144:5: remark: 1 virtual registers copies 2.000000e+01 total copies cost generated in loop [-Rpass-missed=regalloc]
+  144 |     for (int i = 0; i < n; i++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:173:5: remark: 1 folded reloads 2.000000e+01 total folded reloads cost 3 virtual registers copies 5.250000e+01 total copies cost generated in loop [-Rpass-missed=regalloc]
+  173 |     for (int i = 0; i < shown; i++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:46:5: remark: 3 virtual registers copies 4.859157e+02 total copies cost generated in loop [-Rpass-missed=regalloc]
+   46 |     for (int probe = 0; probe < TABLE_SIZE; probe++) {
+      |     ^
+/workspace/user-programs/word_frequency.c:100:5: remark: 2 spills 1.565875e+01 total spills cost 4 reloads 2.652350e+01 total reloads cost 5 virtual registers copies 4.962543e+02 total copies cost generated in loop [-Rpass-missed=regalloc]
+  100 |     while (next_word(&text, word) > 0) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:1: remark: 4 spills 1.728375e+01 total spills cost 1 folded spills 1.000000e+00 total folded spills cost 5 reloads 2.683585e+01 total reloads cost 1 folded reloads 2.000000e+01 total folded reloads cost 26 virtual registers copies 6.413551e+02 total copies cost generated in function [-Rpass-missed=regalloc]
+  185 | int main(void) {
+      | ^
+/workspace/user-programs/word_frequency.c:185:1: remark: Greedy Register Allocator: Function: main: MI Instruction count changed from 377 to 395; Delta: 18 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:1: remark: Virtual Register Rewriter: Function: main: MI Instruction count changed from 395 to 512; Delta: 117 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:1: remark: 104 stack bytes in function 'main' [-Rpass-analysis=prologepilog]
+/workspace/user-programs/word_frequency.c:185:1: remark: Prologue/Epilogue Insertion & Frame Finalization: Function: main: MI Instruction count changed from 512 to 506; Delta: -6 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:1: remark: Control Flow Optimizer: Function: main: MI Instruction count changed from 506 to 471; Delta: -35 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:1: remark: Branch Probability Basic Block Placement: Function: main: MI Instruction count changed from 471 to 478; Delta: 7 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:1: remark: X86 LEA Fixup: Function: main: MI Instruction count changed from 478 to 479; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:1: remark: Live DEBUG_VALUE analysis: Function: main: MI Instruction count changed from 479 to 803; Delta: 324 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:185:1: remark: 
+Function: main
+Offset: [SP-8], Type: Spill, Align: 16, Size: 8
+Offset: [SP-16], Type: Spill, Align: 8, Size: 8
+Offset: [SP-24], Type: Spill, Align: 16, Size: 8
+Offset: [SP-32], Type: Spill, Align: 8, Size: 8
+Offset: [SP-40], Type: Spill, Align: 16, Size: 8
+Offset: [SP-48], Type: Spill, Align: 8, Size: 8
+Offset: [SP-72], Type: Variable, Align: 16, Size: 24
+Offset: [SP-80], Type: Spill, Align: 8, Size: 8
+Offset: [SP-84], Type: Spill, Align: 4, Size: 4
+Offset: [SP-96], Type: Spill, Align: 8, Size: 8
+    position @ user-programs/word_frequency.c:44
+    position @ user-programs/word_frequency.c:99
+    shown @ user-programs/word_frequency.c:171 [-Rpass-analysis=stack-frame-layout]
+/workspace/user-programs/word_frequency.c:40:5: remark: BasicBlock: entry
+PUSH64r: 6
+LEA64r: 3
+CALL64pcrel32: 2
+XOR32rr: 2
+JMP_1: 1
+MOV32mi: 1
+MOV32ri: 1
+MOV64mr: 1
+SUB64ri32: 1
+ [-Rpass-analysis=asm-printer]
+   40 |     memset(table, 0, sizeof *table);
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: if.then.i11.i
+MOV32mr: 3
+INC32r: 2
+MOV64rr: 2
+CALL64pcrel32: 1
+MOV32mi: 1
+MOV32ri: 1
+MOV32rm: 1
+MOV64rm: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: while.cond.i
+MOV64rm: 2
+JCC_1: 1
+MOVZX32rm8: 1
+TEST8rr: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: land.rhs.i.i
+JCC_1: 1
+MOVZX32rr8: 1
+TEST8mi: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: while.body.i.i
+INC64r: 1
+JCC_1: 1
+MOVZX32rm8: 1
+TEST8rr: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: 
+XOR32rr: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: while.end.i.i
+JCC_1: 1
+TEST8mi: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: while.body12.i.i.preheader
+JMP_1: 1
+XOR32rr: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: if.end.i.i
+INC64r: 1
+JCC_1: 1
+MOVZX32rm8: 1
+TEST8mi: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: while.body12.i.i
+CMP32ri: 1
+JCC_1: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: if.then.i.i
+CALL64pcrel32: 1
+INC32r: 1
+JMP_1: 1
+MOV64rm: 1
+MOV8mr: 1
+MOVSX64rr32: 1
+MOVZX32rm8: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: next_word.exit.i
+JCC_1: 1
+MOV8mi: 1
+MOVSX64rr32: 1
+TEST32rr: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: while.body.i
+JCC_1: 1
+MOV32ri: 1
+MOV64mr: 1
+MOVZX32rm8: 1
+TEST8rr: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: for.body.i.i.i.preheader
+LEA64r: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: for.body.i.i.i
+IMUL32rri: 1
+INC64r: 1
+JCC_1: 1
+MOVZX32rm8: 1
+MOVZX32rr8: 1
+TEST8rr: 1
+XOR32rr: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: for.body.i.i.preheader
+MOV32ri: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: for.body.i.i
+LEA64r: 2
+JCC_1: 1
+MOV32rm: 1
+MOV32rr: 1
+MOVZX32rr8: 1
+SHL32ri: 1
+TEST32rr: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: if.end.i10.i
+MOV64rr: 2
+CALL64pcrel32: 1
+JCC_1: 1
+TEST32rr: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: for.inc.i.i
+DEC32r: 1
+INC32r: 1
+JCC_1: 1
+JMP_1: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: if.then9.i.i
+INC32r: 2
+JMP_1: 1
+MOV32mr: 1
+MOV64rm: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: if.then.i
+MOV64rm: 3
+CALL64pcrel32: 1
+LEA64r: 1
+MOV32rr: 1
+XOR32rr: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: count_words.exit
+LEA64r: 2
+XOR32rr: 2
+JMP_1: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: for.inc.i.1
+ADD64ri32: 1
+CMP64ri32: 1
+JCC_1: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: for.body.i
+CMP32mi: 1
+JCC_1: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: if.then.i8
+MOVUPDmr: 2
+MOVUPDrm: 2
+INC32r: 1
+LEA64r: 1
+MOVSX64rr32: 1
+SHL64ri: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: for.inc.i
+CMP32mi: 1
+JCC_1: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: if.then.i8.1
+MOVUPDmr: 2
+MOVUPDrm: 2
+INC32r: 1
+JMP_1: 1
+MOVSX64rr32: 1
+SHL64ri: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: collect.exit
+LEA64r: 3
+CALL64pcrel32: 2
+MOV32rr: 2
+MOV64rr: 2
+XOR32rr: 2
+JCC_1: 1
+MOV32ri: 1
+MOVSX64rr32: 1
+TEST32rr: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: for.body.preheader.i
+CMOV32rr: 1
+CMP32ri: 1
+JMP_1: 1
+MOV32ri: 1
+MOV64mr: 1
+MOV64rm: 1
+XOR32rr: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: print_bar.exit.i
+CALL64pcrel32: 1
+CMP64rm: 1
+INC64r: 1
+JCC_1: 1
+MOV32ri: 1
+MOV64rm: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: for.body.i10
+LEA64r: 2
+MOV32rm: 2
+MOV64rr: 2
+CALL64pcrel32: 1
+JCC_1: 1
+SHL64ri: 1
+TEST32rr: 1
+XOR32rr: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: cond.end.i.i
+CDQ: 1
+IDIV32r: 1
+JCC_1: 1
+LEA64_32r: 1
+MOV32rm: 1
+SHL32ri: 1
+SUB32rr: 1
+TEST32rr: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: for.body.i36.i.preheader
+MOV32rr: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: for.body.i36.i
+CALL64pcrel32: 1
+DEC32r: 1
+JCC_1: 1
+JMP_1: 1
+MOV32ri: 1
+MOV64rm: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: for.cond.cleanup.i
+XOR32rr: 2
+MOV32rr: 1
+MOV64rr: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: for.body.i.i17
+CMOV64rr: 2
+ADD64ri32: 1
+CALL64pcrel32: 1
+CMP64rr: 1
+DEC64r: 1
+JCC_1: 1
+MOV64rr: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: longest.exit.i
+JCC_1: 1
+TEST64rr: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: if.then.i20
+CALL64pcrel32: 1
+LEA64r: 1
+MOV64rr: 1
+XOR32rr: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: for.body.i41.i.preheader
+XOR32rr: 2
+LEA64r: 1
+MOV64rr: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: for.body.i41.i
+ADD64rr: 2
+ADD64ri32: 1
+CALL64pcrel32: 1
+DEC64r: 1
+IMUL64rr: 1
+JCC_1: 1
+MOV64rr: 1
+MOVSX64rm32: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: for.cond.cleanup.i.i
+JCC_1: 1
+TEST64rr: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: select.true.sink
+CVTSI642SDrr: 2
+DIVSDrr: 1
+JMP_1: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: mean_length.exit.i
+LEA64r: 2
+CALL64pcrel32: 1
+JMP_1: 1
+MOV8ri: 1
+XORPDrr: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: 
+XORPDrr: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: select.end
+LEA64r: 3
+ADD64ri32: 1
+ADD64rr: 1
+CALL64pcrel32: 1
+MOV8ri: 1
+SHL64ri: 1
+XOR32rr: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: land.rhs.i.i24
+CMP32mi: 1
+JCC_1: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: for.body.i54.i
+ADD64ri32: 1
+CMP32rr: 1
+INC32r: 1
+JCC_1: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: 
+MOV32rr: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: report.exit
+LEA64r: 2
+MOV32ri: 2
+CALL64pcrel32: 1
+MOV32rr: 1
+XOR32rr: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: for.body.i30
+JCC_1: 1
+MOV32rm: 1
+MOV32rr: 1
+MOVZX32rr8: 1
+SHL32ri: 1
+TEST32rr: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: if.end.i34
+ADD64rr: 1
+CALL64pcrel32: 1
+JCC_1: 1
+MOV64rr: 1
+TEST32rr: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: for.inc.i35
+DEC32r: 1
+INC32r: 1
+JCC_1: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: 
+XOR32rr: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: table_lookup.exit
+MOV32ri: 2
+LEA64r: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: for.body.i46
+JCC_1: 1
+LEA64r: 1
+MOV32rm: 1
+MOV32rr: 1
+MOVZX32rr8: 1
+SHL32ri: 1
+TEST32rr: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: if.end.i54
+ADD64rr: 1
+CALL64pcrel32: 1
+JCC_1: 1
+MOV64rr: 1
+TEST32rr: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: for.inc.i57
+DEC32r: 1
+INC32r: 1
+JCC_1: 1
+JMP_1: 1
+MOV32ri: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: 
+XOR32rr: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:5: remark: BasicBlock: table_lookup.exit62
+POP64r: 6
+MOV32rr: 2
+SETCCr: 2
+TEST32rr: 2
+ADD64ri32: 1
+CALL64pcrel32: 1
+LEA64r: 1
+MOVZX32rr8: 1
+OR8rr: 1
+RET64: 1
+XOR32rr: 1
+ [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      |     ^
+/workspace/user-programs/word_frequency.c:185:5: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:185:1: remark: 311 instructions in function [-Rpass-analysis=asm-printer]
+  185 | int main(void) {
+      | ^
+/workspace/user-programs/word_frequency.c:111:1: remark: X86 DAG->DAG Instruction Selection: Function: by_count: MI Instruction count changed from 0 to 18; Delta: 18 [-Rpass-analysis=size-info]
+  111 | static int by_count(const void *a, const void *b) {
+      | ^
+/workspace/user-programs/word_frequency.c:111:1: remark: Machine Common Subexpression Elimination: Function: by_count: MI Instruction count changed from 18 to 17; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:111:1: remark: Peephole Optimizations: Function: by_count: MI Instruction count changed from 17 to 16; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:111:1: remark: Eliminate PHI nodes for register allocation: Function: by_count: MI Instruction count changed from 16 to 18; Delta: 2 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:111:1: remark: Two-Address instruction pass: Function: by_count: MI Instruction count changed from 18 to 20; Delta: 2 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:111:1: remark: Register Coalescer: Function: by_count: MI Instruction count changed from 20 to 15; Delta: -5 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:111:1: remark: Debug Variable Analysis: Function: by_count: MI Instruction count changed from 15 to 11; Delta: -4 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:111:1: remark: Virtual Register Rewriter: Function: by_count: MI Instruction count changed from 11 to 12; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:111:1: remark: 0 stack bytes in function 'by_count' [-Rpass-analysis=prologepilog]
+/workspace/user-programs/word_frequency.c:111:1: remark: Control Flow Optimizer: Function: by_count: MI Instruction count changed from 12 to 10; Delta: -2 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:111:1: remark: Live DEBUG_VALUE analysis: Function: by_count: MI Instruction count changed from 10 to 18; Delta: 8 [-Rpass-analysis=size-info]
+/workspace/user-programs/word_frequency.c:111:1: remark: 
+Function: by_count [-Rpass-analysis=stack-frame-layout]
+/workspace/user-programs/word_frequency.c:111:12: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+  111 | static int by_count(const void *a, const void *b) {
+      |            ^
+/workspace/user-programs/word_frequency.c:111:12: remark: BasicBlock: entry
+JCC_1: 1
+MOV32rm: 1
+SUB32rm: 1
+ [-Rpass-analysis=asm-printer]
+  111 | static int by_count(const void *a, const void *b) {
+      |            ^
+/workspace/user-programs/word_frequency.c:111:12: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:111:12: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:111:12: remark: BasicBlock: if.end
+MOV32rm: 1
+SUB32rm: 1
+ [-Rpass-analysis=asm-printer]
+  111 | static int by_count(const void *a, const void *b) {
+      |            ^
+/workspace/user-programs/word_frequency.c:111:12: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:111:12: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:111:12: remark: BasicBlock: cleanup
+RET64: 1
+ [-Rpass-analysis=asm-printer]
+  111 | static int by_count(const void *a, const void *b) {
+      |            ^
+/workspace/user-programs/word_frequency.c:111:12: note: could not determine the original source location for user-programs/word_frequency.c:0:0
+/workspace/user-programs/word_frequency.c:111:1: remark: 6 instructions in function [-Rpass-analysis=asm-printer]
+  111 | static int by_count(const void *a, const void *b) {
+      | ^

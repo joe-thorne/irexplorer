@@ -27,7 +27,25 @@ are asserted against fresh analysis and served correspondences. This is AI-assis
 manual artefact evidence; independent human sign-off and fresh Docker
 regeneration are separate verification steps.
 
-User programs are tested without LLVM. `test_user_programs_api.py` drives the app in-process with user programs on, pointed at the real compiler service on a loopback port. The service runs the fake `clang` and `opt` in `fake_toolchain/`, which replay the committed curated artefacts of the three unedited curated sources, looked up by the SHA-256 of the source, and fail with "no recording" for any other source. A `// irx-fake: error` line makes the fake clang fail as the pinned clang does on a call to an undeclared `abss`, and `// irx-fake: crash` makes the fake opt crash; `test_user_program_compile_failures.py` covers both. `// irx-fake: hang` never finishes (in a child process that keeps writing, as clang's own `-cc1` child would), and `// irx-fake: slow` spends 2 s in its first command and then compiles as recorded, its marker line left out of the lookup. The timeout tests start a service with a 0.5 s timeout. The cancel tests drop a request mid-compile: `test_compiler_service.py` closes its socket to the service, and `CompileCancelTests` serves the app under a real uvicorn server on loopback, since the in-process test client cannot drop a request. What is accepted as a user program is checked on both sides against the shared cases in `data/user-program-acceptance.json`: by `test_accepted_programs.py` on the server and by `scripts/check_user_programs.mjs` in the browser.
+User programs are tested without LLVM. `test_user_programs_api.py` drives the app in-process with user programs on, pointed at the real compiler service on a loopback port. The service runs the fake `clang` and `opt` in `fake_toolchain/`, which replay the committed curated artefacts of the three unedited curated sources, looked up by the SHA-256 of the source, and fail with "no recording" for any other source. A `// irx-fake: error` line makes the fake clang fail as the pinned clang does on a call to an undeclared `abss`, and `// irx-fake: crash` makes the fake opt crash; `test_user_program_compile_failures.py` covers both. `// irx-fake: hang` never finishes (in a child process that keeps writing, as clang's own `-cc1` child would), and `// irx-fake: slow` spends 2 s in its first command and then compiles as recorded, its marker line left out of the lookup. The timeout tests start a service with a 0.5 s timeout. The cancel tests drop a request mid-compile: `test_compiler_service.py` closes its socket to the service, and `CompileCancelTests` serves the app under a real uvicorn server on loopback, since the in-process test client cannot drop a request. The fake also replays the user programs in `data/user-programs`, recorded from the real toolchain (see below); `test_user_program_recordings.py` checks that each replays exactly as recorded and that the app answers each as `data/user-programs/corpus.json` says. What is accepted as a user program is checked on both sides against the shared cases in `data/user-program-acceptance.json`: by `test_accepted_programs.py` on the server and by `scripts/check_user_programs.mjs` in the browser.
+
+## Real-compiler smoke check
+
+Run by hand before the demo and before merging; it is not part of CI. With Docker and the [user-programs stack](../README.md#run-with-user-programs) up:
+
+```sh
+scripts/check_user_programs.sh
+```
+
+It fails at once without Docker or a healthy stack. Otherwise it runs `test_user_programs_smoke.py` (skipped in the offline suite) against the stack: the three unedited curated sources must compile to their committed artefacts once `examples/curated` reads `user-programs` and the output directory `out`; each recording in `data/user-programs` must still match the real toolchain (ignoring the compiler image's identity); and the app must answer each corpus program as `corpus.json` says, under a fresh file name so it compiles afresh, the realistic 200-line program within 15 s. A program with `until` answers as its `currently` until that ticket lands.
+
+The corpus sources are stored as the app sends them, each beside a directory of the same stem that holds its recording. To add a program or re-record after a deliberate toolchain change, list it in `corpus.json` and, with the stack up, run:
+
+```sh
+.venv/bin/python scripts/record_user_programs.py
+```
+
+It sends each program to the stack's compiler service (inside its container, so a program the app cannot show yet is recorded too) and rewrites its recording.
 
 ## Lint and type checks
 

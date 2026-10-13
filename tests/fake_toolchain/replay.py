@@ -5,9 +5,11 @@ commands. Nothing is compiled: each output is the artefact recorded for the same
 source, looked up by the SHA-256 of the source text (the normalised source the service was sent).
 
 The recordings are the committed curated artefacts of the three unedited curated sources, with their
-`examples/curated` paths rewritten to `user-programs`, as the compiler service would have written them.
-A source with no recording fails with a distinct "no recording" message and exit status, so a mistake
-in a test never looks like a compile failure.
+`examples/curated` paths rewritten to `user-programs`, as the compiler service would have written them,
+and the corpus in tests/data/user-programs, recorded from the real toolchain in the same layout by
+scripts/record_user_programs.py. A recorded failure (`failure.json`) replays its failing command's stderr
+and exit status. A source with no recording fails with a distinct "no recording" message and exit
+status, so a mistake in a test never looks like a compile failure.
 
 A marker line, `// irx-fake: <marker>`, chooses a failure instead of a replay:
 
@@ -23,6 +25,7 @@ A marker line, `// irx-fake: <marker>`, chooses a failure instead of a replay:
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 import subprocess
 import sys
@@ -34,11 +37,13 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
 from src.backend.toolchain import curated  # noqa: E402
+from src.backend.toolchain.generate_curated import format_command  # noqa: E402
 
 NO_RECORDING = 86
 MARKER = re.compile(r"^[ \t]*// irx-fake: (\w+)[ \t]*$", re.MULTILINE)
 # The compiler service's workspace in the compiler image, where a failure's printed paths start.
 IMAGE_WORKSPACE = Path("/workspace")
+USER_PROGRAMS = REPO_ROOT / "tests" / "data" / "user-programs"
 # clang's default -ferror-limit.
 ERROR_LIMIT = 20
 # The stand-in IR a crash-marked source compiles to, which the fake opt crashes on.
@@ -75,6 +80,12 @@ class Recording:
     def pass_remarks(self, state: curated.PassState) -> str:
         return self.text(f"{self.stem}_{state.file_suffix}_remarks.yaml")
 
+    @property
+    def failure(self) -> dict[str, str] | None:
+        """The compiler service's error for a recorded program whose compile failed."""
+        path = self.directory / "failure.json"
+        return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+
     def manifest_line(self, key: str) -> str:
         for line in self.text("manifest.txt").splitlines():
             if line.startswith(f"{key}: "):
@@ -83,12 +94,16 @@ class Recording:
 
 
 def recordings() -> dict[str, Recording]:
-    """Recordings keyed by the SHA-256 of their source text."""
+    """Recordings keyed by the SHA-256 of their source text: the curated examples first, then the user programs."""
 
-    return {
+    found = {
         _digest(curated.source_path(example).read_bytes()): Recording(curated.artefact_dir(example), example)
         for example in curated.list_examples()
     }
+    for program in json.loads((USER_PROGRAMS / "corpus.json").read_text(encoding="utf-8"))["programs"]:
+        stem = program["fileName"].removesuffix(".c")
+        found[_digest((USER_PROGRAMS / program["fileName"]).read_bytes())] = Recording(USER_PROGRAMS / stem, stem)
+    return found
 
 
 def clang(args: list[str]) -> int:
@@ -114,6 +129,8 @@ def clang(args: list[str]) -> int:
     recording = recordings().get(digest)
     if recording is None:
         return _no_recording(f"source sha256 {digest}")
+    if recording.failure is not None:
+        return _failed(recording.failure, ["clang", *args])
     level = curated.PASS_STATES[0] if "-O0" in args else curated.PASS_STATES[-1]
     if "-S" in args:
         output.write_text(recording.ir(level), encoding="utf-8")
@@ -140,6 +157,8 @@ def opt(args: list[str]) -> int:
     if received == CRASH_IR:
         return _crash(args, input_path)
     for recording in recordings().values():
+        if recording.failure is not None:
+            continue
         for previous, state in zip(curated.PASS_STATES[:-2], curated.PASS_STATES[1:-1], strict=True):
             if recording.ir(previous) != received:
                 continue
@@ -151,6 +170,15 @@ def opt(args: list[str]) -> int:
             remarks_output.write_text(recording.pass_remarks(state), encoding="utf-8")
             return 0
     return _no_recording(f"opt input {input_path}")
+
+
+def _failed(failure: dict[str, str], command: list[str]) -> int:
+    """Fail as the recorded command did; a recorded failure has no artefacts for any other command."""
+
+    if failure["command"] != format_command(command).replace(str(Path.cwd()), str(IMAGE_WORKSPACE)):
+        return _no_recording(f"command {format_command(command)}")
+    sys.stderr.write(failure["stderr"])
+    return int(re.fullmatch(r".* exited with status (\d+)\.", failure["message"]).group(1))
 
 
 def _undeclared_abss(source: Path) -> int:
