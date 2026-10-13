@@ -114,11 +114,11 @@ To check user programs by hand, start the compiler service over the fake toolcha
 
 ```sh
 .venv/bin/python -m src.backend.toolchain.compiler_service --port 8090 --toolchain tests/fake_toolchain --workspace "$(mktemp -d)"
-IREXPLORER_USER_PROGRAMS=1 IREXPLORER_COMPILER_URL=http://127.0.0.1:8090 .venv/bin/python -c "from src.backend.api.server import run_server; run_server()"
-IREXPLORER_ORIGIN=http://127.0.0.1:8000 node scripts/check_user_programs.mjs
+IREXPLORER_USER_PROGRAMS=1 IREXPLORER_COMPILER_URL=http://127.0.0.1:8090 IREXPLORER_COMPILER_TIMEOUT=5 .venv/bin/python -c "from src.backend.api.server import run_server; run_server()"
+IREXPLORER_ORIGIN=http://127.0.0.1:8000 IREXPLORER_COMPILER_PID=<compiler service pid> node scripts/check_user_programs.mjs
 ```
 
-It uploads the unedited curated sources, which the fake toolchain has recordings for, and checks the **Curated examples | Your files** switch, the compile card and a user program opening in the panels. Each scenario starts from a freshly loaded Explore page. `check_app.mjs` checks that no upload control is built with user programs off.
+It uploads the unedited curated sources, which the fake toolchain has recordings for, and checks the **Curated examples | Your files** switch, the compile card and a user program opening in the panels. It makes the compiler busy with a slow compile posted from outside the page, and unavailable by pausing the compiler service's process (`IREXPLORER_COMPILER_PID`) until the app's 5 s compiler timeout passes, then checks that **Try again** succeeds once the cause is gone. Each scenario starts from a freshly loaded Explore page. `check_app.mjs` checks that no upload control is built with user programs off.
 
 All four scripts connect to the browser on port 9239 unless `IREXPLORER_CDP_PORT` names another. Close the temporary Chrome process after testing.
 

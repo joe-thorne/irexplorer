@@ -5,6 +5,8 @@
   const LIMITS = "One C file, up to 200 lines. Standard headers are allowed.";
   const WAIT = "irexplorer compiles the unoptimised -O0 state, applies the curated pass sequence one pass at a time, "
     + "and compiles the recompiled O3 state separately. This usually takes about 5 s.";
+  // Failures where the compiler, not the program, was the problem: the same file may well work next time.
+  const RETRYABLE = new Set(["compiler_busy", "compile_timeout", "compiler_unavailable"]);
   const EMPTY_PROMPTS = {
     curated: "Choose a curated file to start comparing.",
     yours: "Upload a C file, or choose one of your files, to start comparing.",
@@ -16,7 +18,7 @@
   // The user program on screen or being opened, if any.
   let current = null;
   // What the card shows in place of the panels: null (no card), { kind: "compiling", fileName, started }
-  // or { kind: "failed", fileName, error }, where error is the server's { code, message, … }.
+  // or { kind: "failed", fileName, source, error }, where error is the server's { code, message, … }.
   let card = null;
   let ticking = null;
 
@@ -124,11 +126,14 @@
     }
   }
 
-  function failureContent({ fileName, error }) {
+  function failureContent({ fileName, source, error }) {
+    const retry = RETRYABLE.has(error.code)
+      ? [h("button", { type: "button", class: "primary", onclick: () => compile(fileName, source) }, "Try again")]
+      : [];
     return [
       h("h2", { id: "program-card-heading" }, `${fileName} could not be opened`),
       h("p", { class: "program-failure-message" }, error.message),
-      h("div", { class: "program-actions" },
+      h("div", { class: "program-actions" }, ...retry,
         h("button", { type: "button", onclick: () => view.fileInput.click() }, "Choose another file…")),
     ];
   }
@@ -159,7 +164,7 @@
     announce(`Compiling ${fileName}.`);
     const result = await postProgram(fileName, source);
     if (!result.ok) {
-      card = { kind: "failed", fileName, error: result.error };
+      card = { kind: "failed", fileName, source, error: result.error };
       render();
       announce(`Error: ${result.error.message}`, "error");
       return;

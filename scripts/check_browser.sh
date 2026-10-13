@@ -14,6 +14,9 @@ PORT=${IREXPLORER_PORT:-8000}
 CDP_PORT=${IREXPLORER_CDP_PORT:-9239}
 COMPILER_PORT=${IREXPLORER_COMPILER_PORT:-8090}
 COMPILER_URL="http://127.0.0.1:$COMPILER_PORT"
+# Seconds the app waits for the compiler service before reporting it unavailable: longer than the fake's
+# slow compile, and far shorter than the deployed 40 s.
+COMPILER_TIMEOUT=5
 export IREXPLORER_ORIGIN="http://127.0.0.1:$PORT"
 export IREXPLORER_CDP_PORT=$CDP_PORT
 
@@ -70,6 +73,7 @@ start_server() {
   IREXPLORER_STUDY_DIR="$work/study" IREXPLORER_COLLECTION_MODE=preview \
     IREXPLORER_STUDY_ORIGIN="$IREXPLORER_ORIGIN" IREXPLORER_COLLECTION_CLOSED="$1" \
     IREXPLORER_USER_PROGRAMS="$2" IREXPLORER_COMPILER_URL="$COMPILER_URL" \
+    IREXPLORER_COMPILER_TIMEOUT="$COMPILER_TIMEOUT" \
     "$PYTHON" -c "from src.backend.api.server import run_server; run_server(port=$PORT)" >"$log" 2>&1 &
   server_pid=$!
   wait_for "$IREXPLORER_ORIGIN/" || { cat "$log" >&2; return 1; }
@@ -83,6 +87,8 @@ start_compiler() {
     --toolchain tests/fake_toolchain --workspace "$work/compiler" \
     --compiler-image sha256:fake-compiler-image --libc-version fake >"$work/compiler.log" 2>&1 &
   compiler_pid=$!
+  # check_user_programs pauses it to make the compiler unavailable.
+  export IREXPLORER_COMPILER_PID=$compiler_pid
   wait_for "$COMPILER_URL/" || { cat "$work/compiler.log" >&2; return 1; }
 }
 
