@@ -54,7 +54,7 @@ Open **http://127.0.0.1:8000**. Stop the Docker application first if it already 
 
 ## Release identity
 
-The navigation displays the application version. `/api/release` exposes its source fingerprint, instrument versions, and artefact checksum. Container builds verify all pinned compiler artefacts and generate `release.json` from the packaged inputs. Git checkouts identify as development builds even when a generated `release.json` remains from an earlier build.
+The navigation displays the application version. `/api/release` exposes its source fingerprint, instrument versions, and artefact checksum, and beside them a runtime `config` object (whether user programs are on) that is not part of the release identity. Container builds verify all pinned compiler artefacts and generate `release.json` from the packaged inputs. Git checkouts identify as development builds even when a generated `release.json` remains from an earlier build.
 
 For a new version:
 

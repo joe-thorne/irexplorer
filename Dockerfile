@@ -5,7 +5,7 @@ LABEL org.opencontainers.image.title="irexplorer" \
       org.opencontainers.image.version="${APP_VERSION}"
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
     IREXPLORER_STUDY_DIR=/data IREXPLORER_COLLECTION_MODE=local \
-    IREXPLORER_STUDY_ORIGIN=http://localhost:8000
+    IREXPLORER_STUDY_ORIGIN=http://localhost:8000 IREXPLORER_USER_PROGRAMS=0
 WORKDIR /opt/irexplorer
 COPY src/backend/requirements.lock /tmp/requirements.lock
 RUN python -m pip install --no-cache-dir -r /tmp/requirements.lock \

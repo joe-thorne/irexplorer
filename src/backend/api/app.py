@@ -28,6 +28,7 @@ from src.backend.api.schemas import (
 )
 from src.backend.evaluation.router import router as study_router
 from src.backend.evaluation.service import Config, StudyService
+from src.backend.programs import UserProgramsSetting
 from src.backend.release import metadata
 
 FRONTEND_ROOT = Path(__file__).resolve().parents[2] / "frontend"
@@ -60,9 +61,16 @@ def create_app(
     service: QueryService | None = None,
     *,
     study_config: Config | None = None,
+    user_programs: UserProgramsSetting | None = None,
 ) -> FastAPI:
     """Create the same-origin API and static frontend application."""
 
+    programs = user_programs or UserProgramsSetting.environment()
+    study = study_config or Config.environment()
+    if programs.enabled and study.research:
+        # Research data is never collected beside user-supplied code.
+        raise ValueError(f"User programs cannot run with {study.collection_mode} collection; "
+                         "set IREXPLORER_USER_PROGRAMS=0 or use local collection.")
     query_service = service or QueryService()
     app = FastAPI(
         title="irexplorer curated query API",
@@ -145,7 +153,9 @@ def create_app(
 
     @app.get("/api/release")
     def release() -> JSONResponse:
-        return JSONResponse(metadata(), headers={"Cache-Control": "no-store"})
+        # The setting is runtime configuration beside the baked identity, never part of it.
+        return JSONResponse({**metadata(), "config": {"userPrograms": programs.enabled}},
+                            headers={"Cache-Control": "no-store"})
 
     @app.get("/api/examples", response_model=ExamplesResponse)
     def list_examples() -> dict[str, object]:
@@ -189,7 +199,11 @@ def create_app(
     ) -> dict[str, object]:
         return query_service.cfg(example_id, ordinal, function_id)
 
-    app.include_router(study_router(StudyService(study_config or Config.environment())))
+    app.include_router(study_router(StudyService(study)))
+    if programs.enabled:
+        # The user programs router (/api/programs) is mounted here, and only here, once it is built.
+        # With the setting off it is never mounted, so every /api/programs path is an unknown route.
+        pass
 
     app.mount("/", AppStaticFiles(directory=FRONTEND_ROOT, html=True), name="frontend")
     return app
