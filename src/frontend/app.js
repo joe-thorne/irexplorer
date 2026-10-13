@@ -751,11 +751,12 @@ window.StudyWorkspace = {
   },
   // Open a task on `workspace` (the shape `snapshot()` returns). An inheriting task
   // keeps the workspace already on screen, or opens `workspace` after a reload.
-  // Either way the task starts with no selection.
+  // Either way the task starts with no selection. Only a curated workspace is inherited:
+  // a user program on screen is replaced by `workspace`, as for a task that does not inherit.
   async prepareTask(workspace, { inherit = false } = {}) {
     appState.manualSetup = false;
     const request = ++appState.taskRequestId;
-    if (inherit && appState.ready) {
+    if (inherit && appState.ready && appState.exampleId) {
       renderWithoutSelection();
       return;
     }
