@@ -9,8 +9,15 @@ The recordings are the committed curated artefacts of the three unedited curated
 A source with no recording fails with a distinct "no recording" message and exit status, so a mistake
 in a test never looks like a compile failure.
 
-A marker line in the source, ``// irx-fake: <marker>``, chooses a failure; the rest of the source is
-looked up as usual, so a marker can be added to a recorded source.
+A marker line, `// irx-fake: <marker>`, chooses a failure instead of a replay:
+
+- `error`: clang fails as the pinned clang does on each call to an undeclared `abss` (a typo for `abs`),
+  with a note in the system header and the `/workspace` paths the compiler image would print.
+- `crash`: clang succeeds and opt crashes on the first pass, as an LLVM crash reports itself.
+- `hang`: clang never finishes, in a child process that keeps writing its output, as clang's own
+  `-cc1` child would.
+- `slow`: clang spends a couple of seconds in the first command, then the rest of the source (without
+  its marker line) replays as recorded, so a marker can be added to a recorded source.
 """
 
 from __future__ import annotations
@@ -29,11 +36,17 @@ sys.path.insert(0, str(REPO_ROOT))
 from src.backend.toolchain import curated  # noqa: E402
 
 NO_RECORDING = 86
-MARKER = re.compile(r"^// irx-fake: (\w+)$\n?", re.MULTILINE)
+MARKER = re.compile(r"^[ \t]*// irx-fake: (\w+)[ \t]*$", re.MULTILINE)
+# The compiler service's workspace in the compiler image, where a failure's printed paths start.
+IMAGE_WORKSPACE = Path("/workspace")
+# clang's default -ferror-limit.
+ERROR_LIMIT = 20
+# The stand-in IR a crash-marked source compiles to, which the fake opt crashes on.
+CRASH_IR = "; irx-fake: crash\n"
 # A slow program spends this long in its first command, then compiles as its recording says.
 SLOW_SECONDS = 2.0
-# A hanging clang's child, as clang's own -cc1 child would, keeps writing its output until it is stopped.
-# It gives up after a minute, so a compiler service that fails to stop it leaks nothing for long.
+# A hanging clang's child keeps writing its output until it is stopped. It gives up after a minute, so a
+# compiler service that fails to stop it leaks nothing for long.
 HANG = """
 import sys, time
 from pathlib import Path
@@ -85,13 +98,19 @@ def clang(args: list[str]) -> int:
         return 0
     source = Path(next(arg for arg in args if arg.endswith(".c")))
     output = Path(_after(args, "-o"))
-    text = source.read_text(encoding="utf-8")
-    markers = MARKER.findall(text)
-    if "hang" in markers:
+    text = source.read_bytes().decode("utf-8")
+    failure = _marker(text)
+    if failure == "error":
+        return _undeclared_abss(source)
+    if failure == "crash":
+        output.write_text(CRASH_IR, encoding="utf-8")
+        return 0
+    if failure == "hang":
         return subprocess.run([sys.executable, "-c", HANG, str(output)], check=False).returncode
-    if "slow" in markers and "-O0" in args and "-S" in args:
+    if failure == "slow" and "-O0" in args and "-S" in args:
         time.sleep(SLOW_SECONDS)
-    digest = _digest(MARKER.sub("", text).encode("utf-8"))
+    digest = _digest("".join(line for line in text.splitlines(keepends=True)
+                             if not MARKER.fullmatch(line.rstrip("\r\n"))).encode("utf-8"))
     recording = recordings().get(digest)
     if recording is None:
         return _no_recording(f"source sha256 {digest}")
@@ -118,6 +137,8 @@ def opt(args: list[str]) -> int:
     output = Path(_after(args, "-o"))
     (input_path,) = [arg for arg in args if not arg.startswith("-") and arg != str(output)]
     received = Path(input_path).read_text(encoding="utf-8")
+    if received == CRASH_IR:
+        return _crash(args, input_path)
     for recording in recordings().values():
         for previous, state in zip(curated.PASS_STATES[:-2], curated.PASS_STATES[1:-1], strict=True):
             if recording.ir(previous) != received:
@@ -130,6 +151,61 @@ def opt(args: list[str]) -> int:
             remarks_output.write_text(recording.pass_remarks(state), encoding="utf-8")
             return 0
     return _no_recording(f"opt input {input_path}")
+
+
+def _undeclared_abss(source: Path) -> int:
+    """Fail as the pinned clang does on each call to an undeclared ``abss``, up to its error limit."""
+
+    path = _in_image(source)
+    calls = [(number, call.start() + 1, line)
+             for number, line in enumerate(source.read_text(encoding="utf-8").splitlines(), start=1)
+             for call in re.finditer(r"\babss\(", line)]
+    if not calls:
+        print("irx-fake: an error marker needs a call to abss", file=sys.stderr)
+        return NO_RECORDING
+    report = []
+    for number, column, line in calls[:ERROR_LIMIT]:
+        report += [
+            f"{path}:{number}:{column}: error: call to undeclared function 'abss'; ISO C99 and later do not "
+            "support implicit function declarations [-Wimplicit-function-declaration]",
+            f"{number:5} | {line}",
+            f"{'':5} | {' ' * (column - 1)}^",
+            f"{path}:{number}:{column}: note: did you mean 'abs'?",
+            "/usr/include/stdlib.h:980:12: note: 'abs' declared here",
+            "  980 | extern int abs (int __x) __THROW __attribute__ ((__const__)) __wur;",
+            "      |            ^",
+        ]
+    if len(calls) > ERROR_LIMIT:
+        report.append("fatal error: too many errors emitted, stopping now [-ferror-limit=]")
+    errors = min(len(calls), ERROR_LIMIT)
+    report.append(f"{errors} error{'' if errors == 1 else 's'} generated.")
+    print("\n".join(report), file=sys.stderr)
+    return 1
+
+
+def _crash(args: list[str], input_path: str) -> int:
+    """Crash as opt does on an internal error: a stack dump naming the command and the pass it was running."""
+
+    command = " ".join(["opt", *args]).replace(str(Path.cwd()), str(IMAGE_WORKSPACE))
+    print("PLEASE submit a bug report to https://github.com/llvm/llvm-project/issues/ and include the crash "
+          "backtrace.", file=sys.stderr)
+    print("Stack dump:", file=sys.stderr)
+    print(f"0.\tProgram arguments: {command}", file=sys.stderr)
+    print(f'1.\tRunning pass "{_option(args, "-passes=")}" on module "{_in_image(Path(input_path))}"',
+          file=sys.stderr)
+    print(" #0 0x00005581c0de1f2a llvm::sys::PrintStackTrace(llvm::raw_ostream&, int)", file=sys.stderr)
+    return 139
+
+
+def _marker(source: str) -> str | None:
+    match = MARKER.search(source)
+    return match.group(1) if match else None
+
+
+def _in_image(path: Path) -> Path:
+    """A workspace path as the compiler image names it: the service runs every command from its workspace."""
+
+    return IMAGE_WORKSPACE / path.relative_to(Path.cwd())
 
 
 def _no_recording(what: str) -> int:

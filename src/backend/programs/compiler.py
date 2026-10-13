@@ -22,6 +22,11 @@ class CompileFailed(Exception):
         self.command = command
         self.output = output
 
+    @property
+    def tool(self) -> str:
+        """The failed command's tool, ``clang`` or ``opt``."""
+        return self.command.split(" ", 1)[0]
+
 
 class CompileNotFinished(Exception):
     """The compiler was busy, slow or out of reach, so the compile did not finish; trying again may work.

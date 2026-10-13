@@ -4,6 +4,7 @@
 // Each scenario starts from a freshly loaded Explore page with empty session storage; add a scenario
 // to `scenarios` for each new behaviour. Optional IREXPLORER_CHECK_OUTPUT directory for screenshots.
 // IREXPLORER_COMPILER_PID is the compiler service's process, which a scenario pauses to make it unavailable.
+import { existsSync } from 'node:fs';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -13,10 +14,11 @@ const cdp = `http://127.0.0.1:${process.env.IREXPLORER_CDP_PORT || '9239'}`;
 const captures = process.env.IREXPLORER_CHECK_OUTPUT;
 if (captures) await mkdir(captures, { recursive: true });
 const curatedSources = join(import.meta.dirname, '..', 'examples', 'curated');
-const copies = await mkdtemp(join(tmpdir(), 'irexplorer-user-programs-'));
+// Sources written for a scenario, such as ones carrying a fake toolchain marker (tests/fake_toolchain).
+const writtenSources = await mkdtemp(join(tmpdir(), 'irexplorer-user-programs-'));
 // A curated source under another name: the same recording, but a programId the server does not hold yet.
 async function renamedCopy(example, fileName) {
-  const path = join(copies, fileName);
+  const path = join(writtenSources, fileName);
   await writeFile(path, await readFile(join(curatedSources, `${example}.c`)));
   return path;
 }
@@ -27,7 +29,7 @@ const page = await (await fetch(`${cdp}/json/new?about:blank`, { method: 'PUT' }
 const ws = new WebSocket(page.webSocketDebuggerUrl);
 await new Promise(resolve => ws.addEventListener('open', resolve, { once: true }));
 let sequence = 0, fileChooser = null;
-const waiting = new Map(), exceptions = [], consoleErrors = [], checks = [], requests = [], held = [];
+const waiting = new Map(), exceptions = [], consoleErrors = [], checks = [], requests = [], responses = [], held = [];
 ws.addEventListener('message', ({ data }) => {
   const message = JSON.parse(data);
   if (message.method === 'Runtime.exceptionThrown') exceptions.push(message.params.exceptionDetails);
@@ -38,6 +40,10 @@ ws.addEventListener('message', ({ data }) => {
   if (message.method === 'Network.requestWillBeSent') {
     const { method, url } = message.params.request;
     requests.push({ method, path: new URL(url).pathname });
+  }
+  if (message.method === 'Network.responseReceived') {
+    const { status, url } = message.params.response;
+    responses.push({ status, path: new URL(url).pathname });
   }
   if (message.method === 'Page.fileChooserOpened') fileChooser = message.params.backendNodeId;
   // POST /api/programs is held here until the scenario releases it, so the compile state can be checked.
@@ -81,7 +87,6 @@ const posts = () => requests.filter(request => request.method === 'POST' && requ
 // Clicks the failure card's button with exactly this text.
 const cardButton = text => value(`[...document.querySelectorAll('#program-card button')].find(button => button.textContent === ${JSON.stringify(text)}).click()`);
 const cardButtons = `[...document.querySelectorAll('#program-card button')].map(button => button.textContent).join('|')`;
-const yourFiles = `[...document.querySelector('#your-file-select').options].filter(option => option.value).map(option => option.textContent).join('|')`;
 // A POST from outside this page, as another tab's would be.
 function postElsewhere(fileName, source) {
   return fetch(base + '/api/programs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName, source }) });
@@ -106,6 +111,12 @@ async function chooseFile(buttonSelector, file) {
   }
   await send('DOM.setFileInputFiles', { files: [file], backendNodeId: fileChooser });
 }
+// Drag `file` in from outside the page and drop it on the centre of `selector`, as a person would.
+async function dropFile(selector, file) {
+  const { x, y } = await value(`(() => { const box = document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect(); return { x: box.left + box.width / 2, y: box.top + box.height / 2 }; })()`);
+  const data = { items: [], files: [file], dragOperationsMask: 1 };
+  for (const type of ['dragEnter', 'dragOver', 'drop']) await send('Input.dispatchDragEvent', { type, x, y, data });
+}
 async function holdCompiles(hold) {
   if (hold) await send('Fetch.enable', { patterns: [{ urlPattern: '*/api/programs', requestStage: 'Request' }] });
   else await send('Fetch.disable');
@@ -118,13 +129,62 @@ async function releaseCompile() {
   await send('Fetch.continueRequest', { requestId: held.shift() });
 }
 
+// Ask check_browser.sh to restart the host runner, so the server forgets every user program it held.
+async function restartServer() {
+  const requestFile = process.env.IREXPLORER_RESTART_REQUEST;
+  if (!requestFile) throw Error('Restarting the host runner needs IREXPLORER_RESTART_REQUEST; run this through check_browser.sh');
+  await writeFile(requestFile, '');
+  for (let attempt = 0; existsSync(requestFile); attempt += 1) {
+    if (attempt === 600) throw Error('The host runner was not restarted');
+    await pause(100);
+  }
+}
+// Open Explore in a tab of its own (not opened from this one, so its session storage starts empty), wait
+// until `ready` holds there, and return the value of `expression` in it.
+async function inFreshTab(ready, expression) {
+  const tab = await (await fetch(`${cdp}/json/new?${base}/#/explore`, { method: 'PUT' })).json();
+  const socket = new WebSocket(tab.webSocketDebuggerUrl);
+  await new Promise(resolve => socket.addEventListener('open', resolve, { once: true }));
+  let id = 0;
+  const evaluate = text => new Promise(resolve => {
+    const sent = ++id;
+    socket.addEventListener('message', function reply({ data }) {
+      const message = JSON.parse(data);
+      if (message.id !== sent) return;
+      socket.removeEventListener('message', reply);
+      resolve(message.result?.result?.value);
+    });
+    socket.send(JSON.stringify({ id: sent, method: 'Runtime.evaluate', params: { expression: text, returnByValue: true } }));
+  });
+  try {
+    for (let attempt = 0; !(await evaluate(ready)); attempt += 1) {
+      if (attempt === 200) throw Error(`Timed out in a fresh tab: ${ready}`);
+      await pause(75);
+    }
+    return await evaluate(expression);
+  } finally {
+    socket.close();
+    await fetch(`${cdp}/json/close/${tab.id}`);
+  }
+}
+const uploadOptions = `[...document.querySelector('#your-file-select').options].filter(option => option.value).map(option => option.textContent)`;
+// Upload `name` from the curated sources through Your files and wait until it is open.
+async function upload(name) {
+  await click('#source-mode input[value="yours"]');
+  await chooseFile('#program-drop button', join(curatedSources, name));
+  await until(`window.StudyWorkspace.ready && Boolean(appState.programId) && !${visible('#program-card')}`);
+}
+async function reload() {
+  await send('Page.reload');
+  await until(`document.readyState === 'complete' && document.querySelectorAll('#example-select option').length === 4`);
+  await until(`document.querySelector('#source-mode') !== null`);
+}
+
 async function openExplore() {
   await send('Page.navigate', { url: `${base}/#/explore` });
   await until(`document.readyState === 'complete'`);
   await value('sessionStorage.clear()');
-  await send('Page.reload');
-  await until(`document.readyState === 'complete' && document.querySelectorAll('#example-select option').length === 4`);
-  await until(`document.querySelector('#source-mode') !== null`);
+  await reload();
 }
 
 const scenarios = {
@@ -196,6 +256,167 @@ const scenarios = {
     await until(`window.StudyWorkspace.ready && appState.programId === ${JSON.stringify(programId)}`);
     await check('Reopening an upload sends no POST', `${posts() === postsBefore && requests.slice(reopenedFrom).some(request => request.path === `/api/programs/${programId}/states`)}`);
   },
+  async 'A compile error marks its lines in the source and replaces the comparison'() {
+    await click('#source-mode input[value="yours"]');
+    await chooseFile('#program-drop button', join(curatedSources, 'score.c'));
+    await until('window.StudyWorkspace.ready && Boolean(appState.programId)');
+    await check('An earlier comparison is open before the failing upload', `${visible('#left-panel')} && ${visible('.comparison-status')}`);
+    // The fake clang fails as clang does on each call to an undeclared abss, with a note in stdlib.h.
+    const filler = Array.from({ length: 36 }, (_, index) => `int filler_${index}(int value) { return value + ${index}; }`);
+    const broken = ['// irx-fake: error', '#include <stdlib.h>', '', ...filler, '', 'int distance(int from, int to) {',
+      '  return abss(to - from);', '}', '', ...filler.map(line => line.replace('filler_', 'more_')), '',
+      'int gap(int from, int to) {', '  int difference = to - from;', '  return abss(difference);', '}', ''].join('\n');
+    const brokenFile = join(writtenSources, 'broken.c');
+    await writeFile(brokenFile, broken);
+    const lineOf = text => broken.split('\n').indexOf(text) + 1;
+    const [first, second] = [lineOf('  return abss(to - from);'), lineOf('  return abss(difference);')];
+    await chooseFile('#program-upload', brokenFile);
+    await until(`document.querySelector('#program-card')?.innerText.includes('broken.c could not be opened')`);
+
+    await check('The failure card replaces the earlier comparison: no panels, no comparison, no program open',
+      `${visible('#program-card')} && !${visible('#left-panel')} && !${visible('#right-panel')} && !${visible('.comparison-status')} && !appState.programId && !appState.exampleId`);
+    await check('The failed upload is not added to Your file',
+      `[...document.querySelectorAll('#your-file-select option')].filter(option => option.value).map(option => option.textContent).join('|') === 'score.c'`);
+    await check('The failed source is shown with its failing lines marked',
+      `document.querySelector('#source-summary').textContent === 'C source · broken.c' && [...document.querySelectorAll('#source-lines .source-line.is-error')].map(line => Number(line.dataset.line)).join(',') === '${first},${second}'`);
+    await check('Each diagnostic in the file is a button reading "Line L, column C: message"',
+      `(() => { const buttons = [...document.querySelectorAll('#program-card .program-diagnostics button')].map(button => button.textContent); return buttons.length === 4 && buttons[0] === "Line ${first}, column 10: call to undeclared function 'abss'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]" && buttons[1] === "Line ${first}, column 10: did you mean 'abs'?" && buttons[2].startsWith('Line ${second}, column 10: '); })()`);
+    await check('A diagnostic in a system header is listed with its path, not as a button',
+      `[...document.querySelectorAll('#program-card .program-diagnostics li:not(:has(button))')].some(item => item.textContent.includes("/usr/include/stdlib.h, line 980, column 12: 'abs' declared here"))`);
+    const secondLine = `document.querySelector('#source-lines .source-line[data-line="${second}"]')`;
+    const inView = `(() => { const viewer = document.querySelector('#source-lines').getBoundingClientRect(), line = ${secondLine}.getBoundingClientRect(); return line.top >= viewer.top && line.bottom <= viewer.bottom; })()`;
+    await check('The second failing line starts out of view', `!${inView}`);
+    await value(`[...document.querySelectorAll('#program-card .program-diagnostics button')].find(button => button.textContent.startsWith('Line ${second},')).click()`);
+    await check('A diagnostic button scrolls to its line and outlines it, and only it',
+      `${inView} && ${secondLine}.classList.contains('is-outlined') && document.querySelectorAll('#source-lines .is-outlined').length === 1 && getComputedStyle(${secondLine}).outlineStyle !== 'none'`);
+    await check("clang's full output is in a closed Full compiler output disclosure",
+      `(() => { const details = document.querySelector('#program-card details.program-output'); return Boolean(details) && !details.open && details.querySelector('summary').textContent === 'Full compiler output' && details.querySelector('pre').textContent.startsWith('broken.c:${first}:10: error: ') && details.querySelector('pre').textContent.includes('2 errors generated.'); })()`);
+    await check('Choose another file… is offered', `[...document.querySelectorAll('#program-card button')].some(button => button.textContent === 'Choose another file…')`);
+    await snap('user-programs-compile-error.png');
+
+    const crashFile = join(writtenSources, 'crash.c');
+    await writeFile(crashFile, '// irx-fake: crash\nint answer(void) { return 42; }\n');
+    await chooseFile('#program-card .program-actions button', crashFile);
+    await until(`document.querySelector('#program-card')?.innerText.includes('crash.c could not be opened')`);
+    await check('An opt failure lists no diagnostics and marks no lines, only its output',
+      `!document.querySelector('#program-card .program-diagnostics') && !document.querySelector('#source-lines .is-error, #source-lines .is-outlined') && document.querySelector('#program-card details.program-output pre').textContent.includes('Stack dump:')`);
+  },
+
+  async 'Uploads survive a reload in this tab, and a fresh tab starts on Curated examples'() {
+    await upload('score.c');
+    await upload('binary_search.c');
+    await reload();
+    await check('After a reload the uploads are listed, oldest first', `JSON.stringify(${uploadOptions}) === '["score.c","binary_search.c"]'`);
+    await check('After a reload with uploads the page opens in Your files', `document.querySelector('#source-mode input[value="yours"]').checked && ${visible('#your-file-select')} && !${visible('#example-select')}`);
+    await check('After a reload nothing reopens by itself',
+      `!appState.programId && !appState.exampleId && document.querySelector('#your-file-select').value === '' && ${visible('#program-drop')} && !${visible('#program-card')} && !${visible('#left-panel')}`);
+    await snap('user-programs-reloaded.png');
+    const fresh = await inFreshTab(`document.querySelector('#source-mode') !== null`,
+      `({ curated: document.querySelector('#source-mode input[value="curated"]').checked, uploads: ${uploadOptions} })`);
+    if (!fresh.curated || fresh.uploads.length) throw Error(`Failed: a fresh tab starts in Curated examples with an empty list; observed=${JSON.stringify(fresh)}`);
+    checks.push('A fresh tab starts in Curated examples with an empty list');
+  },
+
+  async 'A program the server forgot is recompiled from the source this tab kept'() {
+    await upload('score.c');
+    const programId = await value('appState.programId');
+    await reload();
+    await restartServer();
+    await holdCompiles(true);
+    const from = responses.length, before = posts();
+    await select('#your-file-select', programId);
+    await until(`document.querySelector('#program-card')?.innerText.includes('Recompiling score.c')`);
+    await check('The card says the server no longer had the program and replaces the panels',
+      `${visible('#program-card')} && /no longer had/.test(document.querySelector('#program-card').innerText) && !${visible('#left-panel')} && document.querySelector('#workspace-shell').getAttribute('aria-busy') === 'true'`);
+    await snap('user-programs-recompiling.png');
+    await releaseCompile();
+    await holdCompiles(false);
+    await until(`window.StudyWorkspace.ready && appState.programId === ${JSON.stringify(programId)} && !${visible('#program-card')}`);
+    await check('The program opens again with its panels and comparison', `${visible('#left-panel')} && ${visible('.comparison-status')} && document.querySelectorAll('#left-viewer .ir-line').length > 0 && ${visible('#program-chip')}`);
+    const forgotten = responses.slice(from).filter(response => response.status === 404 && response.path.startsWith(`/api/programs/${programId}/`));
+    await check('Parallel requests found the program gone and shared one recompile: one POST /api/programs',
+      `${forgotten.length >= 2 && posts() - before === 1}`);
+
+    await restartServer();
+    const postsBeforeChange = posts();
+    await select('#right-state', '3');
+    await until(`window.StudyWorkspace.ready && document.querySelector('#right-state').value === '3' && !${visible('#program-card')}`);
+    await check('A program forgotten while it is open is recompiled when a panel changes, and the panels come back',
+      `${posts() - postsBeforeChange === 1} && ${visible('#left-panel')} && ${visible('#right-panel')} && ${visible('.comparison-status')} && !${visible('#empty-state')} && document.querySelectorAll('#right-viewer .ir-line').length > 0`);
+  },
+
+  async 'Drop a C file onto the C source panel in Your files and explore it as a user program'() {
+    const before = posts();
+    await dropFile('#source-panel', join(curatedSources, 'score.c'));
+    await pause(300);
+    await check('Dropping a file in Curated examples does nothing: no compile and the page stays',
+      `${posts() === before} && location.hash === '#/explore' && !${visible('#program-card')} && document.querySelector('#source-mode input[value="curated"]').checked`);
+
+    await click('#source-mode input[value="yours"]');
+    await check('With no user program open the source lines area reads "Drop a .c file here" and offers Paste source instead',
+      `(() => { const drop = document.querySelector('#program-drop'), buttons = [...drop.querySelectorAll('button')].map(b => b.textContent); return ${visible('#program-drop')} && drop.querySelector('.program-drop-title').textContent === 'Drop a .c file here' && buttons.join('|') === 'Choose a file…|Paste source instead'; })()`);
+    await holdCompiles(true);
+    await dropFile('#source-panel', join(curatedSources, 'binary_search.c'));
+    await until(`document.querySelector('#program-card')?.innerText.includes('Compiling binary_search.c')`);
+    await check('The dropped source is shown at once while it compiles', `document.querySelector('#source-summary').textContent === 'C source · binary_search.c' && document.querySelector('#source-lines').inert`);
+    await check('Pasting is unavailable during a compile',
+      `[...document.querySelectorAll('#program-paste-open, #program-drop button')].every(control => control.disabled) && !${visible('#program-paste')}`);
+    await dropFile('#source-panel', join(curatedSources, 'quick_sort.c'));
+    await pause(300);
+    await check('Dropping another file during a compile is refused: the compile carries on',
+      `document.querySelector('#program-card').innerText.includes('Compiling binary_search.c') && document.querySelector('#source-summary').textContent === 'C source · binary_search.c' && location.hash === '#/explore'`);
+    await releaseCompile();
+    await holdCompiles(false);
+    await until('window.StudyWorkspace.ready && Boolean(appState.programId)');
+    await check('Exactly one POST /api/programs was sent for the drops', `${posts() - before === 1}`);
+    await check('The dropped file opens as a user program',
+      `document.querySelector('#source-summary').textContent === 'C source · binary_search.c' && ${visible('#program-chip')} && /^[0-9a-f]{64}$/.test(appState.programId) && appState.exampleId === null && document.querySelectorAll('#left-viewer .ir-line').length > 0`);
+
+    const programId = await value('appState.programId');
+    await dropFile('#source-panel', join(curatedSources, 'quick_sort.c'));
+    await until(`window.StudyWorkspace.ready && Boolean(appState.programId) && appState.programId !== ${JSON.stringify(programId)}`);
+    await check('Dropping onto the panel with a user program open opens the new file, and both are listed',
+      `document.querySelector('#source-summary').textContent === 'C source · quick_sort.c' && [...document.querySelector('#your-file-select').options].filter(option => option.value).map(option => option.textContent).join('|') === 'binary_search.c|quick_sort.c'`);
+  },
+
+  async 'Paste source in Your files and explore it as a user program'() {
+    const source = await readFile(join(curatedSources, 'score.c'), 'utf8');
+    await click('#source-mode input[value="yours"]');
+    await check('Your files offers Paste… beside Upload…', `${visible('#program-paste-open')} && document.querySelector('#program-paste-open').textContent === 'Paste…' && !${visible('#program-paste')}`);
+    await value(`[...document.querySelectorAll('#program-drop button')].find(b => b.textContent === 'Paste source instead').click()`);
+    await check('Paste source instead opens a plain textarea with a File name field defaulting to program.c',
+      `${visible('#program-paste')} && !${visible('#program-drop')} && document.querySelector('#program-paste-name').value === 'program.c' && document.querySelector('label[for="program-paste-name"]').textContent.startsWith('File name') && document.querySelector('#program-paste-source').tagName === 'TEXTAREA' && document.activeElement === document.querySelector('#program-paste-source')`);
+    await snap('user-programs-paste.png');
+    await click('#program-paste-cancel');
+    await check('Cancel closes the paste box and offers the drop zone again', `!${visible('#program-paste')} && ${visible('#program-drop')}`);
+
+    await click('#program-paste-open');
+    await check('Paste… opens the paste box too', `${visible('#program-paste')} && document.activeElement === document.querySelector('#program-paste-source')`);
+    await send('Input.insertText', { text: source });
+    await holdCompiles(true);
+    const before = posts();
+    await click('#program-paste-compile');
+    await until(`document.querySelector('#program-card')?.innerText.includes('Compiling program.c')`);
+    await check('The pasted source compiles as program.c, shown at once, and the paste box closes',
+      `document.querySelector('#source-summary').textContent === 'C source · program.c' && ${visible('#source-lines')} && !${visible('#program-paste')} && document.querySelectorAll('#source-lines .source-line').length === ${source.replace(/\n$/, '').split('\n').length}`);
+    await check('Paste… and the paste box are disabled during a compile',
+      `[...document.querySelectorAll('#program-paste-open, #program-drop button, #program-paste-compile')].every(control => control.disabled)`);
+    await releaseCompile();
+    await holdCompiles(false);
+    await until('window.StudyWorkspace.ready && Boolean(appState.programId)');
+    await check('Exactly one POST /api/programs was sent for the paste', `${posts() - before === 1}`);
+    await check('The pasted source opens as a user program named program.c',
+      `document.querySelector('#source-summary').textContent === 'C source · program.c' && ${visible('#program-chip')} && /^[0-9a-f]{64}$/.test(appState.programId) && appState.exampleId === null && document.querySelectorAll('#left-viewer .ir-line').length > 0`);
+    const programId = await value('appState.programId');
+
+    await click('#program-paste-open');
+    await check('Paste… over an open user program hides its source until cancelled or compiled', `${visible('#program-paste')} && !${visible('#source-lines')}`);
+    await value(`(() => { const name = document.querySelector('#program-paste-name'); name.value = 'my_score.c'; name.dispatchEvent(new Event('input', { bubbles: true })); })()`);
+    await click('#program-paste-compile');
+    await until(`window.StudyWorkspace.ready && Boolean(appState.programId) && appState.programId !== ${JSON.stringify(programId)}`);
+    await check('A custom file name is honoured',
+      `document.querySelector('#source-summary').textContent === 'C source · my_score.c' && [...document.querySelector('#your-file-select').options].filter(option => option.value).map(option => option.textContent).join('|') === 'program.c|my_score.c'`);
+  },
 
   async 'A busy compiler is reported with Try again, which compiles the file once the other compile is over'() {
     const slow = postElsewhere('slow.c', await readFile(join(curatedSources, 'score.c'), 'utf8') + '// irx-fake: slow\n');
@@ -206,7 +427,7 @@ const scenarios = {
     await check('The busy card shows the server\'s message, with Try again and Choose another file…',
       `(() => { const text = document.querySelector('#program-card').innerText; return text.includes('busy_score.c could not be opened') && text.includes('The compiler is busy with another program. Try again in a moment.') && ${cardButtons} === 'Try again|Choose another file…'; })()`);
     await check('The busy file is not added to Your file and the workbench is not busy',
-      `${yourFiles} === '' && document.querySelector('#workspace-shell').getAttribute('aria-busy') !== 'true' && !appState.programId`);
+      `${uploadOptions}.join('|') === '' && document.querySelector('#workspace-shell').getAttribute('aria-busy') !== 'true' && !appState.programId`);
     await snap('user-programs-busy.png');
     if ((await slow).status !== 201) throw Error(`Failed: the other compile finished; observed=${(await slow).status}`);
 
@@ -214,7 +435,7 @@ const scenarios = {
     await cardButton('Try again');
     await until('window.StudyWorkspace.ready && Boolean(appState.programId)');
     await check('Try again posts the same file once and opens it', `${posts() - before === 1} && !${visible('#program-card')} && document.querySelector('#source-summary').textContent === 'C source · busy_score.c'`);
-    await check('Only the file that compiled is listed in Your file', `${yourFiles} === 'busy_score.c'`);
+    await check('Only the file that compiled is listed in Your file', `${uploadOptions}.join('|') === 'busy_score.c'`);
   },
 
   async 'An unavailable compiler is reported with Try again, which compiles the file once the compiler answers'() {
@@ -231,14 +452,14 @@ const scenarios = {
     }
     await check('The unavailable card shows the server\'s message, with Try again and Choose another file…',
       `(() => { const text = document.querySelector('#program-card').innerText; return text.includes('unavailable_search.c could not be opened') && text.includes('The compiler service is unavailable.') && ${cardButtons} === 'Try again|Choose another file…'; })()`);
-    await check('The unavailable file is not added to Your file', `${yourFiles} === '' && !appState.programId`);
+    await check('The unavailable file is not added to Your file', `${uploadOptions}.join('|') === '' && !appState.programId`);
     await snap('user-programs-unavailable.png');
 
     // The compiler finishes the request the app gave up on before it takes another.
     await compilerFree();
     await cardButton('Try again');
     await until('window.StudyWorkspace.ready && Boolean(appState.programId)');
-    await check('Try again opens the file once the compiler answers', `!${visible('#program-card')} && document.querySelector('#source-summary').textContent === 'C source · unavailable_search.c' && ${yourFiles} === 'unavailable_search.c'`);
+    await check('Try again opens the file once the compiler answers', `!${visible('#program-card')} && document.querySelector('#source-summary').textContent === 'C source · unavailable_search.c' && ${uploadOptions}.join('|') === 'unavailable_search.c'`);
   },
 };
 
@@ -256,7 +477,7 @@ try {
   if (cspViolations.length) throw Error(`Browser Content Security Policy violations: ${JSON.stringify(cspViolations)}`);
   console.log(JSON.stringify({ release, assertions: checks.length, checks, runtimeExceptions: exceptions.length, consoleErrors, cspViolations }));
 } finally {
-  await rm(copies, { recursive: true, force: true });
   ws.close();
   await fetch(`${cdp}/json/close/${page.id}`);
+  await rm(writtenSources, { recursive: true, force: true });
 }
