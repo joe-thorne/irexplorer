@@ -327,9 +327,8 @@
     const accepted = AcceptedProgram.accept(fileName, text);
     if (!accepted.ok) {
       const { reason, message } = accepted;
-      card = { kind: "failed", fileName, renamedFrom: null, error: { code: "invalid_program", reason, message } };
-      render();
-      announce(`Error: ${message} Nothing was sent to the compiler.`, "error");
+      showFailure({ fileName, renamedFrom: null, error: { code: "invalid_program", reason, message } },
+        `Error: ${message} Nothing was sent to the compiler.`);
       return;
     }
     const renamedFrom = accepted.fileName === fileName ? null : fileName;
@@ -357,9 +356,7 @@
       return;
     }
     if (!result.ok) {
-      card = { kind: "failed", fileName: accepted.fileName, renamedFrom, source: accepted.source, error: result.error };
-      render();
-      announce(`Error: ${result.error.message}`, "error");
+      showFailure({ fileName: accepted.fileName, renamedFrom, source: accepted.source, error: result.error });
       return;
     }
     const program = { ...result.program, renamedFrom };
@@ -455,10 +452,15 @@
     closeWorkspace();
     sourceState.data = { file: fileName, text: source };
     renderSource();
-    card = { kind: "failed", fileName, source, error: result.error };
-    render();
-    announce(`Error: ${result.error.message}`, "error");
+    showFailure({ fileName, source, error: result.error });
     return false;
+  }
+
+  // The failed card for a program that was refused or did not compile, and its error announced.
+  function showFailure(failed, announcement = `Error: ${failed.error.message}`) {
+    card = { kind: "failed", ...failed };
+    render();
+    announce(announcement, "error");
   }
 
   fetch("/api/release", { cache: "no-store" }).then(response => response.ok ? response.json() : null).then(release => {
