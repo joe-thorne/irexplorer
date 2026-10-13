@@ -24,8 +24,9 @@
   // The user program on screen or being opened, if any.
   let current = null;
   // What the card shows in place of the panels: null (no card), { kind: "compiling", fileName, started,
-  // forgotten } (forgotten: recompiling a program the server no longer had) or { kind: "failed", fileName,
-  // source, error }, where error is the server's { code, message, … }.
+  // cancel, forgotten } (cancel: the upload's AbortController, which Cancel aborts; forgotten: recompiling a
+  // program the server no longer had), { kind: "cancelled", fileName, source } or { kind: "failed",
+  // fileName, source, error }, where error is the server's { code, message, … }.
   let card = null;
   let ticking = null;
   // Whether the paste box stands in for the source lines, and the button to return focus to when it closes.
@@ -217,7 +218,7 @@
     elements.workspace.hidden = true;
     elements.emptyState.hidden = true;
     if (card.kind === "compiling") {
-      const { started } = card;
+      const { started, cancel } = card;
       // Whole seconds for sighted users only; the status was announced once when the compile started.
       const elapsed = h("span", { class: "program-elapsed", "aria-hidden": "true" });
       const tick = () => { elapsed.textContent = `${Math.floor((performance.now() - started) / 1000)} s`; };
@@ -226,23 +227,34 @@
       view.card.replaceChildren(
         h("h2", { id: "program-card-heading" }, `${card.forgotten ? "Recompiling" : "Compiling"} ${card.fileName} · `, elapsed),
         ...(card.forgotten ? [h("p", {}, FORGOTTEN)] : []),
-        h("p", {}, WAIT));
+        h("p", {}, WAIT),
+        ...(cancel ? [h("div", { class: "program-actions" },
+          h("button", { type: "button", onclick: () => cancel.abort() }, "Cancel"))] : []));
+    } else if (card.kind === "cancelled") {
+      const { fileName, source } = card;
+      view.card.replaceChildren(
+        h("h2", { id: "program-card-heading" }, "Compiling cancelled"),
+        h("p", {}, `${fileName} was not compiled.`),
+        programActions(() => compile(fileName, source)));
     } else {
       view.card.replaceChildren(...failureContent(card));
     }
   }
 
   function failureContent({ fileName, source, error }) {
-    const retry = RETRYABLE.has(error.code)
-      ? [h("button", { type: "button", class: "primary", onclick: () => compile(fileName, source) }, "Try again")]
-      : [];
     return [
       h("h2", { id: "program-card-heading" }, `${fileName} could not be opened`),
       h("p", { class: "program-failure-message" }, error.message),
       ...(error.code === "compile_failed" ? compileFailure(error) : []),
-      h("div", { class: "program-actions" }, ...retry,
-        h("button", { type: "button", onclick: () => view.fileInput.click() }, "Choose another file…")),
+      programActions(RETRYABLE.has(error.code) && (() => compile(fileName, source))),
     ];
+  }
+
+  // Try again, when `retry` is given, and Choose another file…: every way on from a card that opened nothing.
+  function programActions(retry) {
+    return h("div", { class: "program-actions" },
+      ...(retry ? [h("button", { type: "button", class: "primary", onclick: retry }, "Try again")] : []),
+      h("button", { type: "button", onclick: () => view.fileInput.click() }, "Choose another file…"));
   }
 
   // Each diagnostic in order; one against the upload is a button that shows its line in the source.
@@ -298,14 +310,24 @@
     closeWorkspace();
     sourceState.data = { file: fileName, text: source };
     renderSource();
-    const compiling = { kind: "compiling", fileName, started: performance.now() };
+    const compiling = { kind: "compiling", fileName, started: performance.now(), cancel: new AbortController() };
     card = compiling;
     render();
     announce(`Compiling ${fileName}.`);
-    const result = await postProgram(fileName, source);
+    const result = await postProgram(fileName, source, compiling.cancel.signal);
     // Explore was left while it compiled (see detach): keep a compiled upload, but open nothing.
     if (card !== compiling) {
       if (result.ok) keep(result.program);
+      return;
+    }
+    // Cancel dropped the request, so the server stopped the compile; whatever the request came to is ignored.
+    if (compiling.cancel.signal.aborted) {
+      const cancelling = view.card.contains(document.activeElement);
+      card = { kind: "cancelled", fileName, source };
+      render();
+      announce(`Compiling ${fileName} cancelled.`);
+      // Cancel has gone with the compile card; Try again stands where it was.
+      if (cancelling) view.card.querySelector("button").focus();
       return;
     }
     if (!result.ok) {
@@ -329,12 +351,13 @@
     keepUploads();
   }
 
-  // POST /api/programs and wait for the compile: { ok: true, program } or { ok: false, error }.
-  async function postProgram(fileName, source) {
+  // POST /api/programs and wait for the compile: { ok: true, program } or { ok: false, error }. Aborting
+  // `signal` closes the request, which the server takes as the end of the compile.
+  async function postProgram(fileName, source, signal) {
     let response;
     try {
       response = await fetch("/api/programs", {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fileName, source }),
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fileName, source }), signal,
       });
     } catch {
       return { ok: false, error: { code: "unreachable", message: "irexplorer could not be reached. Check that it is running." } };
