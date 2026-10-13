@@ -15,18 +15,20 @@
     yours: "Upload a C file, or choose one of your files, to start comparing.",
   };
 
-  // This tab's uploads, oldest first: { programId, fileName, source }. A failed upload is never kept. They
-  // survive a reload in this tab (session storage), not across tabs.
+  // This tab's uploads, oldest first: { programId, fileName, source, renamedFrom }, with the safe name and the
+  // normalised source that were sent, and the name as chosen if it was not safe (else null). A failed upload
+  // is never kept. They survive a reload in this tab (session storage), not across tabs.
   const UPLOADS_KEY = "irexplorer.programs.uploads";
   const uploads = readUploads();
   // After a reload nothing reopens by itself, but a tab with uploads opens in Your files.
   let mode = uploads.length ? "yours" : "curated";
   // The user program on screen or being opened, if any.
   let current = null;
-  // What the card shows in place of the panels: null (no card), { kind: "compiling", fileName, started,
-  // cancel, forgotten } (cancel: the upload's AbortController, which Cancel aborts; forgotten: recompiling a
-  // program the server no longer had), { kind: "cancelled", fileName, source } or { kind: "failed",
-  // fileName, source, error }, where error is the server's { code, message, … }.
+  // What the card shows in place of the panels: null (no card), { kind: "compiling", fileName, renamedFrom,
+  // started, cancel, forgotten } (cancel: the upload's AbortController, which Cancel aborts; forgotten:
+  // recompiling a program the server no longer had), { kind: "cancelled", fileName, renamedFrom, source } or
+  // { kind: "failed", fileName, renamedFrom, source, error }, where error is the server's { code, message, … }.
+  // A file the browser refuses before sending fails with the server's invalid_program error.
   let card = null;
   let ticking = null;
   // Whether the paste box stands in for the source lines, and the button to return focus to when it closes.
@@ -79,6 +81,7 @@
     view.yourControl = h("label", { id: "your-file-control", for: "your-file-select" }, "Your file", view.yourSelect);
     view.upload = h("button", { id: "program-upload", type: "button", onclick: () => view.fileInput.click() }, "Upload…");
     view.pasteOpen = h("button", { id: "program-paste-open", type: "button", onclick: openPaste }, "Paste…");
+    view.renamed = h("p", { id: "program-renamed", class: "program-renamed" });
     view.fileInput = h("input", { id: "program-file-input", type: "file", accept: ".c", hidden: true, onchange: () => {
       const [file] = view.fileInput.files;
       view.fileInput.value = "";
@@ -111,6 +114,7 @@
   function attach() {
     view.controls.prepend(view.mode);
     view.fileControl.after(view.yourControl, view.upload, view.pasteOpen);
+    view.controls.after(view.renamed);
     view.sourceLines.after(view.drop, view.paste, view.fileInput);
     view.summary.replaceWith(view.title);
     view.title.append(view.summary, view.chip);
@@ -131,7 +135,7 @@
     clearInterval(ticking);
     ticking = null;
     view.title.replaceWith(view.summary);
-    for (const element of [view.mode, view.yourControl, view.upload, view.pasteOpen, view.drop, view.paste, view.fileInput, view.card]) {
+    for (const element of [view.mode, view.yourControl, view.upload, view.pasteOpen, view.renamed, view.drop, view.paste, view.fileInput, view.card]) {
       element.remove();
     }
     for (const type of DRAG_EVENTS) view.sourcePanel.removeEventListener(type, dragFile);
@@ -175,6 +179,9 @@
     if (compiling) elements.exampleSelect.disabled = true;
     view.shell.setAttribute("aria-busy", String(compiling));
     view.chip.hidden = !(yours && sourceState.data);
+    const renamedFrom = card?.renamedFrom ?? current?.renamedFrom;
+    view.renamed.hidden = !renamedFrom;
+    view.renamed.textContent = renamedFrom ? `Renamed from “${renamedFrom}”.` : "";
     // The source of a program that is compiling, or that failed, is read-only. It is dimmed unless it
     // carries the compile errors to read.
     const errorLines = new Set(sourceDiagnostics().filter(diagnostic => diagnostic.severity.includes("error"))
@@ -231,22 +238,26 @@
         ...(cancel ? [h("div", { class: "program-actions" },
           h("button", { type: "button", onclick: () => cancel.abort() }, "Cancel"))] : []));
     } else if (card.kind === "cancelled") {
-      const { fileName, source } = card;
+      const { fileName, renamedFrom, source } = card;
       view.card.replaceChildren(
         h("h2", { id: "program-card-heading" }, "Compiling cancelled"),
         h("p", {}, `${fileName} was not compiled.`),
-        programActions(() => compile(fileName, source)));
+        // Compiled again under the name it was chosen as, so a renamed file still says so.
+        programActions(() => compile(renamedFrom ?? fileName, source)));
     } else {
       view.card.replaceChildren(...failureContent(card));
     }
   }
 
-  function failureContent({ fileName, source, error }) {
+  function failureContent({ fileName, renamedFrom, source, error }) {
+    const refused = error.code === "invalid_program";
     return [
       h("h2", { id: "program-card-heading" }, `${fileName} could not be opened`),
       h("p", { class: "program-failure-message" }, error.message),
+      ...(refused ? [h("p", {}, "Nothing was sent to the compiler.")] : []),
       ...(error.code === "compile_failed" ? compileFailure(error) : []),
-      programActions(RETRYABLE.has(error.code) && (() => compile(fileName, source))),
+      // Compiled again under the name it was chosen as, so a renamed file still says so.
+      programActions(RETRYABLE.has(error.code) && (() => compile(renamedFrom ?? fileName, source))),
     ];
   }
 
@@ -299,44 +310,56 @@
 
   // The one way in for a file, however it arrives: read it, then compile it.
   async function uploadFile(file) {
-    await compile(file.name, await file.text());
+    await compile(file.name, await AcceptedProgram.read(file));
   }
 
-  async function compile(fileName, source) {
+  // Check a file name and its text as the server will, then send the safe name and normalised source,
+  // which the server accepts unchanged. `text` is null if the file is not UTF-8.
+  async function compile(fileName, text) {
     if (card?.kind === "compiling") return;
     mode = "yours";
     current = null;
     pasting = false;
     closeWorkspace();
-    sourceState.data = { file: fileName, text: source };
+    const accepted = AcceptedProgram.accept(fileName, text);
+    if (!accepted.ok) {
+      const { reason, message } = accepted;
+      card = { kind: "failed", fileName, renamedFrom: null, error: { code: "invalid_program", reason, message } };
+      render();
+      announce(`Error: ${message} Nothing was sent to the compiler.`, "error");
+      return;
+    }
+    const renamedFrom = accepted.fileName === fileName ? null : fileName;
+    sourceState.data = { file: accepted.fileName, text: accepted.source };
     renderSource();
-    const compiling = { kind: "compiling", fileName, started: performance.now(), cancel: new AbortController() };
+    const compiling = { kind: "compiling", fileName: accepted.fileName, renamedFrom, started: performance.now(),
+      cancel: new AbortController() };
     card = compiling;
     render();
-    announce(`Compiling ${fileName}.`);
-    const result = await postProgram(fileName, source, compiling.cancel.signal);
+    announce(`Compiling ${accepted.fileName}.`);
+    const result = await postProgram(accepted.fileName, accepted.source, compiling.cancel.signal);
     // Explore was left while it compiled (see detach): keep a compiled upload, but open nothing.
     if (card !== compiling) {
-      if (result.ok) keep(result.program);
+      if (result.ok) keep({ ...result.program, renamedFrom });
       return;
     }
     // Cancel dropped the request, so the server stopped the compile; whatever the request came to is ignored.
     if (compiling.cancel.signal.aborted) {
       const cancelling = view.card.contains(document.activeElement);
-      card = { kind: "cancelled", fileName, source };
+      card = { kind: "cancelled", fileName: accepted.fileName, renamedFrom, source: accepted.source };
       render();
-      announce(`Compiling ${fileName} cancelled.`);
+      announce(`Compiling ${accepted.fileName} cancelled.`);
       // Cancel has gone with the compile card; Try again stands where it was.
       if (cancelling) view.card.querySelector("button").focus();
       return;
     }
     if (!result.ok) {
-      card = { kind: "failed", fileName, source, error: result.error };
+      card = { kind: "failed", fileName: accepted.fileName, renamedFrom, source: accepted.source, error: result.error };
       render();
       announce(`Error: ${result.error.message}`, "error");
       return;
     }
-    const { program } = result;
+    const program = { ...result.program, renamedFrom };
     keep(program);
     current = program;
     await loadProgram(program);
@@ -345,9 +368,11 @@
     render();
   }
 
+  // An upload of a program already held replaces it, so the name it was renamed from is the latest.
   function keep(program) {
-    if (uploads.some(upload => upload.programId === program.programId)) return;
-    uploads.push(program);
+    const held = uploads.findIndex(upload => upload.programId === program.programId);
+    if (held < 0) uploads.push(program);
+    else uploads[held] = program;
     keepUploads();
   }
 
