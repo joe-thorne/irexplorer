@@ -3,19 +3,27 @@
 from __future__ import annotations
 
 import hashlib
+from pathlib import Path
 
 from src.backend.toolchain.curated import ARTEFACTS_ROOT, REPO_ROOT, ToolchainError
 
 CHECKSUM_PATH = REPO_ROOT / "docs" / "curated-artefacts.sha256"
 
 
-def curated_tree_digest() -> tuple[int, str]:
-    """Return a deterministic digest over every generated curated artefact."""
+def curated_tree_digest(artefacts_root: Path = ARTEFACTS_ROOT) -> tuple[int, str]:
+    """Return a deterministic digest over every generated curated artefact.
 
-    files = tuple(sorted(path for path in ARTEFACTS_ROOT.rglob("*") if path.is_file()))
+    Paths are hashed as they sit in the repository, so a copy of the tree
+    elsewhere, such as an offline re-bake, digests the same as the original.
+    """
+
+    repository_prefix = ARTEFACTS_ROOT.relative_to(REPO_ROOT)
+    files = tuple(sorted(path for path in artefacts_root.rglob("*") if path.is_file()))
     digest = hashlib.sha256()
     for path in files:
-        relative_path = path.relative_to(REPO_ROOT).as_posix().encode("utf-8")
+        relative_path = (
+            (repository_prefix / path.relative_to(artefacts_root)).as_posix().encode("utf-8")
+        )
         digest.update(relative_path)
         digest.update(b"\0")
         digest.update(hashlib.sha256(path.read_bytes()).digest())
@@ -23,11 +31,11 @@ def curated_tree_digest() -> tuple[int, str]:
     return len(files), digest.hexdigest()
 
 
-def verify_curated_snapshot() -> None:
+def verify_curated_snapshot(artefacts_root: Path = ARTEFACTS_ROOT) -> None:
     """Reject a curated snapshot that diverges from the pinned golden digest."""
 
     expected_count, expected_digest = _read_expected_digest()
-    actual_count, actual_digest = curated_tree_digest()
+    actual_count, actual_digest = curated_tree_digest(artefacts_root)
     if (actual_count, actual_digest) != (expected_count, expected_digest):
         raise ToolchainError(
             "Canonical curated artefacts differ from the pinned snapshot: "
