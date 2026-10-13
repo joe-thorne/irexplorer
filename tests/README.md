@@ -58,7 +58,7 @@ To run the whole browser regression in one step, as CI does:
 scripts/check_browser.sh
 ```
 
-It starts the host runner on a disposable preview store and an isolated headless Chrome, runs the three checks below with collection open, reruns `check_app.mjs` with collection closed, then stops both. `CHROME` names the browser executable if it is not found; `IRX_PYTHON` names the Python interpreter. The steps below run each check by hand.
+It starts the host runner on a disposable preview store and an isolated headless Chrome, runs the three checks below with collection open and user programs off, and reruns `check_app.mjs` with collection closed. It then starts the compiler service on loopback over the fake toolchain (no Docker or LLVM), restarts the host runner with user programs on, runs `check_user_programs.mjs`, and stops everything. It fails if a port it uses already answers, or still answers after it stops a server. `CHROME` names the browser executable if it is not found; `IRX_PYTHON` names the Python interpreter; `IREXPLORER_PORT` (default 8000), `IREXPLORER_CDP_PORT` (9239) and `IREXPLORER_COMPILER_PORT` (8090) name its ports. The steps below run each check by hand.
 
 Start the application with Docker Compose, then start a separate headless Chrome instance with a temporary profile and remote debugging on port 9239. For example, on Linux:
 
@@ -110,7 +110,17 @@ node scripts/check_study_guidance.mjs
 
 It reads every expected sentence from the served message catalogue, glossary and introductions, and runs the journey at desktop and narrow widths. It covers normal guidance, T0 glossary help by keyboard focus and hover, validation, a failed local save, discard confirmation (including Escape and a failed discard), and review. It then covers uncertain delivery: an offline attempt, a reload, a 503, and a stored attempt whose response is lost. These must send identical content under one submission ID. The receipt appears only after the server confirms storage; cleanup failures are checked, as are incompatible and corrupt recovery. Closed collection is served as a content variant with scripted `410 collection_closed` refusals: the closed message, a local draft's discard (including a failed one), a refused submission across a refresh and its discard, and a pending retry that returns a receipt. The journey runs again with every message marked, then with markup in the prose, then with catalogues that break the key or placeholder contract or content without a boolean `submissionEnabled`. Each full journey submits one synthetic record, so use a disposable local or preview store.
 
-All three scripts connect to the browser on port 9239 unless `IREXPLORER_CDP_PORT` names another. Close the temporary Chrome process after testing.
+To check user programs by hand, start the compiler service over the fake toolchain and an application with user programs on, with the same browser:
+
+```sh
+.venv/bin/python -m src.backend.toolchain.compiler_service --port 8090 --toolchain tests/fake_toolchain --workspace "$(mktemp -d)"
+IREXPLORER_USER_PROGRAMS=1 IREXPLORER_COMPILER_URL=http://127.0.0.1:8090 .venv/bin/python -c "from src.backend.api.server import run_server; run_server()"
+IREXPLORER_ORIGIN=http://127.0.0.1:8000 node scripts/check_user_programs.mjs
+```
+
+It uploads the unedited curated sources, which the fake toolchain has recordings for, and checks the **Curated examples | Your files** switch, the compile card and a user program opening in the panels. Each scenario starts from a freshly loaded Explore page. `check_app.mjs` checks that no upload control is built with user programs off.
+
+All four scripts connect to the browser on port 9239 unless `IREXPLORER_CDP_PORT` names another. Close the temporary Chrome process after testing.
 
 Automated checks do not establish complete accessibility conformance or replace physical keyboard and spoken screen-reader testing.
 
