@@ -183,6 +183,39 @@ join:
         )
         graph.validate()
 
+    def test_unreachable_with_debug_location_terminates_its_block(self) -> None:
+        graph = parse_ir_state(
+            """source_filename = "abort.c"
+target triple = "x86_64-unknown-linux-gnu"
+
+define i32 @fail() !dbg !5 {
+entry:
+  call void @abort(), !dbg !9
+  unreachable, !dbg !9
+}
+
+declare void @abort()
+
+!9 = !DILocation(line: 4, column: 3, scope: !5)
+""",
+            ordinal=0,
+            state_id="abort",
+        )
+
+        entry = next(
+            node
+            for node in graph.nodes
+            if node.kind == "BasicBlock" and node.attributes["label"] == "entry"
+        )
+        terminator = graph.by_id[graph.contains_children[entry.stable_id][-1]]
+        self.assertEqual(terminator.attributes["opcode"], "unreachable")
+        self.assertTrue(terminator.attributes["is_terminator"])
+        self.assertEqual(
+            terminator.attributes["source"],
+            SourceLocation(file="abort.c", line=4, column=3),
+        )
+        graph.validate()
+
     def test_unterminated_multiline_switch_is_controlled_failure(self) -> None:
         malformed = """source_filename = "bad.c"
 target triple = "x86_64-unknown-linux-gnu"
