@@ -43,8 +43,11 @@ WORKSPACE = Path("/workspace")
 TARGET_TRIPLE = "x86_64-unknown-linux-gnu"
 # The app sends only safe file names; the service refuses anything else, so no name leaves the workspace.
 SAFE_FILE_NAME = re.compile(r"[A-Za-z0-9_-]{1,64}\.c")
-# How often a running command is checked against the deadline.
+# How often a running command is checked against the deadline and its client's connection.
 POLL_INTERVAL = 0.05
+# A compile whose client has gone stops at its next poll; a request arriving meanwhile waits this long at
+# most for it, rather than being refused as busy.
+STOPPING_GRACE = 5.0
 # Reading the tool versions is not a compile, so the compile timeout does not bound it.
 VERSION_TIMEOUT = 30.0
 # Busy and timeout messages are shown to the student as they are.
@@ -83,6 +86,9 @@ class CompilerService:
     libc_version: str = "unknown"
     # Held for the whole of a compile: one program at a time, and nothing queues behind it.
     _compiling: Lock = field(default_factory=Lock, init=False, repr=False, compare=False)
+    # The running compile's check for whether its client has gone: one entry, set for each compile.
+    _running: list[Callable[[], bool]] = field(default_factory=lambda: [never], init=False, repr=False,
+                                               compare=False)
 
     def compile(self, file_name: str, source: str, *,
                 disconnected: Callable[[], bool] = never) -> dict[str, Any]:
@@ -90,12 +96,20 @@ class CompilerService:
 
         if not SAFE_FILE_NAME.fullmatch(file_name):
             raise CompileError(HTTPStatus.BAD_REQUEST, "invalid_request", "fileName must be a safe C file name.")
-        if not self._compiling.acquire(blocking=False):
+        if not self._compiling.acquire(blocking=False) and not self._after_abandoned_compile():
             raise CompileError(HTTPStatus.CONFLICT, "busy", BUSY)
+        self._running[0] = disconnected
         try:
             return self._compile(file_name, source, disconnected)
         finally:
+            self._running[0] = never
             self._compiling.release()
+
+    def _after_abandoned_compile(self) -> bool:
+        """Take the compile slot once the running compile stops, if its client has gone (the student
+        cancelled and uploaded again at once); otherwise the service is busy."""
+
+        return self._running[0]() and self._compiling.acquire(timeout=STOPPING_GRACE)
 
     def _compile(self, file_name: str, source: str, disconnected: Callable[[], bool]) -> dict[str, Any]:
         deadline = time.monotonic() + self.timeout
@@ -228,11 +242,11 @@ def server(service: CompilerService, host: str, port: int) -> HTTPServer:
         def _disconnected(self) -> bool:
             """Whether the client has closed its connection: its socket is readable but has nothing to read."""
 
-            if not select.select([self.connection], [], [], 0)[0]:
-                return False
             try:
+                if not select.select([self.connection], [], [], 0)[0]:
+                    return False
                 return not self.connection.recv(1, socket.MSG_PEEK)
-            except OSError:
+            except (OSError, ValueError):  # reset, or already closed (another request may ask late)
                 return True
 
         def _answer(self, status: HTTPStatus, body: dict[str, Any]) -> None:
