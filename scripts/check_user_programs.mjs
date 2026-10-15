@@ -412,6 +412,30 @@ const scenarios = {
     await check('A program forgotten while it is open is recompiled when a panel changes, and the panels come back',
       `${posts() - postsBeforeChange === 1} && ${visible('#left-panel')} && ${visible('#right-panel')} && ${visible('.comparison-status')} && !${visible('#empty-state')} && document.querySelectorAll('#right-viewer .ir-line').length > 0`);
   },
+  async 'Cancel stops a recompile, keeps the upload and offers Try again'() {
+    // The fake clang spends a couple of seconds on a slow-marked source, which leaves time to cancel its recompile.
+    const slowFile = join(writtenSources, 'slow_score.c');
+    await writeFile(slowFile, await readFile(join(curatedSources, 'score.c'), 'utf8') + '// irx-fake: slow\n');
+    await click('#source-mode input[value="yours"]');
+    await chooseFile('#program-drop button', slowFile);
+    await until(`window.StudyWorkspace.ready && Boolean(appState.programId) && !${visible('#program-card')}`);
+    const programId = await value('appState.programId');
+    await reload();
+    await restartServer();
+    await select('#your-file-select', programId);
+    await until(`document.querySelector('#program-card')?.innerText.includes('Recompiling slow_score.c')`);
+    await check('The recompile card offers Cancel', `${cardButtons} === 'Cancel'`);
+    await cardButton('Cancel');
+    await until(`document.querySelector('#program-card')?.innerText.includes('Compiling cancelled')`);
+    await check('A cancelled recompile closes the program, shows its kept source and offers Try again and Choose another file…',
+      `${cardButtons} === 'Try again|Choose another file…' && !appState.programId && document.querySelector('#source-summary').textContent === 'C source · slow_score.c' && document.querySelector('#workspace-shell').getAttribute('aria-busy') !== 'true' && !document.querySelector('#your-file-select').disabled`);
+    await check('The upload stays in Your file, and no error replaces the card', `${uploadOptions}.join('|') === 'slow_score.c' && !document.querySelector('.error-state')`);
+
+    const before = posts();
+    await cardButton('Try again');
+    await until(`window.StudyWorkspace.ready && appState.programId === ${JSON.stringify(programId)} && !${visible('#program-card')}`);
+    await check('Try again compiles the kept source and opens the program', `${posts() - before === 1} && ${visible('#left-panel')} && ${visible('#program-chip')}`);
+  },
 
   async 'Drop a C file onto the C source panel in Your files and explore it as a user program'() {
     const before = posts();

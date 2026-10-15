@@ -25,7 +25,7 @@
   // The user program on screen or being opened, if any.
   let current = null;
   // What the card shows in place of the panels: null (no card), { kind: "compiling", fileName, renamedFrom,
-  // started, cancel, forgotten } (cancel: the upload's AbortController, which Cancel aborts; forgotten:
+  // started, cancel, forgotten } (cancel: the POST's AbortController, which Cancel aborts; forgotten:
   // recompiling a program the server no longer had), { kind: "cancelled", fileName, renamedFrom, source } or
   // { kind: "failed", fileName, renamedFrom, source, error }, where error is the server's { code, message, … }.
   // A file the browser refuses before sending fails with the server's invalid_program error.
@@ -347,12 +347,7 @@
     }
     // Cancel dropped the request, so the server stopped the compile; whatever the request came to is ignored.
     if (compiling.cancel.signal.aborted) {
-      const cancelling = view.card.contains(document.activeElement);
-      card = { kind: "cancelled", fileName: accepted.fileName, renamedFrom, source: accepted.source };
-      render();
-      announce(`Compiling ${accepted.fileName} cancelled.`);
-      // Cancel has gone with the compile card; Try again stands where it was.
-      if (cancelling) view.card.querySelector("button").focus();
+      showCancelled({ fileName: accepted.fileName, renamedFrom, source: accepted.source });
       return;
     }
     if (!result.ok) {
@@ -432,27 +427,30 @@
   // Resolves true once the server holds the program again. The card stands in for whatever was on
   // screen until then; on a failure the program is closed and the card says why.
   async function recompile(upload) {
-    const { fileName, source } = upload;
+    const { fileName, renamedFrom = null, source } = upload;
     const workspaceHidden = elements.workspace.hidden, emptyStateHidden = elements.emptyState.hidden;
-    const recompiling = { kind: "compiling", fileName, started: performance.now(), forgotten: true };
+    const recompiling = { kind: "compiling", fileName, started: performance.now(), forgotten: true,
+      cancel: new AbortController() };
     card = recompiling;
     render();
     announce(`Recompiling ${fileName}. The server no longer had it.`);
-    const result = await postProgram(fileName, source);
+    const result = await postProgram(fileName, source, recompiling.cancel.signal);
     // Explore was left while it compiled (see detach), which closed the program: show nothing again.
     if (card !== recompiling) return false;
-    if (result.ok) {
+    if (result.ok && !recompiling.cancel.signal.aborted) {
       card = null;
       render();
       elements.workspace.hidden = workspaceHidden;
       elements.emptyState.hidden = emptyStateHidden;
       return true;
     }
+    // Cancelled or failed: the program closes, its kept source stays, and the upload stays in Your file.
     current = null;
     closeWorkspace();
     sourceState.data = { file: fileName, text: source };
     renderSource();
-    showFailure({ fileName, source, error: result.error });
+    if (recompiling.cancel.signal.aborted) showCancelled({ fileName, renamedFrom, source });
+    else showFailure({ fileName, source, error: result.error });
     return false;
   }
 
@@ -461,6 +459,16 @@
     card = { kind: "failed", ...failed };
     render();
     announce(announcement, "error");
+  }
+
+  // The cancelled card, after Cancel on a compile or a recompile.
+  function showCancelled(cancelled) {
+    const cancelling = view.card.contains(document.activeElement);
+    card = { kind: "cancelled", ...cancelled };
+    render();
+    announce(`Compiling ${cancelled.fileName} cancelled.`);
+    // Cancel has gone with the compile card; Try again stands where it was.
+    if (cancelling) view.card.querySelector("button").focus();
   }
 
   fetch("/api/release", { cache: "no-store" }).then(response => response.ok ? response.json() : null).then(release => {
