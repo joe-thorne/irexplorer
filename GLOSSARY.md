@@ -14,6 +14,10 @@ _Avoid_: sample, test program
 C source supplied in the browser (uploaded, typed, or an edited copy of a curated example) and compiled on request; editing a curated example makes a user program and leaves the curated example unchanged.
 _Avoid_: custom example, user example, uploaded example
 
+**Uncompiled edit**:
+C source in the editor that has changed since it was last compiled; compiling it makes a new user program, and it is kept only in the current browser tab.
+_Avoid_: draft, unsaved changes
+
 **User programs setting**:
 The startup setting that makes user programs available in Explore; off unless deliberately turned on, never available in Study, and never combined with pilot or live collection.
 _Avoid_: feature flag, custom mode
