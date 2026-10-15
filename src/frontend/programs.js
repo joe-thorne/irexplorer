@@ -38,12 +38,12 @@
   // The user program on screen or being opened, if any.
   let current = null;
   // What the card shows in place of the panels: null (no card), { kind: "compiling", fileName, renamedFrom,
-  // origin, workspace, started, cancel, forgotten } (cancel: the POST's AbortController, which Cancel aborts;
+  // request, started, cancel, forgotten } (cancel: the POST's AbortController, which Cancel aborts;
   // forgotten: recompiling a program the server no longer had), { kind: "cancelled", fileName, renamedFrom,
-  // origin, workspace, source } or { kind: "failed", fileName, renamedFrom, origin, workspace, source, error },
-  // where error is the server's { code, message, … }. workspace is what the compiled program opens with (see
-  // compile). A file the browser refuses before sending fails with the server's invalid_program error. Each
-  // also carries `edit`, true when it is the edit open in the editor that is compiling, or that failed.
+  // request } or { kind: "failed", fileName, renamedFrom, request, error }, where fileName is the safe name,
+  // renamedFrom the name as chosen if that was not safe, request the compile request (see compile), which Try
+  // again sends again, and error the server's { code, message, … }. A file the browser refuses before sending
+  // fails with the server's invalid_program error.
   let card = null;
   let ticking = null;
   // The program open in the editor, if any: { title, origin, replaces, compiled, workspace, opened, opener,
@@ -370,18 +370,17 @@
         ...(cancel ? [h("div", { class: "program-actions" },
           h("button", { type: "button", onclick: () => cancel.abort() }, "Cancel"))] : []));
     } else if (card.kind === "cancelled") {
-      const { fileName, renamedFrom, origin, workspace, source, replaces, edit } = card;
       view.card.replaceChildren(
         h("h2", { id: "program-card-heading" }, "Compiling cancelled"),
-        h("p", {}, `${fileName} was not compiled.`),
-        // Compiled again under the name it was chosen as, so a renamed file still says so.
-        programActions(() => compile(renamedFrom ?? fileName, source, origin, workspace, replaces, edit), edit));
+        h("p", {}, `${card.fileName} was not compiled.`),
+        programActions(card));
     } else {
       view.card.replaceChildren(...failureContent(card));
     }
   }
 
-  function failureContent({ fileName, renamedFrom, origin, workspace, source, replaces, error, edit }) {
+  function failureContent(failed) {
+    const { fileName, error } = failed;
     const refused = error.code === "invalid_program";
     return [
       h("h2", { id: "program-card-heading" }, `${fileName} could not be opened`),
@@ -391,17 +390,19 @@
       // A program irexplorer cannot show says why in its message; a parser failure adds the parser's own words.
       ...(error.parserMessage ? [h("details", { class: "program-parser-message" },
         h("summary", {}, "Parser message"), h("pre", {}, error.parserMessage))] : []),
-      // Compiled again under the name it was chosen as, so a renamed file still says so.
-      programActions(RETRYABLE.has(error.code) && (() => compile(renamedFrom ?? fileName, source, origin, workspace, replaces, edit)), edit),
+      programActions(failed),
     ];
   }
 
-  // Try again, when `retry` is given, and Choose another file…: every way on from a card that opened nothing.
-  // A card for an edit leads with Back to editing.
-  function programActions(retry, edit = false) {
+  // Every way on from a card that opened nothing: Try again after Cancel or a failure the compiler caused
+  // (sending the same request, so a renamed file still says so), and Choose another file…. A card for an
+  // edit leads with Back to editing.
+  function programActions({ kind, request, error }) {
+    const { edit } = request;
+    const retry = kind === "cancelled" || RETRYABLE.has(error.code);
     return h("div", { class: "program-actions" },
       ...(edit ? [h("button", { type: "button", class: "primary", onclick: backToEditing }, "Back to editing")] : []),
-      ...(retry ? [h("button", { type: "button", class: edit ? null : "primary", onclick: retry }, "Try again")] : []),
+      ...(retry ? [h("button", { type: "button", class: edit ? null : "primary", onclick: () => compile(request) }, "Try again")] : []),
       h("button", { type: "button", onclick: () => view.fileInput.click() }, "Choose another file…"));
   }
 
@@ -454,18 +455,20 @@
 
   // The one way in for a file, however it arrives: read it, then compile it.
   async function uploadFile(file) {
-    await compile(file.name, await AcceptedProgram.read(file));
+    await compile({ fileName: file.name, text: await AcceptedProgram.read(file) });
   }
 
-  // Check a file name and its text as the server will, then send the safe name and normalised source,
-  // which the server accepts unchanged. `text` is null if the file is not UTF-8. `origin` is where the
+  // Compile a request { fileName, text, origin, workspace, replaces, edit }, of which only the file name
+  // and text, as chosen, are needed: check them as the server will, then send the safe name and normalised
+  // source, which the server accepts unchanged. `text` is null if the file is not UTF-8. `origin` is where the
   // program came from, as Your files keeps it. `workspace` (app.js currentWorkspace), if given, is the
   // panels and function the compiled program opens with. `replaces`, if given, is the programId of the Your
   // files entry the compiled program takes the place of. A file replaces whatever was open at once, an edit
   // the editor left open included. `edit` compiles the edit open in the editor instead (see compileEditor):
   // what it started from stays open, behind the card, until it compiles, and a compile error takes it back
   // to the editor.
-  async function compile(fileName, text, origin = null, workspace = null, replaces = null, edit = false) {
+  async function compile(request) {
+    const { fileName, text, origin = null, workspace = null, replaces = null, edit = false } = request;
     if (card?.kind === "compiling") return;
     if (!edit) {
       if (editing) closeEditor();
@@ -476,14 +479,14 @@
     const accepted = AcceptedProgram.accept(fileName, text);
     if (!accepted.ok) {
       const { reason, message } = accepted;
-      showFailure({ fileName, renamedFrom: null, edit, error: { code: "invalid_program", reason, message } },
+      showFailure({ fileName, renamedFrom: null, request, error: { code: "invalid_program", reason, message } },
         `Error: ${message} Nothing was sent to the compiler.`);
       return;
     }
     const renamedFrom = accepted.fileName === fileName ? null : fileName;
     sourceState.data = { file: accepted.fileName, text: accepted.source };
     renderSource();
-    const compiling = { kind: "compiling", fileName: accepted.fileName, renamedFrom, origin, workspace, replaces, edit, started: performance.now(),
+    const compiling = { kind: "compiling", fileName: accepted.fileName, renamedFrom, request, started: performance.now(),
       cancel: new AbortController() };
     card = compiling;
     render();
@@ -501,7 +504,7 @@
     }
     // Cancel dropped the request, so the server stopped the compile; whatever the request came to is ignored.
     if (compiling.cancel.signal.aborted) {
-      showCancelled({ fileName: accepted.fileName, renamedFrom, origin, workspace, replaces, source: accepted.source, edit });
+      showCancelled({ fileName: accepted.fileName, renamedFrom, request });
       return;
     }
     if (!result.ok && edit && result.error.code === "compile_failed") {
@@ -509,7 +512,7 @@
       return;
     }
     if (!result.ok) {
-      showFailure({ fileName: accepted.fileName, renamedFrom, origin, workspace, replaces, source: accepted.source, error: result.error, edit });
+      showFailure({ fileName: accepted.fileName, renamedFrom, request, error: result.error });
       return;
     }
     if (edit) {
@@ -712,7 +715,7 @@
     } else {
       const uploaded = uploads.find(upload => !upload.origin && upload.source === origin.source);
       if (uploaded) await openUpload(uploaded.programId);
-      else await compile(origin.fileName, origin.source);
+      else await compile({ fileName: origin.fileName, text: origin.source });
     }
     if (select.checkVisibility() && !select.disabled) select.focus();
   }
@@ -742,7 +745,7 @@
     editing.behind = { source: sourceState.data, workspaceHidden: elements.workspace.hidden, emptyStateHidden: elements.emptyState.hidden };
     view.editorDiagnostics.replaceChildren();
     view.editor.markErrors([]);
-    compile(fileName, text, origin, workspace, replaces, true);
+    compile({ fileName, text, origin, workspace, replaces, edit: true });
     // The card is up at once; keep the keyboard in it (on Cancel, or the first way on from a refusal).
     if (focused) view.card.querySelector("button")?.focus();
   }
@@ -811,8 +814,10 @@
   // screen until then; on a failure the program is closed and the card says why.
   async function recompile(upload) {
     const { fileName, renamedFrom = null, origin = null, source } = upload;
+    // What Try again compiles: the upload, under the name it was chosen as.
+    const request = { fileName: renamedFrom ?? fileName, text: source, origin };
     const workspaceHidden = elements.workspace.hidden, emptyStateHidden = elements.emptyState.hidden;
-    const recompiling = { kind: "compiling", fileName, started: performance.now(), forgotten: true,
+    const recompiling = { kind: "compiling", fileName, request, started: performance.now(), forgotten: true,
       cancel: new AbortController() };
     card = recompiling;
     render();
@@ -832,8 +837,8 @@
     closeWorkspace();
     sourceState.data = { file: fileName, text: source };
     renderSource();
-    if (recompiling.cancel.signal.aborted) showCancelled({ fileName, renamedFrom, origin, source });
-    else showFailure({ fileName, origin, source, error: result.error });
+    if (recompiling.cancel.signal.aborted) showCancelled({ fileName, renamedFrom, request });
+    else showFailure({ fileName, renamedFrom: null, request, error: result.error });
     return false;
   }
 
@@ -841,7 +846,7 @@
   function showFailure(failed, announcement = `Error: ${failed.error.message}`) {
     // For an edit, the keyboard stays in the card: Cancel goes with the compiling card, and Back to editing
     // stands where it was.
-    const focused = failed.edit && view.card.contains(document.activeElement);
+    const focused = failed.request.edit && view.card.contains(document.activeElement);
     card = { kind: "failed", ...failed };
     render();
     announce(announcement, "error");
