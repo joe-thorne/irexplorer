@@ -1,0 +1,83 @@
+/* PROTOTYPE ONLY (irexplorer#71): editing-flow variants, the shared editor and the floating switcher. */
+
+/* The shared editor: a transparent textarea exactly over the highlighted lines. */
+.proto-editor { display: flex; flex: 1 1 auto; flex-direction: column; gap: .25rem; min-height: 0; }
+.proto-editor-frame { background: var(--code-bg); border: 1px solid #9fb3c8; border-radius: .45rem; display: flex; flex: 1 1 auto; min-height: 12rem; overflow: hidden; }
+.proto-editor-frame:focus-within { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.proto-editor-gutter, .proto-editor-highlight, .proto-editor-input {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .82rem; line-height: 1.35; tab-size: 4;
+}
+.proto-editor-gutter { border-right: 1px solid #dce5ef; color: #8494a7; display: flex; flex: 0 0 2.6rem; flex-direction: column; overflow: hidden; padding: .4rem 0; text-align: right; user-select: none; }
+.proto-gutter-line { border-left: 3px solid transparent; padding-right: .45rem; }
+.proto-gutter-line.is-changed { border-left-color: #2563eb; color: #1d4ed8; font-weight: 700; }
+.proto-gutter-line.is-error { background: #fde8e8; border-left-color: #b91c1c; color: #991b1b; font-weight: 800; }
+.proto-editor-body { flex: 1 1 auto; min-width: 0; overflow: hidden; position: relative; }
+.proto-editor-highlight { color: var(--code); left: 0; margin: 0; padding: .4rem .5rem; pointer-events: none; position: absolute; top: 0; white-space: pre; }
+.proto-highlight-line { display: block; min-height: 1.35em; }
+.proto-highlight-line.is-error { text-decoration: underline wavy #b91c1c; text-decoration-skip-ink: none; text-underline-offset: 3px; }
+.proto-editor-input { background: transparent; border: 0; caret-color: var(--ink); color: transparent; height: 100%; inset: 0; margin: 0; outline: none; overflow: auto; padding: .4rem .5rem; position: absolute; resize: none; white-space: pre; width: 100%; }
+.proto-editor-input::selection { background: rgb(37 99 235 / 25%); color: transparent; }
+.proto-editor.is-plain .proto-editor-input { color: var(--code); }
+.proto-editor.is-plain .proto-editor-input::selection { color: inherit; }
+.proto-editor-hint { color: var(--muted); font-size: .75rem; margin: 0; }
+.proto-editor-hint.is-over { color: #991b1b; font-weight: 700; }
+
+/* Shared controls around the editor. */
+.proto-edit-name-field { color: var(--ink); display: grid; font-size: .82rem; font-weight: 750; gap: .2rem; }
+.proto-edit-name { background: #fff; border: 1px solid #9fb3c8; border-radius: .35rem; color: var(--code); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .82rem; min-height: 2.25rem; padding: .3rem .45rem; }
+.proto-edit-status { color: var(--muted); font-size: .8rem; margin: 0; }
+.proto-edit-status.is-dirty { color: #9a5b09; font-weight: 750; }
+.proto-edit-status.is-dirty::before { content: "● "; }
+.proto-edit-actions button.primary, .program-actions button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.proto-edit-diagnostics { flex-shrink: 0; margin: 0; max-height: 7rem; }
+.proto-edit-bar { align-items: center; display: flex; gap: .5rem; justify-content: space-between; margin-top: .35rem; }
+.proto-edit-bar .proto-origin { margin: 0; }
+.proto-edit-open { margin-left: auto; padding: .28rem .7rem; }
+#proto-new { align-self: end; min-height: 2.25rem; padding: .28rem .6rem; }
+.proto-link { background: none; border: 0; color: var(--accent); cursor: pointer; font: inherit; padding: 0; text-decoration: underline; }
+.proto-link:hover { background: none; }
+
+/* A · In the source pane: the editor stands in for the source lines; the panels say they are stale. */
+#source-panel[data-proto-editing="A"] > :is(#source-lines, .program-drop, .program-paste, #source-prompt) { display: none !important; }
+.proto-edit-a { display: flex; flex: 1 1 auto; flex-direction: column; gap: .4rem; margin-top: .4rem; min-height: 0; }
+.viewer-panel.proto-stale { outline: 2px dashed #d4a017; outline-offset: -2px; }
+.viewer-panel.proto-stale::before { background: #fff7d6; border-radius: .3rem; color: #6b4b00; content: "Showing the last compile, not your edits"; font-size: .78rem; font-weight: 750; margin-bottom: .35rem; padding: .2rem .45rem; }
+
+/* B · Beside the compiled source: the editor takes the panels' place. */
+#workspace-shell[data-proto-editing="B"] > :is(#workspace, #empty-state, #program-card, .error-state) { display: none !important; }
+#workspace-shell[data-proto-editing="B"] { grid-template-areas: "heading heading heading" "source empty empty" !important; }
+.proto-edit-b { display: flex; flex-direction: column; gap: .45rem; grid-area: empty; height: clamp(48rem, 90vh, 58rem); min-height: 0; min-width: 0; padding: .75rem; }
+.proto-edit-b-heading { border-bottom: 1px solid var(--line); display: grid; gap: .4rem; padding-bottom: .45rem; }
+.proto-edit-b-heading h2 { font-size: 1.1rem; margin: 0; }
+.proto-edit-b-controls { align-items: end; display: flex; flex-wrap: wrap; gap: .6rem; justify-content: space-between; }
+.proto-edit-b-note { background: var(--accent-soft); border-radius: .35rem; font-size: .8rem; margin: .4rem 0 0; padding: .3rem .5rem; }
+#source-panel[data-proto-reference="none"] > :is(#source-lines, .program-drop) { display: none !important; }
+@media (max-width: 1100px) { #workspace-shell[data-proto-editing="B"] { grid-template-areas: "heading" "source" "empty" !important; } }
+
+/* C · Separate editing step: the editor takes the whole workbench. */
+#workspace-shell[data-proto-editing="C"] > :is(#source-panel, #workspace, #empty-state, #program-card, .error-state) { display: none !important; }
+#workspace-shell[data-proto-editing="C"] { grid-template-areas: "heading heading heading" "editor editor editor" !important; }
+.proto-edit-c { display: flex; flex-direction: column; gap: .55rem; grid-area: editor; height: clamp(40rem, 85vh, 56rem); min-height: 0; padding: 1rem 1.25rem; }
+.proto-edit-c-heading { align-items: start; border-bottom: 1px solid var(--line); display: flex; gap: 1rem; justify-content: space-between; padding-bottom: .6rem; }
+.proto-edit-c-heading h2 { font-size: 1.25rem; margin: 0 0 .15rem; }
+.proto-edit-c-from { color: var(--muted); font-size: .85rem; margin: 0; }
+.proto-edit-c-row { align-items: end; display: flex; flex-wrap: wrap; gap: 1rem; }
+.proto-edit-c-row .proto-edit-name { width: 18rem; }
+@media (max-width: 1100px) { #workspace-shell[data-proto-editing="C"] { grid-template-areas: "heading" "editor" !important; } }
+
+/* The floating switcher and the scenario tray. */
+body.has-prototype-switcher { padding-bottom: 4.5rem; }
+.proto-switcher { align-items: center; background: #111827; border-radius: 2rem; bottom: 1rem; box-shadow: 0 8px 24px rgb(0 0 0 / 35%); color: #f9fafb; display: flex; font: 600 .85rem/1 ui-sans-serif, system-ui, sans-serif; gap: .4rem; left: 50%; padding: .35rem .5rem; position: fixed; transform: translateX(-50%); z-index: 50; }
+.proto-switcher button { background: #374151; border: 0; border-radius: 1rem; color: #f9fafb; padding: .35rem .65rem; }
+.proto-switcher button:hover { background: #4b5563; }
+.proto-switcher-label { min-width: 13rem; text-align: center; }
+.proto-tray { background: #111827; border-radius: .8rem; bottom: 4rem; box-shadow: 0 8px 24px rgb(0 0 0 / 35%); color: #e5e7eb; font: .8rem/1.35 ui-sans-serif, system-ui, sans-serif; left: 50%; max-height: 60vh; max-width: calc(100vw - 2rem); overflow: auto; padding: .8rem; position: fixed; transform: translateX(-50%); width: 50rem; z-index: 50; }
+.proto-tray-title { font-weight: 800; margin: 0 0 .4rem; }
+.proto-tray-tip { color: #9ca3af; margin: 0 0 .5rem; }
+.proto-settings { align-items: end; display: flex; flex-wrap: wrap; gap: .6rem; margin: .7rem 0; }
+.proto-settings label { display: grid; gap: .15rem; }
+.proto-settings select { background: #1f2937; border-color: #4b5563; color: #f9fafb; min-height: 1.9rem; }
+.proto-settings button { background: #374151; border: 0; border-radius: .4rem; color: #f9fafb; padding: .35rem .45rem; }
+.proto-readout { display: grid; gap: .15rem .6rem; grid-template-columns: max-content 1fr; margin: 0; }
+.proto-readout dt { color: #9ca3af; }
+.proto-readout dd { margin: 0; overflow-wrap: anywhere; }

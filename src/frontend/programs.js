@@ -247,6 +247,8 @@
     } else {
       view.card.replaceChildren(...failureContent(card));
     }
+    // PROTOTYPE (irexplorer#71): the editing prototype adds its own buttons to the card.
+    window.PrototypeEdit?.decorateCard(view.card, card);
   }
 
   function failureContent({ fileName, renamedFrom, source, error }) {
@@ -471,10 +473,19 @@
     if (cancelling) view.card.querySelector("button").focus();
   }
 
+  // PROTOTYPE (irexplorer#71): the editing prototype drives the M1 flow through this seam.
+  window.ProgramsPrototype = {
+    view, compile, openUpload, render, keepUploads, uploads,
+    get mode() { return mode; }, setMode,
+    get current() { return current; }, get card() { return card; },
+    get compiling() { return card?.kind === "compiling"; },
+  };
+
   fetch("/api/release", { cache: "no-store" }).then(response => response.ok ? response.json() : null).then(release => {
     if (release?.config?.userPrograms !== true) return;
     build();
     followRoute();
+    document.dispatchEvent(new Event("programs-ready"));
   }).catch(() => {});
   // Added now, before study.js adds its own (scripts run in order), so on leaving Explore a user program
   // is closed before a Study task prepares its workspace.
