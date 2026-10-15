@@ -44,15 +44,25 @@
   // compile). A file the browser refuses before sending fails with the server's invalid_program error.
   let card = null;
   let ticking = null;
-  // The program open in the editor, if any: { title, origin, replaces, compiled, workspace, opener,
-  // exampleSelectDisabled, confirming }. replaces is the programId of the Your files entry a compile replaces
-  // (Edit), or null when it adds one (Edit a copy, New…). compiled is true when it opened on the program on
-  // screen (Edit a copy or Edit), whose compiled source the source panel keeps showing beside it, and the
-  // margin marks changes against, and false for a new program; workspace is the panels and function on
-  // screen, for the compiled edit to open with (app.js currentWorkspace), or null. opener is the button that
+  // The program open in the editor, if any: { title, origin, replaces, compiled, workspace, opened, opener,
+  // exampleSelectDisabled, confirming, reopened }. replaces is the programId of the Your files entry a
+  // compile replaces (Edit), or null when it adds one (Edit a copy, New…). compiled is true when it opened
+  // on the program on screen (Edit a copy or Edit), whose compiled source the source panel keeps showing
+  // beside it, and the margin marks changes against, and false for a new program; workspace is the panels
+  // and function on screen, for the compiled edit to open with (app.js currentWorkspace), or null; opened is
+  // what was open behind the editor ({ exampleId } or { programId }), or null. opener is the button that
   // opened it, which gets focus back when it closes. While it is open the editor stands in for the panels
-  // and the comparison (which stay as they were behind it), and the file controls are disabled.
+  // and the comparison (which stay as they were behind it), and the file controls are disabled. reopened is
+  // true for an Uncompiled edit picked up again after a reload, when nothing is open behind it (reopenEdit).
   let editing = null;
+  // The Uncompiled edit, kept in session storage beside the uploads while the editor is open, so that a
+  // reload in this tab picks it up again (another tab, or a later visit, starts clean): { mode, title, origin,
+  // replaces, opened, workspace, fileName, text, start, compiled }, where text is the editor's text, start
+  // what the edit started as and compiled the compiled source the source panel shows beside it ({ file,
+  // text }, null for a new program). Compiling, discarding or leaving Explore removes it.
+  const EDIT_KEY = "irexplorer.programs.uncompiled-edit";
+  // The one kept when this page loaded, which the editor reopens on entering Explore.
+  let keptEdit = readEdit();
   // The warnings the list was last built for, so it is rebuilt, and closed, only for another program.
   let listedWarnings = null;
 
@@ -68,6 +78,29 @@
 
   function keepUploads() {
     try { sessionStorage.setItem(UPLOADS_KEY, JSON.stringify(uploads)); } catch { /* kept for this page only */ }
+  }
+
+  function readEdit() {
+    try {
+      const edit = JSON.parse(sessionStorage.getItem(EDIT_KEY) || "null");
+      const complete = ["title", "fileName", "text", "start"].every(key => typeof edit?.[key] === "string")
+        && ["curated", "yours"].includes(edit.mode) && typeof edit.origin?.kind === "string";
+      return complete ? edit : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function keepEdit() {
+    const { title, origin, replaces, opened, workspace, compiled } = editing;
+    const source = compiled && sourceState.data ? { file: sourceState.data.file, text: sourceState.data.text } : null;
+    const edit = { mode, title, origin, replaces, opened, workspace, fileName: view.editorName.value, text: view.editor.text,
+      start: view.editor.start, compiled: source };
+    try { sessionStorage.setItem(EDIT_KEY, JSON.stringify(edit)); } catch { /* kept until this page closes */ }
+  }
+
+  function forgetEdit() {
+    try { sessionStorage.removeItem(EDIT_KEY); } catch { /* nothing was kept */ }
   }
 
   function h(tag, attributes = {}, ...children) {
@@ -124,7 +157,7 @@
     // In the page only while a program is open in it (see renderEditor and style.css).
     view.editor = ProgramEditor.create({ label: "C source", onInput: renderEditor, onSubmit: compileEditor });
     view.editorHeading = h("h2", { id: "program-editor-heading" });
-    view.editorName = h("input", { id: "program-editor-name", type: "text", spellcheck: "false", autocomplete: "off" });
+    view.editorName = h("input", { id: "program-editor-name", type: "text", spellcheck: "false", autocomplete: "off", oninput: keepEdit });
     view.editorDiscard = h("button", { id: "program-editor-discard", type: "button", onclick: discardEditor });
     view.editorRestore = h("button", { id: "program-editor-restore", type: "button", onclick: restoreOriginal }, "Restore original");
     view.editorConfirmation = h("div", { class: "program-editor-confirmation", role: "alert" });
@@ -160,6 +193,8 @@
     view.title.append(view.summary, view.chip);
     view.shell.append(view.card);
     for (const type of DRAG_EVENTS) view.sourcePanel.addEventListener(type, dragFile);
+    if (keptEdit) reopenEdit(keptEdit);
+    keptEdit = null;
     render();
   }
 
@@ -531,8 +566,10 @@
   // panels and function.
   function openEditor({ title, origin, replaces, fileName, text, compiled }, opener, announcement) {
     if (editing || card?.kind === "compiling") return;
-    editing = { title, origin, replaces, compiled, workspace: appState.ready ? currentWorkspace() : null, opener,
-      exampleSelectDisabled: elements.exampleSelect.disabled, confirming: false };
+    const { ready, exampleId, programId } = appState;
+    editing = { title, origin, replaces, compiled, workspace: ready ? currentWorkspace() : null,
+      opened: !ready ? null : exampleId ? { exampleId } : { programId }, opener,
+      exampleSelectDisabled: elements.exampleSelect.disabled, confirming: false, reopened: false };
     view.editorName.value = fileName;
     view.editor.load(text, { compiled: compiled ? text : null });
     render();
@@ -560,6 +597,24 @@
     view.editorRestore.hidden = editing.origin.kind === "new";
     view.editorRestore.disabled = view.editor.text === editing.origin.source;
     view.editorConfirmation.hidden = !editing.confirming;
+    keepEdit();
+  }
+
+  // After a reload, open the Uncompiled edit `kept` in the editor as it was, beside the compiled source kept
+  // with it, with the source mode and file it was started from chosen and locked. Nothing is asked of the
+  // server, which may have forgotten the program the edit started from; what was open behind the editor
+  // opens again only if the editor closes without compiling (see leaveEditor).
+  function reopenEdit({ mode: kind, title, origin, replaces = null, opened = null, workspace = null, fileName, text, start, compiled = null }) {
+    mode = kind;
+    current = uploads.find(upload => upload.programId === opened?.programId) ?? null;
+    if (opened?.exampleId) elements.exampleSelect.value = opened.exampleId;
+    sourceState.data = compiled;
+    renderSource();
+    editing = { title, origin, replaces, compiled: Boolean(compiled), workspace, opened, opener: null,
+      exampleSelectDisabled: false, confirming: false, reopened: true };
+    view.editorName.value = fileName;
+    view.editor.load(text, { compiled: compiled?.text ?? null, start });
+    announce(`${title}: your uncompiled edit was kept through the reload.`);
   }
 
   const edited = () => view.editor.edited;
@@ -568,6 +623,7 @@
   function closeEditor() {
     elements.exampleSelect.disabled = editing.exampleSelectDisabled;
     editing = null;
+    forgetEdit();
     view.summary.textContent = sourceSummary();
     render();
   }
@@ -619,12 +675,19 @@
     if (select.checkVisibility() && !select.disabled) select.focus();
   }
 
-  function leaveEditor() {
-    const { opener } = editing;
+  async function leaveEditor() {
+    const { opener, opened, workspace, reopened } = editing;
     closeEditor();
-    // The button that opened the editor, or New… if that one has gone with the drop zone.
-    (opener?.checkVisibility() ? opener : view.newProgram).focus();
     announce("Editor closed.");
+    // After a reload nothing was open behind the editor: what was open when the edit started opens again.
+    if (reopened && opened?.exampleId) {
+      elements.exampleSelect.value = opened.exampleId;
+      await loadExample(workspace);
+    } else if (reopened && opened?.programId) {
+      await openUpload(opened.programId, workspace);
+    }
+    // The button that opened the editor, else Edit (or Edit a copy) on what opened again, else New….
+    (opener?.checkVisibility() ? opener : view.edit.checkVisibility() ? view.edit : view.newProgram).focus();
   }
 
   // Compile and Ctrl/⌘+Enter: the editor closes and the program compiles as an upload does.
@@ -640,12 +703,13 @@
   }
 
   // A held upload opens at once: its kept source shows while the views load, and nothing is compiled.
-  async function openUpload(programId) {
+  // `workspace` (app.js currentWorkspace), if given, is the panels and function it opens with.
+  async function openUpload(programId, workspace = null) {
     const upload = uploads.find(item => item.programId === programId);
     if (!upload) return;
     current = upload;
     card = null;
-    const opened = loadProgram(upload);
+    const opened = loadProgram(upload, workspace);
     render();
     await opened;
     if (current === upload) announceWarnings(upload);
@@ -711,7 +775,9 @@
   fetch("/api/release", { cache: "no-store" }).then(response => response.ok ? response.json() : null).then(release => {
     if (release?.config?.userPrograms !== true) return;
     build();
-    followRoute();
+    // Once the curated examples are listed, which unlocks their select, so that an Uncompiled edit
+    // reopened after a reload keeps it locked.
+    return examplesReady.then(followRoute);
   }).catch(() => {});
   // Added now, before study.js adds its own (scripts run in order), so on leaving Explore a user program
   // is closed before a Study task prepares its workspace.

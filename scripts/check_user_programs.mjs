@@ -950,6 +950,72 @@ const scenarios = {
     await check('A deleted line is not counted: one line is changed', `${marked} === '4' && ${status}.textContent === 'Edited · not compiled · 1 line new or changed'`);
   },
 
+  async 'An Uncompiled edit survives a reload in this tab, even when the server has forgotten its program, and compiling it clears it'() {
+    const quickSort = await readFile(join(curatedSources, 'quick_sort.c'), 'utf8');
+    const edited = await readFile(join(userProgramSources, 'quick_sort.c'), 'utf8');
+    const editor = `document.querySelector('#program-editor textarea')`;
+    // What the editor shows: its heading, file name, text, margin marks, status line and Discard button.
+    const editorView = `({ heading: document.querySelector('#program-editor-heading')?.textContent, name: document.querySelector('#program-editor-name')?.value, text: ${editor}?.value, marked: [...document.querySelectorAll('#program-editor .editor-gutter span.is-changed')].map(span => span.textContent).join(), status: document.querySelector('#program-editor .editor-status')?.textContent, discard: document.querySelector('#program-editor-discard')?.textContent })`;
+    await upload('quick_sort.c');
+    const uploaded = await value('appState.programId');
+    await choose('#right-state', '5');
+    await choose('#left-view', 'cfg');
+    await click('#program-edit');
+    await editorText(edited);
+    await value(`(() => { const name = document.querySelector('#program-editor-name'); name.focus(); name.select(); })()`);
+    await send('Input.insertText', { text: 'my_sort.c' });
+    const before = await value(editorView);
+    if (before.text !== edited || before.name !== 'my_sort.c' || !before.marked || !before.status.startsWith('Edited · not compiled')) throw Error(`Failed: the edit before the reload; observed=${JSON.stringify(before)}`);
+
+    // The server forgets every program, so nothing behind the editor can be read from it again.
+    await restartServer();
+    await reload();
+    const from = requests.length;
+    await until(visible('#program-editor'));
+    const after = await value(editorView);
+    if (JSON.stringify(after) !== JSON.stringify(before)) throw Error(`Failed: the editor reopens as it was; before=${JSON.stringify(before)} after=${JSON.stringify(after)}`);
+    checks.push('After a reload the editor reopens with the text, file name, heading, margin marks, status line and Discard edits');
+    await check('The editor still stands in for the panels and the comparison', `!${visible('#left-panel')} && !${visible('#right-panel')} && !${visible('.comparison-status')} && !${visible('#empty-state')} && !${visible('#program-card')}`);
+    await check('The source panel beside it shows the compiled source, with its note',
+      `${visible('#source-lines')} && document.querySelector('#source-summary').textContent === 'C source · quick_sort.c' && document.querySelectorAll('#source-lines .source-line').length === ${quickSort.replace(/\n$/, '').split('\n').length} && ${visible('#program-source-note')}`);
+    await check('The file controls stay locked, on Your files', `document.querySelector('#source-mode input[value="yours"]').checked && [...document.querySelectorAll('#source-mode input, #example-select, #your-file-select, #program-upload, #program-new')].every(control => control.disabled)`);
+    await check('The reopened edit is announced', `document.querySelector('#notice').textContent === 'Editing quick_sort.c: your uncompiled edit was kept through the reload.'`);
+    await check('Reopening the edit asked nothing of the server', `${!requests.slice(from).some(request => request.path.startsWith('/api/programs'))}`);
+    await snap('user-programs-edit-reloaded.png');
+
+    const fresh = await inFreshTab(`document.querySelector('#source-mode') !== null`,
+      `({ editor: Boolean(document.querySelector('#program-editor')), curated: document.querySelector('#source-mode input[value="curated"]').checked && !document.querySelector('#source-mode input[value="curated"]').disabled })`);
+    if (fresh.editor || !fresh.curated) throw Error(`Failed: a new tab does not show the Uncompiled edit; observed=${JSON.stringify(fresh)}`);
+    checks.push('A new tab does not show the Uncompiled edit, and starts on Curated examples');
+
+    await click('#program-editor-compile');
+    await until(`window.StudyWorkspace.ready && Boolean(appState.programId) && appState.programId !== ${JSON.stringify(uploaded)} && !${visible('#program-card')}`);
+    await check('The reopened edit compiles in place of the upload it started from, with the panels as they were',
+      `${uploadOptions}.join('|') === 'my_sort.c · edited' && document.querySelector('#right-state').value === '5' && document.querySelector('#left-view').value === 'cfg'`);
+    await reload();
+    await pause(300);
+    await check('After compiling, a reload opens no editor', `!document.querySelector('#program-editor') && ${uploadOptions}.join('|') === 'my_sort.c · edited' && !document.querySelector('#program-new').disabled`);
+  },
+
+  async 'An Uncompiled edit of a curated copy survives a reload, and discarding it brings the example back and clears it'() {
+    await openCurated('quick_sort');
+    await choose('#left-state', '3');
+    await click('#program-edit');
+    await send('Input.insertText', { text: '// an edit\n' });
+    await reload();
+    await until(visible('#program-editor'));
+    await check('After a reload the copy reopens under its heading, on Curated examples with the example locked',
+      `document.querySelector('#program-editor-heading').textContent === 'Editing a copy of curated quick sort' && document.querySelector('#program-editor textarea').value.startsWith('// an edit\\n') && document.querySelector('#program-editor .editor-gutter span.is-changed')?.textContent === '1' && document.querySelector('#source-mode input[value="curated"]').checked && document.querySelector('#example-select').value === 'quick_sort' && [...document.querySelectorAll('#source-mode input, #example-select')].every(control => control.disabled)`);
+    await click('#program-editor-discard');
+    await value(`[...document.querySelectorAll('#program-editor .program-editor-confirmation button')].find(button => button.textContent === 'Discard edits').click()`);
+    await until(`window.StudyWorkspace.ready && appState.exampleId === 'quick_sort'`);
+    await check('Discarding brings back the curated example with the panels as they were, and Edit a copy focused',
+      `!document.querySelector('#program-editor') && ${visible('#left-panel')} && document.querySelector('#left-state').value === '3' && !document.querySelector('#example-select').disabled && document.activeElement === document.querySelector('#program-edit')`);
+    await reload();
+    await pause(300);
+    await check('After discarding, a reload opens no editor', `!document.querySelector('#program-editor') && !document.querySelector('#example-select').disabled`);
+  },
+
   async 'Leaving Explore closes the editor, and Study never shows it'() {
     await click('#source-mode input[value="yours"]');
     await click('#program-new');
@@ -960,6 +1026,9 @@ const scenarios = {
     await value(`location.hash = '/explore'`);
     await until(`document.querySelector('#source-mode') !== null`);
     await check('Back in Explore the editor is closed, on Curated examples', `!document.querySelector('#program-editor') && document.querySelector('#source-mode input[value="curated"]').checked && ${visible('#example-select')}`);
+    await reload();
+    await pause(300);
+    await check('The edit left behind in Explore is not kept: a reload opens no editor', `!document.querySelector('#program-editor') && !document.querySelector('#example-select').disabled`);
   },
 
   async 'Study never builds the upload controls, even while a compile is under way'() {

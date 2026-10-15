@@ -48,8 +48,8 @@ window.ProgramEditor = (() => {
     return changed;
   }
 
-  // An editor of C source: { element, textarea, text, edited, load(text, { compiled, start }), replaceText(text),
-  // focus() }.
+  // An editor of C source: { element, textarea, text, start, edited, load(text, { compiled, start }),
+  // replaceText(text), focus() }.
   // The margin marks the lines that are new or changed against the compiled source the edit started from,
   // and a status line, shown once the text differs from what it started as, counts them. The hint under
   // it gives the keys and the line count. onInput runs after each edit; onSubmit on Ctrl/⌘+Enter.
@@ -174,6 +174,8 @@ window.ProgramEditor = (() => {
     return {
       element, textarea,
       get text() { return textarea.value; },
+      // What the edit started as (see load).
+      get start() { return start; },
       // Whether the text differs from what the edit started as.
       get edited() { return textarea.value !== start; },
       // Start afresh on `text`, scrolled to the top with the caret at the start. `compiled` is the compiled
