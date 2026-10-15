@@ -56,7 +56,7 @@ from src.backend.programs.compiler import (
     CompileRequest,
     CompilerOutput,
 )
-from src.backend.programs.diagnostics import compile_failure
+from src.backend.programs.diagnostics import compile_failure, compile_warnings
 from src.backend.programs.unsupported import UnsupportedProgram, unsupported_program
 
 # At most 16 programs are held; nothing is persisted, so a restart forgets them all.
@@ -78,6 +78,8 @@ class UnknownProgramError(QueryError):
 class UserProgram:
     records: ModelRecords
     manifest: dict[str, Any]
+    # clang's warnings on the program, as compile_failed's diagnostics are shaped; empty when there are none.
+    warnings: tuple[dict[str, Any], ...]
 
 
 class ProgramStore:
@@ -137,7 +139,7 @@ def router(store: ProgramStore, compiler: CompilerClient) -> APIRouter:
         except ValueError as exc:
             # Ingest and model validation fail with ValueError: the program compiled, but cannot be shown.
             raise unsupported_program(exc) from exc
-        return UserProgram(records, output.manifest)
+        return UserProgram(records, output.manifest, tuple(compile_warnings(output.o0_stderr)))
 
     @api.post("/api/programs", response_model=ProgramResponse, status_code=201)
     async def post_program(posted: ProgramRequest, request: Request, response: Response) -> Any:
@@ -230,7 +232,7 @@ def _error(status_code: int, error: dict[str, Any]) -> JSONResponse:
 def _program_view(program: UserProgram) -> dict[str, Any]:
     source = program.records.source
     return {"programId": program.records.timeline_id, "fileName": source.file, "sha256": source.sha256,
-            "manifest": program.manifest}
+            "manifest": program.manifest, "warnings": list(program.warnings)}
 
 
 def _with_program_id(view: dict[str, Any]) -> dict[str, Any]:
