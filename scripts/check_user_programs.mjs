@@ -1,7 +1,8 @@
 // User programs acceptance. Node 22+ and an isolated headless Chrome CDP, against a host runner with the
 // user programs setting on and a compiler service on loopback over the fake toolchain (check_browser.sh
-// phase 3). Uploads are the unedited curated sources and the recorded corpus in tests/data/user-programs,
-// which the fake toolchain has recordings for.
+// phase 3). Uploads and programs compiled from the editor are the unedited curated sources and the recorded
+// corpus in tests/data/user-programs (the editor's starter function among them), which the fake toolchain
+// has recordings for.
 // Each scenario starts from a freshly loaded Explore page with empty session storage; add a scenario
 // to `scenarios` for each new behaviour. Optional IREXPLORER_CHECK_OUTPUT directory for screenshots.
 // IREXPLORER_COMPILER_PID is the compiler service's process, which a scenario pauses to make it unavailable.
@@ -127,6 +128,11 @@ async function dropFile(selector, file) {
   const data = { items: [], files: [file], dragOperationsMask: 1 };
   for (const type of ['dragEnter', 'dragOver', 'drop']) await send('Input.dispatchDragEvent', { type, x, y, data });
 }
+// Press a key with `modifiers` (CDP's bit field) held, as a person would.
+const CTRL = 2;
+async function key(key, code, keyCode, modifiers = 0) {
+  for (const type of ['keyDown', 'keyUp']) await send('Input.dispatchKeyEvent', { type, key, code, windowsVirtualKeyCode: keyCode, modifiers });
+}
 async function holdCompiles(hold) {
   if (hold) await send('Fetch.enable', { patterns: [{ urlPattern: '*/api/programs', requestStage: 'Request' }] });
   else await send('Fetch.disable');
@@ -192,7 +198,7 @@ async function reload() {
 
 // Study (#/study…) is unchanged by user programs: none of their controls exist there, and the source
 // panel is the curated one. `studySurface` reads what a participant's source panel is made of.
-const programControls = ['#source-mode', '#your-file-control', '#your-file-select', '#program-upload', '#program-paste-open', '#program-file-input', '#program-drop', '#program-paste', '#program-chip', '#program-card', '#program-warnings', '.source-title'];
+const programControls = ['#source-mode', '#your-file-control', '#your-file-select', '#program-upload', '#program-new', '#program-file-input', '#program-drop', '#program-editor', '#program-chip', '#program-card', '#program-warnings', '.source-title'];
 const noProgramControls = `${JSON.stringify(programControls)}.every(selector => !document.querySelector(selector))`;
 const curatedExamples = (await (await fetch(base + '/api/examples')).json()).examples;
 const curatedSourcePanel = `(() => { const panel = document.querySelector('#source-panel'), options = [...document.querySelectorAll('#example-select option')].map(option => option.value).filter(Boolean);
@@ -483,14 +489,14 @@ const scenarios = {
       `${posts() === before} && location.hash === '#/explore' && !${visible('#program-card')} && document.querySelector('#source-mode input[value="curated"]').checked`);
 
     await click('#source-mode input[value="yours"]');
-    await check('With no user program open the source lines area reads "Drop a .c file here" and offers Paste source instead',
-      `(() => { const drop = document.querySelector('#program-drop'), buttons = [...drop.querySelectorAll('button')].map(b => b.textContent); return ${visible('#program-drop')} && drop.querySelector('.program-drop-title').textContent === 'Drop a .c file here' && buttons.join('|') === 'Choose a file…|Paste source instead'; })()`);
+    await check('With no user program open the source lines area reads "Drop a .c file here" and offers Write or paste a program',
+      `(() => { const drop = document.querySelector('#program-drop'), buttons = [...drop.querySelectorAll('button')].map(b => b.textContent); return ${visible('#program-drop')} && drop.querySelector('.program-drop-title').textContent === 'Drop a .c file here' && buttons.join('|') === 'Choose a file…|Write or paste a program'; })()`);
     await holdCompiles(true);
     await dropFile('#source-panel', join(curatedSources, 'binary_search.c'));
     await until(`document.querySelector('#program-card')?.innerText.includes('Compiling binary_search.c')`);
     await check('The dropped source is shown at once while it compiles', `document.querySelector('#source-summary').textContent === 'C source · binary_search.c' && document.querySelector('#source-lines').inert`);
-    await check('Pasting is unavailable during a compile',
-      `[...document.querySelectorAll('#program-paste-open, #program-drop button')].every(control => control.disabled) && !${visible('#program-paste')}`);
+    await check('New… is unavailable during a compile',
+      `[...document.querySelectorAll('#program-new, #program-drop button')].every(control => control.disabled)`);
     await dropFile('#source-panel', join(curatedSources, 'quick_sort.c'));
     await pause(300);
     await check('Dropping another file during a compile is refused: the compile carries on',
@@ -509,43 +515,113 @@ const scenarios = {
       `document.querySelector('#source-summary').textContent === 'C source · quick_sort.c' && [...document.querySelector('#your-file-select').options].filter(option => option.value).map(option => option.textContent).join('|') === 'binary_search.c|quick_sort.c'`);
   },
 
-  async 'Paste source in Your files and explore it as a user program'() {
-    const source = await readFile(join(curatedSources, 'score.c'), 'utf8');
+  async 'New… opens the editor on a starter function, and Compile opens it as a new program'() {
+    const starter = await readFile(join(userProgramSources, 'program.c'), 'utf8');
     await click('#source-mode input[value="yours"]');
-    await check('Your files offers Paste… beside Upload…', `${visible('#program-paste-open')} && document.querySelector('#program-paste-open').textContent === 'Paste…' && !${visible('#program-paste')}`);
-    await value(`[...document.querySelectorAll('#program-drop button')].find(b => b.textContent === 'Paste source instead').click()`);
-    await check('Paste source instead opens a plain textarea with a File name field defaulting to program.c',
-      `${visible('#program-paste')} && !${visible('#program-drop')} && document.querySelector('#program-paste-name').value === 'program.c' && document.querySelector('label[for="program-paste-name"]').textContent.startsWith('File name') && document.querySelector('#program-paste-source').tagName === 'TEXTAREA' && document.activeElement === document.querySelector('#program-paste-source')`);
-    await snap('user-programs-paste.png');
-    await click('#program-paste-cancel');
-    await check('Cancel closes the paste box and offers the drop zone again', `!${visible('#program-paste')} && ${visible('#program-drop')}`);
+    await check('Your files offers New… after Upload…, and no paste box',
+      `${visible('#program-new')} && document.querySelector('#program-new').textContent === 'New…' && Boolean(document.querySelector('#program-upload').compareDocumentPosition(document.querySelector('#program-new')) & Node.DOCUMENT_POSITION_FOLLOWING) && !document.querySelector('#program-paste-open, #program-paste')`);
+    await check('The drop zone offers Write or paste a program beside Choose a file…',
+      `[...document.querySelectorAll('#program-drop button')].map(button => button.textContent).join('|') === 'Choose a file…|Write or paste a program'`);
+    await click('#program-new');
+    await check('The editor stands in for the panels and the comparison, two columns wide',
+      `(() => { const editor = document.querySelector('#program-editor').getBoundingClientRect(), source = document.querySelector('#source-panel').getBoundingClientRect(); return ${visible('#program-editor')} && !${visible('#left-panel')} && !${visible('#right-panel')} && !${visible('.comparison-status')} && !${visible('#empty-state')} && editor.left > source.right && editor.width > 1.8 * source.width && Math.abs(editor.top - source.top) < 1; })()`);
+    await check('The source panel beside it is empty: no source lines and no drop zone',
+      `!${visible('#source-lines')} && !${visible('#program-drop')} && !${visible('#source-prompt')} && document.querySelector('#source-summary').textContent === 'C source' && !${visible('#program-chip')}`);
+    await check('Its heading reads New program and labels the editor, with a File name field of program.c',
+      `(() => { const editor = document.querySelector('#program-editor'), heading = document.getElementById(editor.getAttribute('aria-labelledby')), name = document.querySelector('#program-editor-name'); return editor.tagName === 'SECTION' && heading.tagName === 'H2' && heading.textContent === 'New program' && name.value === 'program.c' && name.labels[0]?.textContent.trim().startsWith('File name'); })()`);
+    await check('The editor holds the starter function, focused, and is labelled for screen readers',
+      `(() => { const text = document.querySelector('#program-editor textarea'); return text.value === ${JSON.stringify(starter)} && document.activeElement === text && text.getAttribute('aria-label') === 'C source'; })()`);
+    await check('The editor numbers its lines', `[...document.querySelectorAll('#program-editor .editor-gutter span')].map(span => span.textContent).join() === ${JSON.stringify(starter.split('\n').map((_, index) => index + 1).join())}`);
+    await check('The editor highlights C as the source panel does, behind the text and aligned with the numbers',
+      `(() => { const lines = [...document.querySelectorAll('#program-editor .editor-highlight > span')], numbers = [...document.querySelectorAll('#program-editor .editor-gutter span')]; return lines[0].querySelector('.c-token-comment')?.textContent.startsWith('// A new program') && lines[1].querySelector('.c-token-type')?.textContent === 'int' && lines[1].querySelector('.c-token-function')?.textContent === 'square' && lines[2].querySelector('.c-token-keyword')?.textContent === 'return' && document.querySelector('#program-editor .editor-highlight').getAttribute('aria-hidden') === 'true' && lines.every((line, index) => Math.abs(line.getBoundingClientRect().top - numbers[index].getBoundingClientRect().top) < 1); })()`);
+    await check('The switch, both file selects, Upload… and New… are disabled while editing',
+      `[...document.querySelectorAll('#source-mode input, #example-select, #your-file-select, #program-upload, #program-new')].every(control => control.disabled)`);
+    await snap('user-programs-editor.png');
+    await check('With no edits the editor offers Close editor', `document.querySelector('#program-editor-discard').textContent === 'Close editor'`);
+    await click('#program-editor-discard');
+    await check('Close editor closes at once, back to the drop zone with the controls enabled and New… focused',
+      `!document.querySelector('#program-editor') && ${visible('#program-drop')} && !document.querySelector('#program-new').disabled && !document.querySelector('#program-upload').disabled && !document.querySelector('#source-mode input[value="curated"]').disabled && document.activeElement === document.querySelector('#program-new')`);
 
-    await click('#program-paste-open');
-    await check('Paste… opens the paste box too', `${visible('#program-paste')} && document.activeElement === document.querySelector('#program-paste-source')`);
-    await send('Input.insertText', { text: source });
+    await value(`[...document.querySelectorAll('#program-drop button')].find(button => button.textContent === 'Write or paste a program').click()`);
+    await check('Write or paste a program opens the editor too, on the starter function', `${visible('#program-editor')} && document.querySelector('#program-editor textarea').value === ${JSON.stringify(starter)}`);
     await holdCompiles(true);
     const before = posts();
-    await click('#program-paste-compile');
+    await click('#program-editor-compile');
     await until(`document.querySelector('#program-card')?.innerText.includes('Compiling program.c')`);
-    await check('The pasted source compiles as program.c, shown at once, and the paste box closes',
-      `document.querySelector('#source-summary').textContent === 'C source · program.c' && ${visible('#source-lines')} && !${visible('#program-paste')} && document.querySelectorAll('#source-lines .source-line').length === ${source.replace(/\n$/, '').split('\n').length}`);
-    await check('Paste… and the paste box are disabled during a compile',
-      `[...document.querySelectorAll('#program-paste-open, #program-drop button, #program-paste-compile')].every(control => control.disabled)`);
+    await check('Compile closes the editor and shows the compiling card with Cancel, the source shown at once',
+      `!document.querySelector('#program-editor') && ${visible('#program-card')} && ${cardButtons} === 'Cancel' && document.querySelector('#source-summary').textContent === 'C source · program.c' && document.querySelectorAll('#source-lines .source-line').length === ${starter.replace(/\n$/, '').split('\n').length}`);
     await releaseCompile();
     await holdCompiles(false);
     await until('window.StudyWorkspace.ready && Boolean(appState.programId)');
-    await check('Exactly one POST /api/programs was sent for the paste', `${posts() - before === 1}`);
-    await check('The pasted source opens as a user program named program.c',
-      `document.querySelector('#source-summary').textContent === 'C source · program.c' && ${visible('#program-chip')} && /^[0-9a-f]{64}$/.test(appState.programId) && appState.exampleId === null && document.querySelectorAll('#left-viewer .ir-line').length > 0`);
-    const programId = await value('appState.programId');
+    await check('Exactly one POST /api/programs was sent', `${posts() - before === 1}`);
+    await check('The new program opens in the panels and is listed as "program.c · new"',
+      `document.querySelector('#source-summary').textContent === 'C source · program.c' && ${visible('#left-panel')} && document.querySelectorAll('#left-viewer .ir-line').length > 0 && ${uploadOptions}.join('|') === 'program.c · new' && document.querySelector('#your-file-select').selectedOptions[0].textContent === 'program.c · new'`);
+  },
 
-    await click('#program-paste-open');
-    await check('Paste… over an open user program hides its source until cancelled or compiled', `${visible('#program-paste')} && !${visible('#source-lines')}`);
-    await value(`(() => { const name = document.querySelector('#program-paste-name'); name.value = 'my_score.c'; name.dispatchEvent(new Event('input', { bubbles: true })); })()`);
-    await click('#program-paste-compile');
-    await until(`window.StudyWorkspace.ready && Boolean(appState.programId) && appState.programId !== ${JSON.stringify(programId)}`);
-    await check('A custom file name is honoured',
-      `document.querySelector('#source-summary').textContent === 'C source · my_score.c' && [...document.querySelector('#your-file-select').options].filter(option => option.value).map(option => option.textContent).join('|') === 'program.c|my_score.c'`);
+  async 'Ctrl+Enter compiles the editor under the name typed in File name'() {
+    const starter = await readFile(join(userProgramSources, 'program.c'), 'utf8');
+    await click('#source-mode input[value="yours"]');
+    await click('#program-new');
+    await value(`(() => { const name = document.querySelector('#program-editor-name'); name.focus(); name.select(); })()`);
+    await send('Input.insertText', { text: 'my_square.c' });
+    await value(`document.querySelector('#program-editor textarea').focus()`);
+    await holdCompiles(true);
+    const before = posts();
+    await key('Enter', 'Enter', 13, CTRL);
+    await until(`document.querySelector('#program-card')?.innerText.includes('Compiling my_square.c')`);
+    await check('Ctrl+Enter compiles with the compiling card and Cancel', `!document.querySelector('#program-editor') && ${cardButtons} === 'Cancel'`);
+    await releaseCompile();
+    await holdCompiles(false);
+    await until('window.StudyWorkspace.ready && Boolean(appState.programId)');
+    await check('Exactly one POST /api/programs was sent, for the starter unchanged', `${posts() - before === 1}`);
+    await check('The program is compiled and listed under the name typed',
+      `document.querySelector('#source-summary').textContent === 'C source · my_square.c' && ${uploadOptions}.join('|') === 'my_square.c · new'`);
+    await check('The server holds the starter under that name',
+      `fetch('/api/programs/' + appState.programId + '/source').then(r => r.json()).then(body => body.file === 'my_square.c' && body.text === ${JSON.stringify(starter)})`);
+  },
+
+  async 'Discard edits asks first, and brings back the program that was open'() {
+    const quickSort = await readFile(join(curatedSources, 'quick_sort.c'), 'utf8');
+    await upload('score.c');
+    const programId = await value('appState.programId');
+    await click('#program-new');
+    await check('Over an open program, the editor hides the panels and leaves the source panel empty',
+      `${visible('#program-editor')} && !${visible('#left-panel')} && !${visible('.comparison-status')} && !${visible('#source-lines')} && document.querySelector('#source-summary').textContent === 'C source' && !${visible('#program-chip')}`);
+    await value(`document.querySelector('#program-editor textarea').select()`);
+    await send('Input.insertText', { text: quickSort });
+    await check('Source pasted into the editor replaces the starter, numbered and highlighted',
+      `(() => { const lines = document.querySelectorAll('#program-editor .editor-highlight > span'); return document.querySelector('#program-editor textarea').value === ${JSON.stringify(quickSort)} && document.querySelectorAll('#program-editor .editor-gutter span').length === ${quickSort.split('\n').length} && lines.length === ${quickSort.split('\n').length}; })()`);
+    await check('With edits the button reads Discard edits', `document.querySelector('#program-editor-discard').textContent === 'Discard edits'`);
+    const posted = posts();
+    await dropFile('#source-panel', join(curatedSources, 'binary_search.c'));
+    await pause(300);
+    await check('A file dropped while editing is refused: nothing is sent and the editor stays', `${posts() === posted} && ${visible('#program-editor')}`);
+
+    await click('#program-editor-discard');
+    await check('Discard edits asks for confirmation in the page, with Keep editing focused',
+      `(() => { const confirmation = document.querySelector('#program-editor .program-editor-confirmation'); return ${visible('#program-editor .program-editor-confirmation')} && confirmation.getAttribute('role') === 'alert' && confirmation.textContent.includes('Discard your edits to program.c?') && [...confirmation.querySelectorAll('button')].map(button => button.textContent).join('|') === 'Keep editing|Discard edits' && document.activeElement?.textContent === 'Keep editing'; })()`);
+    await snap('user-programs-editor-discard.png');
+    await value(`[...document.querySelectorAll('#program-editor .program-editor-confirmation button')].find(button => button.textContent === 'Keep editing').click()`);
+    await check('Keep editing keeps the edit and returns to the editor',
+      `!${visible('#program-editor .program-editor-confirmation')} && document.querySelector('#program-editor textarea').value === ${JSON.stringify(quickSort)} && document.activeElement === document.querySelector('#program-editor textarea')`);
+    await click('#program-editor-discard');
+    await value(`[...document.querySelectorAll('#program-editor .program-editor-confirmation button')].find(button => button.textContent === 'Discard edits').click()`);
+    await check('Discarding brings back the program that was open, its panels and its source',
+      `!document.querySelector('#program-editor') && appState.programId === ${JSON.stringify(programId)} && window.StudyWorkspace.ready && ${visible('#left-panel')} && ${visible('.comparison-status')} && ${visible('#source-lines')} && document.querySelector('#source-summary').textContent === 'C source · score.c' && ${visible('#program-chip')}`);
+    await check('The controls are enabled again, nothing was compiled and Your files is unchanged',
+      `${posts() === posted} && ${uploadOptions}.join('|') === 'score.c' && [...document.querySelectorAll('#source-mode input, #your-file-select, #program-upload, #program-new')].every(control => !control.disabled)`);
+  },
+
+  async 'Leaving Explore closes the editor, and Study never shows it'() {
+    await click('#source-mode input[value="yours"]');
+    await click('#program-new');
+    await send('Input.insertText', { text: '// an edit\n' });
+    await value(`location.hash = '/study'`);
+    await until(`document.querySelector('#route-heading')?.textContent === 'Information and consent'`);
+    await check('Study shows no editor and no New…, and the curated source panel', `${noProgramControls} && ${curatedSourcePanel}`);
+    await value(`location.hash = '/explore'`);
+    await until(`document.querySelector('#source-mode') !== null`);
+    await check('Back in Explore the editor is closed, on Curated examples', `!document.querySelector('#program-editor') && document.querySelector('#source-mode input[value="curated"]').checked && ${visible('#example-select')}`);
   },
 
   async 'Study never builds the upload controls, even while a compile is under way'() {

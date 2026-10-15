@@ -1,0 +1,130 @@
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/program.c', Line: 2, Column: 0 }
+Function:        square
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        square
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '5'
+  - String:          '; Delta: '
+  - Delta:           '5'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/program.c', Line: 2, Column: 0 }
+Function:        square
+Args:
+  - Pass:            Two-Address instruction pass
+  - String:          ': Function: '
+  - Function:        square
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '5'
+  - String:          ' to '
+  - MIInstrsAfter:   '6'
+  - String:          '; Delta: '
+  - Delta:           '1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/program.c', Line: 2, Column: 0 }
+Function:        square
+Args:
+  - Pass:            Register Coalescer
+  - String:          ': Function: '
+  - Function:        square
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '6'
+  - String:          ' to '
+  - MIInstrsAfter:   '5'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/program.c', Line: 2, Column: 0 }
+Function:        square
+Args:
+  - Pass:            Debug Variable Analysis
+  - String:          ': Function: '
+  - Function:        square
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '5'
+  - String:          ' to '
+  - MIInstrsAfter:   '4'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Missed
+Pass:            regalloc
+Name:            SpillReloadCopies
+DebugLoc:        { File: 'user-programs/program.c', Line: 2, Column: 1 }
+Function:        square
+Args:
+  - NumVRCopies:     '1'
+  - String:          ' virtual registers copies '
+  - TotalCopiesCost: '1.000000e+00'
+  - String:          ' total copies cost '
+  - String:          generated in function
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: 'user-programs/program.c', Line: 2, Column: 0 }
+Function:        square
+Args:
+  - NumStackBytes:   '0'
+  - String:          ' stack bytes in function '''
+  - Function:        square
+  - String:          ''''
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: 'user-programs/program.c', Line: 2, Column: 0 }
+Function:        square
+Args:
+  - String:          "\nFunction: square"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/program.c', Line: 0, Column: 0 }
+Function:        square
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      entry
+  - String:          "\n"
+  - String:          IMUL32rr
+  - String:          ': '
+  - INST_IMUL32rr:   '1'
+  - String:          "\n"
+  - String:          MOV32rr
+  - String:          ': '
+  - INST_MOV32rr:    '1'
+  - String:          "\n"
+  - String:          RET64
+  - String:          ': '
+  - INST_RET64:      '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: 'user-programs/program.c', Line: 2, Column: 0 }
+Function:        square
+Args:
+  - NumInstructions: '3'
+  - String:          ' instructions in function'
+...
