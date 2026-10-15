@@ -915,6 +915,44 @@ const scenarios = {
       `!document.querySelector('#program-editor') && document.querySelector('#source-summary').textContent === 'C source · edited_sort.c' && document.querySelector('#right-state').value === '9' && ${uploadOptions}.join('|') === 'edited_sort.c · edited' && document.querySelector('#source-mode input[value="yours"]').checked`);
   },
 
+  async 'A reload while an edit\'s card offers Back to editing reopens the editor with the edit'() {
+    const [quickSort, edited] = await Promise.all([readFile(join(curatedSources, 'quick_sort.c'), 'utf8'), readFile(join(userProgramSources, 'quick_sort.c'), 'utf8')]);
+    const textarea = `document.querySelector('#program-editor textarea')`;
+    // The editor as it was beside the compiled source of the curated example, with the file controls locked.
+    const reopened = text => `${visible('#program-editor')} && !${visible('#program-card')} && ${textarea}.value === ${JSON.stringify(text)} && document.querySelector('#program-editor-heading').textContent === 'Editing a copy of curated quick sort'
+      && document.querySelector('#source-summary').textContent === 'C source · quick_sort.c' && document.querySelectorAll('#source-lines .source-line').length === ${quickSort.replace(/\n$/, '').split('\n').length} && ${visible('#program-source-note')}
+      && [...document.querySelectorAll('#source-mode input, #example-select')].every(control => control.disabled)`;
+    await openCurated('quick_sort');
+    await click('#program-edit');
+    await editorText(edited);
+
+    // A compile that timed out, answered in the page as in the Back to editing scenario.
+    await holdCompiles(true);
+    await click('#program-editor-compile');
+    for (let attempt = 0; !held.length; attempt += 1) {
+      if (attempt === 100) throw Error('No POST /api/programs was sent');
+      await pause(30);
+    }
+    const timedOut = { error: { code: 'compile_timeout', message: 'The compile took longer than 30 s and was stopped.' } };
+    await send('Fetch.fulfillRequest', { requestId: held.shift(), responseCode: 504, responseHeaders: [{ name: 'Content-Type', value: 'application/json' }], body: Buffer.from(JSON.stringify(timedOut)).toString('base64') });
+    await holdCompiles(false);
+    await until(`document.querySelector('#program-card')?.innerText.includes('The compile took longer than 30 s and was stopped.')`);
+    await check('The failure card offers Back to editing first', `${cardButtons}.startsWith('Back to editing|')`);
+    await reload();
+    await check('A reload from the failure card reopens the editor with the edit, beside the compiled source, the controls locked', reopened(edited));
+
+    const hanging = `${edited}// irx-fake: hang\n`;
+    await editorText(hanging);
+    await click('#program-editor-compile');
+    await until(`document.querySelector('#program-card')?.innerText.includes('Compiling quick_sort.c')`);
+    await cardButton('Cancel');
+    await until(`document.querySelector('#program-card')?.innerText.includes('Compiling cancelled')`);
+    await check('The cancelled card offers Back to editing first', `${cardButtons}.startsWith('Back to editing|')`);
+    await reload();
+    await check('A reload from the cancelled card reopens the editor with the edit as it was', reopened(hanging));
+    await compilerFree();
+  },
+
   async 'A file chosen from an edit\'s card replaces the edit and the comparison, as an upload does'() {
     await upload('score.c');
     await click('#program-edit');
