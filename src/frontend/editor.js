@@ -67,7 +67,7 @@ window.ProgramEditor = (() => {
     const hint = h("p", { id: hintId, class: "editor-hint" },
       "Tab indents · Shift+Tab outdents · Enter keeps the indent · Esc, then Tab, leaves the editor · Ctrl/⌘+Enter compiles · ", count);
     textarea.setAttribute("aria-describedby", hintId);
-    // The only unsaved marker; announced, once it says something new.
+    // The only sign that the text is an Uncompiled edit; announced, once it says something new.
     const status = h("p", { class: "editor-status", role: "status" });
     const element = h("div", { class: "editor" }, status, frame, hint);
     // What the margin compares with (null: nothing compiled yet), and the text the edit started as.
