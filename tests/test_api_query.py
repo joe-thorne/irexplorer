@@ -1,3 +1,4 @@
+import os
 import unittest
 from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import patch
@@ -112,7 +113,11 @@ class QueryServiceTests(unittest.TestCase):
 
 class FastApiTests(unittest.TestCase):
     def setUp(self) -> None:
-        self.client = TestClient(create_app())
+        # No deployment settings, wherever the suite runs: the test image presets IREXPLORER_* variables, and its
+        # preset study origin would refuse this suite's submissions.
+        unset = {name: value for name, value in os.environ.items() if not name.startswith("IREXPLORER_")}
+        with patch.dict(os.environ, unset, clear=True):
+            self.client = TestClient(create_app())
 
     def tearDown(self) -> None:
         self.client.close()

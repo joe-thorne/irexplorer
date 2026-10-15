@@ -123,6 +123,7 @@ UNMARKED = {'instrumentVersion': 'v0.12', 'contentVersion': 'v0.12-final-1', 'st
 FINISHED = {**UNMARKED, 'finished': True}
 RESEARCH_ORIGIN = 'https://study.example.test'
 RESEARCH_REVISION = '0.1.1-webproject.1'
+DEVELOPMENT_BUILD = {'version': 'development', 'revision': 'development'}
 
 
 def research_config(directory, mode, **changes):
@@ -478,8 +479,11 @@ class SubmissionTests(unittest.TestCase):
                     research_config(root, mode, origin=origin)
             with self.subTest(mode=mode, revision='development'), self.assertRaisesRegex(ValueError, 'development'):
                 research_config(root, mode, app_revision='development')
-            # This checkout is a development build, whatever revision label the environment supplies.
-            with self.subTest(mode=mode, build='checkout'), self.assertRaisesRegex(ValueError, 'development'):
+            # A checkout is a development build, whatever revision label the environment supplies. Set it here,
+            # so the check also holds where the suite runs from a packaged build, such as the test image.
+            with (self.subTest(mode=mode, build='checkout'),
+                  patch('src.backend.evaluation.service.metadata', return_value=DEVELOPMENT_BUILD),
+                  self.assertRaisesRegex(ValueError, 'development')):
                 Config(root, collection_mode=mode, origin=RESEARCH_ORIGIN, app_revision=RESEARCH_REVISION)
             with (self.subTest(mode=mode, origin='unconfigured'),
                   patch.dict('os.environ', {'IREXPLORER_COLLECTION_MODE': mode, 'IREXPLORER_STUDY_DIR': str(root),
