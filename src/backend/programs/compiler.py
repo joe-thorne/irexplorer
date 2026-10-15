@@ -81,6 +81,8 @@ class CompilerOutput:
     states: tuple[CompiledState, ...]
     opt_record: str
     manifest: dict[str, Any]
+    # The -O0 emit command's stderr: clang's warnings on the program, if any.
+    o0_stderr: str
 
 
 class CompileRequest:
@@ -164,4 +166,5 @@ def _output(status: int, body: Any) -> CompilerOutput:
                      for state in body["states"]),
         opt_record=body["optRecord"],
         manifest=body["manifest"],
+        o0_stderr=body["o0Stderr"],
     )

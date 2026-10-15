@@ -66,6 +66,8 @@ class RealCompilerSmokeTests(unittest.TestCase):
                 status, body = self.compiler.compile(f"{example}.c", curated.read_source(example))
                 answered = recording_files(example, status, body)
                 answered.pop("manifest.json")
+                # The fake toolchain replays a curated source's -O0 stderr as empty: it must compile cleanly.
+                self.assertEqual(answered.pop(f"{example}_O0_stderr.txt", ""), "")
                 committed = {name: (curated.artefact_dir(example) / name).read_text(encoding="utf-8")
                              for name in answered}
                 self.assertEqual([name for name in answered if as_user_program(answered[name], example)

@@ -18,10 +18,14 @@
     yours: "Upload a C file, or choose one of your files, to start comparing.",
   };
 
-  // This tab's uploads, oldest first: { programId, fileName, source, renamedFrom, origin }, with the safe name
-  // and the normalised source that were sent, the name as chosen if it was not safe (else null), and where
-  // the program came from: { kind: "new" } for one written in the editor, else null for an uploaded file. A
-  // failed upload is never kept. They survive a reload in this tab (session storage), not across tabs.
+  // The server lists at most this many of clang's warnings on a program that compiled.
+  const MAX_WARNINGS = 20;
+
+  // This tab's uploads, oldest first: { programId, fileName, source, renamedFrom, origin, warnings }, with the
+  // safe name and the normalised source that were sent, the name as chosen if it was not safe (else null),
+  // where the program came from: { kind: "new" } for one written in the editor, else null for an uploaded
+  // file, and clang's warnings as the server listed them. A failed upload is never kept. They survive a
+  // reload in this tab (session storage), not across tabs.
   const UPLOADS_KEY = "irexplorer.programs.uploads";
   const uploads = readUploads();
   // After a reload nothing reopens by itself, but a tab with uploads opens in Your files.
@@ -40,6 +44,8 @@
   // stands in for the panels and the comparison (which stay as they were behind it), and the file controls
   // are disabled.
   let editing = null;
+  // The warnings the list was last built for, so it is rebuilt, and closed, only for another program.
+  let listedWarnings = null;
 
   function readUploads() {
     try {
@@ -116,13 +122,18 @@
     view.chip = h("span", { id: "program-chip", class: "program-chip" }, "Your file");
     view.title = h("div", { class: "source-title" });
     view.card = h("section", { id: "program-card", class: "panel program-card", "aria-labelledby": "program-card-heading" });
+    // clang's warnings on the open upload, collapsed, between the source heading and the source lines.
+    view.warnings = h("details", { id: "program-warnings", class: "program-warnings" });
     recompileForgottenProgram = recompileForgotten;
+    // The workspace draws the source lines again once a program has loaded, so their marks are put back.
+    document.addEventListener("workspace-ready", markWarnings);
   }
 
   function attach() {
     view.controls.prepend(view.mode);
     view.fileControl.after(view.yourControl, view.upload, view.newProgram);
     view.controls.after(view.renamed);
+    view.controls.closest(".source-heading").after(view.warnings);
     view.sourceLines.after(view.drop, view.fileInput);
     view.summary.replaceWith(view.title);
     view.title.append(view.summary, view.chip);
@@ -144,9 +155,10 @@
     clearInterval(ticking);
     ticking = null;
     view.title.replaceWith(view.summary);
-    for (const element of [view.mode, view.yourControl, view.upload, view.newProgram, view.renamed, view.drop, view.fileInput, view.card]) {
+    for (const element of [view.mode, view.yourControl, view.upload, view.newProgram, view.renamed, view.warnings, view.drop, view.fileInput, view.card]) {
       element.remove();
     }
+    for (const line of view.sourceLines.querySelectorAll(".is-warning")) line.classList.remove("is-warning");
     for (const type of DRAG_EVENTS) view.sourcePanel.removeEventListener(type, dragFile);
     view.sourcePanel.classList.remove("is-drop-target");
     delete view.sourcePanel.dataset.mode;
@@ -201,8 +213,39 @@
       line.classList.remove("is-outlined");
     }
     setEmptyPrompt(EMPTY_PROMPTS[mode]);
+    renderWarnings();
     renderCard();
     renderEditor();
+  }
+
+  // The open upload's warnings, listed closed above the source lines and marked on them; none under a card.
+  function renderWarnings() {
+    const warnings = !card && current?.warnings || [];
+    view.warnings.hidden = !warnings.length;
+    if (warnings !== listedWarnings) {
+      listedWarnings = warnings;
+      const count = `${warnings.length} clang warning${warnings.length === 1 ? "" : "s"}`;
+      view.warnings.open = false;
+      view.warnings.replaceChildren(
+        h("summary", {}, warnings.length >= MAX_WARNINGS ? `${count} · at most ${MAX_WARNINGS} are listed` : count),
+        h("ul", { class: "program-diagnostics", "aria-label": "Clang warnings" }, ...warnings.map(diagnosticItem)));
+    }
+    markWarnings();
+  }
+
+  function markWarnings() {
+    const lines = new Set(view.warnings.isConnected && !view.warnings.hidden
+      ? listedWarnings.filter(inUpload).map(warning => warning.line) : []);
+    for (const line of view.sourceLines.querySelectorAll(".source-line")) {
+      line.classList.toggle("is-warning", lines.has(Number(line.dataset.line)));
+    }
+  }
+
+  // Once `program` is open, add its warnings to the announcement that it is ready.
+  function announceWarnings(program) {
+    const count = program.warnings?.length;
+    if (!count || appState.programId !== program.programId || !appState.ready) return;
+    announce(`${elements.notice.textContent} Clang reported ${count} warning${count === 1 ? "" : "s"}, listed above the source.`);
   }
 
   // How Your files lists a program: a new one written in the editor says so.
@@ -283,14 +326,17 @@
       h("button", { type: "button", onclick: () => view.fileInput.click() }, "Choose another file…"));
   }
 
-  // Each diagnostic in order; one against the upload is a button that shows its line in the source.
+  // One diagnostic; one against the upload is a button that shows its line in the source.
+  function diagnosticItem(diagnostic) {
+    const { file, line, column, severity, message } = diagnostic;
+    const text = inUpload(diagnostic) ? `Line ${line}, column ${column}: ${message}` : `${file}, line ${line}, column ${column}: ${message}`;
+    return h("li", { "data-severity": severity }, h("span", { class: "program-diagnostic-severity" }, severity),
+      inUpload(diagnostic) ? h("button", { type: "button", onclick: () => showSourceLine(line) }, text) : h("span", {}, text));
+  }
+
+  // Each diagnostic in order, then clang's full output.
   function compileFailure({ diagnostics, output }) {
-    const items = diagnostics.map(diagnostic => {
-      const { file, line, column, severity, message } = diagnostic;
-      const text = inUpload(diagnostic) ? `Line ${line}, column ${column}: ${message}` : `${file}, line ${line}, column ${column}: ${message}`;
-      return h("li", { "data-severity": severity }, h("span", { class: "program-diagnostic-severity" }, severity),
-        inUpload(diagnostic) ? h("button", { type: "button", onclick: () => showSourceLine(line) }, text) : h("span", {}, text));
-    });
+    const items = diagnostics.map(diagnosticItem);
     return [
       ...(items.length ? [h("ul", { class: "program-diagnostics", "aria-label": "Compiler diagnostics" }, ...items)] : []),
       h("details", { class: "program-output" }, h("summary", {}, "Full compiler output"), h("pre", {}, output)),
@@ -372,6 +418,7 @@
     if (card !== compiling) return;
     card = null;
     render();
+    announceWarnings(program);
   }
 
   // An upload of a program already held replaces it, so the name it was renamed from is the latest.
@@ -394,7 +441,10 @@
       return { ok: false, error: { code: "unreachable", message: "irexplorer could not be reached. Check that it is running." } };
     }
     const body = await response.json().catch(() => ({}));
-    if (response.ok) return { ok: true, program: { programId: body.programId, fileName: body.fileName, source } };
+    if (response.ok) {
+      const warnings = Array.isArray(body.warnings) ? body.warnings : [];
+      return { ok: true, program: { programId: body.programId, fileName: body.fileName, source, warnings } };
+    }
     return { ok: false, error: { message: `The compile failed with status ${response.status}.`, ...body.error } };
   }
 
@@ -484,6 +534,7 @@
     const opened = loadProgram(upload);
     render();
     await opened;
+    if (current === upload) announceWarnings(upload);
   }
 
   // A program the server has forgotten (it restarted, or dropped the program from its store) is compiled
