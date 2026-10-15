@@ -2,8 +2,9 @@
 
 Run by hand before the demo and before merging, with `scripts/check_user_programs.sh`, which checks that
 Docker and the stack are up and sets IREXPLORER_SMOKE_COMPILER (the compiler service's container) and
-IREXPLORER_SMOKE_APP (the app's address). Without them this module is skipped: the offline suite and CI
-have no Docker or LLVM.
+IREXPLORER_SMOKE_APP (the app's address); CI's user-programs job runs it the same way, only when started by
+hand. Without them this module is skipped: the offline suite, and CI on push and pull request, have no
+Docker or LLVM.
 """
 
 import json
