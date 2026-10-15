@@ -570,7 +570,10 @@ details p { margin: .8rem 0 0; }
 .editor-hint.is-over span { color: #991b1b; font-weight: 750; }
 .program-editor-frame { background: var(--code-bg); border: 1px solid #9fb3c8; border-radius: .45rem; display: flex; flex: 1 1 auto; min-height: 20rem; overflow: hidden; }
 .editor-gutter, .editor-highlight, .editor-input { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .82rem; letter-spacing: normal; line-height: 1.35; tab-size: 4; }
-.editor-gutter { border-right: 1px solid #dce5ef; color: #64748b; flex: 0 0 2.75rem; overflow: hidden; padding: .4rem .45rem 0 0; text-align: right; user-select: none; }
+/* The numbers are out of flow, as the text is, so a long program scrolls inside the editor rather than
+   growing it past the source panel beside it. */
+.editor-gutter { border-right: 1px solid #dce5ef; color: #64748b; flex: 0 0 2.75rem; overflow: hidden; position: relative; text-align: right; user-select: none; }
+.editor-numbers { inset: .4rem .45rem auto 0; position: absolute; }
 .editor-numbers span, .editor-highlight > span { display: block; }
 /* A bar in the margin beside each line that is new or changed against the compiled source. Only those lines
    have a border, so forced colours, which draw every border, show the same bars. */

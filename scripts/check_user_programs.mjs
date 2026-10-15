@@ -806,6 +806,8 @@ const scenarios = {
     await value(`${editor}.select()`);
     await send('Input.insertText', { text: 'int x;\n'.repeat(201) });
     await check('Over the limit the count says so, apart from colour', `${hint}.textContent.endsWith('201 / 200 lines: too many to compile') && ${hint}.classList.contains('is-over')`);
+    await check('The editor keeps to the source panel\'s height, so a long program scrolls inside it',
+      `(() => { const editor = document.querySelector('#program-editor').getBoundingClientRect(), source = document.querySelector('#source-panel').getBoundingClientRect(); return Math.abs(editor.height - source.height) < 1 && ${editor}.scrollHeight > ${editor}.clientHeight; })()`);
   },
 
   async 'The margin marks new or changed lines, and the status line counts them'() {
