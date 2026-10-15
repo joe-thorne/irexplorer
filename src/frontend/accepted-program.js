@@ -14,6 +14,12 @@ window.AcceptedProgram = (() => {
     return `${match[1].replace(/[^A-Za-z0-9_-]+/g, "_").slice(0, STEM_LENGTH) || "program"}.c`;
   }
 
+  // How many lines `source` has against the limit: one trailing newline ends the last line rather than
+  // starting another, and empty text has none.
+  function countLines(source) {
+    return source ? source.split("\n").length - (source.endsWith("\n") ? 1 : 0) : 0;
+  }
+
   // { ok: true, fileName, source } with the safe name and normalised source, or { ok: false, reason, message }.
   // The first check that fails gives the reason, in the server's order. `text` is null for a file whose
   // bytes are not UTF-8 (see read). Nothing is ever truncated.
@@ -26,8 +32,7 @@ window.AcceptedProgram = (() => {
     const source = text.replace(/^﻿/, "").replace(/\r\n?/g, "\n");
     // C's own whitespace; CR is gone by now.
     if (/^[ \t\n\v\f]*$/.test(source)) return refused("empty", "The file is empty or contains only whitespace.");
-    // One trailing newline ends the last line rather than starting another.
-    const lines = source.split("\n").length - (source.endsWith("\n") ? 1 : 0);
+    const lines = countLines(source);
     if (lines > MAX_LINES) return refused("too_many_lines", `The file has ${lines} lines; up to ${MAX_LINES} are allowed.`);
     const size = new TextEncoder().encode(source).length;
     if (size > MAX_BYTES) {
@@ -46,5 +51,5 @@ window.AcceptedProgram = (() => {
     }
   }
 
-  return { accept, read };
+  return { accept, read, countLines, MAX_LINES };
 })();

@@ -35,10 +35,10 @@
   // { code, message, … }. A file the browser refuses before sending fails with the server's invalid_program error.
   let card = null;
   let ticking = null;
-  // The program open in the editor, if any: { title, origin, start, opener, exampleSelectDisabled, confirming }.
-  // start is the text it opened with, so an edit is any change from it; opener is the button that opened it,
-  // which gets focus back when it closes. While it is open the editor stands in for the panels and the
-  // comparison (which stay as they were behind it), and the file controls are disabled.
+  // The program open in the editor, if any: { title, origin, opener, exampleSelectDisabled, confirming }.
+  // opener is the button that opened it, which gets focus back when it closes. While it is open the editor
+  // stands in for the panels and the comparison (which stay as they were behind it), and the file controls
+  // are disabled.
   let editing = null;
 
   function readUploads() {
@@ -401,7 +401,7 @@
   // New… (or Write or paste a program): a new program, named program.c, starting from STARTER.
   function openEditor(event) {
     if (editing || card?.kind === "compiling") return;
-    editing = { title: "New program", origin: { kind: "new" }, start: STARTER, opener: event.currentTarget,
+    editing = { title: "New program", origin: { kind: "new" }, opener: event.currentTarget,
       exampleSelectDisabled: elements.exampleSelect.disabled, confirming: false };
     view.editorName.value = "program.c";
     view.editor.load(STARTER);
@@ -426,7 +426,7 @@
     view.editorConfirmation.hidden = !editing.confirming;
   }
 
-  const edited = () => view.editor.text !== editing.start;
+  const edited = () => view.editor.edited;
 
   // Back to whatever the editor stood in for, unchanged.
   function closeEditor() {

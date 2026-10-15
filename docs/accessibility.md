@@ -4,6 +4,8 @@ The interface uses labelled native controls, visible focus indicators, a skip li
 
 The comparison workspace has two independently configured panels and a shared function selector. Narrow layouts stack the panels and bound their scrolling regions. Graphs provide width fitting and explicit zoom choices. Reduced-motion and forced-colour preferences have dedicated styles.
 
+The user programs editor is a native textarea labelled for screen readers and described by a hint that gives its keys and line count. Tab indents there, so Esc releases Tab for the next press, which then leaves the editor; keyboard users are never trapped in it. Its status line, which counts the lines that are new or changed, is announced when it changes, and its margin marks those lines with a bar that forced colours keep. Edits made with its keys go through the browser's own undo.
+
 Study forms use fieldsets, legends, labelled inputs, text validation messages, and focus on invalid controls. Draft and submission failures remain visible and preserve retry options.
 
 The [test suite](../tests/README.md) includes interface and browser checks. These checks do not establish full accessibility conformance. Physical keyboard, spoken screen-reader, zoom, and platform-specific behaviour require manual assessment.
