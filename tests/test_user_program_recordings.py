@@ -72,6 +72,25 @@ class RecordedUserProgramTests(unittest.TestCase):
                 self.assertEqual(differences(recorded_files(program.recording_dir), answered, ignoring=FAKE_IDENTITY),
                                  [])
 
+    def test_a_remark_file_differs_only_in_its_remarks_not_in_their_order(self) -> None:
+        # Two of GVN's remarks on one load, which the real opt writes in either order from one compile to the
+        # next (word_frequency.opt.yaml does so on amd64).
+        clobbered_by_memset = ("--- !Missed\nPass:            gvn\nName:            LoadClobbered\n"
+                               "Args:\n  - ClobberedBy:     call llvm.memset.p0.i64\n...\n")
+        clobbered_by_call = ("--- !Missed\nPass:            gvn\nName:            LoadClobbered\n"
+                             "Args:\n  - ClobberedBy:     call\n...\n")
+        clobbered_by_store = clobbered_by_call.replace("call\n", "store\n")
+        recorded = {"p.opt.yaml": clobbered_by_memset + clobbered_by_call,
+                    "p_04_gvn_remarks.yaml": clobbered_by_memset + clobbered_by_call, "p_O3.ll": "a\nb\n"}
+
+        self.assertEqual(differences(recorded, {"p.opt.yaml": clobbered_by_call + clobbered_by_memset,
+                                                "p_04_gvn_remarks.yaml": clobbered_by_call + clobbered_by_memset,
+                                                "p_O3.ll": "a\nb\n"}), [])
+        self.assertEqual(differences(recorded, {"p.opt.yaml": clobbered_by_store + clobbered_by_memset,
+                                                "p_04_gvn_remarks.yaml": clobbered_by_call + clobbered_by_call,
+                                                "p_O3.ll": "b\na\n"}),
+                         ["p.opt.yaml", "p_04_gvn_remarks.yaml", "p_O3.ll"])
+
     def app_client(self) -> TestClient:
         study = tempfile.TemporaryDirectory()
         self.addCleanup(study.cleanup)

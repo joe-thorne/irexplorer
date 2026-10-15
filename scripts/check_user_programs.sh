@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Real-compiler smoke check for user programs, run by hand before the demo and before merging; it is not
-# part of CI. Needs Docker and the user-programs stack, started from the irexplorer root with
+# Real-compiler smoke check for user programs, run by hand before the demo and before merging. CI runs it
+# only when started by hand (the user-programs job in .github/workflows/ci.yml, natively on amd64), never on
+# push or pull request, and the gate never runs it. Needs Docker and the user-programs stack, started from
+# the irexplorer root with
 #   docker compose -f compose.user-programs.yaml up -d --build --wait
 # and fails at once without them. It runs tests/test_user_programs_smoke.py against the stack, pointing it
 # at the compiler service's container, so the module is never skipped: curated parity, each recording in
