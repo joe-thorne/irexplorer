@@ -785,6 +785,41 @@ const scenarios = {
       `${uploadOptions}.join('|') === 'quick_sort.c · edited|quick_sort_2_.c · edited|program.c · new|program_2_.c · new'`);
   },
 
+  async 'Restore original puts back the curated text after several compiled edits, and undo reverses it'() {
+    const quickSort = await readFile(join(curatedSources, 'quick_sort.c'), 'utf8');
+    const edited = await readFile(join(userProgramSources, 'quick_sort.c'), 'utf8');
+    const twice = `${edited}// irx-fake: slow\n`;
+    await openCurated('quick_sort');
+    await click('#program-edit');
+    await check('Restore original is offered, and disabled while the text is the original',
+      `${visible('#program-editor-restore')} && document.querySelector('#program-editor-restore').textContent === 'Restore original' && document.querySelector('#program-editor-restore').disabled`);
+    await editorText(edited);
+    await check('Restore original is enabled once the text differs from the original', `!document.querySelector('#program-editor-restore').disabled`);
+    await click('#program-editor-compile');
+    await until(`window.StudyWorkspace.ready && Boolean(appState.programId) && !${visible('#program-card')}`);
+    const once = await value('appState.programId');
+    await click('#program-edit');
+    await editorText(twice);
+    await click('#program-editor-compile');
+    await until(`window.StudyWorkspace.ready && Boolean(appState.programId) && appState.programId !== ${JSON.stringify(once)} && !${visible('#program-card')}`);
+    await check('Two compiled edits later, one entry is listed', `${uploadOptions}.join('|') === 'quick_sort.c · edited'`);
+    await click('#program-edit');
+    await check('The editor opens on the last compiled edit', `document.querySelector('#program-editor textarea').value === ${JSON.stringify(twice)}`);
+    await click('#program-editor-restore');
+    await check('Restore original puts back the curated example\'s text, with the editor focused',
+      `document.querySelector('#program-editor textarea').value === ${JSON.stringify(quickSort)} && document.activeElement === document.querySelector('#program-editor textarea') && document.querySelector('#program-editor-restore').disabled`);
+    await check('The restored text counts as an edit of the compiled source', `document.querySelector('#program-editor .editor-status').textContent.startsWith('Edited · not compiled · ') && document.querySelector('#program-editor-discard').textContent === 'Discard edits'`);
+    await check('Restoring is announced, with the way to undo it', `document.querySelector('#notice').textContent.includes('Restored the original') && document.querySelector('#notice').textContent.includes('undo')`);
+    await key('z', 'KeyZ', 90, CTRL);
+    await check('Undo reverses Restore original', `document.querySelector('#program-editor textarea').value === ${JSON.stringify(twice)} && !document.querySelector('#program-editor-restore').disabled`);
+  },
+
+  async 'A new program has no original to restore'() {
+    await click('#source-mode input[value="yours"]');
+    await click('#program-new');
+    await check('Restore original is not offered for a new program', `!${visible('#program-editor-restore')}`);
+  },
+
   async 'In the editor Tab indents, Shift+Tab outdents, Enter keeps the indent, and undo steps back through them'() {
     const starter = await readFile(join(userProgramSources, 'program.c'), 'utf8');
     const lines = starter.split('\n');

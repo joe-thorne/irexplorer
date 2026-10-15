@@ -126,6 +126,7 @@
     view.editorHeading = h("h2", { id: "program-editor-heading" });
     view.editorName = h("input", { id: "program-editor-name", type: "text", spellcheck: "false", autocomplete: "off" });
     view.editorDiscard = h("button", { id: "program-editor-discard", type: "button", onclick: discardEditor });
+    view.editorRestore = h("button", { id: "program-editor-restore", type: "button", onclick: restoreOriginal }, "Restore original");
     view.editorConfirmation = h("div", { class: "program-editor-confirmation", role: "alert" });
     view.editorSection = h("section", { id: "program-editor", class: "panel program-editor", "aria-labelledby": "program-editor-heading" },
       h("header", { class: "program-editor-heading" }, view.editorHeading,
@@ -133,7 +134,7 @@
           h("label", { for: "program-editor-name" }, "File name", view.editorName),
           h("div", { class: "program-actions" },
             h("button", { id: "program-editor-compile", type: "button", class: "primary", onclick: compileEditor }, "Compile"),
-            view.editorDiscard))),
+            view.editorRestore, view.editorDiscard))),
       view.editorConfirmation, view.editor.element);
     view.chip = h("span", { id: "program-chip", class: "program-chip" }, "Your file");
     view.title = h("div", { class: "source-title" });
@@ -555,6 +556,9 @@
     if (!view.editorSection.isConnected) view.shell.append(view.editorSection);
     view.editorHeading.textContent = editing.title;
     view.editorDiscard.textContent = edited() ? "Discard edits" : "Close editor";
+    // A new program has no original to go back to.
+    view.editorRestore.hidden = editing.origin.kind === "new";
+    view.editorRestore.disabled = view.editor.text === editing.origin.source;
     view.editorConfirmation.hidden = !editing.confirming;
   }
 
@@ -585,6 +589,13 @@
     editing.confirming = true;
     renderEditor();
     keep.focus();
+  }
+
+  // Restore original: the curated example's text, or the text first uploaded, as one edit that the
+  // browser's undo reverses.
+  function restoreOriginal() {
+    view.editor.replaceText(editing.origin.source);
+    announce(`Restored the original ${editing.origin.kind === "curated" ? "curated example" : "upload"}. Ctrl/⌘+Z (undo) reverses it.`);
   }
 
   // Open the original: the curated example under Curated examples, or the first upload, opened from Your
