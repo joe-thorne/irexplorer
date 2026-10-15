@@ -1,8 +1,8 @@
 // User programs in Explore (ADR 0005): the Curated examples | Your files switch, uploading a C file, the
-// editor for writing a new program (editor.js), and the card that stands in for the panels and the
-// comparison while a user program compiles or after it fails. Nothing here is built unless /api/release
-// reports the user programs setting on, and nothing here exists in Study (#/study…), which shares the
-// workspace: the controls are added on entering Explore and removed on leaving it.
+// editor for writing a new program or editing the one open (editor.js), and the card that stands in for the
+// panels and the comparison while a user program compiles or after it fails. Nothing here is built unless
+// /api/release reports the user programs setting on, and nothing here exists in Study (#/study…), which
+// shares the workspace: the controls are added on entering Explore and removed on leaving it.
 (() => {
   const LIMITS = "One C file, up to 200 lines. Standard headers are allowed.";
   const WAIT = "irexplorer compiles the unoptimised -O0 state, applies the curated pass sequence one pass at a time, "
@@ -13,6 +13,8 @@
   // What a new program starts as in the editor. tests/data/user-programs/program.c is the same text, recorded
   // from the real toolchain so that the browser regression can compile it over the fake one.
   const STARTER = "// A new program: change this function, or replace it with your own C.\nint square(int x) {\n    return x * x;\n}\n";
+  // What the source panel says, beside the editor, of the compiled source it shows.
+  const SOURCE_NOTE = "This is the source that was compiled, as the panels show it.";
   const EMPTY_PROMPTS = {
     curated: "Choose a curated file to start comparing.",
     yours: "Upload a C file, or choose one of your files, to start comparing.",
@@ -29,16 +31,20 @@
   // The user program on screen or being opened, if any.
   let current = null;
   // What the card shows in place of the panels: null (no card), { kind: "compiling", fileName, renamedFrom,
-  // origin, started, cancel, forgotten } (cancel: the POST's AbortController, which Cancel aborts; forgotten:
-  // recompiling a program the server no longer had), { kind: "cancelled", fileName, renamedFrom, origin,
-  // source } or { kind: "failed", fileName, renamedFrom, origin, source, error }, where error is the server's
-  // { code, message, … }. A file the browser refuses before sending fails with the server's invalid_program error.
+  // origin, workspace, started, cancel, forgotten } (cancel: the POST's AbortController, which Cancel aborts;
+  // forgotten: recompiling a program the server no longer had), { kind: "cancelled", fileName, renamedFrom,
+  // origin, workspace, source } or { kind: "failed", fileName, renamedFrom, origin, workspace, source, error },
+  // where error is the server's { code, message, … }. workspace is what the compiled program opens with (see
+  // compile). A file the browser refuses before sending fails with the server's invalid_program error.
   let card = null;
   let ticking = null;
-  // The program open in the editor, if any: { title, origin, start, opener, exampleSelectDisabled, confirming }.
-  // start is the text it opened with, so an edit is any change from it; opener is the button that opened it,
-  // which gets focus back when it closes. While it is open the editor stands in for the panels and the
-  // comparison (which stay as they were behind it), and the file controls are disabled.
+  // The program open in the editor, if any: { title, origin, start, compiled, workspace, opener,
+  // exampleSelectDisabled, confirming }. start is the text it opened with, so an edit is any change from it;
+  // compiled is true when it opened on the program on screen (Edit a copy or Edit), whose compiled source the
+  // source panel keeps showing beside it, and false for a new program; workspace is the panels and function
+  // on screen, for the compiled edit to open with (app.js currentWorkspace), or null. opener is the button
+  // that opened it, which gets focus back when it closes. While it is open the editor stands in for the
+  // panels and the comparison (which stay as they were behind it), and the file controls are disabled.
   let editing = null;
 
   function readUploads() {
@@ -86,7 +92,10 @@
     view.yourSelect = h("select", { id: "your-file-select", onchange: () => openUpload(view.yourSelect.value) });
     view.yourControl = h("label", { id: "your-file-control", for: "your-file-select" }, "Your file", view.yourSelect);
     view.upload = h("button", { id: "program-upload", type: "button", onclick: () => view.fileInput.click() }, "Upload…");
-    view.newProgram = h("button", { id: "program-new", type: "button", onclick: openEditor }, "New…");
+    view.newProgram = h("button", { id: "program-new", type: "button", onclick: openNew }, "New…");
+    // Edit a copy of the curated example open, or Edit the user program open: under the source controls.
+    view.edit = h("button", { id: "program-edit", type: "button", onclick: openEdit });
+    view.sourceNote = h("p", { id: "program-source-note", class: "program-source-note" }, SOURCE_NOTE);
     view.renamed = h("p", { id: "program-renamed", class: "program-renamed" });
     view.fileInput = h("input", { id: "program-file-input", type: "file", accept: ".c", hidden: true, onchange: () => {
       const [file] = view.fileInput.files;
@@ -94,7 +103,7 @@
       if (file) uploadFile(file);
     } });
     view.choose = h("button", { type: "button", class: "primary", onclick: () => view.fileInput.click() }, "Choose a file…");
-    view.write = h("button", { type: "button", onclick: openEditor }, "Write or paste a program");
+    view.write = h("button", { type: "button", onclick: openNew }, "Write or paste a program");
     // Stands in for the source prompt while Your files is selected (see style.css).
     view.drop = h("div", { id: "program-drop", class: "program-drop" },
       h("p", { class: "program-drop-title" }, "Drop a .c file here"),
@@ -117,11 +126,15 @@
     view.title = h("div", { class: "source-title" });
     view.card = h("section", { id: "program-card", class: "panel program-card", "aria-labelledby": "program-card-heading" });
     recompileForgottenProgram = recompileForgotten;
+    // Edit a copy and Edit follow what the workspace has open (see renderEdit).
+    document.addEventListener("workspace-ready", renderEdit);
+    elements.exampleSelect.addEventListener("change", renderEdit);
   }
 
   function attach() {
     view.controls.prepend(view.mode);
     view.fileControl.after(view.yourControl, view.upload, view.newProgram);
+    view.controls.append(view.edit);
     view.controls.after(view.renamed);
     view.sourceLines.after(view.drop, view.fileInput);
     view.summary.replaceWith(view.title);
@@ -144,7 +157,7 @@
     clearInterval(ticking);
     ticking = null;
     view.title.replaceWith(view.summary);
-    for (const element of [view.mode, view.yourControl, view.upload, view.newProgram, view.renamed, view.drop, view.fileInput, view.card]) {
+    for (const element of [view.mode, view.yourControl, view.upload, view.newProgram, view.edit, view.renamed, view.drop, view.fileInput, view.card]) {
       element.remove();
     }
     for (const type of DRAG_EVENTS) view.sourcePanel.removeEventListener(type, dragFile);
@@ -199,10 +212,22 @@
     for (const line of view.sourceLines.querySelectorAll(".source-line")) {
       line.classList.toggle("is-error", errorLines.has(Number(line.dataset.line)));
       line.classList.remove("is-outlined");
+      // Beside the editor the compiled source is only to read: a line selects nothing in the hidden panels.
+      line.disabled = Boolean(editing);
     }
     setEmptyPrompt(EMPTY_PROMPTS[mode]);
     renderCard();
     renderEditor();
+    renderEdit();
+  }
+
+  // Edit a copy while a curated example is open, Edit while one of your files is; disabled while the editor
+  // is open.
+  function renderEdit() {
+    const open = appState.ready && !card && (mode === "yours" ? Boolean(current) : Boolean(appState.exampleId));
+    view.edit.hidden = !open;
+    view.edit.textContent = mode === "yours" ? "Edit" : "Edit a copy";
+    view.edit.disabled = Boolean(editing);
   }
 
   // How Your files lists a program: a new one written in the editor says so.
@@ -250,18 +275,18 @@
         ...(cancel ? [h("div", { class: "program-actions" },
           h("button", { type: "button", onclick: () => cancel.abort() }, "Cancel"))] : []));
     } else if (card.kind === "cancelled") {
-      const { fileName, renamedFrom, origin, source } = card;
+      const { fileName, renamedFrom, origin, workspace, source } = card;
       view.card.replaceChildren(
         h("h2", { id: "program-card-heading" }, "Compiling cancelled"),
         h("p", {}, `${fileName} was not compiled.`),
         // Compiled again under the name it was chosen as, so a renamed file still says so.
-        programActions(() => compile(renamedFrom ?? fileName, source, origin)));
+        programActions(() => compile(renamedFrom ?? fileName, source, origin, workspace)));
     } else {
       view.card.replaceChildren(...failureContent(card));
     }
   }
 
-  function failureContent({ fileName, renamedFrom, origin, source, error }) {
+  function failureContent({ fileName, renamedFrom, origin, workspace, source, error }) {
     const refused = error.code === "invalid_program";
     return [
       h("h2", { id: "program-card-heading" }, `${fileName} could not be opened`),
@@ -272,7 +297,7 @@
       ...(error.parserMessage ? [h("details", { class: "program-parser-message" },
         h("summary", {}, "Parser message"), h("pre", {}, error.parserMessage))] : []),
       // Compiled again under the name it was chosen as, so a renamed file still says so.
-      programActions(RETRYABLE.has(error.code) && (() => compile(renamedFrom ?? fileName, source, origin))),
+      programActions(RETRYABLE.has(error.code) && (() => compile(renamedFrom ?? fileName, source, origin, workspace))),
     ];
   }
 
@@ -329,8 +354,9 @@
 
   // Check a file name and its text as the server will, then send the safe name and normalised source,
   // which the server accepts unchanged. `text` is null if the file is not UTF-8. `origin` is where the
-  // program came from, as Your files keeps it.
-  async function compile(fileName, text, origin = null) {
+  // program came from, as Your files keeps it. `workspace` (app.js currentWorkspace), if given, is the
+  // panels and function the compiled program opens with.
+  async function compile(fileName, text, origin = null, workspace = null) {
     if (card?.kind === "compiling") return;
     mode = "yours";
     current = null;
@@ -345,7 +371,7 @@
     const renamedFrom = accepted.fileName === fileName ? null : fileName;
     sourceState.data = { file: accepted.fileName, text: accepted.source };
     renderSource();
-    const compiling = { kind: "compiling", fileName: accepted.fileName, renamedFrom, origin, started: performance.now(),
+    const compiling = { kind: "compiling", fileName: accepted.fileName, renamedFrom, origin, workspace, started: performance.now(),
       cancel: new AbortController() };
     card = compiling;
     render();
@@ -358,17 +384,17 @@
     }
     // Cancel dropped the request, so the server stopped the compile; whatever the request came to is ignored.
     if (compiling.cancel.signal.aborted) {
-      showCancelled({ fileName: accepted.fileName, renamedFrom, origin, source: accepted.source });
+      showCancelled({ fileName: accepted.fileName, renamedFrom, origin, workspace, source: accepted.source });
       return;
     }
     if (!result.ok) {
-      showFailure({ fileName: accepted.fileName, renamedFrom, origin, source: accepted.source, error: result.error });
+      showFailure({ fileName: accepted.fileName, renamedFrom, origin, workspace, source: accepted.source, error: result.error });
       return;
     }
     const program = { ...result.program, renamedFrom, origin };
     keep(program);
     current = program;
-    await loadProgram(program);
+    await loadProgram(program, workspace);
     if (card !== compiling) return;
     card = null;
     render();
@@ -399,27 +425,47 @@
   }
 
   // New… (or Write or paste a program): a new program, named program.c, starting from STARTER.
-  function openEditor(event) {
+  function openNew(event) {
+    openEditor({ title: "New program", origin: { kind: "new" }, fileName: "program.c", text: STARTER, compiled: false },
+      event.currentTarget, "New program. Write or paste C, then compile it.");
+  }
+
+  // Edit a copy of the curated example open, named after its file, or Edit the user program open.
+  function openEdit(event) {
+    if (!appState.ready) return;
+    const { file, text } = sourceState.data;
+    const program = mode === "yours"
+      ? { title: `Editing ${current.fileName}`, origin: current.origin ?? { kind: "upload", fileName: current.fileName } }
+      : { title: `Editing a copy of curated ${appState.exampleId.replaceAll("_", " ")}`, origin: { kind: "curated", exampleId: appState.exampleId } };
+    openEditor({ ...program, fileName: file, text, compiled: true }, event.currentTarget, `${program.title}. Change the C, then compile it.`);
+  }
+
+  // Open the editor on `text` under `fileName`. Over a program on screen, the compiled edit opens with its
+  // panels and function.
+  function openEditor({ title, origin, fileName, text, compiled }, opener, announcement) {
     if (editing || card?.kind === "compiling") return;
-    editing = { title: "New program", origin: { kind: "new" }, start: STARTER, opener: event.currentTarget,
+    editing = { title, origin, start: text, compiled, workspace: appState.ready ? currentWorkspace() : null, opener,
       exampleSelectDisabled: elements.exampleSelect.disabled, confirming: false };
-    view.editorName.value = "program.c";
-    view.editor.load(STARTER);
+    view.editorName.value = fileName;
+    view.editor.load(text);
     render();
     view.editor.focus();
-    announce("New program. Write or paste C, then compile it.");
+    announce(announcement);
   }
 
   // The editor's part of the page: the section that stands in for the panels, and the source panel beside it,
-  // which shows nothing for a new program, as nothing is compiled yet (see style.css).
+  // which shows the compiled source the edit started from, with a note saying so, or nothing for a new
+  // program, as nothing is compiled yet (see style.css).
   function renderEditor() {
     if (!editing) {
       view.editorSection.remove();
+      view.sourceNote.remove();
       delete view.sourcePanel.dataset.editing;
       return;
     }
-    view.sourcePanel.dataset.editing = editing.origin.kind;
-    if (editing.origin.kind === "new") view.summary.textContent = "C source";
+    view.sourcePanel.dataset.editing = editing.compiled ? "compiled" : "new";
+    if (editing.compiled) view.sourceLines.before(view.sourceNote);
+    else view.summary.textContent = "C source";
     if (!view.editorSection.isConnected) view.shell.append(view.editorSection);
     view.editorHeading.textContent = editing.title;
     view.editorDiscard.textContent = edited() ? "Discard edits" : "Close editor";
@@ -466,11 +512,11 @@
   // Compile and Ctrl/⌘+Enter: the editor closes and the program compiles as an upload does.
   function compileEditor() {
     if (!editing) return;
-    const { origin } = editing;
+    const { origin, workspace } = editing;
     const fileName = view.editorName.value.trim(), text = view.editor.text;
     const focused = view.editorSection.contains(document.activeElement);
     closeEditor();
-    compile(fileName, text, origin);
+    compile(fileName, text, origin, workspace);
     // The card is up at once; keep the keyboard in it (on Cancel, or the first way on from a refusal).
     if (focused) view.card.querySelector("button")?.focus();
   }

@@ -155,8 +155,9 @@ async function loadExample(workspace = null) {
 }
 
 // Open a user program the server holds. Its source, kept by the browser, shows while the views load.
-async function loadProgram({ programId, fileName, source }) {
-  await openWorkspace({ exampleId: null, programId, name: fileName, source: { file: fileName, text: source } });
+// `workspace` (the shape `currentWorkspace()` returns) is carried over, as for an edit of what was open.
+async function loadProgram({ programId, fileName, source }, workspace = null) {
+  await openWorkspace({ exampleId: null, programId, name: fileName, source: { file: fileName, text: source } }, workspace);
 }
 
 // Open a curated example or a user program in the panels; both load through the same views.
@@ -187,7 +188,11 @@ async function openWorkspace(target, workspace = null) {
     appState.panels.left.viewType = "ir";
     appState.panels.right.ordinal = Math.min(1, appState.states.length - 1);
     appState.panels.right.viewType = "ir";
-    if (target.exampleId && workspace?.exampleId === target.exampleId) {
+    // A workspace carries over to the same curated example, or to any user program: every user program
+    // has the curated pass sequence's states, so its ordinals always match. Its function is kept if the
+    // program still has it; refreshWorkspace otherwise chooses the default function.
+    const carried = target.programId || (target.exampleId && workspace?.exampleId === target.exampleId);
+    if (workspace && carried) {
       for (const side of ["left", "right"]) {
         const panel = workspace.panels?.[side];
         if (Number.isInteger(panel?.ordinal) && panel.ordinal >= 0 && panel.ordinal < appState.states.length &&
@@ -706,6 +711,19 @@ function viewRequest(target, path) {
   return request(`${apiRoot(target)}${path}`, {}, target.programId);
 }
 
+// What openWorkspace can carry over from the workspace on screen: both panels' states and views, and the
+// chosen function.
+function currentWorkspace() {
+  return {
+    exampleId: appState.exampleId,
+    functionName: appState.functionName,
+    panels: Object.fromEntries(["left", "right"].map((side) => [side, {
+      ordinal: appState.panels[side].ordinal,
+      viewType: appState.panels[side].viewType,
+    }])),
+  };
+}
+
 // Empty the workspace: no curated example or user program open, nothing loading.
 function closeWorkspace() {
   ++appState.loadId;
@@ -784,14 +802,7 @@ window.StudyWorkspace = {
   },
   snapshot() {
     if (!appState.ready || !appState.exampleId) return null;
-    return {
-      exampleId: appState.exampleId,
-      functionName: appState.functionName,
-      panels: Object.fromEntries(["left", "right"].map((side) => [side, {
-        ordinal: appState.panels[side].ordinal,
-        viewType: appState.panels[side].viewType,
-      }])),
-    };
+    return currentWorkspace();
   },
   reset() {
     closeWorkspace();

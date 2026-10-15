@@ -474,6 +474,8 @@ details p { margin: .8rem 0 0; }
 .source-mode label:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: -3px; }
 .source-controls .source-mode label:has(input:disabled) { cursor: not-allowed; opacity: .6; }
 #program-upload, #program-new { align-self: end; min-height: 2.25rem; padding: .28rem .6rem; }
+/* Under the source controls, in their grid, so the heading heights still line up the code frames. */
+#program-edit { grid-column: 1 / -1; justify-self: start; min-height: 2.25rem; padding: .28rem .6rem; }
 .source-title { align-items: center; display: flex; flex-wrap: wrap; gap: .5rem; }
 .program-chip { background: var(--linked-soft); border-radius: 1rem; color: var(--linked); font-size: .75rem; font-weight: 800; padding: .1rem .5rem; }
 .program-renamed { color: var(--muted); font-size: .82rem; margin: .4rem 0 0; }
@@ -540,6 +542,9 @@ details p { margin: .8rem 0 0; }
 }
 /* A new program has no compiled source yet, so the source panel beside the editor shows none. */
 #source-panel[data-editing="new"] :is(#source-lines, #source-prompt, #program-chip, #program-renamed) { display: none; }
+/* Otherwise it shows the compiled source the edit started from, to read only, and says so. */
+#source-panel[data-editing] .source-line:disabled { cursor: text; opacity: 1; }
+.program-source-note { color: var(--muted); font-size: .82rem; margin: .4rem 0; }
 .program-editor { display: flex; flex-direction: column; gap: .45rem; grid-area: empty; min-height: 0; min-width: 0; overflow: hidden; padding: .75rem; }
 .program-editor-heading { border-bottom: 1px solid var(--line); display: grid; gap: .4rem; padding-bottom: .45rem; }
 .program-editor-heading h2 { font-size: 1.1rem; margin: 0; }

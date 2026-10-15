@@ -32,7 +32,7 @@ Only localhost port 8000 is published. The application runs as a non-root user w
 
 ## Run with user programs
 
-User programs let you open one small C file of your own in **Explore**, or write one in its editor, and follow it through the same states, panels and comparison report as a curated example. They are for local use only and run in a separate Compose stack, on port 8001, beside the study stack above. Build the pinned toolchain image once (it downloads about 1.7 GB of LLVM), then start the stack:
+User programs let you open one small C file of your own in **Explore**, write one in its editor, or edit a copy of a curated example or one of your files, and follow it through the same states, panels and comparison report as a curated example. They are for local use only and run in a separate Compose stack, on port 8001, beside the study stack above. Build the pinned toolchain image once (it downloads about 1.7 GB of LLVM), then start the stack:
 
 ```sh
 docker compose --profile toolchain build toolchain

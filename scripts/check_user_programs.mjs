@@ -196,9 +196,29 @@ async function reload() {
   await until(`document.querySelector('#source-mode') !== null`);
 }
 
+// Open the curated example `exampleId` in the File select and wait until it is open.
+async function openCurated(exampleId) {
+  await select('#example-select', exampleId);
+  await until(`window.StudyWorkspace.ready && appState.exampleId === ${JSON.stringify(exampleId)}`);
+}
+// Choose `option` in a workspace select and wait until the workspace shows it.
+async function choose(selector, option) {
+  await select(selector, option);
+  await until(`window.StudyWorkspace.ready && document.querySelector(${JSON.stringify(selector)}).value === ${JSON.stringify(option)}`);
+}
+// Replace everything in the editor with `text`, as pasting over a selection does.
+async function editorText(text) {
+  await value(`document.querySelector('#program-editor textarea').select()`);
+  await send('Input.insertText', { text });
+}
+// What the source panel says beside the editor about the source it shows.
+const SOURCE_NOTE = 'This is the source that was compiled, as the panels show it.';
+// The C source and both panels start their code areas at the same height below their headings.
+const alignedCode = `(() => { const panels = ['#source-panel', '#left-panel', '#right-panel'].map(selector => document.querySelector(selector).getBoundingClientRect()), views = ['#source-lines', '#left-viewer', '#right-viewer'].map(selector => document.querySelector(selector).getBoundingClientRect()); return views.every((view, index) => Math.abs((view.top - panels[index].top) - (views[0].top - panels[0].top)) < 1); })()`;
+
 // Study (#/study…) is unchanged by user programs: none of their controls exist there, and the source
 // panel is the curated one. `studySurface` reads what a participant's source panel is made of.
-const programControls = ['#source-mode', '#your-file-control', '#your-file-select', '#program-upload', '#program-new', '#program-file-input', '#program-drop', '#program-editor', '#program-chip', '#program-card', '.source-title'];
+const programControls = ['#source-mode', '#your-file-control', '#your-file-select', '#program-upload', '#program-new', '#program-edit', '#program-source-note', '#program-file-input', '#program-drop', '#program-editor', '#program-chip', '#program-card', '.source-title'];
 const noProgramControls = `${JSON.stringify(programControls)}.every(selector => !document.querySelector(selector))`;
 const curatedExamples = (await (await fetch(base + '/api/examples')).json()).examples;
 const curatedSourcePanel = `(() => { const panel = document.querySelector('#source-panel'), options = [...document.querySelectorAll('#example-select option')].map(option => option.value).filter(Boolean);
@@ -572,6 +592,84 @@ const scenarios = {
       `!document.querySelector('#program-editor') && appState.programId === ${JSON.stringify(programId)} && window.StudyWorkspace.ready && ${visible('#left-panel')} && ${visible('.comparison-status')} && ${visible('#source-lines')} && document.querySelector('#source-summary').textContent === 'C source · score.c' && ${visible('#program-chip')}`);
     await check('The controls are enabled again, nothing was compiled and Your files is unchanged',
       `${posts() === posted} && ${uploadOptions}.join('|') === 'score.c' && [...document.querySelectorAll('#source-mode input, #your-file-select, #program-upload, #program-new')].every(control => !control.disabled)`);
+  },
+
+  async 'Edit a copy opens the editor on a copy of the curated example, beside the source that was compiled'() {
+    const quickSort = await readFile(join(curatedSources, 'quick_sort.c'), 'utf8');
+    await check('With no curated example open there is no Edit a copy', `!${visible('#program-edit')}`);
+    await openCurated('quick_sort');
+    await check('Edit a copy appears under the source controls once a curated example is open',
+      `${visible('#program-edit')} && document.querySelector('#program-edit').textContent === 'Edit a copy' && document.querySelector('#program-edit').getBoundingClientRect().top >= document.querySelector('#function-select').getBoundingClientRect().bottom`);
+    await check('The C source and both panels still start their code at the same height', alignedCode);
+    await click('#program-edit');
+    await check('Its heading names the curated example, with a File name field of the example\'s file',
+      `document.querySelector('#program-editor-heading').textContent === 'Editing a copy of curated quick sort' && document.querySelector('#program-editor-name').value === 'quick_sort.c'`);
+    await check('The editor holds the curated source, focused', `(() => { const text = document.querySelector('#program-editor textarea'); return text.value === ${JSON.stringify(quickSort)} && document.activeElement === text; })()`);
+    await check('The editor stands in for the panels and the comparison', `${visible('#program-editor')} && !${visible('#left-panel')} && !${visible('#right-panel')} && !${visible('.comparison-status')}`);
+    await check('The source panel beside it shows the compiled source, with a note saying it is what was compiled',
+      `${visible('#source-lines')} && document.querySelector('#source-summary').textContent === 'C source · quick_sort.c' && document.querySelectorAll('#source-lines .source-line').length === ${quickSort.replace(/\n$/, '').split('\n').length} && ${visible('#program-source-note')} && document.querySelector('#program-source-note').textContent === ${JSON.stringify(SOURCE_NOTE)}`);
+    await click('.source-line[data-line="4"]');
+    await check('The compiled source is read-only beside the editor: a line clicked selects nothing', `!document.querySelector('#source-lines .is-source') && document.querySelector('#source-lines .source-line').disabled`);
+    await check('Edit a copy is disabled with the file controls while editing',
+      `[...document.querySelectorAll('#source-mode input, #example-select, #program-edit')].every(control => control.disabled)`);
+    await snap('user-programs-edit-a-copy.png');
+    await click('#program-editor-discard');
+    await check('Close editor brings back the curated example, with Edit a copy focused',
+      `!document.querySelector('#program-editor') && !${visible('#program-source-note')} && appState.exampleId === 'quick_sort' && window.StudyWorkspace.ready && ${visible('#left-panel')} && document.activeElement === document.querySelector('#program-edit') && !document.querySelector('#program-edit').disabled && !document.querySelector('#source-lines .source-line').disabled`);
+  },
+
+  async 'Edit opens the editor on one of your files, beside the source that was compiled'() {
+    const quickSort = await readFile(join(curatedSources, 'quick_sort.c'), 'utf8');
+    await upload('quick_sort.c');
+    await check('Edit appears under the source controls when one of your files is open', `${visible('#program-edit')} && document.querySelector('#program-edit').textContent === 'Edit'`);
+    await click('#program-edit');
+    await check('Its heading names the file, with a File name field of the file',
+      `document.querySelector('#program-editor-heading').textContent === 'Editing quick_sort.c' && document.querySelector('#program-editor-name').value === 'quick_sort.c' && document.querySelector('#program-editor textarea').value === ${JSON.stringify(quickSort)}`);
+    await check('The source panel beside it shows the compiled source, with a note saying it is what was compiled',
+      `${visible('#source-lines')} && document.querySelector('#source-summary').textContent === 'C source · quick_sort.c' && document.querySelectorAll('#source-lines .source-line').length === ${quickSort.replace(/\n$/, '').split('\n').length} && ${visible('#program-source-note')} && !${visible('#left-panel')}`);
+    await check('Edit is disabled with the file controls while editing',
+      `[...document.querySelectorAll('#source-mode input, #your-file-select, #program-upload, #program-new, #program-edit')].every(control => control.disabled)`);
+  },
+
+  async 'A compiled edit opens with both panels and the function as they were, the selection and trace cleared'() {
+    const edited = await readFile(join(userProgramSources, 'quick_sort.c'), 'utf8');
+    await openCurated('quick_sort');
+    await choose('#function-select', 'partition');
+    await choose('#left-state', '2');
+    await choose('#left-view', 'cfg');
+    await choose('#right-state', '9');
+    await click('.source-line[data-line="4"]');
+    await until(`Boolean(document.querySelector('#source-lines .is-source'))`);
+    await check('Before the edit a C line is selected and traced into the panels', `document.querySelectorAll('#right-viewer .ir-line.is-source, #right-viewer .ir-line.is-linked').length > 0`);
+    await click('#program-edit');
+    await editorText(edited);
+    await click('#program-editor-compile');
+    await until(`window.StudyWorkspace.ready && Boolean(appState.programId) && !${visible('#program-card')}`);
+    await check('The compiled edit opens as quick_sort.c in Your files',
+      `document.querySelector('#source-summary').textContent === 'C source · quick_sort.c' && document.querySelector('#source-mode input[value="yours"]').checked && ${visible('#program-chip')} && document.querySelector('#source-lines').textContent.includes('void sort(')`);
+    await check('Both panels keep their states and views',
+      `document.querySelector('#left-state').value === '2' && document.querySelector('#left-view').value === 'cfg' && document.querySelector('#right-state').value === '9' && document.querySelector('#right-view').value === 'ir' && ${visible('#left-viewer .cfg-svg')} && document.querySelectorAll('#right-viewer .ir-line').length > 0`);
+    await check('The function that still exists stays chosen',
+      `document.querySelector('#function-select').value === 'partition' && [...document.querySelector('#function-select').options].map(option => option.value).join('|') === 'sort|partition'`);
+    await check('The source selection and trace are cleared',
+      `!document.querySelector('#source-lines .is-source') && !document.querySelector('#left-viewer .is-source, #left-viewer .is-linked, #left-viewer .is-selected, #right-viewer .is-source, #right-viewer .is-linked, #right-viewer .is-selected')`);
+    await click('.source-line[data-line="4"]');
+    await until(`Boolean(document.querySelector('#source-lines .is-source'))`);
+    await check('A C line of the edit links into its instructions', `document.querySelectorAll('#right-viewer .ir-line.is-source, #right-viewer .ir-line.is-linked').length > 0`);
+  },
+
+  async 'A compiled edit opens the default function when the chosen one is gone'() {
+    const edited = await readFile(join(userProgramSources, 'quick_sort.c'), 'utf8');
+    await upload('quick_sort.c');
+    const uploaded = await value('appState.programId');
+    await choose('#function-select', 'quick_sort');
+    await choose('#right-state', '5');
+    await click('#program-edit');
+    await editorText(edited);
+    await click('#program-editor-compile');
+    await until(`window.StudyWorkspace.ready && Boolean(appState.programId) && appState.programId !== ${JSON.stringify(uploaded)} && !${visible('#program-card')}`);
+    await check('quick_sort is gone, so the edit opens on its first function, sort, with the states kept',
+      `document.querySelector('#function-select').value === 'sort' && document.querySelector('#right-state').value === '5' && document.querySelector('#left-state').value === '0'`);
   },
 
   async 'Leaving Explore closes the editor, and Study never shows it'() {
