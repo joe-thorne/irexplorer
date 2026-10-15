@@ -51,5 +51,5 @@ window.AcceptedProgram = (() => {
     }
   }
 
-  return { accept, read, countLines, MAX_LINES };
+  return { accept, read, countLines, safeFileName, MAX_LINES };
 })();

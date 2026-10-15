@@ -479,6 +479,10 @@ details p { margin: .8rem 0 0; }
 .source-title { align-items: center; display: flex; flex-wrap: wrap; gap: .5rem; }
 .program-chip { background: var(--linked-soft); border-radius: 1rem; color: var(--linked); font-size: .75rem; font-weight: 800; padding: .1rem .5rem; }
 .program-renamed { color: var(--muted); font-size: .82rem; margin: .4rem 0 0; }
+.program-origin { color: var(--muted); font-size: .82rem; grid-column: 1 / -1; margin: 0; }
+/* Open the original reads as a link at the end of the line naming the original. */
+.program-link { background: none; border: 0; color: var(--accent); font-weight: 700; padding: 0; text-decoration: underline; }
+.program-link:hover { background: none; color: var(--ink); }
 /* In Your files the drop zone stands in for the source prompt: it shows while no source is open. */
 .program-drop { align-content: center; border: 2px dashed #9fb3c8; border-radius: .5rem; display: none; flex: 1 1 auto; gap: .5rem; justify-items: center; min-height: 0; overflow: auto; padding: 1rem; text-align: center; }
 .program-drop p { margin: 0; }
@@ -548,7 +552,7 @@ details p { margin: .8rem 0 0; }
   }
 }
 /* A new program has no compiled source yet, so the source panel beside the editor shows none. */
-#source-panel[data-editing="new"] :is(#source-lines, #source-prompt, #program-chip, #program-renamed, #program-warnings) { display: none; }
+#source-panel[data-editing="new"] :is(#source-lines, #source-prompt, #program-chip, #program-renamed, #program-origin, #program-warnings) { display: none; }
 /* Otherwise it shows the compiled source the edit started from, to read only, and says so. */
 #source-panel[data-editing] .source-line:disabled { cursor: text; opacity: 1; }
 .program-source-note { color: var(--muted); font-size: .82rem; margin: .4rem 0; }
