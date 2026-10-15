@@ -716,6 +716,158 @@ const scenarios = {
       `document.querySelector('#function-select').value === 'sort' && document.querySelector('#right-state').value === '5' && document.querySelector('#left-state').value === '0'`);
   },
 
+  async 'A compile error in an edit reopens the editor with its lines marked and its diagnostics listed, keeping the comparison'() {
+    const score = await readFile(join(curatedSources, 'score.c'), 'utf8');
+    await upload('score.c');
+    const uploaded = await value('appState.programId');
+    await choose('#right-state', '5');
+    await click('#program-edit');
+    // The fake clang fails as clang does on each call to an undeclared abss; the second is far enough down
+    // that the editor has to scroll to it.
+    const filler = Array.from({ length: 80 }, (_, index) => `int filler_${index}(int value) { return value + ${index}; }`);
+    const broken = ['// irx-fake: error', '#include <stdlib.h>', '', 'int distance(int from, int to) {', '  return abss(to - from);', '}', '',
+      ...filler, '', 'int gap(int from, int to) {', '  int difference = to - from;', '  return abss(difference);', '}', ''].join('\n');
+    const lineOf = text => broken.split('\n').indexOf(text) + 1;
+    const [first, second] = [lineOf('  return abss(to - from);'), lineOf('  return abss(difference);')];
+    await editorText(broken);
+    const before = posts();
+    await click('#program-editor-compile');
+    await until(`${visible('#program-editor')} && Boolean(document.querySelector('#program-editor-diagnostics li'))`);
+
+    await check('The edit was sent once, and the editor comes back with the edit as it was',
+      `${posts() - before === 1} && !${visible('#program-card')} && document.querySelector('#program-editor textarea').value === ${JSON.stringify(broken)} && document.querySelector('#program-editor-name').value === 'score.c' && document.querySelector('#program-editor-heading').textContent === 'Editing score.c'`);
+    const marked = part => `[...document.querySelectorAll(${JSON.stringify(`#program-editor ${part}`)})].flatMap((line, index) => line.classList.contains('is-error') ? [index + 1] : []).join()`;
+    await check('The failing lines are marked, in the margin and behind the text',
+      `${marked('.editor-numbers span')} === '${first},${second}' && ${marked('.editor-highlight > span')} === '${first},${second}'`);
+    await check('Clang\'s diagnostics are listed above the editor, each against the edit a button naming its line',
+      `(() => { const listed = document.querySelector('#program-editor-diagnostics'), buttons = [...listed.querySelectorAll('li button')].map(button => button.textContent), headers = [...listed.querySelectorAll('li > span:not(.program-diagnostic-severity)')].map(span => span.textContent);
+        return ${visible('#program-editor-diagnostics')} && Boolean(listed.compareDocumentPosition(document.querySelector('#program-editor textarea')) & Node.DOCUMENT_POSITION_FOLLOWING)
+          && listed.querySelector('ul').getAttribute('aria-label') === 'Compiler diagnostics' && listed.textContent.includes('The C source did not compile.')
+          && buttons.length === 4 && buttons[0].startsWith("Line ${first}, column 10: call to undeclared function 'abss'") && buttons[1] === "Line ${first}, column 10: did you mean 'abs'?"
+          && buttons[2].startsWith("Line ${second}, column 10: call to undeclared function 'abss'") && headers.length === 2 && headers.every(text => text.startsWith('/usr/include/stdlib.h, line 980'))
+          && Boolean(listed.querySelector('details.program-output:not([open])')); })()`);
+    await check('The error and every diagnostic are announced',
+      `(() => { const notice = document.querySelector('#notice').textContent; return notice.startsWith("Error: The C source did not compile. Clang's diagnostics, listed above the editor: error: Line ${first}, column 10: call to undeclared function 'abss'") && [...document.querySelectorAll('#program-editor-diagnostics li')].every(item => notice.includes(item.querySelector('button, span:not(.program-diagnostic-severity)').textContent)); })()`);
+    await check('The program the edit started from stays open behind the editor, with its compiled source beside it, and nothing is added to Your files',
+      `appState.programId === ${JSON.stringify(uploaded)} && window.StudyWorkspace.ready && !${visible('#left-panel')} && ${uploadOptions}.join('|') === 'score.c' && document.querySelector('#source-summary').textContent === 'C source · score.c' && ${visible('#program-source-note')} && document.querySelectorAll('#source-lines .source-line').length === ${score.replace(/\n$/, '').split('\n').length} && !document.querySelector('#source-lines .is-error')`);
+    await check('The file controls stay locked while the edit is open', `[...document.querySelectorAll('#source-mode input, #your-file-select, #program-upload, #program-new')].every(control => control.disabled)`);
+    await snap('user-programs-edit-error.png');
+
+    const caretOn = line => `(() => { const text = document.querySelector('#program-editor textarea'), height = parseFloat(getComputedStyle(text).lineHeight), top = (${line} - 1) * height;
+      return document.activeElement === text && text.selectionStart === text.selectionEnd && text.value.slice(0, text.selectionStart).split('\\n').length === ${line} && top >= text.scrollTop && top + height <= text.scrollTop + text.clientHeight; })()`;
+    await value(`document.querySelectorAll('#program-editor-diagnostics li button')[2].click()`);
+    await check('A diagnostic moves the caret to its line in the editor, scrolled into view', caretOn(second));
+    await value(`document.querySelectorAll('#program-editor-diagnostics li button')[0].click()`);
+    await check('Each diagnostic does, back up to the first', caretOn(first));
+
+    // An optimiser crash fails the compile too, with no line to mark: the editor comes back with clang's output.
+    const crashing = `${score}// irx-fake: crash\n`;
+    await editorText(crashing);
+    await click('#program-editor-compile');
+    await until(`${visible('#program-editor')} && document.querySelector('#program-editor-diagnostics')?.textContent.includes('opt failed while optimising the program.')`);
+    await check('A crash reopens the editor with the edit, no lines marked, no diagnostics and the full output',
+      `document.querySelector('#program-editor textarea').value === ${JSON.stringify(crashing)} && !document.querySelector('#program-editor .is-error') && !document.querySelector('#program-editor-diagnostics li') && document.querySelector('#program-editor-diagnostics .program-output pre').textContent.includes('PLEASE submit a bug report') && appState.programId === ${JSON.stringify(uploaded)}`);
+
+    await click('#program-editor-discard');
+    await value(`[...document.querySelectorAll('#program-editor .program-editor-confirmation button')].find(button => button.textContent === 'Discard edits').click()`);
+    await check('Discarding brings back the comparison that still works, as it was',
+      `!document.querySelector('#program-editor') && appState.programId === ${JSON.stringify(uploaded)} && window.StudyWorkspace.ready && ${visible('#left-panel')} && ${visible('.comparison-status')} && document.querySelector('#right-state').value === '5' && document.querySelector('#source-summary').textContent === 'C source · score.c' && ${visible('#source-lines')} && !document.querySelector('#source-lines').inert && !document.querySelector('#source-lines').classList.contains('is-pending')`);
+    await check('The controls are enabled again and Your files is unchanged',
+      `${uploadOptions}.join('|') === 'score.c' && [...document.querySelectorAll('#source-mode input, #your-file-select, #program-upload, #program-new, #program-edit')].every(control => !control.disabled)`);
+  },
+
+  async 'Back to editing leads the card after a busy compiler, a timeout, an unavailable compiler or Cancel, and returns to the edit unchanged'() {
+    const [score, edited] = await Promise.all([readFile(join(curatedSources, 'score.c'), 'utf8'), readFile(join(userProgramSources, 'quick_sort.c'), 'utf8')]);
+    await openCurated('quick_sort');
+    await choose('#right-state', '9');
+    await click('#program-edit');
+    await editorText(edited);
+    // Under a name of its own: the server may already hold the edited copy as quick_sort.c, and would open it at once.
+    await value(`(() => { const name = document.querySelector('#program-editor-name'); name.focus(); name.select(); })()`);
+    await send('Input.insertText', { text: 'edited_sort.c' });
+    const edit = { text: edited };
+    const failed = text => until(`document.querySelector('#program-card')?.innerText.includes(${JSON.stringify(text)})`);
+    // The card stands in for the edit, and Back to editing comes first; it brings back the edit as it was,
+    // beside the compiled source, with the comparison it started from still open behind it.
+    async function backToEditing(kind, buttons = 'Back to editing|Try again|Choose another file…') {
+      await check(`${kind}: the card leads with Back to editing, then M1's actions`, `${cardButtons} === ${JSON.stringify(buttons)} && document.querySelector('#program-card .program-actions button').classList.contains('primary') && !document.querySelector('#program-editor')`);
+      await check(`${kind}: the curated example the edit started from stays open behind the card, and nothing is added to Your files`,
+        `appState.exampleId === 'quick_sort' && appState.ready && !${visible('#left-panel')} && ${uploadOptions}.join('|') === ''`);
+      await cardButton('Back to editing');
+      await check(`${kind}: Back to editing returns to the edit unchanged, focused, beside the compiled source`,
+        `(() => { const text = document.querySelector('#program-editor textarea'); return ${visible('#program-editor')} && !${visible('#program-card')} && text.value === ${JSON.stringify(edit.text)} && document.activeElement === text && document.querySelector('#program-editor-name').value === 'edited_sort.c' && document.querySelector('#program-editor-heading').textContent === 'Editing a copy of curated quick sort' && document.querySelector('#program-editor-discard').textContent === 'Discard edits' && !${visible('#program-editor-diagnostics')}
+          && document.querySelector('#source-summary').textContent === 'C source · quick_sort.c' && ${visible('#program-source-note')} && !document.querySelector('#source-lines').inert && [...document.querySelectorAll('#source-mode input, #example-select')].every(control => control.disabled) && appState.exampleId === 'quick_sort'; })()`);
+    }
+
+    // Busy: another compile, posted from outside the page, is under way (under a name of its own, as the
+    // server answers a program it already holds at once).
+    let slow = postElsewhere('slow_edit.c', `${score}// irx-fake: slow\n`);
+    await pause(300);
+    await click('#program-editor-compile');
+    await failed('The compiler is busy with another program.');
+    await snap('user-programs-edit-busy.png');
+    await backToEditing('Busy');
+    await slow;
+
+    // Timeout: the fake toolchain cannot outlast the app's own 5 s wait, so the page is answered as the app
+    // answers a compile the compiler service stopped.
+    await holdCompiles(true);
+    await click('#program-editor-compile');
+    for (let attempt = 0; !held.length; attempt += 1) {
+      if (attempt === 100) throw Error('No POST /api/programs was sent');
+      await pause(30);
+    }
+    const timedOut = { error: { code: 'compile_timeout', message: 'The compile took longer than 30 s and was stopped.' } };
+    await send('Fetch.fulfillRequest', { requestId: held.shift(), responseCode: 504, responseHeaders: [{ name: 'Content-Type', value: 'application/json' }], body: Buffer.from(JSON.stringify(timedOut)).toString('base64') });
+    await holdCompiles(false);
+    await failed('The compile took longer than 30 s and was stopped.');
+    await backToEditing('Timeout');
+
+    // Unavailable: clang hangs until the app gives up on the compiler service.
+    edit.text = `${edited}// irx-fake: hang\n`;
+    await editorText(edit.text);
+    await click('#program-editor-compile');
+    await failed('The compiler service is unavailable.');
+    await backToEditing('Unavailable');
+    await compilerFree();
+
+    // Cancel, with the keyboard in the card.
+    await click('#program-editor-compile');
+    await failed('Compiling edited_sort.c');
+    await check('Cancel: the compiling card offers Cancel, focused', `${cardButtons} === 'Cancel' && document.activeElement?.textContent === 'Cancel'`);
+    for (const type of ['keyDown', 'keyUp']) await send('Input.dispatchKeyEvent', { type, key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, text: '\r' });
+    await failed('Compiling cancelled');
+    await check('Cancel: Back to editing takes the focus Cancel had', `document.activeElement?.textContent === 'Back to editing'`);
+    await backToEditing('Cancel');
+
+    // Try again on an edit's card compiles the edit, which then opens as the compiled edit.
+    edit.text = edited;
+    await editorText(edited);
+    slow = postElsewhere('slow_edit_again.c', `${score}// irx-fake: slow\n`);
+    await pause(300);
+    await click('#program-editor-compile');
+    await failed('The compiler is busy with another program.');
+    await slow;
+    await cardButton('Try again');
+    await until(`window.StudyWorkspace.ready && Boolean(appState.programId) && !${visible('#program-card')}`);
+    await check('Try again compiles the edit, which opens with the panels as they were and is listed in Your files',
+      `!document.querySelector('#program-editor') && document.querySelector('#source-summary').textContent === 'C source · edited_sort.c' && document.querySelector('#right-state').value === '9' && ${uploadOptions}.join('|') === 'edited_sort.c' && document.querySelector('#source-mode input[value="yours"]').checked`);
+  },
+
+  async 'A file chosen from an edit\'s card replaces the edit and the comparison, as an upload does'() {
+    await upload('score.c');
+    await click('#program-edit');
+    await editorText('int main(void) { return 0; }\n// irx-fake: hang\n');
+    await click('#program-editor-compile');
+    await until(`document.querySelector('#program-card')?.innerText.includes('Compiling score.c')`);
+    await cardButton('Cancel');
+    await until(`document.querySelector('#program-card')?.innerText.includes('Compiling cancelled')`);
+    await chooseFile('#program-card .program-actions button:last-child', join(curatedSources, 'binary_search.c'));
+    await until(`window.StudyWorkspace.ready && document.querySelector('#source-summary').textContent === 'C source · binary_search.c' && !${visible('#program-card')}`);
+    await check('The chosen file opens in place of the edit: no editor, and the file controls are enabled',
+      `!document.querySelector('#program-editor') && ${visible('#left-panel')} && ${uploadOptions}.join('|') === 'score.c|binary_search.c' && [...document.querySelectorAll('#source-mode input, #your-file-select, #program-upload, #program-new, #program-edit')].every(control => !control.disabled)`);
+  },
+
   async 'In the editor Tab indents, Shift+Tab outdents, Enter keeps the indent, and undo steps back through them'() {
     const starter = await readFile(join(userProgramSources, 'program.c'), 'utf8');
     const lines = starter.split('\n');

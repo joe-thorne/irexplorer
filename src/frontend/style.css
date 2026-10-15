@@ -561,6 +561,12 @@ details p { margin: .8rem 0 0; }
 .program-editor-confirmation { border-left: 4px solid #9b1c1c; display: grid; gap: .5rem; padding-left: 1rem; }
 .program-editor-confirmation[hidden] { display: none; }
 .program-editor-confirmation p { margin: 0; }
+/* Why the edit's last compile failed, above the editor, kept short so the editor keeps its room. */
+.program-editor-diagnostics { display: grid; font-size: .85rem; gap: .3rem; }
+.program-editor-diagnostics[hidden] { display: none; }
+.program-editor-diagnostics .program-failure-message { margin: 0; }
+.program-editor-diagnostics .program-diagnostics { margin: 0; max-height: 9rem; }
+.program-editor-diagnostics .program-output { margin: 0; }
 /* editor.js: a transparent textarea exactly over the highlighted copy of its text, with the line numbers
    beside them. All three share one font, size, line height and top padding, so their lines stay aligned. */
 .editor { display: flex; flex: 1 1 auto; flex-direction: column; gap: .35rem; min-height: 0; }
@@ -577,10 +583,13 @@ details p { margin: .8rem 0 0; }
 .editor-numbers span, .editor-highlight > span { display: block; }
 /* A bar in the margin beside each line that is new or changed against the compiled source. Only those lines
    have a border, so forced colours, which draw every border, show the same bars. */
-.editor-numbers span { padding-left: 3px; }
+.editor-numbers span { padding-left: 3px; padding-right: 3px; }
 .editor-numbers span.is-changed { border-left: 3px solid var(--accent); padding-left: 0; }
+/* A line a failed compile reported an error on: a red bar on the margin's other side, and the line tinted. */
+.editor-numbers span.is-error { background: #fde8e8; border-right: 3px solid #b91c1c; color: #991b1b; font-weight: 800; padding-right: 0; }
+.editor-highlight > span.is-error { background: #fde8e8; }
 .editor-body { flex: 1 1 auto; min-width: 0; overflow: hidden; position: relative; }
-.editor-highlight { background: none; color: var(--code); left: 0; margin: 0; padding: .4rem .5rem; pointer-events: none; position: absolute; top: 0; white-space: pre; }
+.editor-highlight { background: none; color: var(--code); left: 0; margin: 0; min-width: 100%; padding: .4rem .5rem; pointer-events: none; position: absolute; top: 0; white-space: pre; }
 .editor-input { background: transparent; border: 0; caret-color: var(--ink); color: transparent; height: 100%; inset: 0; margin: 0; overflow: auto; padding: .4rem .5rem; position: absolute; resize: none; white-space: pre; width: 100%; }
 /* Inset, as the frame would clip an outer outline. */
 .editor-input:focus-visible { outline: 3px solid var(--focus); outline-offset: -3px; }

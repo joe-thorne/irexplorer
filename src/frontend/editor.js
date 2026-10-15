@@ -48,10 +48,11 @@ window.ProgramEditor = (() => {
     return changed;
   }
 
-  // An editor of C source: { element, textarea, text, edited, load(text, { compiled, start }), focus() }.
-  // The margin marks the lines that are new or changed against the compiled source the edit started from,
-  // and a status line, shown once the text differs from what it started as, counts them. The hint under
-  // it gives the keys and the line count. onInput runs after each edit; onSubmit on Ctrl/⌘+Enter.
+  // An editor of C source: { element, textarea, text, edited, load(text, { compiled, start }), focus(),
+  // markErrors(lines), showLine(line, column) }. The margin marks the lines that are new or changed against
+  // the compiled source the edit started from, and a status line, shown once the text differs from what it
+  // started as, counts them. The hint under it gives the keys and the line count. onInput runs after each
+  // edit; onSubmit on Ctrl/⌘+Enter.
   function create({ label, onInput = () => {}, onSubmit = () => {} }) {
     const numbers = h("div", { class: "editor-numbers" });
     const gutter = h("div", { class: "editor-gutter", "aria-hidden": "true" }, numbers);
@@ -71,15 +72,18 @@ window.ProgramEditor = (() => {
     const element = h("div", { class: "editor" }, status, frame, hint);
     // What the margin compares with (null: nothing compiled yet), and the text the edit started as.
     let compiled = null, start = "";
+    // The lines a failed compile reported errors on, marked until the next load or markErrors.
+    let errors = new Set();
 
     // One number and one highlighted line per line of text, the last (empty or not) included, as the caret can be there.
     function paint() {
       const lines = textarea.value.split("\n");
       const state = { inBlockComment: false };
       const changed = changedLines(compiled === null ? null : linesOf(compiled), linesOf(textarea.value));
-      numbers.replaceChildren(...lines.map((_, index) => h("span", { class: changed.has(index + 1) ? "is-changed" : null }, String(index + 1))));
-      highlight.replaceChildren(...lines.map(line => {
-        const code = h("span");
+      const marks = number => [changed.has(number) && "is-changed", errors.has(number) && "is-error"].filter(Boolean).join(" ") || null;
+      numbers.replaceChildren(...lines.map((_, index) => h("span", { class: marks(index + 1) }, String(index + 1))));
+      highlight.replaceChildren(...lines.map((line, index) => {
+        const code = h("span", { class: errors.has(index + 1) ? "is-error" : null });
         highlightCSource(code, line || " ", state);
         return code;
       }));
@@ -182,12 +186,31 @@ window.ProgramEditor = (() => {
       load(text, { compiled: from = null, start: as = text } = {}) {
         compiled = from;
         start = as;
+        errors = new Set();
         textarea.value = text;
         textarea.setSelectionRange(0, 0);
         textarea.scrollTop = textarea.scrollLeft = 0;
         paint();
       },
       focus() { textarea.focus(); },
+      // Mark these line numbers as the ones a failed compile reported errors on (none: clear the marks).
+      markErrors(lines) {
+        errors = new Set(lines);
+        paint();
+      },
+      // Put the caret on `line` (at `column`, as far as the line reaches), focused and scrolled into view.
+      showLine(line, column = 1) {
+        const lines = textarea.value.split("\n").slice(0, line);
+        const at = lines.slice(0, -1).reduce((offset, text) => offset + text.length + 1, 0)
+          + Math.min(Math.max(column - 1, 0), lines.at(-1)?.length ?? 0);
+        textarea.focus();
+        textarea.setSelectionRange(at, at);
+        const height = parseFloat(getComputedStyle(textarea).lineHeight), top = (lines.length - 1) * height;
+        if (top < textarea.scrollTop || top + height > textarea.scrollTop + textarea.clientHeight) {
+          textarea.scrollTop = Math.max(0, top - textarea.clientHeight / 3);
+        }
+        follow();
+      },
     };
   }
 

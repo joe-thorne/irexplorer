@@ -39,16 +39,19 @@
   // forgotten: recompiling a program the server no longer had), { kind: "cancelled", fileName, renamedFrom,
   // origin, workspace, source } or { kind: "failed", fileName, renamedFrom, origin, workspace, source, error },
   // where error is the server's { code, message, … }. workspace is what the compiled program opens with (see
-  // compile). A file the browser refuses before sending fails with the server's invalid_program error.
+  // compile). A file the browser refuses before sending fails with the server's invalid_program error. Each
+  // also carries `edit`, true when it is the edit open in the editor that is compiling, or that failed.
   let card = null;
   let ticking = null;
   // The program open in the editor, if any: { title, origin, compiled, workspace, opener, exampleSelectDisabled,
-  // confirming }. compiled is true when it opened on the program on screen (Edit a copy or Edit), whose
+  // confirming, behind }. compiled is true when it opened on the program on screen (Edit a copy or Edit), whose
   // compiled source the source panel keeps showing beside it, and the margin marks changes against, and
   // false for a new program; workspace is the panels and function on screen, for the compiled edit to open
   // with (app.js currentWorkspace), or null. opener is the button that opened it, which gets focus back when
   // it closes. While it is open the editor stands in for the panels and the comparison (which stay as they
-  // were behind it), and the file controls are disabled.
+  // were behind it), and the file controls are disabled. While the edit compiles, and when it fails for
+  // another reason than a compile error, the card stands in for the editor in turn, and `behind` is what the
+  // source panel and the workspace showed beside the editor, for the editor to come back to (see uncover).
   let editing = null;
   // The warnings the list was last built for, so it is rebuilt, and closed, only for another program.
   let listedWarnings = null;
@@ -120,6 +123,8 @@
     view.editorName = h("input", { id: "program-editor-name", type: "text", spellcheck: "false", autocomplete: "off" });
     view.editorDiscard = h("button", { id: "program-editor-discard", type: "button", onclick: discardEditor });
     view.editorConfirmation = h("div", { class: "program-editor-confirmation", role: "alert" });
+    // Why the edit's last compile failed, above the editor (see reopenEditor).
+    view.editorDiagnostics = h("div", { id: "program-editor-diagnostics", class: "program-editor-diagnostics" });
     view.editorSection = h("section", { id: "program-editor", class: "panel program-editor", "aria-labelledby": "program-editor-heading" },
       h("header", { class: "program-editor-heading" }, view.editorHeading,
         h("div", { class: "program-editor-controls" },
@@ -127,7 +132,7 @@
           h("div", { class: "program-actions" },
             h("button", { id: "program-editor-compile", type: "button", class: "primary", onclick: compileEditor }, "Compile"),
             view.editorDiscard))),
-      view.editorConfirmation, view.editor.element);
+      view.editorConfirmation, view.editorDiagnostics, view.editor.element);
     view.chip = h("span", { id: "program-chip", class: "program-chip" }, "Your file");
     view.title = h("div", { class: "source-title" });
     view.card = h("section", { id: "program-card", class: "panel program-card", "aria-labelledby": "program-card-heading" });
@@ -253,7 +258,7 @@
       view.warnings.open = false;
       view.warnings.replaceChildren(
         h("summary", {}, warnings.length >= MAX_WARNINGS ? `${count} · at most ${MAX_WARNINGS} are listed` : count),
-        h("ul", { class: "program-diagnostics", "aria-label": "Clang warnings" }, ...warnings.map(diagnosticItem)));
+        h("ul", { class: "program-diagnostics", "aria-label": "Clang warnings" }, ...warnings.map(warning => diagnosticItem(warning))));
     }
     markWarnings();
   }
@@ -318,18 +323,18 @@
         ...(cancel ? [h("div", { class: "program-actions" },
           h("button", { type: "button", onclick: () => cancel.abort() }, "Cancel"))] : []));
     } else if (card.kind === "cancelled") {
-      const { fileName, renamedFrom, origin, workspace, source } = card;
+      const { fileName, renamedFrom, origin, workspace, source, edit } = card;
       view.card.replaceChildren(
         h("h2", { id: "program-card-heading" }, "Compiling cancelled"),
         h("p", {}, `${fileName} was not compiled.`),
         // Compiled again under the name it was chosen as, so a renamed file still says so.
-        programActions(() => compile(renamedFrom ?? fileName, source, origin, workspace)));
+        programActions(() => compile(renamedFrom ?? fileName, source, origin, workspace, edit), edit));
     } else {
       view.card.replaceChildren(...failureContent(card));
     }
   }
 
-  function failureContent({ fileName, renamedFrom, origin, workspace, source, error }) {
+  function failureContent({ fileName, renamedFrom, origin, workspace, source, error, edit }) {
     const refused = error.code === "invalid_program";
     return [
       h("h2", { id: "program-card-heading" }, `${fileName} could not be opened`),
@@ -340,28 +345,35 @@
       ...(error.parserMessage ? [h("details", { class: "program-parser-message" },
         h("summary", {}, "Parser message"), h("pre", {}, error.parserMessage))] : []),
       // Compiled again under the name it was chosen as, so a renamed file still says so.
-      programActions(RETRYABLE.has(error.code) && (() => compile(renamedFrom ?? fileName, source, origin, workspace))),
+      programActions(RETRYABLE.has(error.code) && (() => compile(renamedFrom ?? fileName, source, origin, workspace, edit)), edit),
     ];
   }
 
   // Try again, when `retry` is given, and Choose another file…: every way on from a card that opened nothing.
-  function programActions(retry) {
+  // A card for an edit leads with Back to editing.
+  function programActions(retry, edit = false) {
     return h("div", { class: "program-actions" },
-      ...(retry ? [h("button", { type: "button", class: "primary", onclick: retry }, "Try again")] : []),
+      ...(edit ? [h("button", { type: "button", class: "primary", onclick: backToEditing }, "Back to editing")] : []),
+      ...(retry ? [h("button", { type: "button", class: edit ? null : "primary", onclick: retry }, "Try again")] : []),
       h("button", { type: "button", onclick: () => view.fileInput.click() }, "Choose another file…"));
   }
 
-  // One diagnostic; one against the upload is a button that shows its line in the source.
-  function diagnosticItem(diagnostic) {
-    const { file, line, column, severity, message } = diagnostic;
-    const text = inUpload(diagnostic) ? `Line ${line}, column ${column}: ${message}` : `${file}, line ${line}, column ${column}: ${message}`;
+  // One diagnostic; one against the upload is a button that shows its line (in the source, unless `show`
+  // shows it elsewhere).
+  function diagnosticItem(diagnostic, show = showSourceLine) {
+    const { line, column, severity } = diagnostic;
+    const text = diagnosticText(diagnostic);
     return h("li", { "data-severity": severity }, h("span", { class: "program-diagnostic-severity" }, severity),
-      inUpload(diagnostic) ? h("button", { type: "button", onclick: () => showSourceLine(line) }, text) : h("span", {}, text));
+      inUpload(diagnostic) ? h("button", { type: "button", onclick: () => show(line, column) }, text) : h("span", {}, text));
+  }
+
+  function diagnosticText({ file, line, column, message }) {
+    return `${inUpload({ file }) ? "Line" : `${file}, line`} ${line}, column ${column}: ${message}`;
   }
 
   // Each diagnostic in order, then clang's full output.
-  function compileFailure({ diagnostics, output }) {
-    const items = diagnostics.map(diagnosticItem);
+  function compileFailure({ diagnostics, output }, show = showSourceLine) {
+    const items = diagnostics.map(diagnostic => diagnosticItem(diagnostic, show));
     return [
       ...(items.length ? [h("ul", { class: "program-diagnostics", "aria-label": "Compiler diagnostics" }, ...items)] : []),
       h("details", { class: "program-output" }, h("summary", {}, "Full compiler output"), h("pre", {}, output)),
@@ -401,23 +413,29 @@
   // Check a file name and its text as the server will, then send the safe name and normalised source,
   // which the server accepts unchanged. `text` is null if the file is not UTF-8. `origin` is where the
   // program came from, as Your files keeps it. `workspace` (app.js currentWorkspace), if given, is the
-  // panels and function the compiled program opens with.
-  async function compile(fileName, text, origin = null, workspace = null) {
+  // panels and function the compiled program opens with. A file replaces whatever was open at once, an edit
+  // the editor left open included. `edit` compiles the edit open in the editor instead (see compileEditor):
+  // what it started from stays open, behind the card, until it compiles, and a compile error takes it back
+  // to the editor.
+  async function compile(fileName, text, origin = null, workspace = null, edit = false) {
     if (card?.kind === "compiling") return;
-    mode = "yours";
-    current = null;
-    closeWorkspace();
+    if (!edit) {
+      if (editing) closeEditor();
+      mode = "yours";
+      current = null;
+      closeWorkspace();
+    }
     const accepted = AcceptedProgram.accept(fileName, text);
     if (!accepted.ok) {
       const { reason, message } = accepted;
-      showFailure({ fileName, renamedFrom: null, error: { code: "invalid_program", reason, message } },
+      showFailure({ fileName, renamedFrom: null, edit, error: { code: "invalid_program", reason, message } },
         `Error: ${message} Nothing was sent to the compiler.`);
       return;
     }
     const renamedFrom = accepted.fileName === fileName ? null : fileName;
     sourceState.data = { file: accepted.fileName, text: accepted.source };
     renderSource();
-    const compiling = { kind: "compiling", fileName: accepted.fileName, renamedFrom, origin, workspace, started: performance.now(),
+    const compiling = { kind: "compiling", fileName: accepted.fileName, renamedFrom, origin, workspace, edit, started: performance.now(),
       cancel: new AbortController() };
     card = compiling;
     render();
@@ -430,12 +448,25 @@
     }
     // Cancel dropped the request, so the server stopped the compile; whatever the request came to is ignored.
     if (compiling.cancel.signal.aborted) {
-      showCancelled({ fileName: accepted.fileName, renamedFrom, origin, workspace, source: accepted.source });
+      showCancelled({ fileName: accepted.fileName, renamedFrom, origin, workspace, source: accepted.source, edit });
+      return;
+    }
+    if (!result.ok && edit && result.error.code === "compile_failed") {
+      reopenEditor(result.error);
       return;
     }
     if (!result.ok) {
-      showFailure({ fileName: accepted.fileName, renamedFrom, origin, workspace, source: accepted.source, error: result.error });
+      showFailure({ fileName: accepted.fileName, renamedFrom, origin, workspace, source: accepted.source, error: result.error, edit });
       return;
+    }
+    if (edit) {
+      // The edit compiled: what it started from closes, and the edit opens in its place.
+      mode = "yours";
+      current = null;
+      closeWorkspace();
+      sourceState.data = { file: accepted.fileName, text: accepted.source };
+      renderSource();
+      closeEditor();
     }
     const program = { ...result.program, renamedFrom, origin };
     keep(program);
@@ -495,9 +526,10 @@
   function openEditor({ title, origin, fileName, text, compiled }, opener, announcement) {
     if (editing || card?.kind === "compiling") return;
     editing = { title, origin, compiled, workspace: appState.ready ? currentWorkspace() : null, opener,
-      exampleSelectDisabled: elements.exampleSelect.disabled, confirming: false };
+      exampleSelectDisabled: elements.exampleSelect.disabled, confirming: false, behind: null };
     view.editorName.value = fileName;
     view.editor.load(text, { compiled: compiled ? text : null });
+    view.editorDiagnostics.replaceChildren();
     render();
     view.editor.focus();
     announce(announcement);
@@ -505,9 +537,10 @@
 
   // The editor's part of the page: the section that stands in for the panels, and the source panel beside it,
   // which shows the compiled source the edit started from, with a note saying so, or nothing for a new
-  // program, as nothing is compiled yet (see style.css).
+  // program, as nothing is compiled yet (see style.css). While the edit compiles, or its card says why it did
+  // not, the card stands in for the editor instead, and the source panel shows the edit as it shows an upload.
   function renderEditor() {
-    if (!editing) {
+    if (!editing || card) {
       view.editorSection.remove();
       view.sourceNote.remove();
       delete view.sourcePanel.dataset.editing;
@@ -520,6 +553,7 @@
     view.editorHeading.textContent = editing.title;
     view.editorDiscard.textContent = edited() ? "Discard edits" : "Close editor";
     view.editorConfirmation.hidden = !editing.confirming;
+    view.editorDiagnostics.hidden = !view.editorDiagnostics.childElementCount;
   }
 
   const edited = () => view.editor.edited;
@@ -559,16 +593,56 @@
     announce("Editor closed.");
   }
 
-  // Compile and Ctrl/⌘+Enter: the editor closes and the program compiles as an upload does.
+  // Compile and Ctrl/⌘+Enter: the card stands in for the editor and the edit compiles as an upload does,
+  // but the program it started from stays open behind them until it has compiled.
   function compileEditor() {
-    if (!editing) return;
+    if (!editing || card) return;
     const { origin, workspace } = editing;
     const fileName = view.editorName.value.trim(), text = view.editor.text;
     const focused = view.editorSection.contains(document.activeElement);
-    closeEditor();
-    compile(fileName, text, origin, workspace);
+    editing.behind = { source: sourceState.data, workspaceHidden: elements.workspace.hidden, emptyStateHidden: elements.emptyState.hidden };
+    view.editorDiagnostics.replaceChildren();
+    view.editor.markErrors([]);
+    compile(fileName, text, origin, workspace, true);
     // The card is up at once; keep the keyboard in it (on Cancel, or the first way on from a refusal).
     if (focused) view.card.querySelector("button")?.focus();
+  }
+
+  // Put back what the card stood in for while the edit compiled: the source panel and the workspace as they
+  // were beside the editor, which then comes back.
+  function uncover() {
+    const { source, workspaceHidden, emptyStateHidden } = editing.behind;
+    card = null;
+    sourceState.data = source;
+    renderSource();
+    if (appState.ready) applySourceHighlights();
+    elements.workspace.hidden = workspaceHidden;
+    elements.emptyState.hidden = emptyStateHidden;
+  }
+
+  // A compile error in the edit: the editor comes back with the edit as it was, its failing lines marked and
+  // clang's diagnostics listed above it, each going to its line. The announcement reads them all.
+  function reopenEditor(error) {
+    uncover();
+    view.editorDiagnostics.replaceChildren(h("p", { class: "program-failure-message" }, error.message),
+      ...compileFailure(error, (line, column) => view.editor.showLine(line, column)));
+    render();
+    const lines = (error.diagnostics || []).filter(diagnostic => inUpload(diagnostic) && diagnostic.severity.includes("error"))
+      .map(diagnostic => diagnostic.line);
+    view.editor.markErrors(lines);
+    if (lines.length) view.editor.showLine(lines[0]);
+    else view.editor.focus();
+    const diagnostics = (error.diagnostics || []).map(diagnostic => `${diagnostic.severity}: ${diagnosticText(diagnostic)}`);
+    announce(`Error: ${error.message} ${diagnostics.length
+      ? `Clang's diagnostics, listed above the editor: ${diagnostics.join(" ")}` : "Clang's output is above the editor."}`);
+  }
+
+  // Back to editing, from the card of an edit that did not compile: the edit, unchanged.
+  function backToEditing() {
+    uncover();
+    render();
+    view.editor.focus();
+    announce(`Back to editing ${view.editorName.value.trim() || "the program"}.`);
   }
 
   // A held upload opens at once: its kept source shows while the views load, and nothing is compiled.
@@ -625,9 +699,13 @@
 
   // The failed card for a program that was refused or did not compile, and its error announced.
   function showFailure(failed, announcement = `Error: ${failed.error.message}`) {
+    // For an edit, the keyboard stays in the card: Cancel goes with the compiling card, and Back to editing
+    // stands where it was.
+    const focused = failed.edit && view.card.contains(document.activeElement);
     card = { kind: "failed", ...failed };
     render();
     announce(announcement, "error");
+    if (focused) view.card.querySelector("button").focus();
   }
 
   // The cancelled card, after Cancel on a compile or a recompile.
