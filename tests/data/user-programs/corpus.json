@@ -41,6 +41,11 @@
       "about": "A realistic program of about 200 lines.",
       "outcome": {"status": 201},
       "withinSeconds": 15
+    },
+    {
+      "fileName": "program.c",
+      "about": "The starter function a new program begins with in the editor.",
+      "outcome": {"status": 201}
     }
   ]
 }

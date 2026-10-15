@@ -1,0 +1,24 @@
+/workspace/user-programs/program.c:2:1: remark: X86 DAG->DAG Instruction Selection: Function: square: MI Instruction count changed from 0 to 5; Delta: 5 [-Rpass-analysis=size-info]
+    2 | int square(int x) {
+      | ^
+/workspace/user-programs/program.c:2:1: remark: Two-Address instruction pass: Function: square: MI Instruction count changed from 5 to 6; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/program.c:2:1: remark: Register Coalescer: Function: square: MI Instruction count changed from 6 to 5; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/program.c:2:1: remark: Debug Variable Analysis: Function: square: MI Instruction count changed from 5 to 4; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/program.c:2:1: remark: 1 virtual registers copies 1.000000e+00 total copies cost generated in function [-Rpass-missed=regalloc]
+/workspace/user-programs/program.c:2:1: remark: 0 stack bytes in function 'square' [-Rpass-analysis=prologepilog]
+/workspace/user-programs/program.c:2:1: remark: 
+Function: square [-Rpass-analysis=stack-frame-layout]
+/workspace/user-programs/program.c:2:5: note: could not determine the original source location for user-programs/program.c:0:0
+    2 | int square(int x) {
+      |     ^
+/workspace/user-programs/program.c:2:5: remark: BasicBlock: entry
+IMUL32rr: 1
+MOV32rr: 1
+RET64: 1
+ [-Rpass-analysis=asm-printer]
+    2 | int square(int x) {
+      |     ^
+/workspace/user-programs/program.c:2:5: note: could not determine the original source location for user-programs/program.c:0:0
+/workspace/user-programs/program.c:2:1: remark: 3 instructions in function [-Rpass-analysis=asm-printer]
+    2 | int square(int x) {
+      | ^
