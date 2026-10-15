@@ -546,7 +546,7 @@ details p { margin: .8rem 0 0; }
   }
 }
 /* A new program has no compiled source yet, so the source panel beside the editor shows none. */
-#source-panel[data-editing="new"] :is(#source-lines, #source-prompt, #program-chip, #program-renamed) { display: none; }
+#source-panel[data-editing="new"] :is(#source-lines, #source-prompt, #program-chip, #program-renamed, #program-warnings) { display: none; }
 .program-editor { display: flex; flex-direction: column; gap: .45rem; grid-area: empty; min-height: 0; min-width: 0; overflow: hidden; padding: .75rem; }
 .program-editor-heading { border-bottom: 1px solid var(--line); display: grid; gap: .4rem; padding-bottom: .45rem; }
 .program-editor-heading h2 { font-size: 1.1rem; margin: 0; }

@@ -382,6 +382,12 @@ const scenarios = {
     await until(`window.StudyWorkspace.ready && appState.programId === ${JSON.stringify(warningsId)}`);
     await check('Reopening the warned upload lists its warnings again, collapsed, and marks their lines',
       `${visible('#program-warnings')} && !document.querySelector('#program-warnings').open && document.querySelectorAll('#source-lines .source-line.is-warning').length === ${warned.length}`);
+    await click('#program-new');
+    await until(visible('#program-editor'));
+    await check('Writing a new program shows no warnings beside it, as nothing of it is compiled yet', `!${visible('#program-warnings')}`);
+    await click('#program-editor-discard');
+    await until(`!document.querySelector('#program-editor')`);
+    await check('Closing the editor lists the open upload\'s warnings again', visible('#program-warnings'));
     await click('#source-mode input[value="curated"]');
     await check('Curated examples shows no warnings', `!${visible('#program-warnings')} && !document.querySelector('#source-lines .is-warning')`);
   },
