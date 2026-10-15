@@ -1,8 +1,7 @@
 # User programs: the same app image as docker-compose.yml with the user programs setting on, beside a
 # compiler service. A separate project on its own port, so it runs beside the study stack without touching it.
 #   docker compose -f compose.user-programs.yaml up -d --build --wait
-# The app image keeps Compose's own name, so building this stack never replaces an image tagged for the study
-# stack. Its version default is the Dockerfile's.
+# Both stacks build and tag the same app image, at the Dockerfile's version default; only the setting differs.
 name: irexplorer-user-programs
 
 services:
@@ -13,6 +12,7 @@ services:
       target: app
       args:
         APP_VERSION: ${IREXPLORER_VERSION:-0.6.0-dev.1}
+    image: irexplorer:${IREXPLORER_VERSION:-0.6.0-dev.1}
     ports:
       - "127.0.0.1:8001:8000"
     environment:

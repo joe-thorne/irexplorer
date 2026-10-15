@@ -74,7 +74,7 @@ The navigation displays the application version. `/api/release` exposes its sour
 For a new version:
 
 ```sh
-export IREXPLORER_VERSION=0.1.1
+export IREXPLORER_VERSION=0.6.0
 scripts/check_dependency_advisories.sh
 docker compose build app
 docker compose up -d --no-build --pull never --wait

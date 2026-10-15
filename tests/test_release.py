@@ -42,11 +42,20 @@ class ImageDefaultsTests(unittest.TestCase):
         self.assertIn('IREXPLORER_USER_PROGRAMS=0', self.dockerfile)
         self.assertNotIn('IREXPLORER_COMPILER_URL', self.dockerfile)
 
-    def test_the_user_programs_stack_defaults_to_the_dockerfile_version(self):
-        # Both stacks build the same app image, so the user-programs stack must not fall back to another version.
+    def test_both_stacks_build_the_same_app_image_at_the_dockerfile_version(self):
+        # Feature on is runtime configuration, so neither stack may fall back to another version, target or tag.
         default = re.search(r'^ARG APP_VERSION=(\S+)$', self.dockerfile, re.MULTILINE).group(1)
-        compose = (ROOT / 'compose.user-programs.yaml').read_text()
-        self.assertIn(f'APP_VERSION: ${{IREXPLORER_VERSION:-{default}}}', compose)
+        for name in ('docker-compose.yml', 'compose.user-programs.yaml'):
+            with self.subTest(compose=name):
+                compose = (ROOT / name).read_text()
+                self.assertIn('target: app', compose)
+                self.assertIn(f'APP_VERSION: ${{IREXPLORER_VERSION:-{default}}}', compose)
+                self.assertIn(f'image: irexplorer:${{IREXPLORER_VERSION:-{default}}}', compose)
+
+    def test_the_study_stack_states_that_user_programs_are_off(self):
+        compose = (ROOT / 'docker-compose.yml').read_text()
+        self.assertIn('IREXPLORER_USER_PROGRAMS: "0"', compose)
+        self.assertNotIn('IREXPLORER_COMPILER_URL', compose)
 
 
 class SourceFingerprintTests(unittest.TestCase):
