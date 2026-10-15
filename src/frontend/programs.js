@@ -109,17 +109,6 @@
     try { sessionStorage.removeItem(EDIT_KEY); } catch { /* nothing was kept */ }
   }
 
-  function h(tag, attributes = {}, ...children) {
-    const element = document.createElement(tag);
-    for (const [name, value] of Object.entries(attributes)) {
-      if (name.startsWith("on")) element.addEventListener(name.slice(2), value);
-      else if (value === true) element.setAttribute(name, "");
-      else if (value !== false && value != null) element.setAttribute(name, value);
-    }
-    element.append(...children);
-    return element;
-  }
-
   const view = {};
   const DRAG_EVENTS = ["dragenter", "dragover", "dragleave", "drop"];
 
@@ -639,7 +628,7 @@
     else view.summary.textContent = "C source";
     if (!view.editorSection.isConnected) view.shell.append(view.editorSection);
     view.editorHeading.textContent = editing.title;
-    view.editorDiscard.textContent = edited() ? "Discard edits" : "Close editor";
+    view.editorDiscard.textContent = view.editor.edited ? "Discard edits" : "Close editor";
     // A new program has no original to go back to.
     view.editorRestore.hidden = editing.origin.kind === "new";
     view.editorRestore.disabled = view.editor.text === editing.origin.source;
@@ -667,8 +656,6 @@
     announce(`${title}: your uncompiled edit was kept.`);
   }
 
-  const edited = () => view.editor.edited;
-
   // Back to whatever the editor stood in for, unchanged, with the Uncompiled edit gone.
   function closeEditor() {
     forgetEdit();
@@ -685,7 +672,7 @@
 
   // Closing an edit asks first, in the page, as the edit would be lost.
   function discardEditor() {
-    if (!edited()) {
+    if (!view.editor.edited) {
       leaveEditor();
       return;
     }

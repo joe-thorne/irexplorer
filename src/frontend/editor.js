@@ -4,21 +4,15 @@
 // under the default-src 'self' content security policy. programs.js builds it in Explore only.
 window.ProgramEditor = (() => {
   const INDENT = "    ";
-  let editors = 0;
-  function h(tag, attributes = {}, ...children) {
-    const element = document.createElement(tag);
-    for (const [name, value] of Object.entries(attributes)) {
-      if (name.startsWith("on")) element.addEventListener(name.slice(2), value);
-      else if (value === true) element.setAttribute(name, "");
-      else if (value !== false && value != null) element.setAttribute(name, value);
-    }
-    element.append(...children);
-    return element;
-  }
 
-  // The lines a line count, margin or comparison goes by: one trailing newline ends the last line rather
-  // than starting another.
-  const linesOf = text => (text ? text.replace(/\n$/, "").split("\n") : []);
+  // How far `before` and `after` (two arrays of lines, or two strings) agree from the start and, in what is
+  // left, from the end: [head, tail].
+  function sharedEnds(before, after) {
+    let head = 0, tail = 0;
+    while (head < before.length && head < after.length && before[head] === after[head]) head += 1;
+    while (tail < before.length - head && tail < after.length - head && before.at(-1 - tail) === after.at(-1 - tail)) tail += 1;
+    return [head, tail];
+  }
 
   // The 1-based numbers of the lines in `after` that are new or changed against `before` (null: every line
   // is new): those outside a longest common run of lines. Only what lies between a shared head and tail is
@@ -29,9 +23,7 @@ window.ProgramEditor = (() => {
       after.forEach((_, index) => changed.add(index + 1));
       return changed;
     }
-    let head = 0, tail = 0;
-    while (head < before.length && head < after.length && before[head] === after[head]) head += 1;
-    while (tail < before.length - head && tail < after.length - head && before.at(-1 - tail) === after.at(-1 - tail)) tail += 1;
+    const [head, tail] = sharedEnds(before, after);
     const old = before.slice(head, before.length - tail), now = after.slice(head, after.length - tail);
     // common[i][j]: the longest common run of old[i…] and now[j…].
     const common = Array.from({ length: old.length + 1 }, () => new Uint16Array(now.length + 1));
@@ -48,7 +40,7 @@ window.ProgramEditor = (() => {
     return changed;
   }
 
-  // An editor of C source: { element, textarea, text, start, edited, load(text, { compiled, start }),
+  // The one editor of C source: { element, text, start, edited, load(text, { compiled, start }),
   // replaceText(text), focus(), markErrors(lines), showLine(line, column) }. The margin marks the lines that
   // are new or changed against the compiled source the edit started from, and a status line, shown once the
   // text differs from what it started as, counts them. The hint under it gives the keys and the line count.
@@ -62,11 +54,10 @@ window.ProgramEditor = (() => {
     });
     const frame = h("div", { class: "program-editor-frame" }, gutter, h("div", { class: "editor-body" }, highlight, textarea));
     // The keys, and the line count against the limit, which the textarea is described by.
-    const hintId = `editor-hint-${++editors}`;
     const count = h("span");
-    const hint = h("p", { id: hintId, class: "editor-hint" },
+    const hint = h("p", { id: "program-editor-hint", class: "editor-hint" },
       "Tab indents · Shift+Tab outdents · Enter keeps the indent · Esc, then Tab, leaves the editor · Ctrl/⌘+Enter compiles · ", count);
-    textarea.setAttribute("aria-describedby", hintId);
+    textarea.setAttribute("aria-describedby", hint.id);
     // The only sign that the text is an Uncompiled edit; announced, once it says something new.
     const status = h("p", { class: "editor-status", role: "status" });
     const element = h("div", { class: "editor" }, status, frame, hint);
@@ -79,7 +70,7 @@ window.ProgramEditor = (() => {
     function paint() {
       const lines = textarea.value.split("\n");
       const state = { inBlockComment: false };
-      const changed = changedLines(compiled === null ? null : linesOf(compiled), linesOf(textarea.value));
+      const changed = changedLines(compiled === null ? null : AcceptedProgram.lines(compiled), AcceptedProgram.lines(textarea.value));
       const marks = number => [changed.has(number) && "is-changed", errors.has(number) && "is-error"].filter(Boolean).join(" ") || null;
       numbers.replaceChildren(...lines.map((_, index) => h("span", { class: marks(index + 1) }, String(index + 1))));
       highlight.replaceChildren(...lines.map((line, index) => {
@@ -88,7 +79,7 @@ window.ProgramEditor = (() => {
         return code;
       }));
       follow();
-      const counted = AcceptedProgram.countLines(textarea.value), over = counted > AcceptedProgram.MAX_LINES;
+      const counted = AcceptedProgram.lines(textarea.value).length, over = counted > AcceptedProgram.MAX_LINES;
       count.textContent = `${counted} / ${AcceptedProgram.MAX_LINES} lines${over ? ": too many to compile" : ""}`;
       hint.classList.toggle("is-over", over);
       const said = textarea.value === start ? ""
@@ -108,9 +99,7 @@ window.ProgramEditor = (() => {
     // just that. Where the browser cannot edit (execCommand is refused), the text changes without undo.
     function replace(from, to, text, selectFrom, selectTo) {
       const old = textarea.value.slice(from, to);
-      let head = 0, tail = 0;
-      while (head < old.length && head < text.length && old[head] === text[head]) head += 1;
-      while (tail < old.length - head && tail < text.length - head && old.at(-1 - tail) === text.at(-1 - tail)) tail += 1;
+      const [head, tail] = sharedEnds(old, text);
       const middle = text.slice(head, text.length - tail);
       if (head + tail < old.length || middle) {
         textarea.setSelectionRange(from + head, to - tail);
@@ -175,7 +164,7 @@ window.ProgramEditor = (() => {
     textarea.addEventListener("scroll", follow);
 
     return {
-      element, textarea,
+      element,
       get text() { return textarea.value; },
       // What the edit started as (see load).
       get start() { return start; },
