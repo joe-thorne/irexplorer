@@ -218,7 +218,7 @@ const alignedCode = `(() => { const panels = ['#source-panel', '#left-panel', '#
 
 // Study (#/study…) is unchanged by user programs: none of their controls exist there, and the source
 // panel is the curated one. `studySurface` reads what a participant's source panel is made of.
-const programControls = ['#source-mode', '#your-file-control', '#your-file-select', '#program-upload', '#program-new', '#program-edit', '#program-source-note', '#program-file-input', '#program-drop', '#program-editor', '#program-chip', '#program-card', '#program-warnings', '.source-title'];
+const programControls = ['#source-mode', '#your-file-control', '#your-file-select', '#program-upload', '#program-new', '#program-edit', '#program-origin', '#program-source-note', '#program-file-input', '#program-drop', '#program-editor', '#program-chip', '#program-card', '#program-warnings', '.source-title'];
 const noProgramControls = `${JSON.stringify(programControls)}.every(selector => !document.querySelector(selector))`;
 const curatedExamples = (await (await fetch(base + '/api/examples')).json()).examples;
 const curatedSourcePanel = `(() => { const panel = document.querySelector('#source-panel'), options = [...document.querySelectorAll('#example-select option')].map(option => option.value).filter(Boolean);
@@ -851,7 +851,7 @@ const scenarios = {
     await cardButton('Try again');
     await until(`window.StudyWorkspace.ready && Boolean(appState.programId) && !${visible('#program-card')}`);
     await check('Try again compiles the edit, which opens with the panels as they were and is listed in Your files',
-      `!document.querySelector('#program-editor') && document.querySelector('#source-summary').textContent === 'C source · edited_sort.c' && document.querySelector('#right-state').value === '9' && ${uploadOptions}.join('|') === 'edited_sort.c' && document.querySelector('#source-mode input[value="yours"]').checked`);
+      `!document.querySelector('#program-editor') && document.querySelector('#source-summary').textContent === 'C source · edited_sort.c' && document.querySelector('#right-state').value === '9' && ${uploadOptions}.join('|') === 'edited_sort.c · edited' && document.querySelector('#source-mode input[value="yours"]').checked`);
   },
 
   async 'A file chosen from an edit\'s card replaces the edit and the comparison, as an upload does'() {
@@ -866,6 +866,110 @@ const scenarios = {
     await until(`window.StudyWorkspace.ready && document.querySelector('#source-summary').textContent === 'C source · binary_search.c' && !${visible('#program-card')}`);
     await check('The chosen file opens in place of the edit: no editor, and the file controls are enabled',
       `!document.querySelector('#program-editor') && ${visible('#left-panel')} && ${uploadOptions}.join('|') === 'score.c|binary_search.c' && [...document.querySelectorAll('#source-mode input, #your-file-select, #program-upload, #program-new, #program-edit')].every(control => !control.disabled)`);
+  },
+
+  async 'A compile from Edit replaces the Your files entry it started from, and Open the original opens the first upload'() {
+    const quickSort = await readFile(join(curatedSources, 'quick_sort.c'), 'utf8');
+    const edited = await readFile(join(userProgramSources, 'quick_sort.c'), 'utf8');
+    await upload('quick_sort.c');
+    const uploaded = await value('appState.programId');
+    await check('An upload is listed under its own name, with no line saying it was edited',
+      `${uploadOptions}.join('|') === 'quick_sort.c' && !${visible('#program-origin')}`);
+    await click('#program-edit');
+    await editorText(edited);
+    await click('#program-editor-compile');
+    await until(`window.StudyWorkspace.ready && Boolean(appState.programId) && appState.programId !== ${JSON.stringify(uploaded)} && !${visible('#program-card')}`);
+    await check('The compiled edit replaces the upload in Your files, labelled "· edited" and selected',
+      `${uploadOptions}.join('|') === 'quick_sort.c · edited' && document.querySelector('#your-file-select').value === appState.programId`);
+    await check('A line under the controls says where the edit came from, with a way back to it',
+      `(() => { const line = document.querySelector('#program-origin'); return ${visible('#program-origin')} && line.textContent === 'Edited from your upload quick_sort.c. Open the original' && line.querySelector('button')?.textContent === 'Open the original' && Boolean(document.querySelector('#source-panel > .source-heading').compareDocumentPosition(line) & Node.DOCUMENT_POSITION_FOLLOWING); })()`);
+    await check('The C source and both panels still start their code at the same height', alignedCode);
+    await snap('user-programs-edited.png');
+    // A second compiled edit: the edited copy again, with a marker the fake toolchain strips before replaying it.
+    const once = await value('appState.programId');
+    await click('#program-edit');
+    await check('Editing a compiled edit names the file it is listed as', `document.querySelector('#program-editor-heading').textContent === 'Editing quick_sort.c'`);
+    await editorText(`${edited}// irx-fake: slow\n`);
+    await click('#program-editor-compile');
+    await until(`window.StudyWorkspace.ready && Boolean(appState.programId) && appState.programId !== ${JSON.stringify(once)} && !${visible('#program-card')}`);
+    await check('Another compiled edit replaces that entry again under the same name, with no suffix',
+      `${uploadOptions}.join('|') === 'quick_sort.c · edited' && document.querySelector('#source-summary').textContent === 'C source · quick_sort.c' && !${visible('#program-renamed')}`);
+    await check('It still came from the first upload', `document.querySelector('#program-origin').textContent === 'Edited from your upload quick_sort.c. Open the original'`);
+    await value(`document.querySelector('#program-origin button').click()`);
+    await until(`window.StudyWorkspace.ready && appState.programId === ${JSON.stringify(uploaded)} && !${visible('#program-card')}`);
+    await check('Open the original opens the first upload, listed again as an upload', `document.querySelector('#source-lines').textContent.includes('void quick_sort(') && ${uploadOptions}.join('|') === 'quick_sort.c · edited|quick_sort.c' && !${visible('#program-origin')} && document.querySelector('#your-file-select').value === appState.programId`);
+    await check('The original is the text first uploaded', `fetch('/api/programs/' + appState.programId + '/source').then(r => r.json()).then(body => body.text === ${JSON.stringify(quickSort)})`);
+  },
+
+  async 'Edit a copy and New… add to Your files, a name already listed getting a numbered suffix'() {
+    const edited = await readFile(join(userProgramSources, 'quick_sort.c'), 'utf8');
+    await openCurated('quick_sort');
+    await click('#program-edit');
+    await click('#program-editor-compile');
+    await until(`window.StudyWorkspace.ready && Boolean(appState.programId) && !${visible('#program-card')}`);
+    await check('A compiled copy of a curated example is added to Your files, labelled "· edited"', `${uploadOptions}.join('|') === 'quick_sort.c · edited'`);
+    await check('A line under the controls says it came from the curated example', `document.querySelector('#program-origin').textContent === 'Edited from curated quick sort. Open the original'`);
+    await value(`document.querySelector('#program-origin button').click()`);
+    await until(`window.StudyWorkspace.ready && appState.exampleId === 'quick_sort'`);
+    await check('Open the original opens the curated example under Curated examples',
+      `document.querySelector('#source-mode input[value="curated"]').checked && document.querySelector('#example-select').value === 'quick_sort' && !appState.programId && !${visible('#program-origin')} && document.activeElement === document.querySelector('#example-select')`);
+
+    await click('#program-edit');
+    await check('A second copy starts under the example\'s file name too', `document.querySelector('#program-editor-name').value === 'quick_sort.c'`);
+    await editorText(edited);
+    await click('#program-editor-compile');
+    await until(`document.querySelector('#program-card')?.innerText.includes('Compiling quick_sort_2_.c')`);
+    await until(`window.StudyWorkspace.ready && Boolean(appState.programId) && !${visible('#program-card')}`);
+    await check('It is added beside the first copy, never replacing it, under a numbered name',
+      `${uploadOptions}.join('|') === 'quick_sort.c · edited|quick_sort_2_.c · edited' && document.querySelector('#source-summary').textContent === 'C source · quick_sort_2_.c'`);
+    await check('The numbered name, made safe, is the one the compiler saw', `fetch('/api/programs/' + appState.programId + '/source').then(r => r.json()).then(body => body.file === 'quick_sort_2_.c' && body.text === ${JSON.stringify(edited)})`);
+    await check('The source panel says the name was renamed from the numbered one', `document.querySelector('#program-renamed').textContent === 'Renamed from “quick_sort (2).c”.'`);
+
+    await click('#program-new');
+    await click('#program-editor-compile');
+    await until(`window.StudyWorkspace.ready && document.querySelector('#source-summary').textContent === 'C source · program.c' && !${visible('#program-card')}`);
+    await check('A new program is added, labelled "· new", with no line about an original',
+      `${uploadOptions}.join('|') === 'quick_sort.c · edited|quick_sort_2_.c · edited|program.c · new' && !${visible('#program-origin')}`);
+    await click('#program-new');
+    await click('#program-editor-compile');
+    await until(`window.StudyWorkspace.ready && document.querySelector('#source-summary').textContent === 'C source · program_2_.c' && !${visible('#program-card')}`);
+    await check('Another new program under a name already listed is added with a numbered suffix',
+      `${uploadOptions}.join('|') === 'quick_sort.c · edited|quick_sort_2_.c · edited|program.c · new|program_2_.c · new'`);
+  },
+
+  async 'Restore original puts back the curated text after several compiled edits, and undo reverses it'() {
+    const quickSort = await readFile(join(curatedSources, 'quick_sort.c'), 'utf8');
+    const edited = await readFile(join(userProgramSources, 'quick_sort.c'), 'utf8');
+    const twice = `${edited}// irx-fake: slow\n`;
+    await openCurated('quick_sort');
+    await click('#program-edit');
+    await check('Restore original is offered, and disabled while the text is the original',
+      `${visible('#program-editor-restore')} && document.querySelector('#program-editor-restore').textContent === 'Restore original' && document.querySelector('#program-editor-restore').disabled`);
+    await editorText(edited);
+    await check('Restore original is enabled once the text differs from the original', `!document.querySelector('#program-editor-restore').disabled`);
+    await click('#program-editor-compile');
+    await until(`window.StudyWorkspace.ready && Boolean(appState.programId) && !${visible('#program-card')}`);
+    const once = await value('appState.programId');
+    await click('#program-edit');
+    await editorText(twice);
+    await click('#program-editor-compile');
+    await until(`window.StudyWorkspace.ready && Boolean(appState.programId) && appState.programId !== ${JSON.stringify(once)} && !${visible('#program-card')}`);
+    await check('Two compiled edits later, one entry is listed', `${uploadOptions}.join('|') === 'quick_sort.c · edited'`);
+    await click('#program-edit');
+    await check('The editor opens on the last compiled edit', `document.querySelector('#program-editor textarea').value === ${JSON.stringify(twice)}`);
+    await click('#program-editor-restore');
+    await check('Restore original puts back the curated example\'s text, with the editor focused',
+      `document.querySelector('#program-editor textarea').value === ${JSON.stringify(quickSort)} && document.activeElement === document.querySelector('#program-editor textarea') && document.querySelector('#program-editor-restore').disabled`);
+    await check('The restored text counts as an edit of the compiled source', `document.querySelector('#program-editor .editor-status').textContent.startsWith('Edited · not compiled · ') && document.querySelector('#program-editor-discard').textContent === 'Discard edits'`);
+    await check('Restoring is announced, with the way to undo it', `document.querySelector('#notice').textContent.includes('Restored the original') && document.querySelector('#notice').textContent.includes('undo')`);
+    await key('z', 'KeyZ', 90, CTRL);
+    await check('Undo reverses Restore original', `document.querySelector('#program-editor textarea').value === ${JSON.stringify(twice)} && !document.querySelector('#program-editor-restore').disabled`);
+  },
+
+  async 'A new program has no original to restore'() {
+    await click('#source-mode input[value="yours"]');
+    await click('#program-new');
+    await check('Restore original is not offered for a new program', `!${visible('#program-editor-restore')}`);
   },
 
   async 'In the editor Tab indents, Shift+Tab outdents, Enter keeps the indent, and undo steps back through them'() {

@@ -48,11 +48,11 @@ window.ProgramEditor = (() => {
     return changed;
   }
 
-  // An editor of C source: { element, textarea, text, edited, load(text, { compiled, start }), focus(),
-  // markErrors(lines), showLine(line, column) }. The margin marks the lines that are new or changed against
-  // the compiled source the edit started from, and a status line, shown once the text differs from what it
-  // started as, counts them. The hint under it gives the keys and the line count. onInput runs after each
-  // edit; onSubmit on Ctrl/⌘+Enter.
+  // An editor of C source: { element, textarea, text, edited, load(text, { compiled, start }), replaceText(text),
+  // focus(), markErrors(lines), showLine(line, column) }. The margin marks the lines that are new or changed
+  // against the compiled source the edit started from, and a status line, shown once the text differs from
+  // what it started as, counts them. The hint under it gives the keys and the line count. onInput runs after
+  // each edit; onSubmit on Ctrl/⌘+Enter.
   function create({ label, onInput = () => {}, onSubmit = () => {} }) {
     const numbers = h("div", { class: "editor-numbers" });
     const gutter = h("div", { class: "editor-gutter", "aria-hidden": "true" }, numbers);
@@ -191,6 +191,13 @@ window.ProgramEditor = (() => {
         textarea.setSelectionRange(0, 0);
         textarea.scrollTop = textarea.scrollLeft = 0;
         paint();
+      },
+      // Replace the whole text with `text` as an edit, which the browser's undo reverses (unlike load), and
+      // leave the caret at the start.
+      replaceText(text) {
+        textarea.focus();
+        replace(0, textarea.value.length, text, 0, 0);
+        textarea.scrollTop = textarea.scrollLeft = 0;
       },
       focus() { textarea.focus(); },
       // Mark these line numbers as the ones a failed compile reported errors on (none: clear the marks).
