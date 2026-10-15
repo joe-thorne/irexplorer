@@ -233,8 +233,19 @@ class ProgramManifestResponse(ApiModel):
     commands: list[str]
 
 
+class ProgramDiagnosticResponse(ApiModel):
+    """One of clang's diagnostics, as compile_failed lists them."""
+
+    file: str
+    line: int
+    column: int
+    severity: str
+    message: str
+
+
 class ProgramResponse(ApiModel):
     programId: str
     fileName: str
     sha256: str
     manifest: ProgramManifestResponse
+    warnings: list[ProgramDiagnosticResponse]

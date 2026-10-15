@@ -3,15 +3,16 @@
 With the user-programs stack up (`docker compose -f compose.user-programs.yaml up -d --build --wait`), run
 from the irexplorer root:
 
-    .venv/bin/python scripts/record_user_programs.py
+    .venv/bin/python scripts/record_user_programs.py [FILE_NAME ...]
 
-Each program listed in tests/data/user-programs/corpus.json is sent, exactly as the app would send it, to
-the stack's compiler service. The service has no published port, so it is reached inside its own container.
-Its answer is written to the directory named after the program's stem, in the curated file layout: each
-state's IR and remarks, the optimisation record, the -Rpass text and `manifest.json`; or, for a program
-whose compile failed, `failure.json`. Recording talks to the compiler service rather than the app, so a
-program the app cannot show is recorded all the same. The fake toolchain (tests/fake_toolchain) looks
-the recordings up by the SHA-256 of the source, and `scripts/check_user_programs.sh` checks them for drift.
+Each program listed in tests/data/user-programs/corpus.json, or only those named, is sent, exactly as the
+app would send it, to the stack's compiler service. The service has no published port, so it is reached
+inside its own container. Its answer is written to the directory named after the program's stem, in the
+curated file layout: each state's IR and remarks, the optimisation record, the -Rpass text, the -O0
+command's stderr if it printed anything (clang's warnings) and `manifest.json`; or, for a program whose
+compile failed, `failure.json`. Recording talks to the compiler service rather than the app, so a program
+the app cannot show is recorded all the same. The fake toolchain (tests/fake_toolchain) looks the
+recordings up by the SHA-256 of the source, and `scripts/check_user_programs.sh` checks them for drift.
 """
 
 from __future__ import annotations
@@ -115,6 +116,10 @@ def recording_files(stem: str, status: int, body: dict[str, Any], *,
             files[f"{stem}_{state.file_suffix}_remarks.yaml"] = answered["remarks"]
     files[f"{stem}.opt.yaml"] = body["optRecord"]
     files[f"{stem}_remarks.txt"] = body["rpass"]
+    # Clang's warnings on the program, kept only when there are any, so a clean program's recording (and
+    # each curated example's artefacts) has no such file; the fake toolchain replays a missing one as empty.
+    if body["o0Stderr"]:
+        files[f"{stem}_O0_stderr.txt"] = body["o0Stderr"]
     files["manifest.json"] = _json(body["manifest"])
     return files
 
@@ -156,9 +161,13 @@ def record(program: CorpusProgram, compiler: StackCompiler) -> None:
         (program.recording_dir / name).write_text(text, encoding="utf-8", newline="")
 
 
-def main() -> None:
+def main(file_names: list[str]) -> None:
+    programs = [program for program in corpus() if not file_names or program.file_name in file_names]
+    unknown = set(file_names) - {program.file_name for program in programs}
+    if unknown:
+        raise SystemExit(f"not in corpus.json: {', '.join(sorted(unknown))}")
     compiler = StackCompiler()
-    for program in corpus():
+    for program in programs:
         record(program, compiler)
         print(f"Recorded {program.file_name} in {program.recording_dir.relative_to(ROOT)}")
 
@@ -168,4 +177,4 @@ def _json(value: Any) -> str:
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])

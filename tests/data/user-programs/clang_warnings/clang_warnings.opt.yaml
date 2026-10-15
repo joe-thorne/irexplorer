@@ -1,0 +1,4370 @@
+--- !Passed
+Pass:            loop-delete
+Name:            Invariant
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 16, Column: 5 }
+Function:        sum_to
+Args:
+  - String:          Loop deleted because it is invariant
+...
+--- !Missed
+Pass:            inline
+Name:            NoDefinition
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 73, Column: 5 }
+Function:        print_total
+Args:
+  - Callee:          printf
+    DebugLoc:        { File: '/usr/include/stdio.h', Line: 0, Column: 0 }
+  - String:          ' will not be inlined into '
+  - Caller:          print_total
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 72, 
+                       Column: 0 }
+  - String:          ' because its definition is unavailable'
+...
+--- !Missed
+Pass:            inline
+Name:            NoDefinition
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 74, Column: 5 }
+Function:        print_total
+Args:
+  - Callee:          printf
+    DebugLoc:        { File: '/usr/include/stdio.h', Line: 0, Column: 0 }
+  - String:          ' will not be inlined into '
+  - Caller:          print_total
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 72, 
+                       Column: 0 }
+  - String:          ' because its definition is unavailable'
+...
+--- !Passed
+Pass:            inline
+Name:            Inlined
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 116, Column: 17 }
+Function:        main
+Args:
+  - String:          ''''
+  - Callee:          sum_to
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 14, 
+                       Column: 0 }
+  - String:          ''' inlined into '''
+  - Caller:          main
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 114, 
+                       Column: 0 }
+  - String:          ''''
+  - String:          ' with '
+  - String:          '(cost='
+  - Cost:            '-35'
+  - String:          ', threshold='
+  - Threshold:       '375'
+  - String:          ')'
+  - String:          ' at callsite '
+  - String:          main
+  - String:          ':'
+  - Line:            '2'
+  - String:          ':'
+  - Column:          '17'
+  - String:          ';'
+...
+--- !Passed
+Pass:            inline
+Name:            Inlined
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 116, Column: 5 }
+Function:        main
+Args:
+  - String:          ''''
+  - Callee:          print_total
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 72, 
+                       Column: 0 }
+  - String:          ''' inlined into '''
+  - Caller:          main
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 114, 
+                       Column: 0 }
+  - String:          ''''
+  - String:          ' with '
+  - String:          '(cost='
+  - Cost:            '40'
+  - String:          ', threshold='
+  - Threshold:       '375'
+  - String:          ')'
+  - String:          ' at callsite '
+  - String:          main
+  - String:          ':'
+  - Line:            '2'
+  - String:          ':'
+  - Column:          '5'
+  - String:          ';'
+...
+--- !Passed
+Pass:            inline
+Name:            Inlined
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 117, Column: 12 }
+Function:        main
+Args:
+  - String:          ''''
+  - Callee:          first_positive
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 36, 
+                       Column: 0 }
+  - String:          ''' inlined into '''
+  - Caller:          main
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 114, 
+                       Column: 0 }
+  - String:          ''''
+  - String:          ' with '
+  - String:          '(cost='
+  - Cost:            '-10'
+  - String:          ', threshold='
+  - Threshold:       '250'
+  - String:          ')'
+  - String:          ' at callsite '
+  - String:          main
+  - String:          ':'
+  - Line:            '3'
+  - String:          ':'
+  - Column:          '12'
+  - String:          ';'
+...
+--- !Passed
+Pass:            inline
+Name:            Inlined
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 117, Column: 40 }
+Function:        main
+Args:
+  - String:          ''''
+  - Callee:          max_of
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 99, 
+                       Column: 0 }
+  - String:          ''' inlined into '''
+  - Caller:          main
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 114, 
+                       Column: 0 }
+  - String:          ''''
+  - String:          ' with '
+  - String:          '(cost='
+  - Cost:            '-10'
+  - String:          ', threshold='
+  - Threshold:       '250'
+  - String:          ')'
+  - String:          ' at callsite '
+  - String:          main
+  - String:          ':'
+  - Line:            '3'
+  - String:          ':'
+  - Column:          '40'
+  - String:          ';'
+...
+--- !Passed
+Pass:            inline
+Name:            Inlined
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 117, Column: 60 }
+Function:        main
+Args:
+  - String:          ''''
+  - Callee:          scaled_sum
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 77, 
+                       Column: 0 }
+  - String:          ''' inlined into '''
+  - Caller:          main
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 114, 
+                       Column: 0 }
+  - String:          ''''
+  - String:          ' with '
+  - String:          '(cost='
+  - Cost:            '-10'
+  - String:          ', threshold='
+  - Threshold:       '250'
+  - String:          ')'
+  - String:          ' at callsite '
+  - String:          main
+  - String:          ':'
+  - Line:            '3'
+  - String:          ':'
+  - Column:          '60'
+  - String:          ';'
+...
+--- !Passed
+Pass:            inline
+Name:            Inlined
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 117, Column: 84 }
+Function:        main
+Args:
+  - String:          ''''
+  - Callee:          clamp
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 87, 
+                       Column: 0 }
+  - String:          ''' inlined into '''
+  - Caller:          main
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 114, 
+                       Column: 0 }
+  - String:          ''''
+  - String:          ' with '
+  - String:          '(cost='
+  - Cost:            '-25'
+  - String:          ', threshold='
+  - Threshold:       '375'
+  - String:          ')'
+  - String:          ' at callsite '
+  - String:          main
+  - String:          ':'
+  - Line:            '3'
+  - String:          ':'
+  - Column:          '84'
+  - String:          ';'
+...
+--- !Passed
+Pass:            inline
+Name:            Inlined
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 118, Column: 11 }
+Function:        main
+Args:
+  - String:          ''''
+  - Callee:          count_set_bits
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 4, 
+                       Column: 0 }
+  - String:          ''' inlined into '''
+  - Caller:          main
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 114, 
+                       Column: 0 }
+  - String:          ''''
+  - String:          ' with '
+  - String:          '(cost='
+  - Cost:            '-10'
+  - String:          ', threshold='
+  - Threshold:       '250'
+  - String:          ')'
+  - String:          ' at callsite '
+  - String:          main
+  - String:          ':'
+  - Line:            '4'
+  - String:          ':'
+  - Column:          '11'
+  - String:          ';'
+...
+--- !Passed
+Pass:            inline
+Name:            Inlined
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 118, Column: 34 }
+Function:        main
+Args:
+  - String:          ''''
+  - Callee:          is_same
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 23, 
+                       Column: 0 }
+  - String:          ''' inlined into '''
+  - Caller:          main
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 114, 
+                       Column: 0 }
+  - String:          ''''
+  - String:          ' with '
+  - String:          '(cost='
+  - Cost:            '-35'
+  - String:          ', threshold='
+  - Threshold:       '375'
+  - String:          ')'
+  - String:          ' at callsite '
+  - String:          main
+  - String:          ':'
+  - Line:            '4'
+  - String:          ':'
+  - Column:          '34'
+  - String:          ';'
+...
+--- !Passed
+Pass:            inline
+Name:            Inlined
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 118, Column: 47 }
+Function:        main
+Args:
+  - String:          ''''
+  - Callee:          small_constant
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 27, 
+                       Column: 0 }
+  - String:          ''' inlined into '''
+  - Caller:          main
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 114, 
+                       Column: 0 }
+  - String:          ''''
+  - String:          ' with '
+  - String:          '(cost='
+  - Cost:            '-30'
+  - String:          ', threshold='
+  - Threshold:       '375'
+  - String:          ')'
+  - String:          ' at callsite '
+  - String:          main
+  - String:          ':'
+  - Line:            '4'
+  - String:          ':'
+  - Column:          '47'
+  - String:          ';'
+...
+--- !Passed
+Pass:            inline
+Name:            Inlined
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 118, Column: 71 }
+Function:        main
+Args:
+  - String:          ''''
+  - Callee:          wide_shift
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 32, 
+                       Column: 0 }
+  - String:          ''' inlined into '''
+  - Caller:          main
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 114, 
+                       Column: 0 }
+  - String:          ''''
+  - String:          ' with '
+  - String:          '(cost='
+  - Cost:            '-35'
+  - String:          ', threshold='
+  - Threshold:       '375'
+  - String:          ')'
+  - String:          ' at callsite '
+  - String:          main
+  - String:          ':'
+  - Line:            '4'
+  - String:          ':'
+  - Column:          '71'
+  - String:          ';'
+...
+--- !Passed
+Pass:            inline
+Name:            Inlined
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 118, Column: 87 }
+Function:        main
+Args:
+  - String:          ''''
+  - Callee:          skip_empty
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 46, 
+                       Column: 0 }
+  - String:          ''' inlined into '''
+  - Caller:          main
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 114, 
+                       Column: 0 }
+  - String:          ''''
+  - String:          ' with '
+  - String:          '(cost='
+  - Cost:            '-35'
+  - String:          ', threshold='
+  - Threshold:       '375'
+  - String:          ')'
+  - String:          ' at callsite '
+  - String:          main
+  - String:          ':'
+  - Line:            '4'
+  - String:          ':'
+  - Column:          '87'
+  - String:          ';'
+...
+--- !Passed
+Pass:            inline
+Name:            Inlined
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 119, Column: 11 }
+Function:        main
+Args:
+  - String:          ''''
+  - Callee:          truncated_half
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 51, 
+                       Column: 0 }
+  - String:          ''' inlined into '''
+  - Caller:          main
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 114, 
+                       Column: 0 }
+  - String:          ''''
+  - String:          ' with '
+  - String:          '(cost='
+  - Cost:            '-30'
+  - String:          ', threshold='
+  - Threshold:       '375'
+  - String:          ')'
+  - String:          ' at callsite '
+  - String:          main
+  - String:          ':'
+  - Line:            '5'
+  - String:          ':'
+  - Column:          '11'
+  - String:          ';'
+...
+--- !Passed
+Pass:            inline
+Name:            Inlined
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 119, Column: 30 }
+Function:        main
+Args:
+  - String:          ''''
+  - Callee:          last_of_four
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 56, 
+                       Column: 0 }
+  - String:          ''' inlined into '''
+  - Caller:          main
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 114, 
+                       Column: 0 }
+  - String:          ''''
+  - String:          ' with '
+  - String:          '(cost='
+  - Cost:            '-30'
+  - String:          ', threshold='
+  - Threshold:       '375'
+  - String:          ')'
+  - String:          ' at callsite '
+  - String:          main
+  - String:          ':'
+  - Line:            '5'
+  - String:          ':'
+  - Column:          '30'
+  - String:          ';'
+...
+--- !Passed
+Pass:            inline
+Name:            Inlined
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 119, Column: 47 }
+Function:        main
+Args:
+  - String:          ''''
+  - Callee:          not_equal
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 61, 
+                       Column: 0 }
+  - String:          ''' inlined into '''
+  - Caller:          main
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 114, 
+                       Column: 0 }
+  - String:          ''''
+  - String:          ' with '
+  - String:          '(cost='
+  - Cost:            '-40'
+  - String:          ', threshold='
+  - Threshold:       '375'
+  - String:          ')'
+  - String:          ' at callsite '
+  - String:          main
+  - String:          ':'
+  - Line:            '5'
+  - String:          ':'
+  - Column:          '47'
+  - String:          ';'
+...
+--- !Passed
+Pass:            inline
+Name:            Inlined
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 119, Column: 65 }
+Function:        main
+Args:
+  - String:          ''''
+  - Callee:          array_size
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 68, 
+                       Column: 0 }
+  - String:          ''' inlined into '''
+  - Caller:          main
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 114, 
+                       Column: 0 }
+  - String:          ''''
+  - String:          ' with '
+  - String:          '(cost='
+  - Cost:            '-35'
+  - String:          ', threshold='
+  - Threshold:       '375'
+  - String:          ')'
+  - String:          ' at callsite '
+  - String:          main
+  - String:          ':'
+  - Line:            '5'
+  - String:          ':'
+  - Column:          '65'
+  - String:          ';'
+...
+--- !Passed
+Pass:            inline
+Name:            Inlined
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 119, Column: 86 }
+Function:        main
+Args:
+  - String:          ''''
+  - Callee:          bump
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 109, 
+                       Column: 0 }
+  - String:          ''' inlined into '''
+  - Caller:          main
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 114, 
+                       Column: 0 }
+  - String:          ''''
+  - String:          ' with '
+  - String:          '(cost='
+  - Cost:            '-35'
+  - String:          ', threshold='
+  - Threshold:       '375'
+  - String:          ')'
+  - String:          ' at callsite '
+  - String:          main
+  - String:          ':'
+  - Line:            '5'
+  - String:          ':'
+  - Column:          '86'
+  - String:          ';'
+...
+--- !Passed
+Pass:            loop-delete
+Name:            Invariant
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 38, Column: 5 }
+Function:        main
+Args:
+  - String:          Loop deleted because it is invariant
+...
+--- !Passed
+Pass:            loop-delete
+Name:            Invariant
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 101, Column: 5 }
+Function:        main
+Args:
+  - String:          Loop deleted because it is invariant
+...
+--- !Passed
+Pass:            loop-delete
+Name:            Invariant
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 79, Column: 5 }
+Function:        main
+Args:
+  - String:          Loop deleted because it is invariant
+...
+--- !Passed
+Pass:            loop-delete
+Name:            Invariant
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 7, Column: 5 }
+Function:        main
+Args:
+  - String:          Loop deleted because it is invariant
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            NonReductionValueUsedOutsideLoop
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 7, Column: 5 }
+Function:        count_set_bits
+Args:
+  - String:          'loop not vectorized: '
+  - String:          value that could not be identified as reduction is used outside the loop
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            NoInductionVariable
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 7, Column: 5 }
+Function:        count_set_bits
+Args:
+  - String:          'loop not vectorized: '
+  - String:          loop induction variable could not be identified
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            UnsupportedUncountableLoop
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 7, Column: 5 }
+Function:        count_set_bits
+Args:
+  - String:          'loop not vectorized: '
+  - String:          Cannot vectorize uncountable loop
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            CantComputeNumberOfIterations
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 7, Column: 5 }
+Function:        count_set_bits
+Args:
+  - String:          'loop not vectorized: '
+  - String:          could not determine number of loop iterations
+...
+--- !Missed
+Pass:            loop-vectorize
+Name:            MissedDetails
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 7, Column: 5 }
+Function:        count_set_bits
+Args:
+  - String:          loop not vectorized
+...
+--- !Missed
+Pass:            slp-vectorizer
+Name:            NotPossible
+Function:        count_set_bits
+Args:
+  - String:          'Cannot SLP vectorize list: vectorization was impossible'
+  - String:          ' with available vectorization factors'
+...
+--- !Missed
+Pass:            slp-vectorizer
+Name:            NotBeneficial
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 16, Column: 5 }
+Function:        sum_to
+Args:
+  - String:          'List vectorization was possible but not beneficial with cost '
+  - Cost:            '0'
+  - String:          ' >= '
+  - Treshold:        '0'
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            PotentiallyFaultingLoadsNotSupported
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 38, Column: 5 }
+Function:        first_positive
+Args:
+  - String:          'loop not vectorized: '
+  - String:          Auto-vectorization of loops with potentially faulting load is not supported
+...
+--- !Missed
+Pass:            slp-vectorizer
+Name:            NotPossible
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 62, Column: 9 }
+Function:        not_equal
+Args:
+  - String:          'Cannot SLP vectorize list: vectorization was impossible'
+  - String:          ' with available vectorization factors'
+...
+--- !Passed
+Pass:            loop-vectorize
+Name:            Vectorized
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 79, Column: 5 }
+Function:        scaled_sum
+Args:
+  - String:          'vectorized '
+  - String:          ''
+  - String:          'loop (vectorization width: '
+  - VectorizationFactor: '4'
+  - String:          ', interleaved count: '
+  - InterleaveCount: '2'
+  - String:          ')'
+...
+--- !Passed
+Pass:            loop-vectorize
+Name:            Vectorized
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 101, Column: 5 }
+Function:        max_of
+Args:
+  - String:          'vectorized '
+  - String:          ''
+  - String:          'loop (vectorization width: '
+  - VectorizationFactor: '4'
+  - String:          ', interleaved count: '
+  - InterleaveCount: '2'
+  - String:          ')'
+...
+--- !Analysis
+Pass:            size-info
+Name:            IRSizeChange
+Function:        count_set_bits
+Args:
+  - Pass:            Canonicalize natural loops
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '144'
+  - String:          ' to '
+  - IRInstrsAfter:   '146'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionIRSizeChange
+Function:        count_set_bits
+Args:
+  - Pass:            Canonicalize natural loops
+  - String:          ': Function: '
+  - Function:        count_set_bits
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '12'
+  - String:          ' to '
+  - IRInstrsAfter:   '14'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            IRSizeChange
+Function:        count_set_bits
+Args:
+  - Pass:            Loop Strength Reduction
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '146'
+  - String:          ' to '
+  - IRInstrsAfter:   '147'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionIRSizeChange
+Function:        count_set_bits
+Args:
+  - Pass:            Loop Strength Reduction
+  - String:          ': Function: '
+  - Function:        count_set_bits
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '14'
+  - String:          ' to '
+  - IRInstrsAfter:   '15'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            IRSizeChange
+Function:        count_set_bits
+Args:
+  - Pass:            CodeGen Prepare
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '147'
+  - String:          ' to '
+  - IRInstrsAfter:   '145'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '-2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionIRSizeChange
+Function:        count_set_bits
+Args:
+  - Pass:            CodeGen Prepare
+  - String:          ': Function: '
+  - Function:        count_set_bits
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '14'
+  - String:          ' to '
+  - IRInstrsAfter:   '13'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 4, Column: 0 }
+Function:        count_set_bits
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        count_set_bits
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '25'
+  - String:          '; Delta: '
+  - Delta:           '25'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 4, Column: 0 }
+Function:        count_set_bits
+Args:
+  - Pass:            Eliminate PHI nodes for register allocation
+  - String:          ': Function: '
+  - Function:        count_set_bits
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '25'
+  - String:          ' to '
+  - MIInstrsAfter:   '31'
+  - String:          '; Delta: '
+  - Delta:           '6'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 4, Column: 0 }
+Function:        count_set_bits
+Args:
+  - Pass:            Two-Address instruction pass
+  - String:          ': Function: '
+  - Function:        count_set_bits
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '31'
+  - String:          ' to '
+  - MIInstrsAfter:   '33'
+  - String:          '; Delta: '
+  - Delta:           '2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 4, Column: 0 }
+Function:        count_set_bits
+Args:
+  - Pass:            Register Coalescer
+  - String:          ': Function: '
+  - Function:        count_set_bits
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '33'
+  - String:          ' to '
+  - MIInstrsAfter:   '22'
+  - String:          '; Delta: '
+  - Delta:           '-11'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 4, Column: 0 }
+Function:        count_set_bits
+Args:
+  - Pass:            Debug Variable Analysis
+  - String:          ': Function: '
+  - Function:        count_set_bits
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '22'
+  - String:          ' to '
+  - MIInstrsAfter:   '15'
+  - String:          '; Delta: '
+  - Delta:           '-7'
+...
+--- !Missed
+Pass:            regalloc
+Name:            LoopSpillReloadCopies
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 7, Column: 5 }
+Function:        count_set_bits
+Args:
+  - NumVRCopies:     '1'
+  - String:          ' virtual registers copies '
+  - TotalCopiesCost: '1.600000e+01'
+  - String:          ' total copies cost '
+  - String:          generated in loop
+...
+--- !Missed
+Pass:            regalloc
+Name:            SpillReloadCopies
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 4, Column: 1 }
+Function:        count_set_bits
+Args:
+  - NumVRCopies:     '2'
+  - String:          ' virtual registers copies '
+  - TotalCopiesCost: '1.650000e+01'
+  - String:          ' total copies cost '
+  - String:          generated in function
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 4, Column: 0 }
+Function:        count_set_bits
+Args:
+  - Pass:            Virtual Register Rewriter
+  - String:          ': Function: '
+  - Function:        count_set_bits
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '15'
+  - String:          ' to '
+  - MIInstrsAfter:   '22'
+  - String:          '; Delta: '
+  - Delta:           '7'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 4, Column: 0 }
+Function:        count_set_bits
+Args:
+  - NumStackBytes:   '0'
+  - String:          ' stack bytes in function '''
+  - Function:        count_set_bits
+  - String:          ''''
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 4, Column: 0 }
+Function:        count_set_bits
+Args:
+  - Pass:            Control Flow Optimizer
+  - String:          ': Function: '
+  - Function:        count_set_bits
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '22'
+  - String:          ' to '
+  - MIInstrsAfter:   '20'
+  - String:          '; Delta: '
+  - Delta:           '-2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 4, Column: 0 }
+Function:        count_set_bits
+Args:
+  - Pass:            Live DEBUG_VALUE analysis
+  - String:          ': Function: '
+  - Function:        count_set_bits
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '20'
+  - String:          ' to '
+  - MIInstrsAfter:   '29'
+  - String:          '; Delta: '
+  - Delta:           '9'
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 4, Column: 0 }
+Function:        count_set_bits
+Args:
+  - String:          "\nFunction: count_set_bits"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        count_set_bits
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      entry
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+  - String:          TEST8ri
+  - String:          ': '
+  - INST_TEST8ri:    '1'
+  - String:          "\n"
+  - String:          XOR32rr
+  - String:          ': '
+  - INST_XOR32rr:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        count_set_bits
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      while.body.preheader
+  - String:          "\n"
+  - String:          MOV32rr
+  - String:          ': '
+  - INST_MOV32rr:    '1'
+  - String:          "\n"
+  - String:          XOR32rr
+  - String:          ': '
+  - INST_XOR32rr:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        count_set_bits
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      while.body
+  - String:          "\n"
+  - String:          INC32r
+  - String:          ': '
+  - INST_INC32r:     '1'
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+  - String:          MOV32rr
+  - String:          ': '
+  - INST_MOV32rr:    '1'
+  - String:          "\n"
+  - String:          SHR32ri
+  - String:          ': '
+  - INST_SHR32ri:    '1'
+  - String:          "\n"
+  - String:          TEST8ri
+  - String:          ': '
+  - INST_TEST8ri:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        count_set_bits
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      while.end
+  - String:          "\n"
+  - String:          RET64
+  - String:          ': '
+  - INST_RET64:      '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 4, Column: 0 }
+Function:        count_set_bits
+Args:
+  - NumInstructions: '11'
+  - String:          ' instructions in function'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 14, Column: 0 }
+Function:        sum_to
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        sum_to
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '25'
+  - String:          '; Delta: '
+  - Delta:           '25'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 14, Column: 0 }
+Function:        sum_to
+Args:
+  - Pass:            Remove dead machine instructions
+  - String:          ': Function: '
+  - Function:        sum_to
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '25'
+  - String:          ' to '
+  - MIInstrsAfter:   '24'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 14, Column: 0 }
+Function:        sum_to
+Args:
+  - Pass:            Process Implicit Definitions
+  - String:          ': Function: '
+  - Function:        sum_to
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '24'
+  - String:          ' to '
+  - MIInstrsAfter:   '22'
+  - String:          '; Delta: '
+  - Delta:           '-2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 14, Column: 0 }
+Function:        sum_to
+Args:
+  - Pass:            Eliminate PHI nodes for register allocation
+  - String:          ': Function: '
+  - Function:        sum_to
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '22'
+  - String:          ' to '
+  - MIInstrsAfter:   '24'
+  - String:          '; Delta: '
+  - Delta:           '2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 14, Column: 0 }
+Function:        sum_to
+Args:
+  - Pass:            Two-Address instruction pass
+  - String:          ': Function: '
+  - Function:        sum_to
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '24'
+  - String:          ' to '
+  - MIInstrsAfter:   '28'
+  - String:          '; Delta: '
+  - Delta:           '4'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 14, Column: 0 }
+Function:        sum_to
+Args:
+  - Pass:            Register Coalescer
+  - String:          ': Function: '
+  - Function:        sum_to
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '28'
+  - String:          ' to '
+  - MIInstrsAfter:   '17'
+  - String:          '; Delta: '
+  - Delta:           '-11'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 14, Column: 0 }
+Function:        sum_to
+Args:
+  - Pass:            Debug Variable Analysis
+  - String:          ': Function: '
+  - Function:        sum_to
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '17'
+  - String:          ' to '
+  - MIInstrsAfter:   '12'
+  - String:          '; Delta: '
+  - Delta:           '-5'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 14, Column: 0 }
+Function:        sum_to
+Args:
+  - Pass:            Virtual Register Rewriter
+  - String:          ': Function: '
+  - Function:        sum_to
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '12'
+  - String:          ' to '
+  - MIInstrsAfter:   '16'
+  - String:          '; Delta: '
+  - Delta:           '4'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 14, Column: 0 }
+Function:        sum_to
+Args:
+  - NumStackBytes:   '0'
+  - String:          ' stack bytes in function '''
+  - Function:        sum_to
+  - String:          ''''
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 14, Column: 0 }
+Function:        sum_to
+Args:
+  - Pass:            X86 LEA Fixup
+  - String:          ': Function: '
+  - Function:        sum_to
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '16'
+  - String:          ' to '
+  - MIInstrsAfter:   '17'
+  - String:          '; Delta: '
+  - Delta:           '1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 14, Column: 0 }
+Function:        sum_to
+Args:
+  - Pass:            Live DEBUG_VALUE analysis
+  - String:          ': Function: '
+  - Function:        sum_to
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '17'
+  - String:          ' to '
+  - MIInstrsAfter:   '22'
+  - String:          '; Delta: '
+  - Delta:           '5'
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 14, Column: 0 }
+Function:        sum_to
+Args:
+  - String:          "\nFunction: sum_to"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        sum_to
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      entry
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+  - String:          TEST32rr
+  - String:          ': '
+  - INST_TEST32rr:   '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        sum_to
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      for.body.preheader
+  - String:          "\n"
+  - String:          LEA64_32r
+  - String:          ': '
+  - INST_LEA64_32r:  '3'
+  - String:          "\n"
+  - String:          DEC32r
+  - String:          ': '
+  - INST_DEC32r:     '1'
+  - String:          "\n"
+  - String:          IMUL64rr
+  - String:          ': '
+  - INST_IMUL64rr:   '1'
+  - String:          "\n"
+  - String:          RET64
+  - String:          ': '
+  - INST_RET64:      '1'
+  - String:          "\n"
+  - String:          SHR64ri
+  - String:          ': '
+  - INST_SHR64ri:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        sum_to
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      ''
+  - String:          "\n"
+  - String:          RET64
+  - String:          ': '
+  - INST_RET64:      '1'
+  - String:          "\n"
+  - String:          XOR32rr
+  - String:          ': '
+  - INST_XOR32rr:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 14, Column: 0 }
+Function:        sum_to
+Args:
+  - NumInstructions: '11'
+  - String:          ' instructions in function'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 23, Column: 0 }
+Function:        is_same
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        is_same
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '4'
+  - String:          '; Delta: '
+  - Delta:           '4'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 23, Column: 0 }
+Function:        is_same
+Args:
+  - Pass:            Peephole Optimizations
+  - String:          ': Function: '
+  - Function:        is_same
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '4'
+  - String:          ' to '
+  - MIInstrsAfter:   '3'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 23, Column: 0 }
+Function:        is_same
+Args:
+  - Pass:            Debug Variable Analysis
+  - String:          ': Function: '
+  - Function:        is_same
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '3'
+  - String:          ' to '
+  - MIInstrsAfter:   '2'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 23, Column: 0 }
+Function:        is_same
+Args:
+  - Pass:            Virtual Register Rewriter
+  - String:          ': Function: '
+  - Function:        is_same
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '2'
+  - String:          ' to '
+  - MIInstrsAfter:   '3'
+  - String:          '; Delta: '
+  - Delta:           '1'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 23, Column: 0 }
+Function:        is_same
+Args:
+  - NumStackBytes:   '0'
+  - String:          ' stack bytes in function '''
+  - Function:        is_same
+  - String:          ''''
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 23, Column: 0 }
+Function:        is_same
+Args:
+  - String:          "\nFunction: is_same"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        is_same
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      entry
+  - String:          "\n"
+  - String:          MOV32ri
+  - String:          ': '
+  - INST_MOV32ri:    '1'
+  - String:          "\n"
+  - String:          RET64
+  - String:          ': '
+  - INST_RET64:      '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 23, Column: 0 }
+Function:        is_same
+Args:
+  - NumInstructions: '2'
+  - String:          ' instructions in function'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 27, Column: 0 }
+Function:        small_constant
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        small_constant
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '4'
+  - String:          '; Delta: '
+  - Delta:           '4'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 27, Column: 0 }
+Function:        small_constant
+Args:
+  - Pass:            Peephole Optimizations
+  - String:          ': Function: '
+  - Function:        small_constant
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '4'
+  - String:          ' to '
+  - MIInstrsAfter:   '3'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 27, Column: 0 }
+Function:        small_constant
+Args:
+  - Pass:            Debug Variable Analysis
+  - String:          ': Function: '
+  - Function:        small_constant
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '3'
+  - String:          ' to '
+  - MIInstrsAfter:   '2'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 27, Column: 0 }
+Function:        small_constant
+Args:
+  - Pass:            Virtual Register Rewriter
+  - String:          ': Function: '
+  - Function:        small_constant
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '2'
+  - String:          ' to '
+  - MIInstrsAfter:   '3'
+  - String:          '; Delta: '
+  - Delta:           '1'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 27, Column: 0 }
+Function:        small_constant
+Args:
+  - NumStackBytes:   '0'
+  - String:          ' stack bytes in function '''
+  - Function:        small_constant
+  - String:          ''''
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 27, Column: 0 }
+Function:        small_constant
+Args:
+  - String:          "\nFunction: small_constant"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        small_constant
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      entry
+  - String:          "\n"
+  - String:          MOV8ri
+  - String:          ': '
+  - INST_MOV8ri:     '1'
+  - String:          "\n"
+  - String:          RET64
+  - String:          ': '
+  - INST_RET64:      '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 27, Column: 0 }
+Function:        small_constant
+Args:
+  - NumInstructions: '2'
+  - String:          ' instructions in function'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 32, Column: 0 }
+Function:        wide_shift
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        wide_shift
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '4'
+  - String:          '; Delta: '
+  - Delta:           '4'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 32, Column: 0 }
+Function:        wide_shift
+Args:
+  - Pass:            Process Implicit Definitions
+  - String:          ': Function: '
+  - Function:        wide_shift
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '4'
+  - String:          ' to '
+  - MIInstrsAfter:   '2'
+  - String:          '; Delta: '
+  - Delta:           '-2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 32, Column: 0 }
+Function:        wide_shift
+Args:
+  - Pass:            Debug Variable Analysis
+  - String:          ': Function: '
+  - Function:        wide_shift
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '2'
+  - String:          ' to '
+  - MIInstrsAfter:   '1'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 32, Column: 0 }
+Function:        wide_shift
+Args:
+  - Pass:            Virtual Register Rewriter
+  - String:          ': Function: '
+  - Function:        wide_shift
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '1'
+  - String:          ' to '
+  - MIInstrsAfter:   '2'
+  - String:          '; Delta: '
+  - Delta:           '1'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 32, Column: 0 }
+Function:        wide_shift
+Args:
+  - NumStackBytes:   '0'
+  - String:          ' stack bytes in function '''
+  - Function:        wide_shift
+  - String:          ''''
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 32, Column: 0 }
+Function:        wide_shift
+Args:
+  - String:          "\nFunction: wide_shift"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        wide_shift
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      entry
+  - String:          "\n"
+  - String:          RET64
+  - String:          ': '
+  - INST_RET64:      '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 32, Column: 0 }
+Function:        wide_shift
+Args:
+  - NumInstructions: '1'
+  - String:          ' instructions in function'
+...
+--- !Analysis
+Pass:            size-info
+Name:            IRSizeChange
+Function:        first_positive
+Args:
+  - Pass:            Canonicalize natural loops
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '145'
+  - String:          ' to '
+  - IRInstrsAfter:   '147'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionIRSizeChange
+Function:        first_positive
+Args:
+  - Pass:            Canonicalize natural loops
+  - String:          ': Function: '
+  - Function:        first_positive
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '14'
+  - String:          ' to '
+  - IRInstrsAfter:   '16'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            IRSizeChange
+Function:        first_positive
+Args:
+  - Pass:            Loop Strength Reduction
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '147'
+  - String:          ' to '
+  - IRInstrsAfter:   '148'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionIRSizeChange
+Function:        first_positive
+Args:
+  - Pass:            Loop Strength Reduction
+  - String:          ': Function: '
+  - Function:        first_positive
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '16'
+  - String:          ' to '
+  - IRInstrsAfter:   '17'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            IRSizeChange
+Function:        first_positive
+Args:
+  - Pass:            CodeGen Prepare
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '148'
+  - String:          ' to '
+  - IRInstrsAfter:   '146'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '-2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionIRSizeChange
+Function:        first_positive
+Args:
+  - Pass:            CodeGen Prepare
+  - String:          ': Function: '
+  - Function:        first_positive
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '16'
+  - String:          ' to '
+  - IRInstrsAfter:   '15'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 36, Column: 0 }
+Function:        first_positive
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        first_positive
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '31'
+  - String:          '; Delta: '
+  - Delta:           '31'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 36, Column: 0 }
+Function:        first_positive
+Args:
+  - Pass:            Eliminate PHI nodes for register allocation
+  - String:          ': Function: '
+  - Function:        first_positive
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '31'
+  - String:          ' to '
+  - MIInstrsAfter:   '36'
+  - String:          '; Delta: '
+  - Delta:           '5'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 36, Column: 0 }
+Function:        first_positive
+Args:
+  - Pass:            Two-Address instruction pass
+  - String:          ': Function: '
+  - Function:        first_positive
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '36'
+  - String:          ' to '
+  - MIInstrsAfter:   '37'
+  - String:          '; Delta: '
+  - Delta:           '1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 36, Column: 0 }
+Function:        first_positive
+Args:
+  - Pass:            Register Coalescer
+  - String:          ': Function: '
+  - Function:        first_positive
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '37'
+  - String:          ' to '
+  - MIInstrsAfter:   '27'
+  - String:          '; Delta: '
+  - Delta:           '-10'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 36, Column: 0 }
+Function:        first_positive
+Args:
+  - Pass:            Debug Variable Analysis
+  - String:          ': Function: '
+  - Function:        first_positive
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '27'
+  - String:          ' to '
+  - MIInstrsAfter:   '20'
+  - String:          '; Delta: '
+  - Delta:           '-7'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 36, Column: 0 }
+Function:        first_positive
+Args:
+  - Pass:            Virtual Register Rewriter
+  - String:          ': Function: '
+  - Function:        first_positive
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '20'
+  - String:          ' to '
+  - MIInstrsAfter:   '25'
+  - String:          '; Delta: '
+  - Delta:           '5'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 36, Column: 0 }
+Function:        first_positive
+Args:
+  - NumStackBytes:   '0'
+  - String:          ' stack bytes in function '''
+  - Function:        first_positive
+  - String:          ''''
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 36, Column: 0 }
+Function:        first_positive
+Args:
+  - Pass:            Control Flow Optimizer
+  - String:          ': Function: '
+  - Function:        first_positive
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '25'
+  - String:          ' to '
+  - MIInstrsAfter:   '23'
+  - String:          '; Delta: '
+  - Delta:           '-2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 36, Column: 0 }
+Function:        first_positive
+Args:
+  - Pass:            Branch Probability Basic Block Placement
+  - String:          ': Function: '
+  - Function:        first_positive
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '23'
+  - String:          ' to '
+  - MIInstrsAfter:   '20'
+  - String:          '; Delta: '
+  - Delta:           '-3'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 36, Column: 0 }
+Function:        first_positive
+Args:
+  - Pass:            Live DEBUG_VALUE analysis
+  - String:          ': Function: '
+  - Function:        first_positive
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '20'
+  - String:          ' to '
+  - MIInstrsAfter:   '35'
+  - String:          '; Delta: '
+  - Delta:           '15'
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 36, Column: 0 }
+Function:        first_positive
+Args:
+  - String:          "\nFunction: first_positive"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        first_positive
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      entry
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+  - String:          TEST32rr
+  - String:          ': '
+  - INST_TEST32rr:   '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        first_positive
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      for.body.preheader
+  - String:          "\n"
+  - String:          MOV32rr
+  - String:          ': '
+  - INST_MOV32rr:    '1'
+  - String:          "\n"
+  - String:          XOR32rr
+  - String:          ': '
+  - INST_XOR32rr:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        first_positive
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      for.body
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+  - String:          MOV32rm
+  - String:          ': '
+  - INST_MOV32rm:    '1'
+  - String:          "\n"
+  - String:          TEST32rr
+  - String:          ': '
+  - INST_TEST32rr:   '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        first_positive
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      for.cond
+  - String:          "\n"
+  - String:          CMP64rr
+  - String:          ': '
+  - INST_CMP64rr:    '1'
+  - String:          "\n"
+  - String:          INC64r
+  - String:          ': '
+  - INST_INC64r:     '1'
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        first_positive
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      ''
+  - String:          "\n"
+  - String:          XOR32rr
+  - String:          ': '
+  - INST_XOR32rr:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        first_positive
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      cleanup
+  - String:          "\n"
+  - String:          RET64
+  - String:          ': '
+  - INST_RET64:      '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 36, Column: 0 }
+Function:        first_positive
+Args:
+  - NumInstructions: '12'
+  - String:          ' instructions in function'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 46, Column: 0 }
+Function:        skip_empty
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        skip_empty
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '4'
+  - String:          '; Delta: '
+  - Delta:           '4'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 46, Column: 0 }
+Function:        skip_empty
+Args:
+  - Pass:            Debug Variable Analysis
+  - String:          ': Function: '
+  - Function:        skip_empty
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '4'
+  - String:          ' to '
+  - MIInstrsAfter:   '3'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Missed
+Pass:            regalloc
+Name:            SpillReloadCopies
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 46, Column: 1 }
+Function:        skip_empty
+Args:
+  - NumVRCopies:     '1'
+  - String:          ' virtual registers copies '
+  - TotalCopiesCost: '1.000000e+00'
+  - String:          ' total copies cost '
+  - String:          generated in function
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 46, Column: 0 }
+Function:        skip_empty
+Args:
+  - NumStackBytes:   '0'
+  - String:          ' stack bytes in function '''
+  - Function:        skip_empty
+  - String:          ''''
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 46, Column: 0 }
+Function:        skip_empty
+Args:
+  - String:          "\nFunction: skip_empty"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        skip_empty
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      entry
+  - String:          "\n"
+  - String:          MOV32rr
+  - String:          ': '
+  - INST_MOV32rr:    '1'
+  - String:          "\n"
+  - String:          RET64
+  - String:          ': '
+  - INST_RET64:      '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 46, Column: 0 }
+Function:        skip_empty
+Args:
+  - NumInstructions: '2'
+  - String:          ' instructions in function'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 51, Column: 0 }
+Function:        truncated_half
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        truncated_half
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '4'
+  - String:          '; Delta: '
+  - Delta:           '4'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 51, Column: 0 }
+Function:        truncated_half
+Args:
+  - Pass:            Peephole Optimizations
+  - String:          ': Function: '
+  - Function:        truncated_half
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '4'
+  - String:          ' to '
+  - MIInstrsAfter:   '3'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 51, Column: 0 }
+Function:        truncated_half
+Args:
+  - Pass:            Debug Variable Analysis
+  - String:          ': Function: '
+  - Function:        truncated_half
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '3'
+  - String:          ' to '
+  - MIInstrsAfter:   '2'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 51, Column: 0 }
+Function:        truncated_half
+Args:
+  - Pass:            Virtual Register Rewriter
+  - String:          ': Function: '
+  - Function:        truncated_half
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '2'
+  - String:          ' to '
+  - MIInstrsAfter:   '3'
+  - String:          '; Delta: '
+  - Delta:           '1'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 51, Column: 0 }
+Function:        truncated_half
+Args:
+  - NumStackBytes:   '0'
+  - String:          ' stack bytes in function '''
+  - Function:        truncated_half
+  - String:          ''''
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 51, Column: 0 }
+Function:        truncated_half
+Args:
+  - String:          "\nFunction: truncated_half"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        truncated_half
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      entry
+  - String:          "\n"
+  - String:          MOV32ri
+  - String:          ': '
+  - INST_MOV32ri:    '1'
+  - String:          "\n"
+  - String:          RET64
+  - String:          ': '
+  - INST_RET64:      '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 51, Column: 0 }
+Function:        truncated_half
+Args:
+  - NumInstructions: '2'
+  - String:          ' instructions in function'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 56, Column: 0 }
+Function:        last_of_four
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        last_of_four
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '3'
+  - String:          '; Delta: '
+  - Delta:           '3'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 56, Column: 0 }
+Function:        last_of_four
+Args:
+  - Pass:            Process Implicit Definitions
+  - String:          ': Function: '
+  - Function:        last_of_four
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '3'
+  - String:          ' to '
+  - MIInstrsAfter:   '1'
+  - String:          '; Delta: '
+  - Delta:           '-2'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 56, Column: 0 }
+Function:        last_of_four
+Args:
+  - NumStackBytes:   '0'
+  - String:          ' stack bytes in function '''
+  - Function:        last_of_four
+  - String:          ''''
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 56, Column: 0 }
+Function:        last_of_four
+Args:
+  - String:          "\nFunction: last_of_four"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 58, Column: 5 }
+Function:        last_of_four
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      entry
+  - String:          "\n"
+  - String:          RET64
+  - String:          ': '
+  - INST_RET64:      '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 56, Column: 0 }
+Function:        last_of_four
+Args:
+  - NumInstructions: '1'
+  - String:          ' instructions in function'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 61, Column: 0 }
+Function:        not_equal
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        not_equal
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '12'
+  - String:          '; Delta: '
+  - Delta:           '12'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 61, Column: 0 }
+Function:        not_equal
+Args:
+  - Pass:            X86 Fixup SetCC
+  - String:          ': Function: '
+  - Function:        not_equal
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '12'
+  - String:          ' to '
+  - MIInstrsAfter:   '14'
+  - String:          '; Delta: '
+  - Delta:           '2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 61, Column: 0 }
+Function:        not_equal
+Args:
+  - Pass:            Two-Address instruction pass
+  - String:          ': Function: '
+  - Function:        not_equal
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '14'
+  - String:          ' to '
+  - MIInstrsAfter:   '16'
+  - String:          '; Delta: '
+  - Delta:           '2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 61, Column: 0 }
+Function:        not_equal
+Args:
+  - Pass:            Register Coalescer
+  - String:          ': Function: '
+  - Function:        not_equal
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '16'
+  - String:          ' to '
+  - MIInstrsAfter:   '12'
+  - String:          '; Delta: '
+  - Delta:           '-4'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 61, Column: 0 }
+Function:        not_equal
+Args:
+  - Pass:            Debug Variable Analysis
+  - String:          ': Function: '
+  - Function:        not_equal
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '12'
+  - String:          ' to '
+  - MIInstrsAfter:   '10'
+  - String:          '; Delta: '
+  - Delta:           '-2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 61, Column: 0 }
+Function:        not_equal
+Args:
+  - Pass:            Virtual Register Rewriter
+  - String:          ': Function: '
+  - Function:        not_equal
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '10'
+  - String:          ' to '
+  - MIInstrsAfter:   '9'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 61, Column: 0 }
+Function:        not_equal
+Args:
+  - NumStackBytes:   '0'
+  - String:          ' stack bytes in function '''
+  - Function:        not_equal
+  - String:          ''''
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 61, Column: 0 }
+Function:        not_equal
+Args:
+  - String:          "\nFunction: not_equal"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        not_equal
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      entry
+  - String:          "\n"
+  - String:          SETCCr
+  - String:          ': '
+  - INST_SETCCr:     '2'
+  - String:          "\n"
+  - String:          XOR32rr
+  - String:          ': '
+  - INST_XOR32rr:    '2'
+  - String:          "\n"
+  - String:          CMP32rr
+  - String:          ': '
+  - INST_CMP32rr:    '1'
+  - String:          "\n"
+  - String:          RET64
+  - String:          ': '
+  - INST_RET64:      '1'
+  - String:          "\n"
+  - String:          TEST32rr
+  - String:          ': '
+  - INST_TEST32rr:   '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 61, Column: 0 }
+Function:        not_equal
+Args:
+  - NumInstructions: '7'
+  - String:          ' instructions in function'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 68, Column: 0 }
+Function:        array_size
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        array_size
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '4'
+  - String:          '; Delta: '
+  - Delta:           '4'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 68, Column: 0 }
+Function:        array_size
+Args:
+  - Pass:            Peephole Optimizations
+  - String:          ': Function: '
+  - Function:        array_size
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '4'
+  - String:          ' to '
+  - MIInstrsAfter:   '3'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 68, Column: 0 }
+Function:        array_size
+Args:
+  - Pass:            Debug Variable Analysis
+  - String:          ': Function: '
+  - Function:        array_size
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '3'
+  - String:          ' to '
+  - MIInstrsAfter:   '2'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 68, Column: 0 }
+Function:        array_size
+Args:
+  - Pass:            Virtual Register Rewriter
+  - String:          ': Function: '
+  - Function:        array_size
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '2'
+  - String:          ' to '
+  - MIInstrsAfter:   '3'
+  - String:          '; Delta: '
+  - Delta:           '1'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 68, Column: 0 }
+Function:        array_size
+Args:
+  - NumStackBytes:   '0'
+  - String:          ' stack bytes in function '''
+  - Function:        array_size
+  - String:          ''''
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 68, Column: 0 }
+Function:        array_size
+Args:
+  - String:          "\nFunction: array_size"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        array_size
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      entry
+  - String:          "\n"
+  - String:          MOV32ri
+  - String:          ': '
+  - INST_MOV32ri:    '1'
+  - String:          "\n"
+  - String:          RET64
+  - String:          ': '
+  - INST_RET64:      '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 68, Column: 0 }
+Function:        array_size
+Args:
+  - NumInstructions: '2'
+  - String:          ' instructions in function'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 72, Column: 0 }
+Function:        print_total
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        print_total
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '20'
+  - String:          '; Delta: '
+  - Delta:           '20'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 72, Column: 0 }
+Function:        print_total
+Args:
+  - Pass:            Remove dead machine instructions
+  - String:          ': Function: '
+  - Function:        print_total
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '20'
+  - String:          ' to '
+  - MIInstrsAfter:   '19'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 72, Column: 0 }
+Function:        print_total
+Args:
+  - Pass:            Peephole Optimizations
+  - String:          ': Function: '
+  - Function:        print_total
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '19'
+  - String:          ' to '
+  - MIInstrsAfter:   '18'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 72, Column: 0 }
+Function:        print_total
+Args:
+  - Pass:            Register Coalescer
+  - String:          ': Function: '
+  - Function:        print_total
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '18'
+  - String:          ' to '
+  - MIInstrsAfter:   '16'
+  - String:          '; Delta: '
+  - Delta:           '-2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 72, Column: 0 }
+Function:        print_total
+Args:
+  - Pass:            Debug Variable Analysis
+  - String:          ': Function: '
+  - Function:        print_total
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '16'
+  - String:          ' to '
+  - MIInstrsAfter:   '14'
+  - String:          '; Delta: '
+  - Delta:           '-2'
+...
+--- !Missed
+Pass:            regalloc
+Name:            SpillReloadCopies
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 72, Column: 1 }
+Function:        print_total
+Args:
+  - NumSpills:       '1'
+  - String:          ' spills '
+  - TotalSpillsCost: '1.000000e+00'
+  - String:          ' total spills cost '
+  - NumReloads:      '1'
+  - String:          ' reloads '
+  - TotalReloadsCost: '1.000000e+00'
+  - String:          ' total reloads cost '
+  - NumVRCopies:     '1'
+  - String:          ' virtual registers copies '
+  - TotalCopiesCost: '1.000000e+00'
+  - String:          ' total copies cost '
+  - String:          generated in function
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 72, Column: 0 }
+Function:        print_total
+Args:
+  - Pass:            Virtual Register Rewriter
+  - String:          ': Function: '
+  - Function:        print_total
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '14'
+  - String:          ' to '
+  - MIInstrsAfter:   '13'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 72, Column: 0 }
+Function:        print_total
+Args:
+  - NumStackBytes:   '8'
+  - String:          ' stack bytes in function '''
+  - Function:        print_total
+  - String:          ''''
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 72, Column: 0 }
+Function:        print_total
+Args:
+  - Pass:            'Prologue/Epilogue Insertion & Frame Finalization'
+  - String:          ': Function: '
+  - Function:        print_total
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '13'
+  - String:          ' to '
+  - MIInstrsAfter:   '15'
+  - String:          '; Delta: '
+  - Delta:           '2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 72, Column: 0 }
+Function:        print_total
+Args:
+  - Pass:            Live DEBUG_VALUE analysis
+  - String:          ': Function: '
+  - Function:        print_total
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '15'
+  - String:          ' to '
+  - MIInstrsAfter:   '18'
+  - String:          '; Delta: '
+  - Delta:           '3'
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 72, Column: 0 }
+Function:        print_total
+Args:
+  - String:          "\nFunction: print_total"
+  - String:          "\nOffset: [SP"
+  - Offset:          '-8'
+  - String:          '], Type: '
+  - Type:            Spill
+  - String:          ', Align: '
+  - Align:           '8'
+  - String:          ', Size: '
+  - Size:            '8'
+  - String:          "\n    "
+  - DataLoc:         'mean @ user-programs/clang_warnings.c:72'
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        print_total
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      entry
+  - String:          "\n"
+  - String:          LEA64r
+  - String:          ': '
+  - INST_LEA64r:     '2'
+  - String:          "\n"
+  - String:          CALL64pcrel32
+  - String:          ': '
+  - INST_CALL64pcrel32: '1'
+  - String:          "\n"
+  - String:          MOV64rr
+  - String:          ': '
+  - INST_MOV64rr:    '1'
+  - String:          "\n"
+  - String:          MOV8ri
+  - String:          ': '
+  - INST_MOV8ri:     '1'
+  - String:          "\n"
+  - String:          MOVSDmr
+  - String:          ': '
+  - INST_MOVSDmr:    '1'
+  - String:          "\n"
+  - String:          MOVSDrm_alt
+  - String:          ': '
+  - INST_MOVSDrm_alt: '1'
+  - String:          "\n"
+  - String:          POP64r
+  - String:          ': '
+  - INST_POP64r:     '1'
+  - String:          "\n"
+  - String:          PUSH64r
+  - String:          ': '
+  - INST_PUSH64r:    '1'
+  - String:          "\n"
+  - String:          TAILJMPd64
+  - String:          ': '
+  - INST_TAILJMPd64: '1'
+  - String:          "\n"
+  - String:          XOR32rr
+  - String:          ': '
+  - INST_XOR32rr:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 72, Column: 0 }
+Function:        print_total
+Args:
+  - NumInstructions: '11'
+  - String:          ' instructions in function'
+...
+--- !Analysis
+Pass:            size-info
+Name:            IRSizeChange
+Function:        scaled_sum
+Args:
+  - Pass:            Canonicalize natural loops
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '146'
+  - String:          ' to '
+  - IRInstrsAfter:   '147'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionIRSizeChange
+Function:        scaled_sum
+Args:
+  - Pass:            Canonicalize natural loops
+  - String:          ': Function: '
+  - Function:        scaled_sum
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '39'
+  - String:          ' to '
+  - IRInstrsAfter:   '40'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            IRSizeChange
+Function:        scaled_sum
+Args:
+  - Pass:            Loop Strength Reduction
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '147'
+  - String:          ' to '
+  - IRInstrsAfter:   '148'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionIRSizeChange
+Function:        scaled_sum
+Args:
+  - Pass:            Loop Strength Reduction
+  - String:          ': Function: '
+  - Function:        scaled_sum
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '40'
+  - String:          ' to '
+  - IRInstrsAfter:   '41'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            IRSizeChange
+Function:        scaled_sum
+Args:
+  - Pass:            Loop Strength Reduction
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '148'
+  - String:          ' to '
+  - IRInstrsAfter:   '154'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '6'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionIRSizeChange
+Function:        scaled_sum
+Args:
+  - Pass:            Loop Strength Reduction
+  - String:          ': Function: '
+  - Function:        scaled_sum
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '41'
+  - String:          ' to '
+  - IRInstrsAfter:   '47'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '6'
+...
+--- !Analysis
+Pass:            size-info
+Name:            IRSizeChange
+Function:        scaled_sum
+Args:
+  - Pass:            Expand reduction intrinsics
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '154'
+  - String:          ' to '
+  - IRInstrsAfter:   '158'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '4'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionIRSizeChange
+Function:        scaled_sum
+Args:
+  - Pass:            Expand reduction intrinsics
+  - String:          ': Function: '
+  - Function:        scaled_sum
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '40'
+  - String:          ' to '
+  - IRInstrsAfter:   '51'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '11'
+...
+--- !Analysis
+Pass:            size-info
+Name:            IRSizeChange
+Function:        scaled_sum
+Args:
+  - Pass:            CodeGen Prepare
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '158'
+  - String:          ' to '
+  - IRInstrsAfter:   '156'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '-2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionIRSizeChange
+Function:        scaled_sum
+Args:
+  - Pass:            CodeGen Prepare
+  - String:          ': Function: '
+  - Function:        scaled_sum
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '51'
+  - String:          ' to '
+  - IRInstrsAfter:   '49'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '-2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 77, Column: 0 }
+Function:        scaled_sum
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        scaled_sum
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '73'
+  - String:          '; Delta: '
+  - Delta:           '73'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 77, Column: 0 }
+Function:        scaled_sum
+Args:
+  - Pass:            Process Implicit Definitions
+  - String:          ': Function: '
+  - Function:        scaled_sum
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '73'
+  - String:          ' to '
+  - MIInstrsAfter:   '71'
+  - String:          '; Delta: '
+  - Delta:           '-2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 77, Column: 0 }
+Function:        scaled_sum
+Args:
+  - Pass:            Eliminate PHI nodes for register allocation
+  - String:          ': Function: '
+  - Function:        scaled_sum
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '71'
+  - String:          ' to '
+  - MIInstrsAfter:   '88'
+  - String:          '; Delta: '
+  - Delta:           '17'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 77, Column: 0 }
+Function:        scaled_sum
+Args:
+  - Pass:            Two-Address instruction pass
+  - String:          ': Function: '
+  - Function:        scaled_sum
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '88'
+  - String:          ' to '
+  - MIInstrsAfter:   '101'
+  - String:          '; Delta: '
+  - Delta:           '13'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 77, Column: 0 }
+Function:        scaled_sum
+Args:
+  - Pass:            Register Coalescer
+  - String:          ': Function: '
+  - Function:        scaled_sum
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '101'
+  - String:          ' to '
+  - MIInstrsAfter:   '57'
+  - String:          '; Delta: '
+  - Delta:           '-44'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 77, Column: 0 }
+Function:        scaled_sum
+Args:
+  - Pass:            Debug Variable Analysis
+  - String:          ': Function: '
+  - Function:        scaled_sum
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '57'
+  - String:          ' to '
+  - MIInstrsAfter:   '49'
+  - String:          '; Delta: '
+  - Delta:           '-8'
+...
+--- !Missed
+Pass:            regalloc
+Name:            SpillReloadCopies
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 77, Column: 1 }
+Function:        scaled_sum
+Args:
+  - NumVRCopies:     '2'
+  - String:          ' virtual registers copies '
+  - TotalCopiesCost: '6.250000e-01'
+  - String:          ' total copies cost '
+  - String:          generated in function
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 77, Column: 0 }
+Function:        scaled_sum
+Args:
+  - Pass:            Virtual Register Rewriter
+  - String:          ': Function: '
+  - Function:        scaled_sum
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '49'
+  - String:          ' to '
+  - MIInstrsAfter:   '57'
+  - String:          '; Delta: '
+  - Delta:           '8'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 77, Column: 0 }
+Function:        scaled_sum
+Args:
+  - NumStackBytes:   '0'
+  - String:          ' stack bytes in function '''
+  - Function:        scaled_sum
+  - String:          ''''
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 77, Column: 0 }
+Function:        scaled_sum
+Args:
+  - Pass:            Control Flow Optimizer
+  - String:          ': Function: '
+  - Function:        scaled_sum
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '57'
+  - String:          ' to '
+  - MIInstrsAfter:   '53'
+  - String:          '; Delta: '
+  - Delta:           '-4'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 77, Column: 0 }
+Function:        scaled_sum
+Args:
+  - Pass:            Tail Duplication
+  - String:          ': Function: '
+  - Function:        scaled_sum
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '53'
+  - String:          ' to '
+  - MIInstrsAfter:   '54'
+  - String:          '; Delta: '
+  - Delta:           '1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 77, Column: 0 }
+Function:        scaled_sum
+Args:
+  - Pass:            Live DEBUG_VALUE analysis
+  - String:          ': Function: '
+  - Function:        scaled_sum
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '54'
+  - String:          ' to '
+  - MIInstrsAfter:   '86'
+  - String:          '; Delta: '
+  - Delta:           '32'
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 77, Column: 0 }
+Function:        scaled_sum
+Args:
+  - String:          "\nFunction: scaled_sum"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        scaled_sum
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      entry
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+  - String:          TEST32rr
+  - String:          ': '
+  - INST_TEST32rr:   '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        scaled_sum
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      for.body.preheader
+  - String:          "\n"
+  - String:          CMP32ri
+  - String:          ': '
+  - INST_CMP32ri:    '1'
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+  - String:          MOV32rr
+  - String:          ': '
+  - INST_MOV32rr:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        scaled_sum
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      ''
+  - String:          "\n"
+  - String:          XOR32rr
+  - String:          ': '
+  - INST_XOR32rr:    '2'
+  - String:          "\n"
+  - String:          JMP_1
+  - String:          ': '
+  - INST_JMP_1:      '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        scaled_sum
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      ''
+  - String:          "\n"
+  - String:          RET64
+  - String:          ': '
+  - INST_RET64:      '1'
+  - String:          "\n"
+  - String:          XOR32rr
+  - String:          ': '
+  - INST_XOR32rr:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        scaled_sum
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      vector.ph
+  - String:          "\n"
+  - String:          AND32ri
+  - String:          ': '
+  - INST_AND32ri:    '2'
+  - String:          "\n"
+  - String:          MOV32rr
+  - String:          ': '
+  - INST_MOV32rr:    '2'
+  - String:          "\n"
+  - String:          PXORrr
+  - String:          ': '
+  - INST_PXORrr:     '2'
+  - String:          "\n"
+  - String:          SHL64ri
+  - String:          ': '
+  - INST_SHL64ri:    '1'
+  - String:          "\n"
+  - String:          SHR32ri
+  - String:          ': '
+  - INST_SHR32ri:    '1'
+  - String:          "\n"
+  - String:          XOR32rr
+  - String:          ': '
+  - INST_XOR32rr:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        scaled_sum
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      vector.body
+  - String:          "\n"
+  - String:          PADDDrr
+  - String:          ': '
+  - INST_PADDDrr:    '4'
+  - String:          "\n"
+  - String:          MOVDQUrm
+  - String:          ': '
+  - INST_MOVDQUrm:   '2'
+  - String:          "\n"
+  - String:          ADD64ri32
+  - String:          ': '
+  - INST_ADD64ri32:  '1'
+  - String:          "\n"
+  - String:          CMP64rr
+  - String:          ': '
+  - INST_CMP64rr:    '1'
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        scaled_sum
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      middle.block
+  - String:          "\n"
+  - String:          PADDDrr
+  - String:          ': '
+  - INST_PADDDrr:    '3'
+  - String:          "\n"
+  - String:          PSHUFDri
+  - String:          ': '
+  - INST_PSHUFDri:   '2'
+  - String:          "\n"
+  - String:          CMP32rr
+  - String:          ': '
+  - INST_CMP32rr:    '1'
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+  - String:          MOVPDI2DIrr
+  - String:          ': '
+  - INST_MOVPDI2DIrr: '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        scaled_sum
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      for.body
+  - String:          "\n"
+  - String:          CMP64rr
+  - String:          ': '
+  - INST_CMP64rr:    '1'
+  - String:          "\n"
+  - String:          INC64r
+  - String:          ': '
+  - INST_INC64r:     '1'
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+  - String:          LEA64_32r
+  - String:          ': '
+  - INST_LEA64_32r:  '1'
+  - String:          "\n"
+  - String:          MOV32rm
+  - String:          ': '
+  - INST_MOV32rm:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        scaled_sum
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      for.cond.cleanup
+  - String:          "\n"
+  - String:          RET64
+  - String:          ': '
+  - INST_RET64:      '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 77, Column: 0 }
+Function:        scaled_sum
+Args:
+  - NumInstructions: '42'
+  - String:          ' instructions in function'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 87, Column: 0 }
+Function:        clamp
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        clamp
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '10'
+  - String:          '; Delta: '
+  - Delta:           '10'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 87, Column: 0 }
+Function:        clamp
+Args:
+  - Pass:            Two-Address instruction pass
+  - String:          ': Function: '
+  - Function:        clamp
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '10'
+  - String:          ' to '
+  - MIInstrsAfter:   '11'
+  - String:          '; Delta: '
+  - Delta:           '1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 87, Column: 0 }
+Function:        clamp
+Args:
+  - Pass:            Register Coalescer
+  - String:          ': Function: '
+  - Function:        clamp
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '11'
+  - String:          ' to '
+  - MIInstrsAfter:   '10'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 87, Column: 0 }
+Function:        clamp
+Args:
+  - Pass:            Debug Variable Analysis
+  - String:          ': Function: '
+  - Function:        clamp
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '10'
+  - String:          ' to '
+  - MIInstrsAfter:   '7'
+  - String:          '; Delta: '
+  - Delta:           '-3'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 87, Column: 0 }
+Function:        clamp
+Args:
+  - Pass:            Virtual Register Rewriter
+  - String:          ': Function: '
+  - Function:        clamp
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '7'
+  - String:          ' to '
+  - MIInstrsAfter:   '8'
+  - String:          '; Delta: '
+  - Delta:           '1'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 87, Column: 0 }
+Function:        clamp
+Args:
+  - NumStackBytes:   '0'
+  - String:          ' stack bytes in function '''
+  - Function:        clamp
+  - String:          ''''
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 87, Column: 0 }
+Function:        clamp
+Args:
+  - String:          "\nFunction: clamp"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        clamp
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      entry
+  - String:          "\n"
+  - String:          MOV32ri
+  - String:          ': '
+  - INST_MOV32ri:    '2'
+  - String:          "\n"
+  - String:          CMOV32rr
+  - String:          ': '
+  - INST_CMOV32rr:   '1'
+  - String:          "\n"
+  - String:          CMP32ri
+  - String:          ': '
+  - INST_CMP32ri:    '1'
+  - String:          "\n"
+  - String:          RET64
+  - String:          ': '
+  - INST_RET64:      '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 87, Column: 0 }
+Function:        clamp
+Args:
+  - NumInstructions: '5'
+  - String:          ' instructions in function'
+...
+--- !Analysis
+Pass:            size-info
+Name:            IRSizeChange
+Function:        max_of
+Args:
+  - Pass:            Canonicalize natural loops
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '156'
+  - String:          ' to '
+  - IRInstrsAfter:   '157'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionIRSizeChange
+Function:        max_of
+Args:
+  - Pass:            Canonicalize natural loops
+  - String:          ': Function: '
+  - Function:        max_of
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '42'
+  - String:          ' to '
+  - IRInstrsAfter:   '43'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            IRSizeChange
+Function:        max_of
+Args:
+  - Pass:            Loop Strength Reduction
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '157'
+  - String:          ' to '
+  - IRInstrsAfter:   '158'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionIRSizeChange
+Function:        max_of
+Args:
+  - Pass:            Loop Strength Reduction
+  - String:          ': Function: '
+  - Function:        max_of
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '43'
+  - String:          ' to '
+  - IRInstrsAfter:   '44'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            IRSizeChange
+Function:        max_of
+Args:
+  - Pass:            Loop Strength Reduction
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '158'
+  - String:          ' to '
+  - IRInstrsAfter:   '161'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '3'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionIRSizeChange
+Function:        max_of
+Args:
+  - Pass:            Loop Strength Reduction
+  - String:          ': Function: '
+  - Function:        max_of
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '44'
+  - String:          ' to '
+  - IRInstrsAfter:   '47'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '3'
+...
+--- !Analysis
+Pass:            size-info
+Name:            IRSizeChange
+Function:        max_of
+Args:
+  - Pass:            Expand reduction intrinsics
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '161'
+  - String:          ' to '
+  - IRInstrsAfter:   '165'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '4'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionIRSizeChange
+Function:        max_of
+Args:
+  - Pass:            Expand reduction intrinsics
+  - String:          ': Function: '
+  - Function:        max_of
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '43'
+  - String:          ' to '
+  - IRInstrsAfter:   '51'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '8'
+...
+--- !Analysis
+Pass:            size-info
+Name:            IRSizeChange
+Function:        max_of
+Args:
+  - Pass:            CodeGen Prepare
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '165'
+  - String:          ' to '
+  - IRInstrsAfter:   '164'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionIRSizeChange
+Function:        max_of
+Args:
+  - Pass:            CodeGen Prepare
+  - String:          ': Function: '
+  - Function:        max_of
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '51'
+  - String:          ' to '
+  - IRInstrsAfter:   '50'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 99, Column: 0 }
+Function:        max_of
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        max_of
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '77'
+  - String:          '; Delta: '
+  - Delta:           '77'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 99, Column: 0 }
+Function:        max_of
+Args:
+  - Pass:            Eliminate PHI nodes for register allocation
+  - String:          ': Function: '
+  - Function:        max_of
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '77'
+  - String:          ' to '
+  - MIInstrsAfter:   '94'
+  - String:          '; Delta: '
+  - Delta:           '17'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 99, Column: 0 }
+Function:        max_of
+Args:
+  - Pass:            Two-Address instruction pass
+  - String:          ': Function: '
+  - Function:        max_of
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '94'
+  - String:          ' to '
+  - MIInstrsAfter:   '118'
+  - String:          '; Delta: '
+  - Delta:           '24'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 99, Column: 0 }
+Function:        max_of
+Args:
+  - Pass:            Register Coalescer
+  - String:          ': Function: '
+  - Function:        max_of
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '118'
+  - String:          ' to '
+  - MIInstrsAfter:   '76'
+  - String:          '; Delta: '
+  - Delta:           '-42'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 99, Column: 0 }
+Function:        max_of
+Args:
+  - Pass:            Debug Variable Analysis
+  - String:          ': Function: '
+  - Function:        max_of
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '76'
+  - String:          ' to '
+  - MIInstrsAfter:   '68'
+  - String:          '; Delta: '
+  - Delta:           '-8'
+...
+--- !Missed
+Pass:            regalloc
+Name:            LoopSpillReloadCopies
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 101, Column: 5 }
+Function:        max_of
+Args:
+  - NumVRCopies:     '4'
+  - String:          ' virtual registers copies '
+  - TotalCopiesCost: '3.200000e+01'
+  - String:          ' total copies cost '
+  - String:          generated in loop
+...
+--- !Missed
+Pass:            regalloc
+Name:            SpillReloadCopies
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 99, Column: 1 }
+Function:        max_of
+Args:
+  - NumVRCopies:     '9'
+  - String:          ' virtual registers copies '
+  - TotalCopiesCost: '3.325000e+01'
+  - String:          ' total copies cost '
+  - String:          generated in function
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 99, Column: 0 }
+Function:        max_of
+Args:
+  - Pass:            Virtual Register Rewriter
+  - String:          ': Function: '
+  - Function:        max_of
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '68'
+  - String:          ' to '
+  - MIInstrsAfter:   '75'
+  - String:          '; Delta: '
+  - Delta:           '7'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 99, Column: 0 }
+Function:        max_of
+Args:
+  - NumStackBytes:   '0'
+  - String:          ' stack bytes in function '''
+  - Function:        max_of
+  - String:          ''''
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 99, Column: 0 }
+Function:        max_of
+Args:
+  - Pass:            Control Flow Optimizer
+  - String:          ': Function: '
+  - Function:        max_of
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '75'
+  - String:          ' to '
+  - MIInstrsAfter:   '69'
+  - String:          '; Delta: '
+  - Delta:           '-6'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 99, Column: 0 }
+Function:        max_of
+Args:
+  - Pass:            Live DEBUG_VALUE analysis
+  - String:          ': Function: '
+  - Function:        max_of
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '69'
+  - String:          ' to '
+  - MIInstrsAfter:   '93'
+  - String:          '; Delta: '
+  - Delta:           '24'
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 99, Column: 0 }
+Function:        max_of
+Args:
+  - String:          "\nFunction: max_of"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        max_of
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      entry
+  - String:          "\n"
+  - String:          CMP32ri
+  - String:          ': '
+  - INST_CMP32ri:    '1'
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+  - String:          MOV32rm
+  - String:          ': '
+  - INST_MOV32rm:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        max_of
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      for.body.preheader
+  - String:          "\n"
+  - String:          CMP32ri
+  - String:          ': '
+  - INST_CMP32ri:    '1'
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+  - String:          MOV32ri
+  - String:          ': '
+  - INST_MOV32ri:    '1'
+  - String:          "\n"
+  - String:          MOV32rr
+  - String:          ': '
+  - INST_MOV32rr:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        max_of
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      vector.ph
+  - String:          "\n"
+  - String:          LEA64r
+  - String:          ': '
+  - INST_LEA64r:     '2'
+  - String:          "\n"
+  - String:          AND64ri32
+  - String:          ': '
+  - INST_AND64ri32:  '1'
+  - String:          "\n"
+  - String:          MOV64rr
+  - String:          ': '
+  - INST_MOV64rr:    '1'
+  - String:          "\n"
+  - String:          MOVDI2PDIrr
+  - String:          ': '
+  - INST_MOVDI2PDIrr: '1'
+  - String:          "\n"
+  - String:          MOVDQArr
+  - String:          ': '
+  - INST_MOVDQArr:   '1'
+  - String:          "\n"
+  - String:          PSHUFDri
+  - String:          ': '
+  - INST_PSHUFDri:   '1'
+  - String:          "\n"
+  - String:          XOR32rr
+  - String:          ': '
+  - INST_XOR32rr:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        max_of
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      vector.body
+  - String:          "\n"
+  - String:          MOVDQArr
+  - String:          ': '
+  - INST_MOVDQArr:   '4'
+  - String:          "\n"
+  - String:          MOVDQUrm
+  - String:          ': '
+  - INST_MOVDQUrm:   '2'
+  - String:          "\n"
+  - String:          PANDNrr
+  - String:          ': '
+  - INST_PANDNrr:    '2'
+  - String:          "\n"
+  - String:          PANDrr
+  - String:          ': '
+  - INST_PANDrr:     '2'
+  - String:          "\n"
+  - String:          PCMPGTDrr
+  - String:          ': '
+  - INST_PCMPGTDrr:  '2'
+  - String:          "\n"
+  - String:          PORrr
+  - String:          ': '
+  - INST_PORrr:      '2'
+  - String:          "\n"
+  - String:          ADD64ri32
+  - String:          ': '
+  - INST_ADD64ri32:  '1'
+  - String:          "\n"
+  - String:          CMP64rr
+  - String:          ': '
+  - INST_CMP64rr:    '1'
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        max_of
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      middle.block
+  - String:          "\n"
+  - String:          MOVDQArr
+  - String:          ': '
+  - INST_MOVDQArr:   '3'
+  - String:          "\n"
+  - String:          PANDNrr
+  - String:          ': '
+  - INST_PANDNrr:    '3'
+  - String:          "\n"
+  - String:          PANDrr
+  - String:          ': '
+  - INST_PANDrr:     '3'
+  - String:          "\n"
+  - String:          PCMPGTDrr
+  - String:          ': '
+  - INST_PCMPGTDrr:  '3'
+  - String:          "\n"
+  - String:          PORrr
+  - String:          ': '
+  - INST_PORrr:      '3'
+  - String:          "\n"
+  - String:          PSHUFDri
+  - String:          ': '
+  - INST_PSHUFDri:   '2'
+  - String:          "\n"
+  - String:          CMP64rr
+  - String:          ': '
+  - INST_CMP64rr:    '1'
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+  - String:          MOVPDI2DIrr
+  - String:          ': '
+  - INST_MOVPDI2DIrr: '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        max_of
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      for.body
+  - String:          "\n"
+  - String:          CMOV32rr
+  - String:          ': '
+  - INST_CMOV32rr:   '1'
+  - String:          "\n"
+  - String:          CMP32rr
+  - String:          ': '
+  - INST_CMP32rr:    '1'
+  - String:          "\n"
+  - String:          CMP64rr
+  - String:          ': '
+  - INST_CMP64rr:    '1'
+  - String:          "\n"
+  - String:          INC64r
+  - String:          ': '
+  - INST_INC64r:     '1'
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+  - String:          MOV32rm
+  - String:          ': '
+  - INST_MOV32rm:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        max_of
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      for.cond.cleanup
+  - String:          "\n"
+  - String:          RET64
+  - String:          ': '
+  - INST_RET64:      '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 99, Column: 0 }
+Function:        max_of
+Args:
+  - NumInstructions: '59'
+  - String:          ' instructions in function'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 109, Column: 0 }
+Function:        bump
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        bump
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '6'
+  - String:          '; Delta: '
+  - Delta:           '6'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 109, Column: 0 }
+Function:        bump
+Args:
+  - Pass:            Two-Address instruction pass
+  - String:          ': Function: '
+  - Function:        bump
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '6'
+  - String:          ' to '
+  - MIInstrsAfter:   '7'
+  - String:          '; Delta: '
+  - Delta:           '1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 109, Column: 0 }
+Function:        bump
+Args:
+  - Pass:            Register Coalescer
+  - String:          ': Function: '
+  - Function:        bump
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '7'
+  - String:          ' to '
+  - MIInstrsAfter:   '6'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 109, Column: 0 }
+Function:        bump
+Args:
+  - Pass:            Debug Variable Analysis
+  - String:          ': Function: '
+  - Function:        bump
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '6'
+  - String:          ' to '
+  - MIInstrsAfter:   '4'
+  - String:          '; Delta: '
+  - Delta:           '-2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 109, Column: 0 }
+Function:        bump
+Args:
+  - Pass:            Virtual Register Rewriter
+  - String:          ': Function: '
+  - Function:        bump
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '4'
+  - String:          ' to '
+  - MIInstrsAfter:   '5'
+  - String:          '; Delta: '
+  - Delta:           '1'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 109, Column: 0 }
+Function:        bump
+Args:
+  - NumStackBytes:   '0'
+  - String:          ' stack bytes in function '''
+  - Function:        bump
+  - String:          ''''
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 109, Column: 0 }
+Function:        bump
+Args:
+  - Pass:            Live DEBUG_VALUE analysis
+  - String:          ': Function: '
+  - Function:        bump
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '5'
+  - String:          ' to '
+  - MIInstrsAfter:   '6'
+  - String:          '; Delta: '
+  - Delta:           '1'
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 109, Column: 0 }
+Function:        bump
+Args:
+  - String:          "\nFunction: bump"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        bump
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      entry
+  - String:          "\n"
+  - String:          LEA64_32r
+  - String:          ': '
+  - INST_LEA64_32r:  '1'
+  - String:          "\n"
+  - String:          RET64
+  - String:          ': '
+  - INST_RET64:      '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 109, Column: 0 }
+Function:        bump
+Args:
+  - NumInstructions: '2'
+  - String:          ' instructions in function'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 114, Column: 0 }
+Function:        main
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        main
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '20'
+  - String:          '; Delta: '
+  - Delta:           '20'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 114, Column: 0 }
+Function:        main
+Args:
+  - Pass:            Remove dead machine instructions
+  - String:          ': Function: '
+  - Function:        main
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '20'
+  - String:          ' to '
+  - MIInstrsAfter:   '19'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 114, Column: 0 }
+Function:        main
+Args:
+  - Pass:            Peephole Optimizations
+  - String:          ': Function: '
+  - Function:        main
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '19'
+  - String:          ' to '
+  - MIInstrsAfter:   '17'
+  - String:          '; Delta: '
+  - Delta:           '-2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 114, Column: 0 }
+Function:        main
+Args:
+  - Pass:            Register Coalescer
+  - String:          ': Function: '
+  - Function:        main
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '17'
+  - String:          ' to '
+  - MIInstrsAfter:   '15'
+  - String:          '; Delta: '
+  - Delta:           '-2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 114, Column: 0 }
+Function:        main
+Args:
+  - Pass:            Debug Variable Analysis
+  - String:          ': Function: '
+  - Function:        main
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '15'
+  - String:          ' to '
+  - MIInstrsAfter:   '13'
+  - String:          '; Delta: '
+  - Delta:           '-2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 114, Column: 0 }
+Function:        main
+Args:
+  - Pass:            Virtual Register Rewriter
+  - String:          ': Function: '
+  - Function:        main
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '13'
+  - String:          ' to '
+  - MIInstrsAfter:   '12'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 114, Column: 0 }
+Function:        main
+Args:
+  - NumStackBytes:   '8'
+  - String:          ' stack bytes in function '''
+  - Function:        main
+  - String:          ''''
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 114, Column: 0 }
+Function:        main
+Args:
+  - Pass:            'Prologue/Epilogue Insertion & Frame Finalization'
+  - String:          ': Function: '
+  - Function:        main
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '12'
+  - String:          ' to '
+  - MIInstrsAfter:   '14'
+  - String:          '; Delta: '
+  - Delta:           '2'
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 114, Column: 0 }
+Function:        main
+Args:
+  - String:          "\nFunction: main"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 0, Column: 0 }
+Function:        main
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      entry
+  - String:          "\n"
+  - String:          LEA64r
+  - String:          ': '
+  - INST_LEA64r:     '2'
+  - String:          "\n"
+  - String:          CALL64pcrel32
+  - String:          ': '
+  - INST_CALL64pcrel32: '1'
+  - String:          "\n"
+  - String:          MOV32ri
+  - String:          ': '
+  - INST_MOV32ri:    '1'
+  - String:          "\n"
+  - String:          MOV8ri
+  - String:          ': '
+  - INST_MOV8ri:     '1'
+  - String:          "\n"
+  - String:          MOVSDrm_alt
+  - String:          ': '
+  - INST_MOVSDrm_alt: '1'
+  - String:          "\n"
+  - String:          POP64r
+  - String:          ': '
+  - INST_POP64r:     '1'
+  - String:          "\n"
+  - String:          PUSH64r
+  - String:          ': '
+  - INST_PUSH64r:    '1'
+  - String:          "\n"
+  - String:          TAILJMPd64
+  - String:          ': '
+  - INST_TAILJMPd64: '1'
+  - String:          "\n"
+  - String:          XOR32rr
+  - String:          ': '
+  - INST_XOR32rr:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 114, Column: 0 }
+Function:        main
+Args:
+  - NumInstructions: '10'
+  - String:          ' instructions in function'
+...

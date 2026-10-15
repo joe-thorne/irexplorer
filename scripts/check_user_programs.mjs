@@ -218,7 +218,7 @@ const alignedCode = `(() => { const panels = ['#source-panel', '#left-panel', '#
 
 // Study (#/study…) is unchanged by user programs: none of their controls exist there, and the source
 // panel is the curated one. `studySurface` reads what a participant's source panel is made of.
-const programControls = ['#source-mode', '#your-file-control', '#your-file-select', '#program-upload', '#program-new', '#program-edit', '#program-source-note', '#program-file-input', '#program-drop', '#program-editor', '#program-chip', '#program-card', '.source-title'];
+const programControls = ['#source-mode', '#your-file-control', '#your-file-select', '#program-upload', '#program-new', '#program-edit', '#program-source-note', '#program-file-input', '#program-drop', '#program-editor', '#program-chip', '#program-card', '#program-warnings', '.source-title'];
 const noProgramControls = `${JSON.stringify(programControls)}.every(selector => !document.querySelector(selector))`;
 const curatedExamples = (await (await fetch(base + '/api/examples')).json()).examples;
 const curatedSourcePanel = `(() => { const panel = document.querySelector('#source-panel'), options = [...document.querySelectorAll('#example-select option')].map(option => option.value).filter(Boolean);
@@ -366,6 +366,50 @@ const scenarios = {
     await until(`document.querySelector('#program-card')?.innerText.includes('crash.c could not be opened')`);
     await check('An opt failure lists no diagnostics and marks no lines, only its output',
       `!document.querySelector('#program-card .program-diagnostics') && !document.querySelector('#source-lines .is-error, #source-lines .is-outlined') && document.querySelector('#program-card details.program-output pre').textContent.includes('Stack dump:')`);
+  },
+
+  async "Clang's warnings on an uploaded program are listed, collapsed, above the source, and marked on their lines"() {
+    await click('#source-mode input[value="yours"]');
+    await chooseFile('#program-drop button', join(userProgramSources, 'clang_warnings.c'));
+    await until(`window.StudyWorkspace.ready && Boolean(appState.programId) && !${visible('#program-card')}`);
+    // The recorded clang 22 printed 22 warnings for clang_warnings.c, some with notes; the server answers the first 20.
+    const warned = [7, 17, 24, 28, 33, 39, 47, 52, 58, 62, 69, 73, 74, 80, 81, 88, 89, 102, 103];
+    await check('The warnings are listed in a closed disclosure at the top of the source panel, above the source lines',
+      `(() => { const warnings = document.querySelector('#program-warnings'); return ${visible('#program-warnings')} && warnings.matches('#source-panel > details') && !warnings.open && warnings.compareDocumentPosition(document.querySelector('#source-lines')) & Node.DOCUMENT_POSITION_FOLLOWING && document.querySelector('.source-heading').compareDocumentPosition(warnings) & Node.DOCUMENT_POSITION_FOLLOWING; })()`);
+    await check('Its summary counts the warnings and says at most 20 are listed',
+      `document.querySelector('#program-warnings summary').textContent === '20 clang warnings · at most 20 are listed'`);
+    await check('The comparison stays open beside the warnings', `${visible('#left-panel')} && ${visible('.comparison-status')}`);
+    await check('Each line with a warning is marked in the source, and no other',
+      `[...document.querySelectorAll('#source-lines .source-line.is-warning')].map(line => Number(line.dataset.line)).join(',') === '${warned.join(',')}'`);
+    await check('The opened program is announced with its warnings', `/^clang_warnings\\.c is ready\\..* Clang reported 20 warnings, listed above the source\\.$/.test(document.querySelector('#notice').textContent)`);
+    await click('#program-warnings summary');
+    await check('The warnings are a labelled list of 20, one button each reading "Line L, column C: message", with no notes',
+      `(() => { const list = document.querySelector('#program-warnings ul'), buttons = [...list.querySelectorAll('li[data-severity="warning"] button')].map(button => button.textContent); return ${visible('#program-warnings ul')} && list.getAttribute('aria-label') === 'Clang warnings' && list.children.length === 20 && buttons.length === 20 && buttons[0] === 'Line 7, column 16: using the result of an assignment as a condition without parentheses [-Wparentheses]' && buttons[19] === 'Line 103, column 18: equality comparison result unused [-Wunused-comparison]' && !list.textContent.includes('place parentheses'); })()`);
+    const lastLine = `document.querySelector('#source-lines .source-line[data-line="103"]')`;
+    const inView = `(() => { const viewer = document.querySelector('#source-lines').getBoundingClientRect(), line = ${lastLine}.getBoundingClientRect(); return line.top >= viewer.top && line.bottom <= viewer.bottom; })()`;
+    await check('The last warned line starts out of view', `!${inView}`);
+    await value(`[...document.querySelectorAll('#program-warnings button')].at(-1).click()`);
+    await check('A warning button scrolls to its line and outlines it, and only it',
+      `${inView} && ${lastLine}.classList.contains('is-outlined') && document.querySelectorAll('#source-lines .is-outlined').length === 1`);
+    await snap('user-programs-warnings.png');
+    const warningsId = await value('appState.programId');
+
+    await chooseFile('#program-upload', join(curatedSources, 'score.c'));
+    await until(`window.StudyWorkspace.ready && Boolean(appState.programId) && appState.programId !== ${JSON.stringify(warningsId)}`);
+    await check('A program that compiles cleanly shows no warnings and marks no lines',
+      `!${visible('#program-warnings')} && !document.querySelector('#source-lines .is-warning') && !document.querySelector('#notice').textContent.includes('warning')`);
+    await select('#your-file-select', warningsId);
+    await until(`window.StudyWorkspace.ready && appState.programId === ${JSON.stringify(warningsId)}`);
+    await check('Reopening the warned upload lists its warnings again, collapsed, and marks their lines',
+      `${visible('#program-warnings')} && !document.querySelector('#program-warnings').open && document.querySelectorAll('#source-lines .source-line.is-warning').length === ${warned.length}`);
+    await click('#program-new');
+    await until(visible('#program-editor'));
+    await check('Writing a new program shows no warnings beside it, as nothing of it is compiled yet', `!${visible('#program-warnings')}`);
+    await click('#program-editor-discard');
+    await until(`!document.querySelector('#program-editor')`);
+    await check('Closing the editor lists the open upload\'s warnings again', visible('#program-warnings'));
+    await click('#source-mode input[value="curated"]');
+    await check('Curated examples shows no warnings', `!${visible('#program-warnings')} && !document.querySelector('#source-lines .is-warning')`);
   },
 
   async 'A program irexplorer cannot show says why, with the parser message for a parser failure'() {
