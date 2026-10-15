@@ -55,7 +55,14 @@ cleanup() {
   stop_server || true
   stop_compiler || true
   if [[ -n "$chrome_pid" ]]; then kill "$chrome_pid" 2>/dev/null || true; wait "$chrome_pid" 2>/dev/null || true; fi
-  rm -rf "$work"
+  # Chrome's helper processes can still be writing its profile after the main process exits, so a removal
+  # can fail; retry briefly, and never let leftover temporary files decide the result of a finished check.
+  local attempt
+  for attempt in 1 2 3 4 5; do
+    rm -rf "$work" 2>/dev/null && return 0
+    sleep 0.5
+  done
+  echo "check_browser: could not remove $work; leaving it" >&2
 }
 trap cleanup EXIT
 
