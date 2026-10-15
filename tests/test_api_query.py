@@ -204,7 +204,7 @@ class FastApiTests(unittest.TestCase):
 
     def test_app_assets_bypass_legacy_cache_on_normal_and_conditional_reload(self):
         for path in ("/", "/index.html", "/app.js", "/app.js?v=e7-walkthrough-1",
-                     "/vendor/dagre-1.1.5.min.js", "/source.js", "/comparison.js", "/accepted-program.js",
+                     "/vendor/dagre-1.1.5.min.js", "/source.js", "/comparison.js", "/accepted-program.js", "/editor.js",
                      "/programs.js", "/study.js", "/study-draft.js", "/study-messages.js", "/task-clock.js",
                      "/style.css"):
             with self.subTest(path=path):
@@ -220,7 +220,8 @@ class FastApiTests(unittest.TestCase):
                 self.assertEqual(conditional.headers["cache-control"], "no-store")
         html = self.client.get("/").text
         for name in ("vendor/dagre-1.1.5.min.js", "app.js", "source.js", "comparison.js", "accepted-program.js",
-                     "programs.js", "study.js", "study-draft.js", "study-messages.js", "task-clock.js", "style.css"):
+                     "editor.js", "programs.js", "study.js", "study-draft.js", "study-messages.js", "task-clock.js",
+                     "style.css"):
             self.assertIn(f'/{name}"', html)
 
     def test_errors_are_typed_and_controlled(self) -> None:
