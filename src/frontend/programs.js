@@ -25,9 +25,11 @@
 
   // This tab's uploads, oldest first: { programId, fileName, source, renamedFrom, origin, warnings }, with the
   // safe name and the normalised source that were sent, the name as chosen if it was not safe (else null),
-  // where the program came from: { kind: "new" } for one written in the editor, else null for an uploaded
-  // file, and clang's warnings as the server listed them. A failed upload is never kept. They survive a
-  // reload in this tab (session storage), not across tabs.
+  // where the program came from, and clang's warnings as the server listed them. origin is null for an
+  // uploaded file; a compiled edit keeps where its first edit started, however many compiled edits ago:
+  // { kind: "curated", exampleId, source } (Edit a copy), { kind: "upload", fileName, source } (Edit on an
+  // uploaded file; source is the text first uploaded) or { kind: "new" } (New…). A failed upload is never
+  // kept. They survive a reload in this tab (session storage), not across tabs.
   const UPLOADS_KEY = "irexplorer.programs.uploads";
   const uploads = readUploads();
   // After a reload nothing reopens by itself, but a tab with uploads opens in Your files.
@@ -42,13 +44,14 @@
   // compile). A file the browser refuses before sending fails with the server's invalid_program error.
   let card = null;
   let ticking = null;
-  // The program open in the editor, if any: { title, origin, compiled, workspace, opener, exampleSelectDisabled,
-  // confirming }. compiled is true when it opened on the program on screen (Edit a copy or Edit), whose
-  // compiled source the source panel keeps showing beside it, and the margin marks changes against, and
-  // false for a new program; workspace is the panels and function on screen, for the compiled edit to open
-  // with (app.js currentWorkspace), or null. opener is the button that opened it, which gets focus back when
-  // it closes. While it is open the editor stands in for the panels and the comparison (which stay as they
-  // were behind it), and the file controls are disabled.
+  // The program open in the editor, if any: { title, origin, replaces, compiled, workspace, opener,
+  // exampleSelectDisabled, confirming }. replaces is the programId of the Your files entry a compile replaces
+  // (Edit), or null when it adds one (Edit a copy, New…). compiled is true when it opened on the program on
+  // screen (Edit a copy or Edit), whose compiled source the source panel keeps showing beside it, and the
+  // margin marks changes against, and false for a new program; workspace is the panels and function on
+  // screen, for the compiled edit to open with (app.js currentWorkspace), or null. opener is the button that
+  // opened it, which gets focus back when it closes. While it is open the editor stands in for the panels
+  // and the comparison (which stay as they were behind it), and the file controls are disabled.
   let editing = null;
   // The warnings the list was last built for, so it is rebuilt, and closed, only for another program.
   let listedWarnings = null;
@@ -103,6 +106,10 @@
     view.edit = h("button", { id: "program-edit", type: "button", onclick: openEdit });
     view.sourceNote = h("p", { id: "program-source-note", class: "program-source-note" }, SOURCE_NOTE);
     view.renamed = h("p", { id: "program-renamed", class: "program-renamed" });
+    // Where the compiled edit open came from, with a way back to it: under Edit, in the source controls.
+    view.originName = h("span");
+    view.openOriginal = h("button", { type: "button", class: "program-link", onclick: openOriginal }, "Open the original");
+    view.origin = h("p", { id: "program-origin", class: "program-origin" }, "Edited from ", view.originName, ". ", view.openOriginal);
     view.fileInput = h("input", { id: "program-file-input", type: "file", accept: ".c", hidden: true, onchange: () => {
       const [file] = view.fileInput.files;
       view.fileInput.value = "";
@@ -144,7 +151,7 @@
   function attach() {
     view.controls.prepend(view.mode);
     view.fileControl.after(view.yourControl, view.upload, view.newProgram);
-    view.controls.append(view.edit);
+    view.controls.append(view.edit, view.origin);
     view.controls.after(view.renamed);
     view.controls.closest(".source-heading").after(view.warnings);
     view.sourceLines.after(view.drop, view.fileInput);
@@ -168,7 +175,7 @@
     clearInterval(ticking);
     ticking = null;
     view.title.replaceWith(view.summary);
-    for (const element of [view.mode, view.yourControl, view.upload, view.newProgram, view.edit, view.renamed, view.warnings, view.drop, view.fileInput, view.card]) {
+    for (const element of [view.mode, view.yourControl, view.upload, view.newProgram, view.edit, view.renamed, view.origin, view.warnings, view.drop, view.fileInput, view.card]) {
       element.remove();
     }
     for (const line of view.sourceLines.querySelectorAll(".is-warning")) line.classList.remove("is-warning");
@@ -215,6 +222,11 @@
     const renamedFrom = card?.renamedFrom ?? current?.renamedFrom;
     view.renamed.hidden = !renamedFrom;
     view.renamed.textContent = renamedFrom ? `Renamed from “${renamedFrom}”.` : "";
+    const origin = !card && current?.origin?.kind !== "new" && current?.origin;
+    view.origin.hidden = !origin;
+    view.originName.textContent = !origin ? ""
+      : origin.kind === "curated" ? `curated ${exampleName(origin.exampleId)}` : `your upload ${origin.fileName}`;
+    view.openOriginal.disabled = locked;
     // The source of a program that is compiling, or that failed, is read-only. It is dimmed unless it
     // carries the compile errors to read.
     const errorLines = new Set(sourceDiagnostics().filter(diagnostic => diagnostic.severity.includes("error"))
@@ -273,8 +285,9 @@
     announce(`${elements.notice.textContent} Clang reported ${count} warning${count === 1 ? "" : "s"}, listed above the source.`);
   }
 
-  // How Your files lists a program: a new one written in the editor says so.
-  const listed = upload => upload.origin?.kind === "new" ? `${upload.fileName} · new` : upload.fileName;
+  // How Your files lists a program: a compiled edit says it is edited, or new if written in the editor.
+  const listed = upload => (upload.origin ? `${upload.fileName} · ${upload.origin.kind === "new" ? "new" : "edited"}` : upload.fileName);
+  const exampleName = exampleId => exampleId.replaceAll("_", " ");
 
   // The upload is the only file in the server's user-programs directory, whose path the server trims, so a
   // diagnostic against the upload names a bare file; one in a header keeps its path.
@@ -318,18 +331,18 @@
         ...(cancel ? [h("div", { class: "program-actions" },
           h("button", { type: "button", onclick: () => cancel.abort() }, "Cancel"))] : []));
     } else if (card.kind === "cancelled") {
-      const { fileName, renamedFrom, origin, workspace, source } = card;
+      const { fileName, renamedFrom, origin, workspace, source, replaces } = card;
       view.card.replaceChildren(
         h("h2", { id: "program-card-heading" }, "Compiling cancelled"),
         h("p", {}, `${fileName} was not compiled.`),
         // Compiled again under the name it was chosen as, so a renamed file still says so.
-        programActions(() => compile(renamedFrom ?? fileName, source, origin, workspace)));
+        programActions(() => compile(renamedFrom ?? fileName, source, origin, workspace, replaces)));
     } else {
       view.card.replaceChildren(...failureContent(card));
     }
   }
 
-  function failureContent({ fileName, renamedFrom, origin, workspace, source, error }) {
+  function failureContent({ fileName, renamedFrom, origin, workspace, source, replaces, error }) {
     const refused = error.code === "invalid_program";
     return [
       h("h2", { id: "program-card-heading" }, `${fileName} could not be opened`),
@@ -340,7 +353,7 @@
       ...(error.parserMessage ? [h("details", { class: "program-parser-message" },
         h("summary", {}, "Parser message"), h("pre", {}, error.parserMessage))] : []),
       // Compiled again under the name it was chosen as, so a renamed file still says so.
-      programActions(RETRYABLE.has(error.code) && (() => compile(renamedFrom ?? fileName, source, origin, workspace))),
+      programActions(RETRYABLE.has(error.code) && (() => compile(renamedFrom ?? fileName, source, origin, workspace, replaces))),
     ];
   }
 
@@ -401,8 +414,9 @@
   // Check a file name and its text as the server will, then send the safe name and normalised source,
   // which the server accepts unchanged. `text` is null if the file is not UTF-8. `origin` is where the
   // program came from, as Your files keeps it. `workspace` (app.js currentWorkspace), if given, is the
-  // panels and function the compiled program opens with.
-  async function compile(fileName, text, origin = null, workspace = null) {
+  // panels and function the compiled program opens with. `replaces`, if given, is the programId of the Your
+  // files entry the compiled program takes the place of.
+  async function compile(fileName, text, origin = null, workspace = null, replaces = null) {
     if (card?.kind === "compiling") return;
     mode = "yours";
     current = null;
@@ -417,7 +431,7 @@
     const renamedFrom = accepted.fileName === fileName ? null : fileName;
     sourceState.data = { file: accepted.fileName, text: accepted.source };
     renderSource();
-    const compiling = { kind: "compiling", fileName: accepted.fileName, renamedFrom, origin, workspace, started: performance.now(),
+    const compiling = { kind: "compiling", fileName: accepted.fileName, renamedFrom, origin, workspace, replaces, started: performance.now(),
       cancel: new AbortController() };
     card = compiling;
     render();
@@ -425,20 +439,20 @@
     const result = await postProgram(accepted.fileName, accepted.source, compiling.cancel.signal);
     // Explore was left while it compiled (see detach): keep a compiled upload, but open nothing.
     if (card !== compiling) {
-      if (result.ok) keep({ ...result.program, renamedFrom, origin });
+      if (result.ok) keep({ ...result.program, renamedFrom, origin }, replaces);
       return;
     }
     // Cancel dropped the request, so the server stopped the compile; whatever the request came to is ignored.
     if (compiling.cancel.signal.aborted) {
-      showCancelled({ fileName: accepted.fileName, renamedFrom, origin, workspace, source: accepted.source });
+      showCancelled({ fileName: accepted.fileName, renamedFrom, origin, workspace, replaces, source: accepted.source });
       return;
     }
     if (!result.ok) {
-      showFailure({ fileName: accepted.fileName, renamedFrom, origin, workspace, source: accepted.source, error: result.error });
+      showFailure({ fileName: accepted.fileName, renamedFrom, origin, workspace, replaces, source: accepted.source, error: result.error });
       return;
     }
     const program = { ...result.program, renamedFrom, origin };
-    keep(program);
+    keep(program, replaces);
     current = program;
     await loadProgram(program, workspace);
     if (card !== compiling) return;
@@ -447,12 +461,30 @@
     announceWarnings(program);
   }
 
-  // An upload of a program already held replaces it, so the name it was renamed from is the latest.
-  function keep(program) {
+  // A compiled edit from Edit takes the place of the entry it started from (`replaces`); anything else is
+  // added at the end. An upload of a program already held replaces it, so the name it was renamed from is
+  // the latest, and a program is never listed twice.
+  function keep(program, replaces = null) {
     const held = uploads.findIndex(upload => upload.programId === program.programId);
-    if (held < 0) uploads.push(program);
+    const replaced = replaces === null ? -1 : uploads.findIndex(upload => upload.programId === replaces);
+    if (replaced >= 0) {
+      uploads[replaced] = program;
+      if (held >= 0 && held !== replaced) uploads.splice(held, 1);
+    } else if (held < 0) uploads.push(program);
     else uploads[held] = program;
     keepUploads();
+  }
+
+  // `fileName`, or, when Your files already lists that name (bar the entry being replaced), the first of
+  // "name (2).c", "name (3).c", … that it does not. The list holds safe names, so names are compared as the
+  // compiler would see them.
+  function unusedName(fileName, replaces) {
+    const taken = new Set(uploads.filter(upload => upload.programId !== replaces).map(upload => upload.fileName));
+    const [, stem, extension] = /^([\s\S]*)(\.[cC])$/.exec(fileName) ?? [];
+    if (!stem || !taken.has(AcceptedProgram.safeFileName(fileName))) return fileName;
+    let number = 2;
+    while (taken.has(AcceptedProgram.safeFileName(`${stem} (${number})${extension}`))) number += 1;
+    return `${stem} (${number})${extension}`;
   }
 
   // POST /api/programs and wait for the compile: { ok: true, program } or { ok: false, error }. Aborting
@@ -476,7 +508,7 @@
 
   // New… (or Write or paste a program): a new program, named program.c, starting from STARTER.
   function openNew(event) {
-    openEditor({ title: "New program", origin: { kind: "new" }, fileName: "program.c", text: STARTER, compiled: false },
+    openEditor({ title: "New program", origin: { kind: "new" }, replaces: null, fileName: "program.c", text: STARTER, compiled: false },
       event.currentTarget, "New program. Write or paste C, then compile it.");
   }
 
@@ -484,17 +516,21 @@
   function openEdit(event) {
     if (!appState.ready) return;
     const { file, text } = sourceState.data;
+    // An edit of one of your files replaces its entry, and keeps the entry's origin, or the file as uploaded
+    // if it is not an edit itself; a copy of a curated example is added.
     const program = mode === "yours"
-      ? { title: `Editing ${current.fileName}`, origin: current.origin ?? { kind: "upload", fileName: current.fileName } }
-      : { title: `Editing a copy of curated ${appState.exampleId.replaceAll("_", " ")}`, origin: { kind: "curated", exampleId: appState.exampleId } };
+      ? { title: `Editing ${current.fileName}`, replaces: current.programId,
+        origin: current.origin ?? { kind: "upload", fileName: current.fileName, source: current.source } }
+      : { title: `Editing a copy of curated ${exampleName(appState.exampleId)}`, replaces: null,
+        origin: { kind: "curated", exampleId: appState.exampleId, source: text } };
     openEditor({ ...program, fileName: file, text, compiled: true }, event.currentTarget, `${program.title}. Change the C, then compile it.`);
   }
 
   // Open the editor on `text` under `fileName`. Over a program on screen, the compiled edit opens with its
   // panels and function.
-  function openEditor({ title, origin, fileName, text, compiled }, opener, announcement) {
+  function openEditor({ title, origin, replaces, fileName, text, compiled }, opener, announcement) {
     if (editing || card?.kind === "compiling") return;
-    editing = { title, origin, compiled, workspace: appState.ready ? currentWorkspace() : null, opener,
+    editing = { title, origin, replaces, compiled, workspace: appState.ready ? currentWorkspace() : null, opener,
       exampleSelectDisabled: elements.exampleSelect.disabled, confirming: false };
     view.editorName.value = fileName;
     view.editor.load(text, { compiled: compiled ? text : null });
@@ -551,6 +587,27 @@
     keep.focus();
   }
 
+  // Open the original: the curated example under Curated examples, or the first upload, opened from Your
+  // files if it is still listed there as an upload, else compiled again from the text kept.
+  async function openOriginal() {
+    const { origin } = current;
+    // The button goes with the line, so the keyboard is put on the select the original is chosen in.
+    let select = view.yourSelect;
+    if (origin.kind === "curated") {
+      setMode("curated");
+      elements.exampleSelect.value = origin.exampleId;
+      const opened = loadExample();
+      renderEdit();
+      await opened;
+      select = elements.exampleSelect;
+    } else {
+      const uploaded = uploads.find(upload => !upload.origin && upload.source === origin.source);
+      if (uploaded) await openUpload(uploaded.programId);
+      else await compile(origin.fileName, origin.source);
+    }
+    if (select.checkVisibility() && !select.disabled) select.focus();
+  }
+
   function leaveEditor() {
     const { opener } = editing;
     closeEditor();
@@ -562,11 +619,11 @@
   // Compile and Ctrl/⌘+Enter: the editor closes and the program compiles as an upload does.
   function compileEditor() {
     if (!editing) return;
-    const { origin, workspace } = editing;
-    const fileName = view.editorName.value.trim(), text = view.editor.text;
+    const { origin, workspace, replaces } = editing;
+    const fileName = unusedName(view.editorName.value.trim(), replaces), text = view.editor.text;
     const focused = view.editorSection.contains(document.activeElement);
     closeEditor();
-    compile(fileName, text, origin, workspace);
+    compile(fileName, text, origin, workspace, replaces);
     // The card is up at once; keep the keyboard in it (on Cancel, or the first way on from a refusal).
     if (focused) view.card.querySelector("button")?.focus();
   }
