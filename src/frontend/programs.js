@@ -20,7 +20,8 @@
     yours: "Upload a C file, or choose one of your files, to start comparing.",
   };
 
-  // The server lists at most this many of clang's warnings on a program that compiled.
+  // The server lists at most this many of clang's warnings on a program that compiled, and does not say
+  // whether there were more, so a full list is described as at least this many.
   const MAX_WARNINGS = 20;
 
   // This tab's uploads, oldest first: { programId, fileName, source, renamedFrom, origin, warnings }, with the
@@ -303,10 +304,11 @@
     view.warnings.hidden = !warnings.length;
     if (warnings !== listedWarnings) {
       listedWarnings = warnings;
-      const count = `${warnings.length} clang warning${warnings.length === 1 ? "" : "s"}`;
       view.warnings.open = false;
       view.warnings.replaceChildren(
-        h("summary", {}, warnings.length >= MAX_WARNINGS ? `${count} · at most ${MAX_WARNINGS} are listed` : count),
+        h("summary", {}, warnings.length >= MAX_WARNINGS
+          ? `At least ${MAX_WARNINGS} clang warnings · the first ${MAX_WARNINGS} are listed`
+          : `${warnings.length} clang warning${warnings.length === 1 ? "" : "s"}`),
         h("ul", { class: "program-diagnostics", "aria-label": "Clang warnings" }, ...warnings.map(warning => diagnosticItem(warning))));
     }
     markWarnings();
@@ -324,7 +326,9 @@
   function announceWarnings(program) {
     const count = program.warnings?.length;
     if (!count || appState.programId !== program.programId || !appState.ready) return;
-    announce(`${elements.notice.textContent} Clang reported ${count} warning${count === 1 ? "" : "s"}, listed above the source.`);
+    announce(`${elements.notice.textContent} ${count >= MAX_WARNINGS
+      ? `Clang reported at least ${MAX_WARNINGS} warnings; the first ${MAX_WARNINGS} are listed above the source.`
+      : `Clang reported ${count} warning${count === 1 ? "" : "s"}, listed above the source.`}`);
   }
 
   // How Your files lists a program: a compiled edit says it is edited, or new if written in the editor.

@@ -407,12 +407,13 @@ const scenarios = {
     const warned = [7, 17, 24, 28, 33, 39, 47, 52, 58, 62, 69, 73, 74, 80, 81, 88, 89, 102, 103];
     await check('The warnings are listed in a closed disclosure at the top of the source panel, above the source lines',
       `(() => { const warnings = document.querySelector('#program-warnings'); return ${visible('#program-warnings')} && warnings.matches('#source-panel > details') && !warnings.open && warnings.compareDocumentPosition(document.querySelector('#source-lines')) & Node.DOCUMENT_POSITION_FOLLOWING && document.querySelector('.source-heading').compareDocumentPosition(warnings) & Node.DOCUMENT_POSITION_FOLLOWING; })()`);
-    await check('Its summary counts the warnings and says at most 20 are listed',
-      `document.querySelector('#program-warnings summary').textContent === '20 clang warnings · at most 20 are listed'`);
+    // The server lists at most 20, so with 20 the page cannot tell whether clang reported more.
+    await check('Its summary says there were at least 20 warnings, and the first 20 are listed',
+      `document.querySelector('#program-warnings summary').textContent === 'At least 20 clang warnings · the first 20 are listed'`);
     await check('The comparison stays open beside the warnings', `${visible('#left-panel')} && ${visible('.comparison-status')}`);
     await check('Each line with a warning is marked in the source, and no other',
       `[...document.querySelectorAll('#source-lines .source-line.is-warning')].map(line => Number(line.dataset.line)).join(',') === '${warned.join(',')}'`);
-    await check('The opened program is announced with its warnings', `/^clang_warnings\\.c is ready\\..* Clang reported 20 warnings, listed above the source\\.$/.test(document.querySelector('#notice').textContent)`);
+    await check('The opened program is announced with its warnings', `/^clang_warnings\\.c is ready\\..* Clang reported at least 20 warnings; the first 20 are listed above the source\\.$/.test(document.querySelector('#notice').textContent)`);
     await click('#program-warnings summary');
     await check('The warnings are a labelled list of 20, one button each reading "Line L, column C: message", with no notes',
       `(() => { const list = document.querySelector('#program-warnings ul'), buttons = [...list.querySelectorAll('li[data-severity="warning"] button')].map(button => button.textContent); return ${visible('#program-warnings ul')} && list.getAttribute('aria-label') === 'Clang warnings' && list.children.length === 20 && buttons.length === 20 && buttons[0] === 'Line 7, column 16: using the result of an assignment as a condition without parentheses [-Wparentheses]' && buttons[19] === 'Line 103, column 18: equality comparison result unused [-Wunused-comparison]' && !list.textContent.includes('place parentheses'); })()`);
