@@ -45,7 +45,7 @@ The corpus sources are stored as the app sends them, each beside a directory of 
 .venv/bin/python scripts/record_user_programs.py
 ```
 
-It sends each program to the stack's compiler service (inside its container, so a program the app cannot show yet is recorded too) and rewrites its recording.
+It sends each program to the stack's compiler service (inside its container, so a program the app cannot show yet is recorded too) and rewrites its recording. Name file names after the command (`… record_user_programs.py clang_warnings.c`) to record only those programs. A recording keeps the `-O0` command's stderr (clang's warnings) as `<stem>_O0_stderr.txt` only when clang printed something; the fake `clang` replays a missing one as empty, so the curated artefacts never gain the file.
 
 ## Lint and type checks
 
