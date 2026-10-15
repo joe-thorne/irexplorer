@@ -1,0 +1,61 @@
+/workspace/user-programs/ends_in_abort.c:11:12: remark: 'checked_divide' inlined into 'main' with (cost=-40, threshold=375) at callsite main:1:12; [-Rpass=inline]
+   11 |     return checked_divide(84, 2) == 42 ? 0 : 1;
+      |            ^
+/workspace/user-programs/ends_in_abort.c:3:1: remark: X86 DAG->DAG Instruction Selection: Function: checked_divide: MI Instruction count changed from 0 to 16; Delta: 16 [-Rpass-analysis=size-info]
+    3 | int checked_divide(int numerator, int denominator) {
+      | ^
+/workspace/user-programs/ends_in_abort.c:3:1: remark: Debug Variable Analysis: Function: checked_divide: MI Instruction count changed from 16 to 14; Delta: -2 [-Rpass-analysis=size-info]
+/workspace/user-programs/ends_in_abort.c:3:1: remark: 1 virtual registers copies 9.999990e-01 total copies cost generated in function [-Rpass-missed=regalloc]
+/workspace/user-programs/ends_in_abort.c:3:1: remark: Virtual Register Rewriter: Function: checked_divide: MI Instruction count changed from 14 to 12; Delta: -2 [-Rpass-analysis=size-info]
+/workspace/user-programs/ends_in_abort.c:3:1: remark: 8 stack bytes in function 'checked_divide' [-Rpass-analysis=prologepilog]
+/workspace/user-programs/ends_in_abort.c:3:1: remark: Control Flow Optimizer: Function: checked_divide: MI Instruction count changed from 12 to 11; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/ends_in_abort.c:3:1: remark: Live DEBUG_VALUE analysis: Function: checked_divide: MI Instruction count changed from 11 to 17; Delta: 6 [-Rpass-analysis=size-info]
+/workspace/user-programs/ends_in_abort.c:3:1: remark: 
+Function: checked_divide [-Rpass-analysis=stack-frame-layout]
+/workspace/user-programs/ends_in_abort.c:3:5: note: could not determine the original source location for user-programs/ends_in_abort.c:0:0
+    3 | int checked_divide(int numerator, int denominator) {
+      |     ^
+/workspace/user-programs/ends_in_abort.c:3:5: remark: BasicBlock: entry
+JCC_1: 1
+TEST32rr: 1
+ [-Rpass-analysis=asm-printer]
+    3 | int checked_divide(int numerator, int denominator) {
+      |     ^
+/workspace/user-programs/ends_in_abort.c:3:5: note: could not determine the original source location for user-programs/ends_in_abort.c:0:0
+/workspace/user-programs/ends_in_abort.c:3:5: note: could not determine the original source location for user-programs/ends_in_abort.c:0:0
+/workspace/user-programs/ends_in_abort.c:3:5: remark: BasicBlock: if.end
+CDQ: 1
+IDIV32r: 1
+MOV32rr: 1
+RET64: 1
+ [-Rpass-analysis=asm-printer]
+    3 | int checked_divide(int numerator, int denominator) {
+      |     ^
+/workspace/user-programs/ends_in_abort.c:3:5: note: could not determine the original source location for user-programs/ends_in_abort.c:0:0
+/workspace/user-programs/ends_in_abort.c:3:5: note: could not determine the original source location for user-programs/ends_in_abort.c:0:0
+/workspace/user-programs/ends_in_abort.c:3:5: remark: BasicBlock: if.then
+CALL64pcrel32: 1
+PUSH64r: 1
+ [-Rpass-analysis=asm-printer]
+    3 | int checked_divide(int numerator, int denominator) {
+      |     ^
+/workspace/user-programs/ends_in_abort.c:3:5: note: could not determine the original source location for user-programs/ends_in_abort.c:0:0
+/workspace/user-programs/ends_in_abort.c:3:1: remark: 8 instructions in function [-Rpass-analysis=asm-printer]
+    3 | int checked_divide(int numerator, int denominator) {
+      | ^
+/workspace/user-programs/ends_in_abort.c:10:1: remark: X86 DAG->DAG Instruction Selection: Function: main: MI Instruction count changed from 0 to 3; Delta: 3 [-Rpass-analysis=size-info]
+   10 | int main(void) {
+      | ^
+/workspace/user-programs/ends_in_abort.c:10:1: remark: Peephole Optimizations: Function: main: MI Instruction count changed from 3 to 2; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/ends_in_abort.c:10:1: remark: 0 stack bytes in function 'main' [-Rpass-analysis=prologepilog]
+/workspace/user-programs/ends_in_abort.c:10:1: remark: 
+Function: main [-Rpass-analysis=stack-frame-layout]
+/workspace/user-programs/ends_in_abort.c:11:5: remark: BasicBlock: entry
+RET64: 1
+XOR32rr: 1
+ [-Rpass-analysis=asm-printer]
+   11 |     return checked_divide(84, 2) == 42 ? 0 : 1;
+      |     ^
+/workspace/user-programs/ends_in_abort.c:10:1: remark: 2 instructions in function [-Rpass-analysis=asm-printer]
+   10 | int main(void) {
+      | ^

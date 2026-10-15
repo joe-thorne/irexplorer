@@ -1,0 +1,309 @@
+--- !Missed
+Pass:            inline
+Name:            NoDefinition
+DebugLoc:        { File: 'user-programs/ends_in_abort.c', Line: 5, Column: 9 }
+Function:        checked_divide
+Args:
+  - Callee:          abort
+  - String:          ' will not be inlined into '
+  - Caller:          checked_divide
+    DebugLoc:        { File: 'user-programs/ends_in_abort.c', Line: 3, 
+                       Column: 0 }
+  - String:          ' because its definition is unavailable'
+...
+--- !Passed
+Pass:            inline
+Name:            Inlined
+DebugLoc:        { File: 'user-programs/ends_in_abort.c', Line: 11, Column: 12 }
+Function:        main
+Args:
+  - String:          ''''
+  - Callee:          checked_divide
+    DebugLoc:        { File: 'user-programs/ends_in_abort.c', Line: 3, 
+                       Column: 0 }
+  - String:          ''' inlined into '''
+  - Caller:          main
+    DebugLoc:        { File: 'user-programs/ends_in_abort.c', Line: 10, 
+                       Column: 0 }
+  - String:          ''''
+  - String:          ' with '
+  - String:          '(cost='
+  - Cost:            '-40'
+  - String:          ', threshold='
+  - Threshold:       '375'
+  - String:          ')'
+  - String:          ' at callsite '
+  - String:          main
+  - String:          ':'
+  - Line:            '1'
+  - String:          ':'
+  - Column:          '12'
+  - String:          ';'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/ends_in_abort.c', Line: 3, Column: 0 }
+Function:        checked_divide
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        checked_divide
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '16'
+  - String:          '; Delta: '
+  - Delta:           '16'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/ends_in_abort.c', Line: 3, Column: 0 }
+Function:        checked_divide
+Args:
+  - Pass:            Debug Variable Analysis
+  - String:          ': Function: '
+  - Function:        checked_divide
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '16'
+  - String:          ' to '
+  - MIInstrsAfter:   '14'
+  - String:          '; Delta: '
+  - Delta:           '-2'
+...
+--- !Missed
+Pass:            regalloc
+Name:            SpillReloadCopies
+DebugLoc:        { File: 'user-programs/ends_in_abort.c', Line: 3, Column: 1 }
+Function:        checked_divide
+Args:
+  - NumVRCopies:     '1'
+  - String:          ' virtual registers copies '
+  - TotalCopiesCost: '9.999990e-01'
+  - String:          ' total copies cost '
+  - String:          generated in function
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/ends_in_abort.c', Line: 3, Column: 0 }
+Function:        checked_divide
+Args:
+  - Pass:            Virtual Register Rewriter
+  - String:          ': Function: '
+  - Function:        checked_divide
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '14'
+  - String:          ' to '
+  - MIInstrsAfter:   '12'
+  - String:          '; Delta: '
+  - Delta:           '-2'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: 'user-programs/ends_in_abort.c', Line: 3, Column: 0 }
+Function:        checked_divide
+Args:
+  - NumStackBytes:   '8'
+  - String:          ' stack bytes in function '''
+  - Function:        checked_divide
+  - String:          ''''
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/ends_in_abort.c', Line: 3, Column: 0 }
+Function:        checked_divide
+Args:
+  - Pass:            Control Flow Optimizer
+  - String:          ': Function: '
+  - Function:        checked_divide
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '12'
+  - String:          ' to '
+  - MIInstrsAfter:   '11'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/ends_in_abort.c', Line: 3, Column: 0 }
+Function:        checked_divide
+Args:
+  - Pass:            Live DEBUG_VALUE analysis
+  - String:          ': Function: '
+  - Function:        checked_divide
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '11'
+  - String:          ' to '
+  - MIInstrsAfter:   '17'
+  - String:          '; Delta: '
+  - Delta:           '6'
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: 'user-programs/ends_in_abort.c', Line: 3, Column: 0 }
+Function:        checked_divide
+Args:
+  - String:          "\nFunction: checked_divide"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/ends_in_abort.c', Line: 0, Column: 0 }
+Function:        checked_divide
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      entry
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+  - String:          TEST32rr
+  - String:          ': '
+  - INST_TEST32rr:   '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/ends_in_abort.c', Line: 0, Column: 0 }
+Function:        checked_divide
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      if.end
+  - String:          "\n"
+  - String:          CDQ
+  - String:          ': '
+  - INST_CDQ:        '1'
+  - String:          "\n"
+  - String:          IDIV32r
+  - String:          ': '
+  - INST_IDIV32r:    '1'
+  - String:          "\n"
+  - String:          MOV32rr
+  - String:          ': '
+  - INST_MOV32rr:    '1'
+  - String:          "\n"
+  - String:          RET64
+  - String:          ': '
+  - INST_RET64:      '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/ends_in_abort.c', Line: 0, Column: 0 }
+Function:        checked_divide
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      if.then
+  - String:          "\n"
+  - String:          CALL64pcrel32
+  - String:          ': '
+  - INST_CALL64pcrel32: '1'
+  - String:          "\n"
+  - String:          PUSH64r
+  - String:          ': '
+  - INST_PUSH64r:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: 'user-programs/ends_in_abort.c', Line: 3, Column: 0 }
+Function:        checked_divide
+Args:
+  - NumInstructions: '8'
+  - String:          ' instructions in function'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/ends_in_abort.c', Line: 10, Column: 0 }
+Function:        main
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        main
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '3'
+  - String:          '; Delta: '
+  - Delta:           '3'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/ends_in_abort.c', Line: 10, Column: 0 }
+Function:        main
+Args:
+  - Pass:            Peephole Optimizations
+  - String:          ': Function: '
+  - Function:        main
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '3'
+  - String:          ' to '
+  - MIInstrsAfter:   '2'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: 'user-programs/ends_in_abort.c', Line: 10, Column: 0 }
+Function:        main
+Args:
+  - NumStackBytes:   '0'
+  - String:          ' stack bytes in function '''
+  - Function:        main
+  - String:          ''''
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: 'user-programs/ends_in_abort.c', Line: 10, Column: 0 }
+Function:        main
+Args:
+  - String:          "\nFunction: main"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/ends_in_abort.c', Line: 11, Column: 5 }
+Function:        main
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      entry
+  - String:          "\n"
+  - String:          RET64
+  - String:          ': '
+  - INST_RET64:      '1'
+  - String:          "\n"
+  - String:          XOR32rr
+  - String:          ': '
+  - INST_XOR32rr:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: 'user-programs/ends_in_abort.c', Line: 10, Column: 0 }
+Function:        main
+Args:
+  - NumInstructions: '2'
+  - String:          ' instructions in function'
+...

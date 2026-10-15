@@ -2,7 +2,7 @@
 
 Explore how LLVM optimisation passes transform C programs through coordinated source, intermediate representation (IR), and control-flow graph (CFG) views.
 
-Choose a curated program, select two optimisation states, and follow corresponding instructions or blocks between them. The application ships with verified compiler outputs; running it does not require LLVM or compile user-supplied code.
+Choose a curated program, select two optimisation states, and follow corresponding instructions or blocks between them. The application ships with verified compiler outputs; running it does not require LLVM or compile user-supplied code unless you start the separate [user-programs stack](#run-with-user-programs).
 
 ## Project status
 
@@ -30,6 +30,21 @@ docker compose down       # Remove container; retain local submissions.
 
 Only localhost port 8000 is published. The application runs as a non-root user with read-only application files. Local submissions live in the named `study-data` volume, at `/data/local/submissions.sqlite3`; the database is created on the first submission. A legacy `/data/local/responses.sqlite3` store is moved and migrated on first use. Use `localhost` consistently because submission validation checks the exact origin.
 
+## Run with user programs
+
+User programs let you open one small C file of your own in **Explore** and follow it through the same states, panels and comparison report as a curated example. They are for local use only and run in a separate Compose stack, on port 8001, beside the study stack above. Build the pinned toolchain image once (it downloads about 1.7 GB of LLVM), then start the stack:
+
+```sh
+docker compose --profile toolchain build toolchain
+docker compose -f compose.user-programs.yaml up -d --build --wait
+```
+
+Open **http://localhost:8001**. Stop it with `docker compose -f compose.user-programs.yaml down`; add `--volumes` to remove its own local study store as well.
+
+The stack runs the same application image with the user programs setting on, beside a compiler service holding the pinned LLVM toolchain and the C library headers. On Apple Silicon the compiler runs `linux/amd64` under emulation, so a program takes a few seconds. The compiler service has no published port and no internet access, reaches only the application over the stack's internal network, has a read-only root file system and wipes its temporary work directory after each program. The application never gets the Docker socket and never runs `clang` or `opt` itself.
+
+With the stack up, `scripts/check_user_programs.sh` checks it against the real toolchain; see [tests/README.md](tests/README.md#real-compiler-smoke-check).
+
 ## Run with Python
 
 Python 3.12 is the container runtime baseline. From the repository root:
@@ -54,12 +69,12 @@ Open **http://127.0.0.1:8000**. Stop the Docker application first if it already 
 
 ## Release identity
 
-The navigation displays the application version. `/api/release` exposes its source fingerprint, instrument versions, and artefact checksum. Container builds verify all pinned compiler artefacts and generate `release.json` from the packaged inputs. Git checkouts identify as development builds even when a generated `release.json` remains from an earlier build.
+The navigation displays the application version. `/api/release` exposes its source fingerprint, instrument versions, and artefact checksum, and beside them a runtime `config` object (whether user programs are on) that is not part of the release identity. Container builds verify all pinned compiler artefacts and generate `release.json` from the packaged inputs. Git checkouts identify as development builds even when a generated `release.json` remains from an earlier build.
 
 For a new version:
 
 ```sh
-export IREXPLORER_VERSION=0.1.1
+export IREXPLORER_VERSION=0.6.0
 scripts/check_dependency_advisories.sh
 docker compose build app
 docker compose up -d --no-build --pull never --wait

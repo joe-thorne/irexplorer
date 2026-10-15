@@ -3,7 +3,7 @@
 from src.backend.api.app import create_app
 from src.backend.api.query import (
     DataUnavailableError,
-    LoadedExample,
+    ModelRecords,
     QueryError,
     QueryService,
 )
@@ -13,7 +13,7 @@ __all__ = [
     "QueryError",
     "DataUnavailableError",
     "QueryService",
-    "LoadedExample",
+    "ModelRecords",
     "create_app",
     "run_server",
 ]

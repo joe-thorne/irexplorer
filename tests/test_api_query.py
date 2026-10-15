@@ -1,3 +1,4 @@
+import os
 import unittest
 from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import patch
@@ -112,7 +113,11 @@ class QueryServiceTests(unittest.TestCase):
 
 class FastApiTests(unittest.TestCase):
     def setUp(self) -> None:
-        self.client = TestClient(create_app())
+        # No deployment settings, wherever the suite runs: the test image presets IREXPLORER_* variables, and its
+        # preset study origin would refuse this suite's submissions.
+        unset = {name: value for name, value in os.environ.items() if not name.startswith("IREXPLORER_")}
+        with patch.dict(os.environ, unset, clear=True):
+            self.client = TestClient(create_app())
 
     def tearDown(self) -> None:
         self.client.close()
@@ -199,8 +204,9 @@ class FastApiTests(unittest.TestCase):
 
     def test_app_assets_bypass_legacy_cache_on_normal_and_conditional_reload(self):
         for path in ("/", "/index.html", "/app.js", "/app.js?v=e7-walkthrough-1",
-                     "/vendor/dagre-1.1.5.min.js", "/source.js", "/comparison.js", "/study.js", "/study-draft.js",
-                     "/study-messages.js", "/task-clock.js", "/style.css"):
+                     "/vendor/dagre-1.1.5.min.js", "/source.js", "/comparison.js", "/accepted-program.js",
+                     "/programs.js", "/study.js", "/study-draft.js", "/study-messages.js", "/task-clock.js",
+                     "/style.css"):
             with self.subTest(path=path):
                 first = self.client.get(path)
                 self.assertEqual(first.status_code, 200)
@@ -213,8 +219,8 @@ class FastApiTests(unittest.TestCase):
                 self.assertEqual(conditional.content, first.content)
                 self.assertEqual(conditional.headers["cache-control"], "no-store")
         html = self.client.get("/").text
-        for name in ("vendor/dagre-1.1.5.min.js", "app.js", "source.js", "comparison.js", "study.js", "study-draft.js",
-                     "study-messages.js", "task-clock.js", "style.css"):
+        for name in ("vendor/dagre-1.1.5.min.js", "app.js", "source.js", "comparison.js", "accepted-program.js",
+                     "programs.js", "study.js", "study-draft.js", "study-messages.js", "task-clock.js", "style.css"):
             self.assertIn(f'/{name}"', html)
 
     def test_errors_are_typed_and_controlled(self) -> None:

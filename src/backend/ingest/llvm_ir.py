@@ -19,6 +19,21 @@ class IngestError(ValueError):
     """Raised when LLVM artefacts cannot be ingested into the model."""
 
 
+class NoFunctionDefinitions(IngestError):
+    """Raised for IR that defines no function: only declarations and globals, nothing to show."""
+
+    def __init__(self) -> None:
+        super().__init__("IR contains no function definitions")
+
+
+class UnsupportedTerminator(IngestError):
+    """Raised when a basic block ends in an LLVM terminator the model does not describe, such as ``indirectbr``."""
+
+    def __init__(self, opcode: str, function: str, block: str) -> None:
+        super().__init__(f"basic block {function}.{block} ends in unsupported terminator {opcode}")
+        self.opcode = opcode
+
+
 _SOURCE_RE = re.compile(r'^source_filename = "(.+)"$')
 _TRIPLE_RE = re.compile(r'^target triple = "(.+)"$')
 _DATALAYOUT_RE = re.compile(r'^target datalayout = "(.+)"$')
@@ -32,6 +47,9 @@ _VALUE_RE = re.compile(r"%[-A-Za-z0-9_.$]+")
 _LABEL_REF_RE = re.compile(r"label\s+%([-A-Za-z0-9_.$]+)")
 _SWITCH_CASE_RE = re.compile(r"\bi\d+\s+([^,]+),\s*label\s+%([-A-Za-z0-9_.$]+)")
 _PHI_INCOMING_RE = re.compile(r"\[[^\]]+,\s*%([-A-Za-z0-9_.$]+)\s*\]")
+# The terminators the model describes, and LLVM's others, which end a block the model cannot show.
+_TERMINATORS = frozenset({"br", "ret", "switch", "unreachable", "resume"})
+_UNSUPPORTED_TERMINATORS = frozenset({"indirectbr", "callbr", "invoke", "catchswitch", "catchret", "cleanupret"})
 
 
 @dataclass
@@ -99,7 +117,7 @@ def _parse_ir_state(
     remarks_text: str | None,
     opt_yaml_text: str | None,
 ) -> StateGraph:
-    lines = _join_switch_continuations(ir_text.splitlines())
+    lines = _join_continuations(ir_text.splitlines())
     source_filename = _parse_single(lines, _SOURCE_RE)
     debug_locations = _parse_debug_locations(lines, source_filename or "")
     target_triple = _parse_single(lines, _TRIPLE_RE)
@@ -107,7 +125,7 @@ def _parse_ir_state(
 
     functions = _parse_functions(lines, debug_locations)
     if not functions:
-        raise IngestError("IR contains no function definitions")
+        raise NoFunctionDefinitions()
 
     remarks = _parse_remarks(opt_yaml_text or remarks_text or "")
     remark_lookup = _remarks_by_function_location(remarks)
@@ -302,6 +320,9 @@ def _parse_functions(
 
     for line_no, line in enumerate(lines, start=1):
         define = _DEFINE_RE.match(line)
+        if define is None and line.startswith("define "):
+            # A name LLVM quotes, such as a C identifier with a non-ASCII letter, is never silently left out.
+            raise IngestError(f"unrecognised function definition at line {line_no}: {line}")
         if define:
             if current_function is not None:
                 raise IngestError(f"nested function definition at line {line_no}")
@@ -362,12 +383,14 @@ def _parse_functions(
     return functions
 
 
-def _join_switch_continuations(lines: list[str]) -> list[str]:
-    """Join LLVM's bracketed multi-line ``switch`` instructions.
+def _join_continuations(lines: list[str]) -> list[str]:
+    """Join LLVM's multi-line instructions: bracketed ``switch``, ``callbr`` and ``invoke``.
 
-    LLVM prints the default target on the instruction line and each case on a
-    following line.  The parser otherwise operates on one complete instruction
-    per line, so preserve that contract by forming one logical line here.
+    LLVM prints a switch's default target on the instruction line and each case
+    on a following line, and the ``to label`` destinations of ``callbr`` and
+    ``invoke`` on a line of their own.  The parser otherwise operates on one
+    complete instruction per line, so preserve that contract by forming one
+    logical line here.
     """
 
     joined: list[str] = []
@@ -375,6 +398,10 @@ def _join_switch_continuations(lines: list[str]) -> list[str]:
     while line_index < len(lines):
         line = lines[line_index]
         stripped = line.strip()
+        if stripped.startswith("to label ") and joined:
+            joined[-1] = f"{joined[-1]} {stripped}"
+            line_index += 1
+            continue
         if not (stripped.startswith("switch ") and stripped.endswith("[")):
             joined.append(line)
             line_index += 1
@@ -406,7 +433,10 @@ def _without_comment(text: str) -> str:
 def _require_terminated(function: _FunctionBuild, block: _BlockBuild) -> None:
     if not block.instructions:
         raise IngestError(f"empty basic block: {function.name}.{block.label}")
-    if not block.instructions[-1].is_terminator:
+    last = block.instructions[-1]
+    if last.opcode in _UNSUPPORTED_TERMINATORS:
+        raise UnsupportedTerminator(last.opcode, function.name, block.label)
+    if not last.is_terminator:
         raise IngestError(f"basic block lacks terminator: {function.name}.{block.label}")
 
 
@@ -437,13 +467,11 @@ def _parse_instruction(
     source = debug_locations.get(debug_ref) if debug_ref else None
     successors = _successors(body)
     # Supported terminators are br, ret, switch (including LLVM's multi-line
-    # bracketed form), unreachable and resume. Other LLVM terminators
-    # (invoke, callbr, indirectbr, catchswitch, catchret, cleanupret) do not
-    # appear in these examples; if one ever ends a block it is left unrecognised
-    # and ingestion fails in a controlled way via _require_terminated (FR15/NFR8),
-    # never silently mislabelled. Broader terminator support belongs with any
-    # future arbitrary-source or additional-language work.
-    is_terminator = opcode in {"br", "ret", "switch", "unreachable", "resume"}
+    # bracketed form), unreachable and resume. A block ending in one of LLVM's
+    # other terminators (indirectbr for a computed goto, callbr for asm goto)
+    # fails in a controlled way via _require_terminated (FR15/NFR8), never
+    # silently mislabelled; a user program answers it as unsupported.
+    is_terminator = opcode in _TERMINATORS
 
     return _InstructionBuild(
         id=instruction_id,
@@ -465,7 +493,9 @@ def _normalise_opcode(body: str) -> str:
         raise IngestError("empty instruction")
     if len(words) >= 2 and words[0] in {"tail", "musttail", "notail"} and words[1] == "call":
         return "call"
-    return words[0]
+    # An operandless instruction meets its metadata with no space between:
+    # ``unreachable, !dbg !9`` must still read as ``unreachable``.
+    return words[0].rstrip(",")
 
 
 def _debug_ref(text: str) -> str | None:

@@ -8,24 +8,36 @@ A web application that shows how LLVM optimisation passes transform a program's 
 
 **Curated example**:
 One of the small, fixed C programs the application ships with, chosen to exhibit particular optimisations.
-_Avoid_: sample, test program, user program
+_Avoid_: sample, test program
+
+**User program**:
+C source supplied in the browser (uploaded, typed, or an edited copy of a curated example) and compiled on request; editing a curated example makes a user program and leaves the curated example unchanged.
+_Avoid_: custom example, user example, uploaded example
+
+**User programs setting**:
+The startup setting that makes user programs available in Explore; off unless deliberately turned on, never available in Study, and never combined with pilot or live collection.
+_Avoid_: feature flag, custom mode
 
 **Pinned toolchain**:
-The exact LLVM version and container environment in which all compiler artefacts are produced, so they can be regenerated identically.
+The exact LLVM release build and target that produce every compiler artefact, for a curated example or a user program.
 _Avoid_: environment pin, toolchain pin
 
 **Compiler artefacts**:
-The raw IR, CFG, and remark output produced by the pinned toolchain for a curated example.
+The raw IR and remark output the pinned toolchain produces for a curated example or a user program.
 _Avoid_: golden fixtures, canonical fixtures, canonical artefacts
 
+**Compiler service**:
+The separate container that compiles user programs on request with the pinned toolchain and returns only their compiler artefacts.
+_Avoid_: worker, sandbox, compile server, toolchain container
+
 **Model records**:
-The processed timelines and stored correspondences derived from compiler artefacts ahead of time; the only thing the running application reads.
+The processed timelines and stored correspondences derived from compiler artefacts, from which every query is answered. A curated example's are derived ahead of time; a user program's are derived when it is compiled and lost when the application restarts.
 _Avoid_: pre-baked records, baked data
 
 ### Timeline
 
 **Optimisation timeline**:
-The ordered sequence of recorded compiler states for one curated example, joined by the steps between them.
+The ordered sequence of recorded compiler states for one curated example or user program, joined by the steps between them.
 _Avoid_: pipeline, history
 
 **State**:
@@ -67,7 +79,7 @@ The set of links relating IR elements in one state to IR elements in another, ac
 _Avoid_: mapping, overlay
 
 **Stored correspondence**:
-A correspondence for one step, produced ahead of time from the compiler artefacts.
+A correspondence for one step, derived with the model records rather than on request.
 _Avoid_: overlay, baked overlay
 
 **Composed correspondence**:
@@ -234,5 +246,5 @@ _Avoid_: paused, disabled, offline collection
 ### Release
 
 **Release identity**:
-The version, source fingerprint, and artefact checksum that identify exactly which build of the application is running; recorded with every submission.
+The version, source fingerprint, and artefact checksum that identify exactly which build of the application is running; recorded with every submission. Runtime settings, such as whether user programs are enabled, are not part of it.
 _Avoid_: build number, revision (alone)

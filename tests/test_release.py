@@ -1,11 +1,14 @@
-"""Development checkouts must not advertise a stale packaged release."""
+"""Development checkouts must not advertise a stale packaged release, and the image builds with safe defaults."""
 import json
+import re
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from src.backend.release import metadata
+from scripts.build_release import IMAGE_FILES, source_fingerprint
+from src.backend.release import ROOT, metadata
 
 
 class ReleaseMetadataTests(unittest.TestCase):
@@ -23,3 +26,67 @@ class ReleaseMetadataTests(unittest.TestCase):
             (root / 'release.json').write_text(json.dumps({'version': '0.4.0', 'revision': 'current', 'files': {}}))
             with patch('src.backend.release.ROOT', root):
                 self.assertEqual(metadata(), {'version': '0.4.0', 'revision': 'current'})
+
+
+class ImageDefaultsTests(unittest.TestCase):
+    def setUp(self):
+        self.dockerfile = (ROOT / 'Dockerfile').read_text()
+
+    def test_branch_builds_carry_a_0_6_0_development_version(self):
+        # Until 0.6.0 is tagged, an image built from the user-programs branch is never mistaken for a release.
+        # Moving the default to 0.6.0 itself is the deliberate act of tagging that release.
+        default = re.search(r'^ARG APP_VERSION=(\S+)$', self.dockerfile, re.MULTILINE)
+        self.assertRegex(default and default.group(1), r'^0\.6\.0-dev\.[1-9][0-9]*$')
+
+    def test_image_leaves_user_programs_off(self):
+        self.assertIn('IREXPLORER_USER_PROGRAMS=0', self.dockerfile)
+        self.assertNotIn('IREXPLORER_COMPILER_URL', self.dockerfile)
+
+    def test_both_stacks_build_the_same_app_image_at_the_dockerfile_version(self):
+        # Feature on is runtime configuration, so neither stack may fall back to another version, target or tag.
+        default = re.search(r'^ARG APP_VERSION=(\S+)$', self.dockerfile, re.MULTILINE).group(1)
+        for name in ('docker-compose.yml', 'compose.user-programs.yaml'):
+            with self.subTest(compose=name):
+                compose = (ROOT / name).read_text()
+                self.assertIn('target: app', compose)
+                self.assertIn(f'APP_VERSION: ${{IREXPLORER_VERSION:-{default}}}', compose)
+                self.assertIn(f'image: irexplorer:${{IREXPLORER_VERSION:-{default}}}', compose)
+
+    def test_the_study_stack_states_that_user_programs_are_off(self):
+        compose = (ROOT / 'docker-compose.yml').read_text()
+        self.assertIn('IREXPLORER_USER_PROGRAMS: "0"', compose)
+        self.assertNotIn('IREXPLORER_COMPILER_URL', compose)
+
+
+class SourceFingerprintTests(unittest.TestCase):
+    """The release identity says exactly what was built, user-programs stack included."""
+
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        for name in (*IMAGE_FILES, 'src/backend/toolchain/compiler_service.py', 'examples/curated/score.c'):
+            (self.root / name).parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(ROOT / name, self.root / name)
+        (self.root / 'artefacts').mkdir()
+
+    def test_the_user_programs_stack_and_compiler_service_change_the_fingerprint(self):
+        for name in ('compose.user-programs.yaml', 'Dockerfile.compiler', 'src/backend/toolchain/compiler_service.py'):
+            with self.subTest(name=name):
+                before, files = source_fingerprint(self.root)
+                self.assertIn(name, files)
+                with (self.root / name).open('a') as file:
+                    file.write('\n# changed\n')
+                self.assertNotEqual(source_fingerprint(self.root)[0], before)
+
+    def test_a_missing_image_input_stops_the_build(self):
+        # The fingerprint is taken inside the image, so a file the Dockerfile forgot to copy must not pass silently.
+        (self.root / 'compose.user-programs.yaml').unlink()
+        with self.assertRaises(FileNotFoundError):
+            source_fingerprint(self.root)
+
+    def test_the_image_copies_every_file_the_fingerprint_names(self):
+        runtime = (ROOT / 'Dockerfile').read_text().split(' AS test')[0]
+        copied = {source for line in runtime.splitlines() if line.startswith('COPY ')
+                  for source in line.split()[1:-1]}
+        self.assertEqual(set(IMAGE_FILES) - copied, set())

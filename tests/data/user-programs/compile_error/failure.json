@@ -1,0 +1,6 @@
+{
+  "code": "command_failed",
+  "message": "clang exited with status 1.",
+  "command": "clang -O0 -g -Xclang -disable-O0-optnone -fno-discard-value-names -S -emit-llvm /workspace/user-programs/compile_error.c -o /workspace/out/compile_error_O0.ll",
+  "stderr": "/workspace/user-programs/compile_error.c:6:27: error: expected ';' after expression\n    6 |         total += values[i]\n      |                           ^\n      |                           ;\n/workspace/user-programs/compile_error.c:14:12: error: use of undeclared identifier 'mean'\n   14 |     return mean;\n      |            ^~~~\n2 errors generated.\n"
+}

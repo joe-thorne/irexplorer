@@ -1,0 +1,823 @@
+--- !Missed
+Pass:            inline-cost
+Name:            NeverInline
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 20, Column: 12 }
+Function:        main
+Args:
+  - Callee:          run
+    DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 1, 
+                       Column: 0 }
+  - String:          ' has uninlinable pattern ('
+  - InlineResult:    indirect branch
+  - String:          ') and cost is not fully computed'
+...
+--- !Missed
+Pass:            inline
+Name:            NeverInline
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 20, Column: 12 }
+Function:        main
+Args:
+  - String:          ''''
+  - Callee:          run
+    DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 1, 
+                       Column: 0 }
+  - String:          ''' not inlined into '''
+  - Caller:          main
+    DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 18, 
+                       Column: 0 }
+  - String:          ''' because it should never be inlined '
+  - String:          '(cost=never)'
+  - String:          ': '
+  - Reason:          indirect branch
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            LoopContainsUnsupportedTerminator
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 5, Column: 5 }
+Function:        run
+Args:
+  - String:          'loop not vectorized: '
+  - String:          Loop contains an unsupported terminator
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            NonReductionValueUsedOutsideLoop
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 0, Column: 0 }
+Function:        run
+Args:
+  - String:          'loop not vectorized: '
+  - String:          value that could not be identified as reduction is used outside the loop
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            NonReductionValueUsedOutsideLoop
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 5, Column: 5 }
+Function:        run
+Args:
+  - String:          'loop not vectorized: '
+  - String:          value that could not be identified as reduction is used outside the loop
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            EarlyExitTooManySuccessors
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 5, Column: 5 }
+Function:        run
+Args:
+  - String:          'loop not vectorized: '
+  - String:          Incorrect number of successors from early exiting block
+...
+--- !Analysis
+Pass:            loop-vectorize
+Name:            CantComputeNumberOfIterations
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 5, Column: 5 }
+Function:        run
+Args:
+  - String:          'loop not vectorized: '
+  - String:          could not determine number of loop iterations
+...
+--- !Missed
+Pass:            loop-vectorize
+Name:            MissedDetails
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 5, Column: 5 }
+Function:        run
+Args:
+  - String:          loop not vectorized
+...
+--- !Missed
+Pass:            slp-vectorizer
+Name:            NotPossible
+Function:        run
+Args:
+  - String:          'Cannot SLP vectorize list: vectorization was impossible'
+  - String:          ' with available vectorization factors'
+...
+--- !Missed
+Pass:            slp-vectorizer
+Name:            NotBeneficial
+Function:        run
+Args:
+  - String:          'List vectorization was possible but not beneficial with cost '
+  - Cost:            '0'
+  - String:          ' >= '
+  - Treshold:        '0'
+...
+--- !Missed
+Pass:            slp-vectorizer
+Name:            NotBeneficial
+Function:        run
+Args:
+  - String:          'List vectorization was possible but not beneficial with cost '
+  - Cost:            '0'
+  - String:          ' >= '
+  - Treshold:        '0'
+...
+--- !Missed
+Pass:            slp-vectorizer
+Name:            NotPossible
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 0, Column: 0 }
+Function:        run
+Args:
+  - String:          'Cannot SLP vectorize list: vectorization was impossible'
+  - String:          ' with available vectorization factors'
+...
+--- !Missed
+Pass:            slp-vectorizer
+Name:            NotBeneficial
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 0, Column: 0 }
+Function:        run
+Args:
+  - String:          'List vectorization was possible but not beneficial with cost '
+  - Cost:            '0'
+  - String:          ' >= '
+  - Treshold:        '0'
+...
+--- !Missed
+Pass:            slp-vectorizer
+Name:            NotBeneficial
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 0, Column: 0 }
+Function:        run
+Args:
+  - String:          'List vectorization was possible but not beneficial with cost '
+  - Cost:            '0'
+  - String:          ' >= '
+  - Treshold:        '0'
+...
+--- !Analysis
+Pass:            size-info
+Name:            IRSizeChange
+Function:        run
+Args:
+  - Pass:            Loop Strength Reduction
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '28'
+  - String:          ' to '
+  - IRInstrsAfter:   '30'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionIRSizeChange
+Function:        run
+Args:
+  - Pass:            Loop Strength Reduction
+  - String:          ': Function: '
+  - Function:        run
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '24'
+  - String:          ' to '
+  - IRInstrsAfter:   '26'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            IRSizeChange
+Function:        run
+Args:
+  - Pass:            CodeGen Prepare
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '30'
+  - String:          ' to '
+  - IRInstrsAfter:   '33'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '3'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionIRSizeChange
+Function:        run
+Args:
+  - Pass:            CodeGen Prepare
+  - String:          ': Function: '
+  - Function:        run
+  - String:          ': IR instruction count changed from '
+  - IRInstrsBefore:  '24'
+  - String:          ' to '
+  - IRInstrsAfter:   '29'
+  - String:          '; Delta: '
+  - DeltaInstrCount: '5'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 1, Column: 0 }
+Function:        run
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        run
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '46'
+  - String:          '; Delta: '
+  - Delta:           '46'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 1, Column: 0 }
+Function:        run
+Args:
+  - Pass:            Early Tail Duplication
+  - String:          ': Function: '
+  - Function:        run
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '46'
+  - String:          ' to '
+  - MIInstrsAfter:   '58'
+  - String:          '; Delta: '
+  - Delta:           '12'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 1, Column: 0 }
+Function:        run
+Args:
+  - Pass:            Remove dead machine instructions
+  - String:          ': Function: '
+  - Function:        run
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '58'
+  - String:          ' to '
+  - MIInstrsAfter:   '56'
+  - String:          '; Delta: '
+  - Delta:           '-2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 1, Column: 0 }
+Function:        run
+Args:
+  - Pass:            Machine Common Subexpression Elimination
+  - String:          ': Function: '
+  - Function:        run
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '56'
+  - String:          ' to '
+  - MIInstrsAfter:   '55'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 1, Column: 0 }
+Function:        run
+Args:
+  - Pass:            Peephole Optimizations
+  - String:          ': Function: '
+  - Function:        run
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '55'
+  - String:          ' to '
+  - MIInstrsAfter:   '54'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 1, Column: 0 }
+Function:        run
+Args:
+  - Pass:            Eliminate PHI nodes for register allocation
+  - String:          ': Function: '
+  - Function:        run
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '54'
+  - String:          ' to '
+  - MIInstrsAfter:   '71'
+  - String:          '; Delta: '
+  - Delta:           '17'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 1, Column: 0 }
+Function:        run
+Args:
+  - Pass:            Two-Address instruction pass
+  - String:          ': Function: '
+  - Function:        run
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '71'
+  - String:          ' to '
+  - MIInstrsAfter:   '76'
+  - String:          '; Delta: '
+  - Delta:           '5'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 1, Column: 0 }
+Function:        run
+Args:
+  - Pass:            Register Coalescer
+  - String:          ': Function: '
+  - Function:        run
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '76'
+  - String:          ' to '
+  - MIInstrsAfter:   '41'
+  - String:          '; Delta: '
+  - Delta:           '-35'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 1, Column: 0 }
+Function:        run
+Args:
+  - Pass:            Debug Variable Analysis
+  - String:          ': Function: '
+  - Function:        run
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '41'
+  - String:          ' to '
+  - MIInstrsAfter:   '27'
+  - String:          '; Delta: '
+  - Delta:           '-14'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 1, Column: 0 }
+Function:        run
+Args:
+  - Pass:            Virtual Register Rewriter
+  - String:          ': Function: '
+  - Function:        run
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '27'
+  - String:          ' to '
+  - MIInstrsAfter:   '38'
+  - String:          '; Delta: '
+  - Delta:           '11'
+...
+--- !Missed
+Pass:            shrink-wrap
+Name:            UnsupportedIrreducibleCFG
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 1, Column: 0 }
+Function:        run
+Args:
+  - String:          Irreducible CFGs are not supported yet.
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 1, Column: 0 }
+Function:        run
+Args:
+  - NumStackBytes:   '0'
+  - String:          ' stack bytes in function '''
+  - Function:        run
+  - String:          ''''
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 1, Column: 0 }
+Function:        run
+Args:
+  - Pass:            Control Flow Optimizer
+  - String:          ': Function: '
+  - Function:        run
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '38'
+  - String:          ' to '
+  - MIInstrsAfter:   '35'
+  - String:          '; Delta: '
+  - Delta:           '-3'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 1, Column: 0 }
+Function:        run
+Args:
+  - Pass:            Tail Duplication
+  - String:          ': Function: '
+  - Function:        run
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '35'
+  - String:          ' to '
+  - MIInstrsAfter:   '41'
+  - String:          '; Delta: '
+  - Delta:           '6'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 1, Column: 0 }
+Function:        run
+Args:
+  - Pass:            Live DEBUG_VALUE analysis
+  - String:          ': Function: '
+  - Function:        run
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '41'
+  - String:          ' to '
+  - MIInstrsAfter:   '67'
+  - String:          '; Delta: '
+  - Delta:           '26'
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 1, Column: 0 }
+Function:        run
+Args:
+  - String:          "\nFunction: run"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 0, Column: 0 }
+Function:        run
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      entry
+  - String:          "\n"
+  - String:          XOR32rr
+  - String:          ': '
+  - INST_XOR32rr:    '2'
+  - String:          "\n"
+  - String:          JMP64m
+  - String:          ': '
+  - INST_JMP64m:     '1'
+  - String:          "\n"
+  - String:          LEA64r
+  - String:          ': '
+  - INST_LEA64r:     '1'
+  - String:          "\n"
+  - String:          MOV32ri
+  - String:          ': '
+  - INST_MOV32ri:    '1'
+  - String:          "\n"
+  - String:          MOVZX32rm8
+  - String:          ': '
+  - INST_MOVZX32rm8: '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 0, Column: 0 }
+Function:        run
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      increment
+  - String:          "\n"
+  - String:          INC32r
+  - String:          ': '
+  - INST_INC32r:     '2'
+  - String:          "\n"
+  - String:          CMP32rr
+  - String:          ': '
+  - INST_CMP32rr:    '1'
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 0, Column: 0 }
+Function:        run
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      indirectgoto.backedge
+  - String:          "\n"
+  - String:          INC32r
+  - String:          ': '
+  - INST_INC32r:     '1'
+  - String:          "\n"
+  - String:          JMP64m
+  - String:          ': '
+  - INST_JMP64m:     '1'
+  - String:          "\n"
+  - String:          LEA64r
+  - String:          ': '
+  - INST_LEA64r:     '1'
+  - String:          "\n"
+  - String:          MOVSX64rr32
+  - String:          ': '
+  - INST_MOVSX64rr32: '1'
+  - String:          "\n"
+  - String:          MOVZX32rm8
+  - String:          ': '
+  - INST_MOVZX32rm8: '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 0, Column: 0 }
+Function:        run
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      double_it
+  - String:          "\n"
+  - String:          ADD32rr
+  - String:          ': '
+  - INST_ADD32rr:    '1'
+  - String:          "\n"
+  - String:          CMP32rr
+  - String:          ': '
+  - INST_CMP32rr:    '1'
+  - String:          "\n"
+  - String:          JCC_1
+  - String:          ': '
+  - INST_JCC_1:      '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 0, Column: 0 }
+Function:        run
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      ''
+  - String:          "\n"
+  - String:          INC32r
+  - String:          ': '
+  - INST_INC32r:     '2'
+  - String:          "\n"
+  - String:          JMP64m
+  - String:          ': '
+  - INST_JMP64m:     '1'
+  - String:          "\n"
+  - String:          LEA64r
+  - String:          ': '
+  - INST_LEA64r:     '1'
+  - String:          "\n"
+  - String:          MOVSX64rr32
+  - String:          ': '
+  - INST_MOVSX64rr32: '1'
+  - String:          "\n"
+  - String:          MOVZX32rm8
+  - String:          ': '
+  - INST_MOVZX32rm8: '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 0, Column: 0 }
+Function:        run
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      return
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 0, Column: 0 }
+Function:        run
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      .split
+  - String:          "\n"
+  - String:          RET64
+  - String:          ': '
+  - INST_RET64:      '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 1, Column: 0 }
+Function:        run
+Args:
+  - NumInstructions: '25'
+  - String:          ' instructions in function'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 18, Column: 0 }
+Function:        main
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        main
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '13'
+  - String:          '; Delta: '
+  - Delta:           '13'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 18, Column: 0 }
+Function:        main
+Args:
+  - Pass:            Peephole Optimizations
+  - String:          ': Function: '
+  - Function:        main
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '13'
+  - String:          ' to '
+  - MIInstrsAfter:   '12'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 18, Column: 0 }
+Function:        main
+Args:
+  - Pass:            X86 Fixup SetCC
+  - String:          ': Function: '
+  - Function:        main
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '12'
+  - String:          ' to '
+  - MIInstrsAfter:   '13'
+  - String:          '; Delta: '
+  - Delta:           '1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 18, Column: 0 }
+Function:        main
+Args:
+  - Pass:            Two-Address instruction pass
+  - String:          ': Function: '
+  - Function:        main
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '13'
+  - String:          ' to '
+  - MIInstrsAfter:   '14'
+  - String:          '; Delta: '
+  - Delta:           '1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 18, Column: 0 }
+Function:        main
+Args:
+  - Pass:            Register Coalescer
+  - String:          ': Function: '
+  - Function:        main
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '14'
+  - String:          ' to '
+  - MIInstrsAfter:   '12'
+  - String:          '; Delta: '
+  - Delta:           '-2'
+...
+--- !Missed
+Pass:            regalloc
+Name:            SpillReloadCopies
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 18, Column: 1 }
+Function:        main
+Args:
+  - NumVRCopies:     '1'
+  - String:          ' virtual registers copies '
+  - TotalCopiesCost: '1.000000e+00'
+  - String:          ' total copies cost '
+  - String:          generated in function
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 18, Column: 0 }
+Function:        main
+Args:
+  - Pass:            Virtual Register Rewriter
+  - String:          ': Function: '
+  - Function:        main
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '12'
+  - String:          ' to '
+  - MIInstrsAfter:   '10'
+  - String:          '; Delta: '
+  - Delta:           '-2'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 18, Column: 0 }
+Function:        main
+Args:
+  - NumStackBytes:   '8'
+  - String:          ' stack bytes in function '''
+  - Function:        main
+  - String:          ''''
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 18, Column: 0 }
+Function:        main
+Args:
+  - Pass:            'Prologue/Epilogue Insertion & Frame Finalization'
+  - String:          ': Function: '
+  - Function:        main
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '10'
+  - String:          ' to '
+  - MIInstrsAfter:   '12'
+  - String:          '; Delta: '
+  - Delta:           '2'
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 18, Column: 0 }
+Function:        main
+Args:
+  - String:          "\nFunction: main"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+Function:        main
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      entry
+  - String:          "\n"
+  - String:          CALL64pcrel32
+  - String:          ': '
+  - INST_CALL64pcrel32: '1'
+  - String:          "\n"
+  - String:          CMP32ri
+  - String:          ': '
+  - INST_CMP32ri:    '1'
+  - String:          "\n"
+  - String:          LEA64r
+  - String:          ': '
+  - INST_LEA64r:     '1'
+  - String:          "\n"
+  - String:          MOV32ri
+  - String:          ': '
+  - INST_MOV32ri:    '1'
+  - String:          "\n"
+  - String:          MOV32rr
+  - String:          ': '
+  - INST_MOV32rr:    '1'
+  - String:          "\n"
+  - String:          POP64r
+  - String:          ': '
+  - INST_POP64r:     '1'
+  - String:          "\n"
+  - String:          PUSH64r
+  - String:          ': '
+  - INST_PUSH64r:    '1'
+  - String:          "\n"
+  - String:          RET64
+  - String:          ': '
+  - INST_RET64:      '1'
+  - String:          "\n"
+  - String:          SETCCr
+  - String:          ': '
+  - INST_SETCCr:     '1'
+  - String:          "\n"
+  - String:          XOR32rr
+  - String:          ': '
+  - INST_XOR32rr:    '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: 'user-programs/computed_goto.c', Line: 18, Column: 0 }
+Function:        main
+Args:
+  - NumInstructions: '10'
+  - String:          ' instructions in function'
+...

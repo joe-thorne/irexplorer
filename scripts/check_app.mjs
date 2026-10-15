@@ -18,6 +18,9 @@ const ws = new WebSocket(page.webSocketDebuggerUrl);
 await new Promise(resolve => ws.addEventListener('open', resolve, { once: true }));
 let sequence = 0;
 const waiting = new Map(), exceptions = [], consoleErrors = [], checks = [];
+// These checks run with the user programs setting off; the runtime setting sits beside the release identity.
+if (release.config?.userPrograms !== false) throw Error(`Failed: /api/release reports user programs off; observed=${JSON.stringify(release.config)}`);
+checks.push('/api/release reports user programs off');
 ws.addEventListener('message', ({ data }) => {
   const message = JSON.parse(data);
   if (message.method === 'Runtime.exceptionThrown') exceptions.push(message.params.exceptionDetails);
@@ -354,6 +357,7 @@ try {
   await check('Default page opens Explore without entering Study', `!location.hash && document.querySelector('#study-screen').hidden && !document.querySelector('#explore-heading').hidden`);
   await select('#example-select', 'score');
   await until('window.StudyWorkspace?.ready');
+  await check('With user programs off no switch or upload control is built', `!document.querySelector('#source-mode, #your-file-select, #program-upload, #program-drop, #program-file-input, #program-card, #program-chip') && !document.querySelector('#workspace-shell').innerText.includes('Your files')`);
   await select('#example-select', 'quick_sort'); await until('window.StudyWorkspace.ready');
   await select('#left-state', '3'); await select('#right-state', '4'); await until('window.StudyWorkspace.ready');
   await select('#function-select', 'quick_sort'); await until(`window.StudyWorkspace.ready && appState.functionName === 'quick_sort'`);

@@ -1,6 +1,7 @@
 # ADR 0001 — FastAPI and stateless curated queries
 
 **Status:** Accepted — 03 Aug 2026. The application adds isolated study persistence under [ADR 0002](0002-final-only-study-storage.md); the compiler-query decisions below remain unchanged.
+Partly superseded by [ADR 0005](0005-user-programs-compile-on-request.md) for user programs.
 
 ## Context
 

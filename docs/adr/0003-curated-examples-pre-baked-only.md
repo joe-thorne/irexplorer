@@ -1,6 +1,7 @@
 # ADR 0003 — Curated examples are pre-baked only
 
 **Status:** Accepted — 25 Sep 2026. Records the generation strategy the application has followed since [ADR 0001](0001-fastapi-stateless-curated-api.md); no runtime behaviour changes.
+Partly superseded by [ADR 0005](0005-user-programs-compile-on-request.md) for user programs.
 
 ## Context
 

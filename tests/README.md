@@ -27,6 +27,26 @@ are asserted against fresh analysis and served correspondences. This is AI-assis
 manual artefact evidence; independent human sign-off and fresh Docker
 regeneration are separate verification steps.
 
+User programs are tested without LLVM. `test_user_programs_api.py` drives the app in-process with user programs on, pointed at the real compiler service on a loopback port. The service runs the fake `clang` and `opt` in `fake_toolchain/`, which replay the committed curated artefacts of the three unedited curated sources, looked up by the SHA-256 of the source, and fail with "no recording" for any other source. A `// irx-fake: error` line makes the fake clang fail as the pinned clang does on a call to an undeclared `abss`, and `// irx-fake: crash` makes the fake opt crash; `test_user_program_compile_failures.py` covers both. `// irx-fake: hang` never finishes (in a child process that keeps writing, as clang's own `-cc1` child would), and `// irx-fake: slow` spends 2 s in its first command and then compiles as recorded, its marker line left out of the lookup. The timeout tests start a service with a 0.5 s timeout. The cancel tests drop a request mid-compile: `test_compiler_service.py` closes its socket to the service, and `CompileCancelTests` serves the app under a real uvicorn server on loopback, since the in-process test client cannot drop a request. The fake also replays the user programs in `data/user-programs`, recorded from the real toolchain (see below); `test_user_program_recordings.py` checks that each replays exactly as recorded and that the app answers each as `data/user-programs/corpus.json` says. What is accepted as a user program is checked on both sides against the shared cases in `data/user-program-acceptance.json`: by `test_accepted_programs.py` on the server and by `scripts/check_user_programs.mjs` in the browser.
+
+## Real-compiler smoke check
+
+Run by hand before the demo and before merging; it is not part of CI. With Docker and the [user-programs stack](../README.md#run-with-user-programs) up:
+
+```sh
+scripts/check_user_programs.sh
+```
+
+It fails at once without Docker or a healthy stack. Otherwise it runs `test_user_programs_smoke.py` (skipped in the offline suite) against the stack: the three unedited curated sources must compile to their committed artefacts once `examples/curated` reads `user-programs` and the output directory `out`; each recording in `data/user-programs` must still match the real toolchain (ignoring the compiler image's identity); and the app must answer each corpus program as `corpus.json` says, under a fresh file name so it compiles afresh, the realistic 200-line program within 15 s. A program with `until` answers as its `currently` until that ticket lands.
+
+The corpus sources are stored as the app sends them, each beside a directory of the same stem that holds its recording. To add a program or re-record after a deliberate toolchain change, list it in `corpus.json` and, with the stack up, run:
+
+```sh
+.venv/bin/python scripts/record_user_programs.py
+```
+
+It sends each program to the stack's compiler service (inside its container, so a program the app cannot show yet is recorded too) and rewrites its recording.
+
 ## Lint and type checks
 
 Install the development tools over the runtime environment, then run both checks from the repository root. Their configuration is in `pyproject.toml`.
@@ -56,7 +76,7 @@ To run the whole browser regression in one step, as CI does:
 scripts/check_browser.sh
 ```
 
-It starts the host runner on a disposable preview store and an isolated headless Chrome, runs the three checks below with collection open, reruns `check_app.mjs` with collection closed, then stops both. `CHROME` names the browser executable if it is not found; `IRX_PYTHON` names the Python interpreter. The steps below run each check by hand.
+It starts the host runner on a disposable preview store and an isolated headless Chrome, runs the three checks below with collection open and user programs off, and reruns `check_app.mjs` with collection closed. It then starts the compiler service on loopback over the fake toolchain (no Docker or LLVM), restarts the host runner with user programs on, runs `check_user_programs.mjs`, reruns `check_study_tasks.mjs` and `check_study_guidance.mjs` unchanged (Study must not change with user programs on), and stops everything. It fails if a port it uses already answers, or still answers after it stops a server. `CHROME` names the browser executable if it is not found; `IRX_PYTHON` names the Python interpreter; `IREXPLORER_PORT` (default 8000), `IREXPLORER_CDP_PORT` (9239) and `IREXPLORER_COMPILER_PORT` (8090) name its ports. The steps below run each check by hand.
 
 Start the application with Docker Compose, then start a separate headless Chrome instance with a temporary profile and remote debugging on port 9239. For example, on Linux:
 
@@ -108,7 +128,17 @@ node scripts/check_study_guidance.mjs
 
 It reads every expected sentence from the served message catalogue, glossary and introductions, and runs the journey at desktop and narrow widths. It covers normal guidance, T0 glossary help by keyboard focus and hover, validation, a failed local save, discard confirmation (including Escape and a failed discard), and review. It then covers uncertain delivery: an offline attempt, a reload, a 503, and a stored attempt whose response is lost. These must send identical content under one submission ID. The receipt appears only after the server confirms storage; cleanup failures are checked, as are incompatible and corrupt recovery. Closed collection is served as a content variant with scripted `410 collection_closed` refusals: the closed message, a local draft's discard (including a failed one), a refused submission across a refresh and its discard, and a pending retry that returns a receipt. The journey runs again with every message marked, then with markup in the prose, then with catalogues that break the key or placeholder contract or content without a boolean `submissionEnabled`. Each full journey submits one synthetic record, so use a disposable local or preview store.
 
-All three scripts connect to the browser on port 9239 unless `IREXPLORER_CDP_PORT` names another. Close the temporary Chrome process after testing.
+To check user programs by hand, start the compiler service over the fake toolchain and an application with user programs on, with the same browser:
+
+```sh
+.venv/bin/python -m src.backend.toolchain.compiler_service --port 8090 --toolchain tests/fake_toolchain --workspace "$(mktemp -d)"
+IREXPLORER_USER_PROGRAMS=1 IREXPLORER_COMPILER_URL=http://127.0.0.1:8090 IREXPLORER_COMPILER_TIMEOUT=5 .venv/bin/python -c "from src.backend.api.server import run_server; run_server()"
+IREXPLORER_ORIGIN=http://127.0.0.1:8000 IREXPLORER_COMPILER_PID=<compiler service pid> node scripts/check_user_programs.mjs
+```
+
+It uploads the unedited curated sources, which the fake toolchain has recordings for, and checks the **Curated examples | Your files** switch, the compile card and a user program opening in the panels. It also checks that Study never has the upload controls, even after a compile started in Explore, and that a task inheriting its workspace opens the curated one rather than a user program on screen. It makes the compiler busy with a slow compile posted from outside the page, and unavailable by pausing the compiler service's process (`IREXPLORER_COMPILER_PID`) until the app's 5 s compiler timeout passes, then checks that **Try again** succeeds once the cause is gone. It cancels a hanging compile and checks that another file uploaded straight after compiles rather than finding the compiler busy. It also cancels the recompile of a program the server forgot, and checks that the upload stays listed and **Try again** opens it. Each scenario starts from a freshly loaded Explore page. `check_app.mjs` checks that no upload control is built with user programs off.
+
+All four scripts connect to the browser on port 9239 unless `IREXPLORER_CDP_PORT` names another. Close the temporary Chrome process after testing.
 
 Automated checks do not establish complete accessibility conformance or replace physical keyboard and spoken screen-reader testing.
 

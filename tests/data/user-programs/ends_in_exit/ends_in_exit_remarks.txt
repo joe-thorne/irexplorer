@@ -1,0 +1,99 @@
+/workspace/user-programs/ends_in_exit.c:4:1: remark: eliminating argument message(0) [-Rpass=argpromotion]
+    4 | static void fail(const char *message) {
+      | ^
+/workspace/user-programs/ends_in_exit.c:11:9: remark: 'fail' not inlined into 'parse_digit' because too costly to inline (cost=55, threshold=45) [-Rpass-missed=inline]
+   11 |         fail("not a digit");
+      |         ^
+/workspace/user-programs/ends_in_exit.c:19:30: remark: 'parse_digit' inlined into 'main' with (cost=20, threshold=250) at callsite main:3:30; [-Rpass=inline]
+   19 |         total = total * 10 + parse_digit(*p);
+      |                              ^
+/workspace/user-programs/ends_in_exit.c:11:9: remark: 'fail' not inlined into 'main' because too costly to inline (cost=55, threshold=0) [-Rpass-missed=inline]
+   11 |         fail("not a digit");
+      |         ^
+/workspace/user-programs/ends_in_exit.c:18:5: remark: completely unrolled loop with 4 iterations [-Rpass=loop-unroll]
+   18 |     for (const char *p = "2024"; *p != '\0'; p++) {
+      |     ^
+/workspace/user-programs/ends_in_exit.c:9:1: remark: X86 DAG->DAG Instruction Selection: Function: parse_digit: MI Instruction count changed from 0 to 14; Delta: 14 [-Rpass-analysis=size-info]
+    9 | int parse_digit(char c) {
+      | ^
+/workspace/user-programs/ends_in_exit.c:9:1: remark: Two-Address instruction pass: Function: parse_digit: MI Instruction count changed from 14 to 18; Delta: 4 [-Rpass-analysis=size-info]
+/workspace/user-programs/ends_in_exit.c:9:1: remark: Register Coalescer: Function: parse_digit: MI Instruction count changed from 18 to 13; Delta: -5 [-Rpass-analysis=size-info]
+/workspace/user-programs/ends_in_exit.c:9:1: remark: Debug Variable Analysis: Function: parse_digit: MI Instruction count changed from 13 to 12; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/ends_in_exit.c:9:1: remark: 8 stack bytes in function 'parse_digit' [-Rpass-analysis=prologepilog]
+/workspace/user-programs/ends_in_exit.c:9:1: remark: Control Flow Optimizer: Function: parse_digit: MI Instruction count changed from 12 to 11; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/ends_in_exit.c:9:1: remark: Live DEBUG_VALUE analysis: Function: parse_digit: MI Instruction count changed from 11 to 14; Delta: 3 [-Rpass-analysis=size-info]
+/workspace/user-programs/ends_in_exit.c:9:1: remark: 
+Function: parse_digit [-Rpass-analysis=stack-frame-layout]
+/workspace/user-programs/ends_in_exit.c:9:5: note: could not determine the original source location for user-programs/ends_in_exit.c:0:0
+    9 | int parse_digit(char c) {
+      |     ^
+/workspace/user-programs/ends_in_exit.c:9:5: remark: BasicBlock: entry
+CMP8ri: 1
+JCC_1: 1
+LEA64_32r: 1
+ [-Rpass-analysis=asm-printer]
+    9 | int parse_digit(char c) {
+      |     ^
+/workspace/user-programs/ends_in_exit.c:9:5: note: could not determine the original source location for user-programs/ends_in_exit.c:0:0
+/workspace/user-programs/ends_in_exit.c:9:5: note: could not determine the original source location for user-programs/ends_in_exit.c:0:0
+/workspace/user-programs/ends_in_exit.c:9:5: remark: BasicBlock: if.end
+ADD32ri: 1
+MOVZX32rr8: 1
+RET64: 1
+ [-Rpass-analysis=asm-printer]
+    9 | int parse_digit(char c) {
+      |     ^
+/workspace/user-programs/ends_in_exit.c:9:5: note: could not determine the original source location for user-programs/ends_in_exit.c:0:0
+/workspace/user-programs/ends_in_exit.c:9:5: note: could not determine the original source location for user-programs/ends_in_exit.c:0:0
+/workspace/user-programs/ends_in_exit.c:9:5: remark: BasicBlock: if.then
+CALL64pcrel32: 1
+PUSH64r: 1
+ [-Rpass-analysis=asm-printer]
+    9 | int parse_digit(char c) {
+      |     ^
+/workspace/user-programs/ends_in_exit.c:9:5: note: could not determine the original source location for user-programs/ends_in_exit.c:0:0
+/workspace/user-programs/ends_in_exit.c:9:1: remark: 8 instructions in function [-Rpass-analysis=asm-printer]
+    9 | int parse_digit(char c) {
+      | ^
+/workspace/user-programs/ends_in_exit.c:4:1: remark: X86 DAG->DAG Instruction Selection: Function: fail: MI Instruction count changed from 0 to 20; Delta: 20 [-Rpass-analysis=size-info]
+    4 | static void fail(const char *message) {
+      | ^
+/workspace/user-programs/ends_in_exit.c:4:1: remark: Remove dead machine instructions: Function: fail: MI Instruction count changed from 20 to 19; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/ends_in_exit.c:4:1: remark: Peephole Optimizations: Function: fail: MI Instruction count changed from 19 to 18; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/ends_in_exit.c:4:1: remark: Register Coalescer: Function: fail: MI Instruction count changed from 18 to 16; Delta: -2 [-Rpass-analysis=size-info]
+/workspace/user-programs/ends_in_exit.c:4:1: remark: Debug Variable Analysis: Function: fail: MI Instruction count changed from 16 to 15; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/ends_in_exit.c:4:1: remark: Virtual Register Rewriter: Function: fail: MI Instruction count changed from 15 to 13; Delta: -2 [-Rpass-analysis=size-info]
+/workspace/user-programs/ends_in_exit.c:4:1: remark: 8 stack bytes in function 'fail' [-Rpass-analysis=prologepilog]
+/workspace/user-programs/ends_in_exit.c:4:1: remark: Prologue/Epilogue Insertion & Frame Finalization: Function: fail: MI Instruction count changed from 13 to 11; Delta: -2 [-Rpass-analysis=size-info]
+/workspace/user-programs/ends_in_exit.c:4:1: remark: Live DEBUG_VALUE analysis: Function: fail: MI Instruction count changed from 11 to 12; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/ends_in_exit.c:4:1: remark: 
+Function: fail [-Rpass-analysis=stack-frame-layout]
+/workspace/user-programs/ends_in_exit.c:4:13: remark: BasicBlock: entry
+CALL64pcrel32: 2
+LEA64r: 2
+MOV64rm: 2
+MOV32ri: 1
+PUSH64r: 1
+XOR32rr: 1
+ [-Rpass-analysis=asm-printer]
+    4 | static void fail(const char *message) {
+      |             ^
+/workspace/user-programs/ends_in_exit.c:4:1: remark: 9 instructions in function [-Rpass-analysis=asm-printer]
+    4 | static void fail(const char *message) {
+      | ^
+/workspace/user-programs/ends_in_exit.c:16:1: remark: X86 DAG->DAG Instruction Selection: Function: main: MI Instruction count changed from 0 to 3; Delta: 3 [-Rpass-analysis=size-info]
+   16 | int main(void) {
+      | ^
+/workspace/user-programs/ends_in_exit.c:16:1: remark: Peephole Optimizations: Function: main: MI Instruction count changed from 3 to 2; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/ends_in_exit.c:16:1: remark: 0 stack bytes in function 'main' [-Rpass-analysis=prologepilog]
+/workspace/user-programs/ends_in_exit.c:16:1: remark: 
+Function: main [-Rpass-analysis=stack-frame-layout]
+/workspace/user-programs/ends_in_exit.c:21:5: remark: BasicBlock: parse_digit.exit.3
+RET64: 1
+XOR32rr: 1
+ [-Rpass-analysis=asm-printer]
+   21 |     return total == 2024 ? 0 : 1;
+      |     ^
+/workspace/user-programs/ends_in_exit.c:16:1: remark: 2 instructions in function [-Rpass-analysis=asm-printer]
+   16 | int main(void) {
+      | ^

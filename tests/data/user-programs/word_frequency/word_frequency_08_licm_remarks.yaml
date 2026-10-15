@@ -1,0 +1,60 @@
+--- !Passed
+Pass:            licm
+Name:            Hoisted
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 175, Column: 48 }
+Function:        report
+Args:
+  - String:          'hoisting '
+  - Inst:            getelementptr
+    DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 175, 
+                       Column: 48 }
+...
+--- !Missed
+Pass:            licm
+Name:            LoadWithLoopInvariantAddressInvalidated
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 175, Column: 48 }
+Function:        report
+Args:
+  - String:          failed to move load with loop-invariant address because the loop may invalidate its value
+...
+--- !Passed
+Pass:            licm
+Name:            Hoisted
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 82, Column: 27 }
+Function:        next_word
+Args:
+  - String:          'hoisting '
+  - Inst:            call
+    DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 82, 
+                       Column: 27 }
+...
+--- !Passed
+Pass:            licm
+Name:            Hoisted
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 82, Column: 27 }
+Function:        next_word
+Args:
+  - String:          'hoisting '
+  - Inst:            load
+    DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 82, 
+                       Column: 27 }
+...
+--- !Missed
+Pass:            licm
+Name:            LoadWithLoopInvariantAddressInvalidated
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 86, Column: 12 }
+Function:        next_word
+Args:
+  - String:          failed to move load with loop-invariant address because the loop may invalidate its value
+...
+--- !Passed
+Pass:            licm
+Name:            InstSunk
+DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 48, Column: 19 }
+Function:        table_add
+Args:
+  - String:          'sinking '
+  - Inst:            getelementptr
+    DebugLoc:        { File: 'user-programs/word_frequency.c', Line: 48, 
+                       Column: 19 }
+...

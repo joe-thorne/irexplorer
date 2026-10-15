@@ -1,6 +1,6 @@
 import unittest
 
-from src.backend.ingest import IngestError, parse_ir_state
+from src.backend.ingest import IngestError, UnsupportedTerminator, parse_ir_state
 from src.backend.model import SourceLocation
 from src.backend.toolchain import curated
 
@@ -183,6 +183,39 @@ join:
         )
         graph.validate()
 
+    def test_unreachable_with_debug_location_terminates_its_block(self) -> None:
+        graph = parse_ir_state(
+            """source_filename = "abort.c"
+target triple = "x86_64-unknown-linux-gnu"
+
+define i32 @fail() !dbg !5 {
+entry:
+  call void @abort(), !dbg !9
+  unreachable, !dbg !9
+}
+
+declare void @abort()
+
+!9 = !DILocation(line: 4, column: 3, scope: !5)
+""",
+            ordinal=0,
+            state_id="abort",
+        )
+
+        entry = next(
+            node
+            for node in graph.nodes
+            if node.kind == "BasicBlock" and node.attributes["label"] == "entry"
+        )
+        terminator = graph.by_id[graph.contains_children[entry.stable_id][-1]]
+        self.assertEqual(terminator.attributes["opcode"], "unreachable")
+        self.assertTrue(terminator.attributes["is_terminator"])
+        self.assertEqual(
+            terminator.attributes["source"],
+            SourceLocation(file="abort.c", line=4, column=3),
+        )
+        graph.validate()
+
     def test_unterminated_multiline_switch_is_controlled_failure(self) -> None:
         malformed = """source_filename = "bad.c"
 target triple = "x86_64-unknown-linux-gnu"
@@ -198,6 +231,54 @@ entry:
             parse_ir_state(malformed, ordinal=0, state_id="bad")
 
         self.assertIn("unterminated switch instruction", str(context.exception))
+
+    def test_a_block_ending_in_callbr_fails_as_an_unsupported_terminator(self) -> None:
+        # asm goto: LLVM prints callbr's destinations on a line of their own.
+        asm_goto = """source_filename = "asm_goto.c"
+target triple = "x86_64-unknown-linux-gnu"
+
+define i32 @is_positive(i32 %x) {
+entry:
+  callbr void asm sideeffect "testl $0, $0\\0A\\09jg ${1:l}", "r,!i"(i32 %x)
+          to label %fallthrough [label %positive]
+
+fallthrough:
+  ret i32 0
+
+positive:
+  ret i32 1
+}
+"""
+
+        with self.assertRaises(UnsupportedTerminator) as context:
+            parse_ir_state(asm_goto, ordinal=0, state_id="O0")
+
+        self.assertEqual(context.exception.opcode, "callbr")
+        self.assertEqual(str(context.exception), "basic block is_positive.entry ends in unsupported terminator callbr")
+
+    def test_a_function_whose_name_llvm_quotes_is_a_controlled_failure_not_left_out(self) -> None:
+        # clang 22's IR for `int café(int x)` beside main: LLVM quotes a name with non-ASCII bytes.
+        quoted = """source_filename = "names.c"
+target triple = "x86_64-unknown-linux-gnu"
+
+define i32 @main() {
+entry:
+  %1 = call i32 @"caf\\C3\\A9"(i32 41)
+  ret i32 %1
+}
+
+define i32 @"caf\\C3\\A9"(i32 %0) {
+entry:
+  %2 = add i32 %0, 1
+  ret i32 %2
+}
+"""
+
+        with self.assertRaises(IngestError) as context:
+            parse_ir_state(quoted, ordinal=0, state_id="O0")
+
+        self.assertIn('unrecognised function definition at line 10: define i32 @"caf\\C3\\A9"(i32 %0) {',
+                      str(context.exception))
 
 
 def _kind_counts(graph) -> dict[str, int]:

@@ -13,6 +13,8 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHttpException
 
+from src.backend.api.programs import ProgramStore
+from src.backend.api.programs import router as programs_router
 from src.backend.api.query import DataUnavailableError, QueryError, QueryService
 from src.backend.api.schemas import (
     CfgResponse,
@@ -28,6 +30,8 @@ from src.backend.api.schemas import (
 )
 from src.backend.evaluation.router import router as study_router
 from src.backend.evaluation.service import Config, StudyService
+from src.backend.programs import UserProgramsSetting
+from src.backend.programs.compiler import CompilerClient
 from src.backend.release import metadata
 
 FRONTEND_ROOT = Path(__file__).resolve().parents[2] / "frontend"
@@ -41,6 +45,10 @@ SECURITY_HEADERS = {
     ),
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "no-referrer",
+}
+HTTP_ERRORS = {
+    404: ("not_found", "Resource not found."),
+    405: ("method_not_allowed", "Method not allowed."),
 }
 
 
@@ -60,9 +68,16 @@ def create_app(
     service: QueryService | None = None,
     *,
     study_config: Config | None = None,
+    user_programs: UserProgramsSetting | None = None,
 ) -> FastAPI:
     """Create the same-origin API and static frontend application."""
 
+    programs = user_programs or UserProgramsSetting.environment()
+    study = study_config or Config.environment()
+    if programs.enabled and study.research:
+        # Research data is never collected beside user-supplied code.
+        raise ValueError(f"User programs cannot run with {study.collection_mode} collection; "
+                         "set IREXPLORER_USER_PROGRAMS=0 or use local collection.")
     query_service = service or QueryService()
     app = FastAPI(
         title="irexplorer curated query API",
@@ -115,8 +130,8 @@ def create_app(
         _request: Request,
         exc: StarletteHttpException,
     ) -> JSONResponse:
-        code = "not_found" if exc.status_code == 404 else "method_not_allowed"
-        message = "Resource not found." if exc.status_code == 404 else "Method not allowed."
+        # Anything else the framework refuses, such as a body it cannot read, is a bad request.
+        code, message = HTTP_ERRORS.get(exc.status_code, ("invalid_request", "The request could not be read."))
         return _error_response(exc.status_code, code, message)
 
     @app.exception_handler(Exception)
@@ -145,7 +160,9 @@ def create_app(
 
     @app.get("/api/release")
     def release() -> JSONResponse:
-        return JSONResponse(metadata(), headers={"Cache-Control": "no-store"})
+        # The setting is runtime configuration beside the baked identity, never part of it.
+        return JSONResponse({**metadata(), "config": {"userPrograms": programs.enabled}},
+                            headers={"Cache-Control": "no-store"})
 
     @app.get("/api/examples", response_model=ExamplesResponse)
     def list_examples() -> dict[str, object]:
@@ -189,7 +206,12 @@ def create_app(
     ) -> dict[str, object]:
         return query_service.cfg(example_id, ordinal, function_id)
 
-    app.include_router(study_router(StudyService(study_config or Config.environment())))
+    app.include_router(study_router(StudyService(study)))
+    if programs.enabled:
+        # With the setting off, /api/programs is never mounted, so every path under it is an unknown route.
+        assert programs.compiler_url is not None  # the setting refuses to turn on without one
+        compiler = CompilerClient(programs.compiler_url, timeout=programs.compiler_timeout)
+        app.include_router(programs_router(ProgramStore(), compiler))
 
     app.mount("/", AppStaticFiles(directory=FRONTEND_ROOT, html=True), name="frontend")
     return app
