@@ -46,6 +46,10 @@ SECURITY_HEADERS = {
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "no-referrer",
 }
+HTTP_ERRORS = {
+    404: ("not_found", "Resource not found."),
+    405: ("method_not_allowed", "Method not allowed."),
+}
 
 
 class AppStaticFiles(StaticFiles):
@@ -126,8 +130,8 @@ def create_app(
         _request: Request,
         exc: StarletteHttpException,
     ) -> JSONResponse:
-        code = "not_found" if exc.status_code == 404 else "method_not_allowed"
-        message = "Resource not found." if exc.status_code == 404 else "Method not allowed."
+        # Anything else the framework refuses, such as a body it cannot read, is a bad request.
+        code, message = HTTP_ERRORS.get(exc.status_code, ("invalid_request", "The request could not be read."))
         return _error_response(exc.status_code, code, message)
 
     @app.exception_handler(Exception)

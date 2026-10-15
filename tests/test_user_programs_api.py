@@ -286,6 +286,14 @@ class UserProgramsApiTests(unittest.TestCase):
                 response = self.client.post("/api/programs", json=body)
                 self.assertEqual((response.status_code, response.json()["error"]["code"]), (422, "invalid_request"))
 
+    def test_a_body_that_is_not_utf8_is_an_invalid_request_not_a_wrong_method(self) -> None:
+        # Raw bytes that are not UTF-8 never reach the route: the framework refuses the body with 400.
+        response = self.client.post("/api/programs", content=b'{"fileName": "score.c", "source": "\xff"}',
+                                    headers={"Content-Type": "application/json"})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["error"]["code"], "invalid_request")
+        self.assertEqual(self.client.put("/api/programs").json()["error"]["code"], "method_not_allowed")
+
     def test_each_refusal_is_an_invalid_program_with_its_reason_and_message(self) -> None:
         refused = [case for case in CASES if "refused" in case]
         self.assertEqual({case["refused"]["reason"] for case in refused},
