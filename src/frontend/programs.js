@@ -258,10 +258,9 @@
     const renamedFrom = card?.renamedFrom ?? current?.renamedFrom;
     view.renamed.hidden = !renamedFrom;
     view.renamed.textContent = renamedFrom ? `Renamed from “${renamedFrom}”.` : "";
-    const origin = !card && current?.origin?.kind !== "new" && current?.origin;
-    view.origin.hidden = !origin;
-    view.originName.textContent = !origin ? ""
-      : origin.kind === "curated" ? `curated ${exampleName(origin.exampleId)}` : `your upload ${origin.fileName}`;
+    const origin = !card && current?.origin, original = origin && ORIGINS[origin.kind].original;
+    view.origin.hidden = !original;
+    view.originName.textContent = original ? original.name(origin) : "";
     view.openOriginal.disabled = locked;
     // The source of a program that is compiling, or that failed, is read-only. It is dimmed unless it
     // carries the compile errors to read.
@@ -324,9 +323,42 @@
       : `Clang reported ${count} warning${count === 1 ? "" : "s"}, listed above the source.`}`);
   }
 
-  // How Your files lists a program: a compiled edit says it is edited, or new if written in the editor.
-  const listed = upload => (upload.origin ? `${upload.fileName} · ${upload.origin.kind === "new" ? "new" : "edited"}` : upload.fileName);
   const exampleName = exampleId => exampleId.replaceAll("_", " ");
+
+  // What the page says and does about where a compiled edit came from, by its origin's kind (see uploads):
+  // `listed` labels it in Your files, and `original`, unless it is a new program, which has none, names the
+  // original after "Edited from" and "Restored the original", and opens it, resolving to the select it was
+  // chosen in.
+  const ORIGINS = {
+    curated: { listed: "edited", original: {
+      name: origin => `curated ${exampleName(origin.exampleId)}`,
+      restored: "curated example",
+      // Under Curated examples.
+      async open({ exampleId }) {
+        setMode("curated");
+        elements.exampleSelect.value = exampleId;
+        const opened = loadExample();
+        renderEdit();
+        await opened;
+        return elements.exampleSelect;
+      },
+    } },
+    upload: { listed: "edited", original: {
+      name: origin => `your upload ${origin.fileName}`,
+      restored: "upload",
+      // From Your files if it is still listed there as an upload, else compiled again from the text kept.
+      async open({ fileName, source }) {
+        const uploaded = uploads.find(upload => !upload.origin && upload.source === source);
+        if (uploaded) await openUpload(uploaded.programId);
+        else await compile({ fileName, text: source });
+        return view.yourSelect;
+      },
+    } },
+    new: { listed: "new", original: null },
+  };
+
+  // How Your files lists a program: a compiled edit says it is edited, or new if written in the editor.
+  const listed = upload => (upload.origin ? `${upload.fileName} · ${ORIGINS[upload.origin.kind].listed}` : upload.fileName);
 
   // The upload is the only file in the server's user-programs directory, whose path the server trims, so a
   // diagnostic against the upload names a bare file; one in a header keeps its path.
@@ -632,8 +664,7 @@
     if (!view.editorSection.isConnected) view.shell.append(view.editorSection);
     view.editorHeading.textContent = editing.title;
     view.editorDiscard.textContent = view.editor.edited ? "Discard edits" : "Close editor";
-    // A new program has no original to go back to.
-    view.editorRestore.hidden = editing.origin.kind === "new";
+    view.editorRestore.hidden = !ORIGINS[editing.origin.kind].original;
     view.editorRestore.disabled = view.editor.text === editing.origin.source;
     view.editorConfirmation.hidden = !editing.confirming;
     view.editorDiagnostics.hidden = !view.editorDiagnostics.childElementCount;
@@ -696,27 +727,14 @@
   // browser's undo reverses.
   function restoreOriginal() {
     view.editor.replaceText(editing.origin.source);
-    announce(`Restored the original ${editing.origin.kind === "curated" ? "curated example" : "upload"}. Ctrl/⌘+Z (undo) reverses it.`);
+    announce(`Restored the original ${ORIGINS[editing.origin.kind].original.restored}. Ctrl/⌘+Z (undo) reverses it.`);
   }
 
-  // Open the original: the curated example under Curated examples, or the first upload, opened from Your
-  // files if it is still listed there as an upload, else compiled again from the text kept.
+  // Open the original: the curated example, or the first upload (see ORIGINS).
   async function openOriginal() {
     const { origin } = current;
     // The button goes with the line, so the keyboard is put on the select the original is chosen in.
-    let select = view.yourSelect;
-    if (origin.kind === "curated") {
-      setMode("curated");
-      elements.exampleSelect.value = origin.exampleId;
-      const opened = loadExample();
-      renderEdit();
-      await opened;
-      select = elements.exampleSelect;
-    } else {
-      const uploaded = uploads.find(upload => !upload.origin && upload.source === origin.source);
-      if (uploaded) await openUpload(uploaded.programId);
-      else await compile({ fileName: origin.fileName, text: origin.source });
-    }
+    const select = await ORIGINS[origin.kind].original.open(origin);
     if (select.checkVisibility() && !select.disabled) select.focus();
   }
 
