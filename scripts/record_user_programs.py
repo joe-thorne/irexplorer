@@ -18,6 +18,7 @@ recordings up by the SHA-256 of the source, and `scripts/check_user_programs.sh`
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -128,11 +129,23 @@ def recorded_files(directory: Path) -> dict[str, str]:
     return {path.name: path.read_bytes().decode("utf-8") for path in sorted(directory.iterdir()) if path.is_file()}
 
 
+# The start of each YAML document in a remark file, such as `--- !Missed`.
+REMARK_DOCUMENT = re.compile(r"(?m)^(?=--- )")
+
+
 def differences(recorded: dict[str, str], answered: dict[str, str], *,
                 ignoring: tuple[str, ...] = ("compilerImage",)) -> list[str]:
-    """The names of the files that differ between two recordings, ignoring the named manifest fields."""
+    """The names of the files that differ between two recordings, ignoring the named manifest fields and the
+    order of the remarks in a remark file.
+
+    opt writes some remarks in an order that varies from one compile of the same source to the next (GVN's
+    LoadClobbered remarks for one load, one per clobbering instruction), so a remark file is compared as the
+    multiset of its YAML documents.
+    """
 
     def comparable(name: str, text: str) -> object:
+        if name.endswith(".yaml"):
+            return sorted(REMARK_DOCUMENT.split(text))
         if name != "manifest.json":
             return text
         return {key: value for key, value in json.loads(text).items() if key not in ignoring}

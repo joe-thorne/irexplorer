@@ -37,7 +37,7 @@ Run by hand before the demo and before merging; it is not part of CI. With Docke
 scripts/check_user_programs.sh
 ```
 
-It fails at once without Docker or a healthy stack. Otherwise it runs `test_user_programs_smoke.py` (skipped in the offline suite) against the stack: the three unedited curated sources must compile to their committed artefacts once `examples/curated` reads `user-programs` and the output directory `out`; each recording in `data/user-programs` must still match the real toolchain (ignoring the compiler image's identity); and the app must answer each corpus program as `corpus.json` says, under a fresh file name so it compiles afresh, the realistic 200-line program within 15 s. A program with `until` answers as its `currently` until that ticket lands.
+It fails at once without Docker or a healthy stack. Otherwise it runs `test_user_programs_smoke.py` (skipped in the offline suite) against the stack: the three unedited curated sources must compile to their committed artefacts once `examples/curated` reads `user-programs` and the output directory `out`; each recording in `data/user-programs` must still match the real toolchain (ignoring the compiler image's identity and the order of the remarks in a remark file, which opt varies from one compile to the next); and the app must answer each corpus program as `corpus.json` says, under a fresh file name so it compiles afresh, the realistic 200-line program within 15 s. A program with `until` answers as its `currently` until that ticket lands.
 
 The corpus sources are stored as the app sends them, each beside a directory of the same stem that holds its recording. To add a program or re-record after a deliberate toolchain change, list it in `corpus.json` and, with the stack up, run:
 
