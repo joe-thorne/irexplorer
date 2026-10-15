@@ -46,6 +46,11 @@
       "fileName": "program.c",
       "about": "The starter function a new program begins with in the editor.",
       "outcome": {"status": 201}
+    },
+    {
+      "fileName": "quick_sort.c",
+      "about": "An edited copy of the curated quick_sort, under the name Edit a copy gives it: partition keeps its name and quick_sort is renamed sort.",
+      "outcome": {"status": 201}
     }
   ]
 }
