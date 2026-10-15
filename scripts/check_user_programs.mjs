@@ -284,6 +284,11 @@ async function openExplore() {
   await reload();
 }
 
+// The lines clang warned about in tests/data/user-programs/clang_warnings.c: the recorded clang 22 printed 22
+// warnings for it, some with notes, and the server answers the first 20. `warnedLines` reads the marked lines.
+const warned = [7, 17, 24, 28, 33, 39, 47, 52, 58, 62, 69, 73, 74, 80, 81, 88, 89, 102, 103];
+const warnedLines = `[...document.querySelectorAll('#source-lines .source-line.is-warning')].map(line => Number(line.dataset.line)).join(',')`;
+
 const scenarios = {
   async 'Choose a curated source in Your files and explore it as a user program'() {
     await check('Explore offers Curated examples | Your files above the C source controls, on Curated examples',
@@ -403,8 +408,6 @@ const scenarios = {
     await click('#source-mode input[value="yours"]');
     await chooseFile('#program-drop button', join(userProgramSources, 'clang_warnings.c'));
     await until(`window.StudyWorkspace.ready && Boolean(appState.programId) && !${visible('#program-card')}`);
-    // The recorded clang 22 printed 22 warnings for clang_warnings.c, some with notes; the server answers the first 20.
-    const warned = [7, 17, 24, 28, 33, 39, 47, 52, 58, 62, 69, 73, 74, 80, 81, 88, 89, 102, 103];
     await check('The warnings are listed in a closed disclosure at the top of the source panel, above the source lines',
       `(() => { const warnings = document.querySelector('#program-warnings'); return ${visible('#program-warnings')} && warnings.matches('#source-panel > details') && !warnings.open && warnings.compareDocumentPosition(document.querySelector('#source-lines')) & Node.DOCUMENT_POSITION_FOLLOWING && document.querySelector('.source-heading').compareDocumentPosition(warnings) & Node.DOCUMENT_POSITION_FOLLOWING; })()`);
     // The server lists at most 20, so with 20 the page cannot tell whether clang reported more.
@@ -412,7 +415,7 @@ const scenarios = {
       `document.querySelector('#program-warnings summary').textContent === 'At least 20 clang warnings · the first 20 are listed'`);
     await check('The comparison stays open beside the warnings', `${visible('#left-panel')} && ${visible('.comparison-status')}`);
     await check('Each line with a warning is marked in the source, and no other',
-      `[...document.querySelectorAll('#source-lines .source-line.is-warning')].map(line => Number(line.dataset.line)).join(',') === '${warned.join(',')}'`);
+      `${warnedLines} === '${warned.join(',')}'`);
     await check('The opened program is announced with its warnings', `/^clang_warnings\\.c is ready\\..* Clang reported at least 20 warnings; the first 20 are listed above the source\\.$/.test(document.querySelector('#notice').textContent)`);
     await click('#program-warnings summary');
     await check('The warnings are a labelled list of 20, one button each reading "Line L, column C: message", with no notes',
@@ -433,7 +436,7 @@ const scenarios = {
     await select('#your-file-select', warningsId);
     await until(`window.StudyWorkspace.ready && appState.programId === ${JSON.stringify(warningsId)}`);
     await check('Reopening the warned upload lists its warnings again, collapsed, and marks their lines',
-      `${visible('#program-warnings')} && !document.querySelector('#program-warnings').open && document.querySelectorAll('#source-lines .source-line.is-warning').length === ${warned.length}`);
+      `${visible('#program-warnings')} && !document.querySelector('#program-warnings').open && ${warnedLines} === '${warned.join(',')}'`);
     await click('#program-new');
     await until(visible('#program-editor'));
     await check('Writing a new program shows no warnings beside it, as nothing of it is compiled yet', `!${visible('#program-warnings')}`);
@@ -442,6 +445,25 @@ const scenarios = {
     await check('Closing the editor lists the open upload\'s warnings again', visible('#program-warnings'));
     await click('#source-mode input[value="curated"]');
     await check('Curated examples shows no warnings', `!${visible('#program-warnings')} && !document.querySelector('#source-lines .is-warning')`);
+  },
+
+  async "Clang's warnings on a program compiled from the editor are listed, collapsed, and marked, as for an upload"() {
+    const source = await readFile(join(userProgramSources, 'clang_warnings.c'), 'utf8');
+    await click('#source-mode input[value="yours"]');
+    await click('#program-new');
+    await editorText(source);
+    await value(`(() => { const name = document.querySelector('#program-editor-name'); name.focus(); name.select(); })()`);
+    await send('Input.insertText', { text: 'clang_warnings.c' });
+    await click('#program-editor-compile');
+    await until(`window.StudyWorkspace.ready && Boolean(appState.programId) && !${visible('#program-card')}`);
+    await check('The compiled program opens in place of the editor, with its warnings in a closed disclosure above the source lines',
+      `!document.querySelector('#program-editor') && ${uploadOptions}.join('|') === 'clang_warnings.c · new' && ${visible('#program-warnings')} && !document.querySelector('#program-warnings').open && Boolean(document.querySelector('#program-warnings').compareDocumentPosition(document.querySelector('#source-lines')) & Node.DOCUMENT_POSITION_FOLLOWING)`);
+    await check('Its summary says there were at least 20 warnings, and the first 20 are listed',
+      `document.querySelector('#program-warnings summary').textContent === 'At least 20 clang warnings · the first 20 are listed'`);
+    await check('Each line with a warning is marked in the source, and no other', `${warnedLines} === '${warned.join(',')}'`);
+    await check('The opened program is announced with its warnings', `/ Clang reported at least 20 warnings; the first 20 are listed above the source\\.$/.test(document.querySelector('#notice').textContent)`);
+    await click('#program-warnings summary');
+    await check('Opening the summary lists the 20 warnings, one button each', `${visible('#program-warnings ul')} && document.querySelectorAll('#program-warnings li[data-severity="warning"] button').length === 20`);
   },
 
   async 'A program irexplorer cannot show says why, with the parser message for a parser failure'() {
