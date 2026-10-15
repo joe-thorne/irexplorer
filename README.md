@@ -39,11 +39,11 @@ docker compose --profile toolchain build toolchain
 docker compose -f compose.user-programs.yaml up -d --build --wait
 ```
 
-Open **http://localhost:8001**. A program that compiles with clang warnings lists them, collapsed, above its source, and marks their lines. A compiled edit of one of your files replaces it in **Your files**; a copy of a curated example or a new program is added, under a numbered name such as `program (2).c` if its name is already listed. **Restore original** in the editor puts back the curated example or the file first uploaded. Stop it with `docker compose -f compose.user-programs.yaml down`; add `--volumes` to remove its own local study store as well.
+Open **http://localhost:8001**. A program that compiles with clang warnings lists them, collapsed, above its source, and marks their lines. A compiled edit of one of your files replaces it in **Your files**; a copy of a curated example or a new program is added, under a numbered name such as `program (2).c` if its name is already listed. **Restore original** in the editor puts back the curated example or the file first uploaded. An uncompiled edit in the editor survives a reload in the same tab, but is not shown in another tab or on a later visit. Stop it with `docker compose -f compose.user-programs.yaml down`; add `--volumes` to remove its own local study store as well.
 
 The stack runs the same application image with the user programs setting on, beside a compiler service holding the pinned LLVM toolchain and the C library headers. On Apple Silicon the compiler runs `linux/amd64` under emulation, so a program takes a few seconds. The compiler service has no published port and no internet access, reaches only the application over the stack's internal network, has a read-only root file system and wipes its temporary work directory after each program. The application never gets the Docker socket and never runs `clang` or `opt` itself.
 
-With the stack up, `scripts/check_user_programs.sh` checks it against the real toolchain; see [tests/README.md](tests/README.md#real-compiler-smoke-check).
+With the stack up, `scripts/check_user_programs.sh` checks it against the real toolchain; CI runs the same check on amd64 when started by hand. See [tests/README.md](tests/README.md#real-compiler-smoke-check).
 
 ## Run with Python
 
