@@ -39,7 +39,7 @@ if (release.config?.userPrograms !== true) throw Error(`Failed: /api/release rep
 const page = await (await fetch(`${cdp}/json/new?about:blank`, { method: 'PUT' })).json();
 const ws = new WebSocket(page.webSocketDebuggerUrl);
 await new Promise(resolve => ws.addEventListener('open', resolve, { once: true }));
-let sequence = 0, fileChooser = null;
+let sequence = 0, fileChooser = null, holding = false;
 const waiting = new Map(), exceptions = [], consoleErrors = [], checks = [], requests = [], responses = [], held = [];
 ws.addEventListener('message', ({ data }) => {
   const message = JSON.parse(data);
@@ -57,8 +57,12 @@ ws.addEventListener('message', ({ data }) => {
     responses.push({ status, path: new URL(url).pathname });
   }
   if (message.method === 'Page.fileChooserOpened') fileChooser = message.params.backendNodeId;
-  // POST /api/programs is held here until the scenario releases it, so the compile state can be checked.
-  if (message.method === 'Fetch.requestPaused') held.push(message.params.requestId);
+  // POST /api/programs is held here while a scenario holds compiles, until it releases it, so the compile
+  // state can be checked; otherwise it goes on at once.
+  if (message.method === 'Fetch.requestPaused') {
+    if (holding) held.push(message.params.requestId);
+    else send('Fetch.continueRequest', { requestId: message.params.requestId });
+  }
   if (waiting.has(message.id)) {
     const [resolve, reject] = waiting.get(message.id); waiting.delete(message.id);
     message.error ? reject(message.error) : resolve(message.result);
@@ -73,8 +77,13 @@ async function value(expression) {
   return result.result.value;
 }
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+// While the page navigates, an evaluation can find its document gone; the next attempt reads the new one.
+const navigating = error => /context was destroyed|Cannot find (default )?(execution )?context|target navigated/i.test(error?.message ?? '');
 async function until(expression, attempts = 200) {
-  for (let attempt = 0; attempt < attempts; attempt += 1) { if (await value(expression)) return; await pause(75); }
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try { if (await value(expression)) return; } catch (error) { if (!navigating(error)) throw error; }
+    await pause(75);
+  }
   throw Error(`Timed out: ${expression}; observed=${JSON.stringify(await observed())}`);
 }
 function observed() {
@@ -133,9 +142,10 @@ const CTRL = 2, SHIFT = 8;
 async function key(key, code, keyCode, modifiers = 0) {
   for (const type of ['keyDown', 'keyUp']) await send('Input.dispatchKeyEvent', { type, key, code, windowsVirtualKeyCode: keyCode, modifiers });
 }
-async function holdCompiles(hold) {
-  if (hold) await send('Fetch.enable', { patterns: [{ urlPattern: '*/api/programs', requestStage: 'Request' }] });
-  else await send('Fetch.disable');
+// Every POST /api/programs is intercepted for the whole run (see the setup at the end), since turning the
+// interception on only when needed can miss a request sent straight after; this decides whether it waits.
+function holdCompiles(hold) {
+  holding = hold;
 }
 async function releaseCompile() {
   for (let attempt = 0; !held.length; attempt += 1) {
@@ -184,16 +194,32 @@ async function inFreshTab(ready, expression) {
   }
 }
 const uploadOptions = `[...document.querySelector('#your-file-select').options].filter(option => option.value).map(option => option.textContent)`;
-// Upload `name` from the curated sources through Your files and wait until it is open.
+// Upload `name` from the curated sources through Your files and wait until it is open (a program open
+// before it would answer at once).
 async function upload(name) {
+  const before = await value('appState.programId');
   await click('#source-mode input[value="yours"]');
-  await chooseFile('#program-drop button', join(curatedSources, name));
-  await until(`window.StudyWorkspace.ready && Boolean(appState.programId) && !${visible('#program-card')}`);
+  await chooseFile('#program-upload', join(curatedSources, name));
+  await until(`window.StudyWorkspace.ready && Boolean(appState.programId) && appState.programId !== ${JSON.stringify(before)} && document.querySelector('#source-summary').textContent === ${JSON.stringify(`C source · ${name}`)} && !${visible('#program-card')}`);
 }
-async function reload() {
+// Explore is ready once the user programs controls are attached, which programs.js does after
+// /api/release and the curated example list (and after reopening any Uncompiled edit), and Study has drawn
+// the route again with its content loaded, which focuses the Explore heading: a click before that would
+// lose its focus to the heading. Until the content has loaded, the heading is kept unfocused, so that its
+// focus then shows that the route was drawn again.
+const exploreReady = `(() => {
+  const heading = document.querySelector('#explore-heading'), loaded = performance.getEntriesByType('resource').some(entry => new URL(entry.name).pathname === '/api/study/content' && entry.responseEnd > 0);
+  if (!loaded && document.activeElement === heading) heading.blur();
+  return loaded && document.activeElement === heading && document.querySelector('#source-mode') !== null;
+})()`;
+// Reload the page and wait until the new document, not the one it replaces, is loaded and `ready` holds
+// there. Page.reload returns once the reload is scheduled, while the old document still answers, and
+// whatever is true there now would be true at once; the old document is marked so it is never taken for
+// the new one.
+async function reload(ready = exploreReady) {
+  await value('window.irexplorerReplacedDocument = true');
   await send('Page.reload');
-  await until(`document.readyState === 'complete' && document.querySelectorAll('#example-select option').length === 4`);
-  await until(`document.querySelector('#source-mode') !== null`);
+  await until(`!window.irexplorerReplacedDocument && document.readyState === 'complete' && (${ready})`);
 }
 
 // Open the curated example `exampleId` in the File select and wait until it is open.
@@ -246,10 +272,15 @@ async function studyToT6() {
   await onTask('T6');
 }
 
+// Explore at a fresh start: clear the tab's session storage and load #/explore as a new document. The
+// first scenario starts from about:blank, which has no session storage of this origin to clear.
 async function openExplore() {
-  await send('Page.navigate', { url: `${base}/#/explore` });
-  await until(`document.readyState === 'complete'`);
-  await value('sessionStorage.clear()');
+  if (await value(`location.origin !== ${JSON.stringify(new URL(base).origin)}`)) {
+    await value('window.irexplorerReplacedDocument = true');
+    await send('Page.navigate', { url: `${base}/#/explore` });
+    await until(`!window.irexplorerReplacedDocument && document.readyState === 'complete'`);
+  }
+  await value(`history.replaceState(null, '', '/#/explore'); sessionStorage.clear()`);
   await reload();
 }
 
@@ -1213,9 +1244,8 @@ const scenarios = {
     await check('Back in Explore the controls return on Curated examples, with the finished upload kept in Your file',
       `document.querySelector('#source-mode input[value="curated"]').checked && ${visible('#example-select')} && [...document.querySelector('#your-file-select').options].some(option => option.textContent === 'score.c')`);
     await check('The tab keeps the upload in session storage', `JSON.parse(sessionStorage.getItem('irexplorer.programs.uploads')).length === 1`);
-    await value(`history.replaceState(null, '', '/#/study')`); await send('Page.reload');
-    await until(`document.readyState === 'complete' && document.querySelector('#route-heading')?.textContent === 'Information and consent'`);
-    await until(`document.querySelectorAll('#example-select option').length === ${curatedExamples.length + 1}`);
+    await value(`history.replaceState(null, '', '/#/study')`);
+    await reload(`document.querySelector('#route-heading')?.textContent === 'Information and consent' && document.querySelectorAll('#example-select option').length === ${curatedExamples.length + 1}`);
     await pause(500);
     await check('A page loaded on #/study with uploads in the tab never builds them', `${noProgramControls} && ${curatedSourcePanel}`);
     await value(`location.hash = '/explore'`);
@@ -1241,8 +1271,7 @@ const scenarios = {
     await check('A file dragged over the task\'s source panel is left to the browser, as before',
       `(() => { const files = new DataTransfer(); files.items.add(new File(['int main(void) { return 0; }'], 'program.c')); return ['dragover', 'drop'].every(type => { const event = new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: files }); document.querySelector('#source-lines').dispatchEvent(event); return !event.defaultPrevented; }) && !document.querySelector('#source-panel').classList.contains('is-drop-target') && !appState.programId; })()`);
     const entered = await value(studySurface);
-    await send('Page.reload');
-    await onTask('T6');
+    await reload(`document.querySelector('#survey-form')?.dataset.section === 'T6' && window.StudyWorkspace.ready`);
     await check('A page loaded on the task never builds the controls', noProgramControls);
     await check('The task looks exactly as on a page that never built them', `${JSON.stringify(entered)} === ${studySurface}`);
   },
@@ -1391,6 +1420,7 @@ const scenarios = {
 try {
   await send('Runtime.enable'); await send('Page.enable'); await send('Network.enable'); await send('Log.enable'); await send('DOM.enable');
   await send('Page.setInterceptFileChooserDialog', { enabled: true });
+  await send('Fetch.enable', { patterns: [{ urlPattern: '*/api/programs', requestStage: 'Request' }] });
   await send('Emulation.setFocusEmulationEnabled', { enabled: true });
   await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
   for (const [name, scenario] of Object.entries(scenarios)) {
