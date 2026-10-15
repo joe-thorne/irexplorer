@@ -64,9 +64,10 @@
   // reload in this tab picks it up again (another tab, or a later visit, starts clean): { mode, title, origin,
   // replaces, opened, workspace, fileName, text, start, compiled }, where text is the editor's text, start
   // what the edit started as and compiled the compiled source the source panel shows beside it ({ file,
-  // text }, null for a new program). Compiling, discarding or leaving Explore removes it.
+  // text }, null for a new program). Compiling or discarding removes it. Leaving Explore keeps it, for the
+  // editor to reopen on coming back.
   const EDIT_KEY = "irexplorer.programs.uncompiled-edit";
-  // The one kept when this page loaded, which the editor reopens on entering Explore.
+  // The one kept when this page loaded, or when Explore was left, which the editor reopens on entering Explore.
   let keptEdit = readEdit();
   // The warnings the list was last built for, so it is rebuilt, and closed, only for another program.
   let listedWarnings = null;
@@ -207,10 +208,13 @@
 
   // Leave the source panel and the workspace exactly as the page has them without user programs. A user
   // program that is open, opening or compiling is closed, so Study never shows one; a compile that
-  // finishes later is kept in Your file but not opened. Explore comes back on Curated examples.
+  // finishes later is kept in Your file but not opened. Explore comes back on Curated examples, or on the
+  // Uncompiled edit that was in the editor, which is kept as it is through a reload.
   function detach() {
-    // An edit in the editor is not kept on leaving Explore.
-    if (editing) closeEditor();
+    if (editing) {
+      keptEdit = readEdit();
+      removeEditor();
+    }
     if (current || card) closeWorkspace();
     mode = "curated";
     current = null;
@@ -496,9 +500,14 @@
     render();
     announce(`Compiling ${accepted.fileName}.`);
     const result = await postProgram(accepted.fileName, accepted.source, compiling.cancel.signal);
-    // Explore was left while it compiled (see detach): keep a compiled upload, but open nothing.
+    // Explore was left while it compiled (see detach): keep a compiled upload, but open nothing. An edit
+    // that compiled is no longer an Uncompiled edit, unless the editor has been opened on it again since.
     if (card !== compiling) {
       if (result.ok) keep({ ...result.program, renamedFrom, origin }, replaces);
+      if (result.ok && edit && !editing) {
+        keptEdit = null;
+        forgetEdit();
+      }
       return;
     }
     // Cancel dropped the request, so the server stopped the compile; whatever the request came to is ignored.
@@ -639,11 +648,13 @@
     keepEdit();
   }
 
-  // After a reload, open the Uncompiled edit `kept` in the editor as it was, beside the compiled source kept
-  // with it, with the source mode and file it was started from chosen and locked. Nothing is asked of the
-  // server, which may have forgotten the program the edit started from; what was open behind the editor
-  // opens again only if the editor closes without compiling (see leaveEditor).
+  // After a reload, or on coming back to Explore, open the Uncompiled edit `kept` in the editor as it was,
+  // beside the compiled source kept with it, with the source mode and file it was started from chosen and
+  // locked. Nothing is asked of the server, which may have forgotten the program the edit started from; what
+  // was open behind the editor opens again only if the editor closes without compiling (see leaveEditor).
   function reopenEdit({ mode: kind, title, origin, replaces = null, opened = null, workspace = null, fileName, text, start, compiled = null }) {
+    // Whatever Study left open is not what the edit started from.
+    closeWorkspace();
     mode = kind;
     current = uploads.find(upload => upload.programId === opened?.programId) ?? null;
     if (opened?.exampleId) elements.exampleSelect.value = opened.exampleId;
@@ -653,16 +664,21 @@
       exampleSelectDisabled: false, confirming: false, reopened: true, behind: null };
     view.editorName.value = fileName;
     view.editor.load(text, { compiled: compiled?.text ?? null, start });
-    announce(`${title}: your uncompiled edit was kept through the reload.`);
+    announce(`${title}: your uncompiled edit was kept.`);
   }
 
   const edited = () => view.editor.edited;
 
-  // Back to whatever the editor stood in for, unchanged.
+  // Back to whatever the editor stood in for, unchanged, with the Uncompiled edit gone.
   function closeEditor() {
+    forgetEdit();
+    removeEditor();
+  }
+
+  // Take the editor out of the page, keeping the Uncompiled edit (see detach).
+  function removeEditor() {
     elements.exampleSelect.disabled = editing.exampleSelectDisabled;
     editing = null;
-    forgetEdit();
     view.summary.textContent = sourceSummary();
     render();
   }

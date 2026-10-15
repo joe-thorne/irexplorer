@@ -1232,7 +1232,7 @@ const scenarios = {
     await check('The source panel beside it shows the compiled source, with its note',
       `${visible('#source-lines')} && document.querySelector('#source-summary').textContent === 'C source · quick_sort.c' && document.querySelectorAll('#source-lines .source-line').length === ${quickSort.replace(/\n$/, '').split('\n').length} && ${visible('#program-source-note')}`);
     await check('The file controls stay locked, on Your files', `document.querySelector('#source-mode input[value="yours"]').checked && [...document.querySelectorAll('#source-mode input, #example-select, #your-file-select, #program-upload, #program-new')].every(control => control.disabled)`);
-    await check('The reopened edit is announced', `document.querySelector('#notice').textContent === 'Editing quick_sort.c: your uncompiled edit was kept through the reload.'`);
+    await check('The reopened edit is announced', `document.querySelector('#notice').textContent === 'Editing quick_sort.c: your uncompiled edit was kept.'`);
     await check('Reopening the edit asked nothing of the server', `${!requests.slice(from).some(request => request.path.startsWith('/api/programs'))}`);
     await snap('user-programs-edit-reloaded.png');
 
@@ -1269,7 +1269,17 @@ const scenarios = {
     await check('After discarding, a reload opens no editor', `!document.querySelector('#program-editor') && !document.querySelector('#example-select').disabled`);
   },
 
-  async 'Leaving Explore closes the editor, and Study never shows it'() {
+  async 'Leaving Explore takes the editor away, Study never shows it, and coming back reopens the Uncompiled edit'() {
+    const starter = await readFile(join(userProgramSources, 'program.c'), 'utf8');
+    const text = `// an edit\n${starter}`;
+    const reopened = `${visible('#program-editor')} && document.querySelector('#program-editor textarea').value === ${JSON.stringify(text)} && document.querySelector('#program-editor-heading').textContent === 'New program' && document.querySelector('#program-editor .editor-status').textContent.startsWith('Edited · not compiled')
+      && document.querySelector('#source-mode input[value="yours"]').checked && [...document.querySelectorAll('#source-mode input, #example-select, #your-file-select, #program-upload, #program-new')].every(control => control.disabled)`;
+    const toStudyAndBack = async () => {
+      await value(`location.hash = '/study'`);
+      await until(`document.querySelector('#route-heading')?.textContent === 'Information and consent'`);
+      await value(`location.hash = '/explore'`);
+      await until(`document.querySelector('#source-mode') !== null`);
+    };
     await click('#source-mode input[value="yours"]');
     await click('#program-new');
     await send('Input.insertText', { text: '// an edit\n' });
@@ -1278,10 +1288,18 @@ const scenarios = {
     await check('Study shows no editor and no New…, and the curated source panel', `${noProgramControls} && ${curatedSourcePanel}`);
     await value(`location.hash = '/explore'`);
     await until(`document.querySelector('#source-mode') !== null`);
-    await check('Back in Explore the editor is closed, on Curated examples', `!document.querySelector('#program-editor') && document.querySelector('#source-mode input[value="curated"]').checked && ${visible('#example-select')}`);
+    await check('Back in Explore the editor reopens on the Uncompiled edit, in Your files with the file controls locked, as after a reload', reopened);
+    await check('The reopened edit is announced', `document.querySelector('#notice').textContent === 'New program: your uncompiled edit was kept.'`);
     await reload();
-    await pause(300);
-    await check('The edit left behind in Explore is not kept: a reload opens no editor', `!document.querySelector('#program-editor') && !document.querySelector('#example-select').disabled`);
+    await check('The edit is still kept through a reload after that', reopened);
+
+    await click('#program-editor-discard');
+    await value(`[...document.querySelectorAll('#program-editor .program-editor-confirmation button')].find(button => button.textContent === 'Discard edits').click()`);
+    await until(`!document.querySelector('#program-editor')`);
+    await toStudyAndBack();
+    await check('After discarding, coming back to Explore opens no editor', `!document.querySelector('#program-editor') && !document.querySelector('#source-mode input[value="curated"]').disabled && !document.querySelector('#example-select').disabled`);
+    await reload();
+    await check('Nor does a reload', `!document.querySelector('#program-editor') && !document.querySelector('#example-select').disabled`);
   },
 
   async 'Study never builds the upload controls, even while a compile is under way'() {
