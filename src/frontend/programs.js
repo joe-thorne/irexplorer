@@ -42,13 +42,13 @@
   // compile). A file the browser refuses before sending fails with the server's invalid_program error.
   let card = null;
   let ticking = null;
-  // The program open in the editor, if any: { title, origin, start, compiled, workspace, opener,
-  // exampleSelectDisabled, confirming }. start is the text it opened with, so an edit is any change from it;
-  // compiled is true when it opened on the program on screen (Edit a copy or Edit), whose compiled source the
-  // source panel keeps showing beside it, and false for a new program; workspace is the panels and function
-  // on screen, for the compiled edit to open with (app.js currentWorkspace), or null. opener is the button
-  // that opened it, which gets focus back when it closes. While it is open the editor stands in for the
-  // panels and the comparison (which stay as they were behind it), and the file controls are disabled.
+  // The program open in the editor, if any: { title, origin, compiled, workspace, opener, exampleSelectDisabled,
+  // confirming }. compiled is true when it opened on the program on screen (Edit a copy or Edit), whose
+  // compiled source the source panel keeps showing beside it, and the margin marks changes against, and
+  // false for a new program; workspace is the panels and function on screen, for the compiled edit to open
+  // with (app.js currentWorkspace), or null. opener is the button that opened it, which gets focus back when
+  // it closes. While it is open the editor stands in for the panels and the comparison (which stay as they
+  // were behind it), and the file controls are disabled.
   let editing = null;
   // The warnings the list was last built for, so it is rebuilt, and closed, only for another program.
   let listedWarnings = null;
@@ -494,10 +494,10 @@
   // panels and function.
   function openEditor({ title, origin, fileName, text, compiled }, opener, announcement) {
     if (editing || card?.kind === "compiling") return;
-    editing = { title, origin, start: text, compiled, workspace: appState.ready ? currentWorkspace() : null, opener,
+    editing = { title, origin, compiled, workspace: appState.ready ? currentWorkspace() : null, opener,
       exampleSelectDisabled: elements.exampleSelect.disabled, confirming: false };
     view.editorName.value = fileName;
-    view.editor.load(text);
+    view.editor.load(text, { compiled: compiled ? text : null });
     render();
     view.editor.focus();
     announce(announcement);
@@ -522,7 +522,7 @@
     view.editorConfirmation.hidden = !editing.confirming;
   }
 
-  const edited = () => view.editor.text !== editing.start;
+  const edited = () => view.editor.edited;
 
   // Back to whatever the editor stood in for, unchanged.
   function closeEditor() {

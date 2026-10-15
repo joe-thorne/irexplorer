@@ -563,10 +563,19 @@ details p { margin: .8rem 0 0; }
 .program-editor-confirmation p { margin: 0; }
 /* editor.js: a transparent textarea exactly over the highlighted copy of its text, with the line numbers
    beside them. All three share one font, size, line height and top padding, so their lines stay aligned. */
+.editor { display: flex; flex: 1 1 auto; flex-direction: column; gap: .35rem; min-height: 0; }
+.editor-status { color: var(--ink); font-size: .85rem; font-weight: 750; margin: 0; }
+.editor-status:empty { display: none; }
+.editor-hint { color: var(--muted); font-size: .8rem; margin: 0; }
+.editor-hint.is-over span { color: #991b1b; font-weight: 750; }
 .program-editor-frame { background: var(--code-bg); border: 1px solid #9fb3c8; border-radius: .45rem; display: flex; flex: 1 1 auto; min-height: 20rem; overflow: hidden; }
 .editor-gutter, .editor-highlight, .editor-input { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .82rem; letter-spacing: normal; line-height: 1.35; tab-size: 4; }
 .editor-gutter { border-right: 1px solid #dce5ef; color: #64748b; flex: 0 0 2.75rem; overflow: hidden; padding: .4rem .45rem 0 0; text-align: right; user-select: none; }
 .editor-numbers span, .editor-highlight > span { display: block; }
+/* A bar in the margin beside each line that is new or changed against the compiled source. Only those lines
+   have a border, so forced colours, which draw every border, show the same bars. */
+.editor-numbers span { padding-left: 3px; }
+.editor-numbers span.is-changed { border-left: 3px solid var(--accent); padding-left: 0; }
 .editor-body { flex: 1 1 auto; min-width: 0; overflow: hidden; position: relative; }
 .editor-highlight { background: none; color: var(--code); left: 0; margin: 0; padding: .4rem .5rem; pointer-events: none; position: absolute; top: 0; white-space: pre; }
 .editor-input { background: transparent; border: 0; caret-color: var(--ink); color: transparent; height: 100%; inset: 0; margin: 0; overflow: auto; padding: .4rem .5rem; position: absolute; resize: none; white-space: pre; width: 100%; }

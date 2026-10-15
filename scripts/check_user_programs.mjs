@@ -129,7 +129,7 @@ async function dropFile(selector, file) {
   for (const type of ['dragEnter', 'dragOver', 'drop']) await send('Input.dispatchDragEvent', { type, x, y, data });
 }
 // Press a key with `modifiers` (CDP's bit field) held, as a person would.
-const CTRL = 2;
+const CTRL = 2, SHIFT = 8;
 async function key(key, code, keyCode, modifiers = 0) {
   for (const type of ['keyDown', 'keyUp']) await send('Input.dispatchKeyEvent', { type, key, code, windowsVirtualKeyCode: keyCode, modifiers });
 }
@@ -714,6 +714,136 @@ const scenarios = {
     await until(`window.StudyWorkspace.ready && Boolean(appState.programId) && appState.programId !== ${JSON.stringify(uploaded)} && !${visible('#program-card')}`);
     await check('quick_sort is gone, so the edit opens on its first function, sort, with the states kept',
       `document.querySelector('#function-select').value === 'sort' && document.querySelector('#right-state').value === '5' && document.querySelector('#left-state').value === '0'`);
+  },
+
+  async 'In the editor Tab indents, Shift+Tab outdents, Enter keeps the indent, and undo steps back through them'() {
+    const starter = await readFile(join(userProgramSources, 'program.c'), 'utf8');
+    const lines = starter.split('\n');
+    const editor = `document.querySelector('#program-editor textarea')`;
+    // The editor's text, and its selection as [start, end].
+    const text = () => value(`${editor}.value`);
+    const selection = () => value(`[${editor}.selectionStart, ${editor}.selectionEnd]`);
+    const at = (line, column) => lines.slice(0, line - 1).join('\n').length + (line > 1 ? 1 : 0) + column;
+    const caret = (start, end = start) => value(`${editor}.setSelectionRange(${start}, ${end})`);
+    const edited = (...changed) => lines.map((line, index) => changed[index] ?? line).join('\n');
+    await click('#source-mode input[value="yours"]');
+    await click('#program-new');
+
+    await caret(at(3, 6));
+    await key('Tab', 'Tab', 9);
+    await check('Tab indents the line the caret is on by four spaces, and the caret moves with its text',
+      `${editor}.value === ${JSON.stringify(edited(undefined, undefined, '        return x * x;'))} && ${editor}.selectionStart === ${at(3, 10)} && document.activeElement === ${editor}`);
+    await key('Tab', 'Tab', 9, SHIFT);
+    await check('Shift+Tab outdents it again', `${editor}.value === ${JSON.stringify(starter)} && ${editor}.selectionStart === ${at(3, 6)}`);
+    await key('Tab', 'Tab', 9, SHIFT);
+    await check('Shift+Tab again takes off the indent the line had', `${editor}.value === ${JSON.stringify(edited(undefined, undefined, 'return x * x;'))} && ${editor}.selectionStart === ${at(3, 2)}`);
+    await key('Tab', 'Tab', 9, SHIFT);
+    await check('Shift+Tab on a line with no indent changes nothing', `${editor}.value === ${JSON.stringify(edited(undefined, undefined, 'return x * x;'))}`);
+    await key('Tab', 'Tab', 9);
+    await check('Tab puts that indent back', `${editor}.value === ${JSON.stringify(starter)}`);
+
+    await caret(at(2, 4), at(4, 1));
+    await key('Tab', 'Tab', 9);
+    await check('Tab indents every line of a selection, which still covers them',
+      `${editor}.value === ${JSON.stringify(edited(undefined, '    int square(int x) {', '        return x * x;', '    }'))} && ${editor}.selectionStart === ${at(2, 0)} && ${editor}.selectionEnd === ${at(4, 1) + 12}`);
+    await key('Tab', 'Tab', 9, SHIFT);
+    await key('Tab', 'Tab', 9, SHIFT);
+    await check('Shift+Tab outdents every line of a selection, each by what indent it has',
+      `${editor}.value === ${JSON.stringify(edited(undefined, undefined, 'return x * x;'))}`);
+    await key('z', 'KeyZ', 90, CTRL);
+    await check('Undo reverses the last outdent', `${editor}.value === ${JSON.stringify(starter)}`);
+    await key('z', 'KeyZ', 90, CTRL);
+    await check('Undo again reverses the outdent before it, back to the indented selection',
+      `${editor}.value === ${JSON.stringify(edited(undefined, '    int square(int x) {', '        return x * x;', '    }'))}`);
+    await key('z', 'KeyZ', 90, CTRL);
+    await check('Undo reverses the indent made with Tab', `${editor}.value === ${JSON.stringify(starter)}`);
+
+    await caret(at(3, lines[2].length));
+    await key('Enter', 'Enter', 13);
+    await send('Input.insertText', { text: 'x = 1;' });
+    await check('Enter starts a new line with the same indent as the line it splits',
+      `${editor}.value === ${JSON.stringify(starter.replace('x * x;\n', 'x * x;\n    x = 1;\n'))} && ${editor}.selectionStart === ${at(4, 10)}`);
+    await key('z', 'KeyZ', 90, CTRL);
+    await key('z', 'KeyZ', 90, CTRL);
+    await check('Undo steps back through the typing and the new line', `${editor}.value === ${JSON.stringify(starter)}`);
+  },
+
+  async 'Esc releases Tab, so the next Tab leaves the editor'() {
+    const starter = await readFile(join(userProgramSources, 'program.c'), 'utf8');
+    const editor = `document.querySelector('#program-editor textarea')`;
+    await click('#source-mode input[value="yours"]');
+    await click('#program-new');
+    await value(`${editor}.setSelectionRange(0, 0)`);
+    await key('Escape', 'Escape', 27);
+    await key('ArrowRight', 'ArrowRight', 39);
+    await key('Tab', 'Tab', 9);
+    await check('A key between Esc and Tab takes the release back: Tab still indents', `${editor}.value === '    ' + ${JSON.stringify(starter)} && document.activeElement === ${editor}`);
+    await key('z', 'KeyZ', 90, CTRL);
+    await key('Escape', 'Escape', 27);
+    await check('Esc changes nothing in the editor and keeps it open', `${editor}.value === ${JSON.stringify(starter)} && ${visible('#program-editor')} && document.activeElement === ${editor}`);
+    await key('Tab', 'Tab', 9);
+    await check('Tab after Esc leaves the editor, and the text is unchanged', `document.activeElement !== ${editor} && ${editor}.value === ${JSON.stringify(starter)}`);
+    await value(`${editor}.focus()`);
+    await key('Escape', 'Escape', 27);
+    await key('Tab', 'Tab', 9, SHIFT);
+    await check('Shift+Tab after Esc leaves it backwards, to File name and the buttons', `document.activeElement !== ${editor} && document.querySelector('#program-editor').contains(document.activeElement) && ${editor}.value === ${JSON.stringify(starter)}`);
+    await value(`${editor}.focus()`);
+    await key('Tab', 'Tab', 9);
+    await check('Back in the editor, Tab indents again', `${editor}.value.startsWith('    ') && document.activeElement === ${editor}`);
+  },
+
+  async 'The hint under the editor gives the keys and counts lines against the 200-line limit'() {
+    const editor = `document.querySelector('#program-editor textarea')`;
+    const hint = `document.querySelector('#program-editor .editor-hint')`;
+    await click('#source-mode input[value="yours"]');
+    await click('#program-new');
+    await check('A hint under the editor gives the keys, and the editor is described by it',
+      `(() => { const text = ${hint}.textContent; return ${visible('#program-editor .editor-hint')} && Boolean(${editor}.compareDocumentPosition(${hint}) & Node.DOCUMENT_POSITION_FOLLOWING) && ${editor}.getAttribute('aria-describedby').split(' ').includes(${hint}.id) && ['Tab indents', 'Shift+Tab outdents', 'Enter keeps the indent', 'Esc, then Tab, leaves the editor', 'Ctrl/⌘+Enter compiles'].every(part => text.includes(part)); })()`);
+    await check('It counts the starter function as 4 / 200 lines', `${hint}.textContent.endsWith('4 / 200 lines') && !${hint}.classList.contains('is-over')`);
+    await value(`${editor}.setSelectionRange(${editor}.value.length, ${editor}.value.length)`);
+    await send('Input.insertText', { text: 'int cube(int x) {\n    return x * x * x;\n}\n' });
+    await check('The count follows the lines added', `${hint}.textContent.endsWith('7 / 200 lines')`);
+    await value(`${editor}.select()`);
+    await send('Input.insertText', { text: 'int x;\n'.repeat(201) });
+    await check('Over the limit the count says so, apart from colour', `${hint}.textContent.endsWith('201 / 200 lines: too many to compile') && ${hint}.classList.contains('is-over')`);
+  },
+
+  async 'The margin marks new or changed lines, and the status line counts them'() {
+    const starter = await readFile(join(userProgramSources, 'program.c'), 'utf8');
+    const editor = `document.querySelector('#program-editor textarea')`;
+    const status = `document.querySelector('#program-editor .editor-status')`;
+    // The line numbers the margin marks as new or changed.
+    const marked = `[...document.querySelectorAll('#program-editor .editor-gutter span.is-changed')].map(span => span.textContent).join()`;
+    await click('#source-mode input[value="yours"]');
+    await click('#program-new');
+    await check('For a new program every line is new: the margin marks the four lines of the starter', `${marked} === '1,2,3,4'`);
+    await check('With no edits there is no status line', `!${visible('#program-editor .editor-status')} && ${status}.textContent === ''`);
+    await value(`${editor}.setSelectionRange(${editor}.value.length, ${editor}.value.length)`);
+    await send('Input.insertText', { text: 'int cube(int x) {\n    return x * x * x;\n}\n' });
+    await check('After an edit the status line reads Edited · not compiled, counting the lines the margin marks',
+      `${visible('#program-editor .editor-status')} && ${status}.textContent === 'Edited · not compiled · 7 lines new or changed' && ${marked} === '1,2,3,4,5,6,7'`);
+    await snap('user-programs-editor-edited.png');
+    await check('The status line is announced to screen readers, and sits above the editor',
+      `${status}.getAttribute('role') === 'status' && Boolean(${status}.compareDocumentPosition(${editor}) & Node.DOCUMENT_POSITION_FOLLOWING)`);
+    await key('z', 'KeyZ', 90, CTRL);
+    await check('Undoing back to the starter clears the status line', `${editor}.value === ${JSON.stringify(starter)} && ${status}.textContent === '' && ${marked} === '1,2,3,4'`);
+
+    // An edit that starts from compiled source, as Edit a copy does, is marked against that source.
+    const compiled = await readFile(join(curatedSources, 'quick_sort.c'), 'utf8');
+    await click('#program-editor-discard');
+    await click('#source-mode input[value="curated"]');
+    await openCurated('quick_sort');
+    await click('#program-edit');
+    await check('Unedited compiled source has no lines marked and no status line', `${marked} === '' && ${status}.textContent === ''`);
+    await value(`(() => { const at = ${editor}.value.indexOf('a[high];'); ${editor}.focus(); ${editor}.setSelectionRange(at + 2, at + 6); })()`);
+    await send('Input.insertText', { text: 'low' });
+    await value(`${editor}.setSelectionRange(${compiled.indexOf('\n\n') + 1}, ${compiled.indexOf('\n\n') + 1})`);
+    await send('Input.insertText', { text: '// a comment\n' });
+    await check('A changed line and an inserted line are marked, and only they are counted',
+      `${editor}.value === ${JSON.stringify(compiled.replace('\n\n', '\n// a comment\n\n').replace('a[high];', 'a[low];'))} && ${marked} === '2,5' && ${status}.textContent === 'Edited · not compiled · 2 lines new or changed'`);
+    await value(`(() => { const at = ${editor}.value.indexOf('// a comment'); ${editor}.setSelectionRange(at, at + 13); })()`);
+    await key('Delete', 'Delete', 46);
+    await check('A deleted line is not counted: one line is changed', `${marked} === '4' && ${status}.textContent === 'Edited · not compiled · 1 line new or changed'`);
   },
 
   async 'Leaving Explore closes the editor, and Study never shows it'() {
