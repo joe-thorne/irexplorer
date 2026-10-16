@@ -108,7 +108,7 @@ def create_app(
         exc: DataUnavailableError,
     ) -> JSONResponse:
         logger.error(
-            "Pre-baked model data failed for curated example %r",
+            "Model records failed to load for curated example %r",
             exc.example_id,
             exc_info=(type(exc), exc, exc.__traceback__),
         )

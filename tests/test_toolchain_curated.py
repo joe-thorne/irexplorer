@@ -74,9 +74,9 @@ class CuratedToolchainTests(unittest.TestCase):
         self.assertIn("-passes=mem2reg", mem2reg)
         self.assertTrue(mem2reg.endswith("score_01_mem2reg.ll"))
 
-        anchor = curated.origin_command("score", "O3")
-        self.assertIn("-O3", anchor)
-        self.assertTrue(anchor.endswith("score_O3.ll"))
+        o3_command = curated.origin_command("score", "O3")
+        self.assertIn("-O3", o3_command)
+        self.assertTrue(o3_command.endswith("score_O3.ll"))
 
     def test_origin_command_unknown_state_is_controlled_failure(self) -> None:
         with self.assertRaises(curated.ToolchainError):

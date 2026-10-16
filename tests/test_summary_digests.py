@@ -24,7 +24,7 @@ HEADER = (
     "# every structured and raw remark path and proves equivalence to that baseline.\n"
     "# Update only after a deliberate, reviewed report change:\n"
     "# python -m tests.test_summary_digests --write\n"
-    "# The v3 re-pin followed exact comparison of 315 response payloads and 45\n"
+    "# The v3 re-pin followed exact comparison of 315 responses and 45\n"
     "# model records under the declared rename mapping; see\n"
     "# docs/model-record-v3-migration.md.\n"
 )
@@ -46,7 +46,7 @@ def normalise_report_renames(response):
 
     return {
         key: (
-            [rename_fields(state, {"step": "transition"}) for state in value]
+            [rename_fields(state, {"step": "transition"}) for state in value]  # terminology: allow transition
             if key == "states"
             else value
         )

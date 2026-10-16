@@ -246,7 +246,7 @@ class FastApiTests(unittest.TestCase):
         self.assertIn("structuralClaims", report_data)
         self.assertNotIn("items", report_data)
         self.assertIn("step", report_data["states"][1])
-        self.assertNotIn("transition", report_data["states"][1])
+        self.assertNotIn("transition", report_data["states"][1])  # terminology: allow transition
 
         source_submission = self.client.post(
             "/api/analysis",

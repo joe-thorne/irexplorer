@@ -225,8 +225,9 @@ def summarise_correspondence(
         remaining = len(remark_names) - 3
         if remaining > 0:
             labels += f", and {remaining} more"
+        # Report text is pinned by the comparison-report digests.
         remark_scope = (
-            "the final transition"
+            "the final transition"  # terminology: allow transition
             if isinstance(correspondence, ComposedCorrespondence)
             else "this step"
         )

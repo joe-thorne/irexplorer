@@ -28,7 +28,7 @@ def compare_timeline_step(
     timeline: OptimisationTimeline,
     from_ordinal: int = 0,
 ) -> Correspondence:
-    """Compare one adjacent timeline pair using its honest transition metadata."""
+    """Compare one adjacent timeline pair using its honest step metadata."""
 
     timeline.validate()
     if from_ordinal < 0 or from_ordinal >= len(timeline.steps):

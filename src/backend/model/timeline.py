@@ -1,4 +1,4 @@
-"""Immutable optimisation timelines and transition provenance."""
+"""Immutable optimisation timelines and step provenance."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ StepKind = Literal["derived", "recompiled"]
 
 @dataclass(frozen=True)
 class StepOrigin:
-    """Auditable provenance for one transition into an optimisation state."""
+    """Auditable provenance for the step that produces an optimisation state."""
 
     command: str
     pass_name: str | None = None
@@ -23,7 +23,7 @@ class StepOrigin:
 
 @dataclass(frozen=True)
 class PassStep:
-    """Metadata for one adjacent transition; comparisons live in Layer 4."""
+    """Metadata for one adjacent step; comparisons live in Layer 4."""
 
     from_ordinal: int
     to_ordinal: int
@@ -64,7 +64,7 @@ class OptimisationTimeline:
 
 
 def validate_timeline(timeline: OptimisationTimeline) -> None:
-    """Validate timeline ordering, immutable states, and transition honesty."""
+    """Validate timeline ordering, immutable states, and step honesty."""
 
     if not timeline.example_id:
         raise ModelValidationError("timeline example_id must not be empty")
