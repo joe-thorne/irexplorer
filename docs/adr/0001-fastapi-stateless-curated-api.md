@@ -52,3 +52,10 @@ Routes change from a stateful session plus unscoped queries to:
 - `GET /api/examples/{exampleId}/states/{ordinal}/cfg?functionId=...`.
 
 User-supplied source compilation is not supported by the runtime. Adding it would require a separately designed isolated worker and resource limits.
+
+## Terminology note — 16 Oct 2026
+
+This record keeps its original wording. In current glossary terms, “pre-baked”
+describes the model records generated offline from compiler artefacts, and the
+cached “correspondence overlays” are stored correspondences. The decision and
+its routes are unchanged.

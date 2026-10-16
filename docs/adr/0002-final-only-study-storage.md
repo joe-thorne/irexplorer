@@ -17,3 +17,7 @@ Store SQLite outside the source tree and public assets. Schema version 4 uses a 
 The application remains a single-host service with explicit persistent storage. Drafts do not support cross-device recovery; closing the tab is not a supported recovery workflow. Abandoned drafts produce no server response record. Multi-host collection would require a separate storage decision.
 
 See [operations](../evaluation-operations.md) and [submission contract](../evaluation-api-contract.md). Tests cover validation, retry behaviour, durable receipts, export fidelity, and backup/restore. Infrastructure logging and external deployment configuration are the responsibility of the hosting environment.
+
+## Terminology note — 16 Oct 2026
+
+This record keeps its original wording. The frozen “envelope” is the frozen submission the browser holds across retries, as the glossary names it. The decision and the stored format are unchanged.
