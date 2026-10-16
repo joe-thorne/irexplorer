@@ -6,11 +6,21 @@ Choose a curated program, select two optimisation states, and follow correspondi
 
 ## Project status
 
-The curated application, local study flow, submission/retry service, and researcher export tools are implemented. Local and preview modes support synthetic testing; pilot and live collection start only from a deliberately configured release with finished participant content, a released build, and an HTTPS origin (see [evaluation operations](docs/evaluation-operations.md#pilot-and-live-collection)). This standalone repository keeps only current technical documentation—completed thesis audits, phase plans, and research worklists belong outside the application repository.
+The curated application, local study flow, submission/retry service, and researcher export tools are implemented, and user programs run locally in a separate stack. The evaluation collected responses with release `0.5.0`, which stays available as the [study build](#run-the-study-build). Local and preview modes support synthetic testing; pilot and live collection start only from a deliberately configured release with finished participant content, a released build, and an HTTPS origin (see [evaluation operations](docs/evaluation-operations.md#pilot-and-live-collection)). This standalone repository keeps only current technical documentation—completed thesis audits, phase plans, and research worklists belong outside the application repository.
 
 ## Run locally
 
-Clone this repository and start Docker with Compose support:
+Three builds run locally, each in Docker with Compose:
+
+| Build | Source | What it shows | Address |
+|---|---|---|---|
+| Current | `main` | Explore with the curated programs, and Study | http://localhost:8000 |
+| [User programs](#run-with-user-programs) | `main` | The current build, plus your own C programs in Explore | http://localhost:8001 |
+| [Study build](#run-the-study-build) | tag `v0.5.0` | The application exactly as evaluation participants used it | http://localhost:8000 |
+
+The current build and the study build both publish port 8000, so run one at a time. The user-programs stack runs beside either.
+
+To run the current build, clone this repository and start Docker with Compose support:
 
 ```sh
 git clone https://github.com/joe-thorne/irexplorer.git
@@ -32,7 +42,7 @@ Only localhost port 8000 is published. The application runs as a non-root user w
 
 ## Run with user programs
 
-User programs let you open one small C file of your own in **Explore**, write one in its editor, or edit a copy of a curated example or one of your files, and follow it through the same states, panels and comparison report as a curated example. They are for local use only and run in a separate Compose stack, on port 8001, beside the study stack above. Build the pinned toolchain image once (it downloads about 1.7 GB of LLVM), then start the stack:
+User programs let you open one small C file of your own in **Explore**, write one in its editor, or edit a copy of a curated example or one of your files, and follow it through the same states, panels and comparison report as a curated example. They are for local use only and run in a separate Compose stack, on port 8001, beside the current build above. Build the pinned toolchain image once (it downloads about 1.7 GB of LLVM), then start the stack:
 
 ```sh
 docker compose --profile toolchain build toolchain
@@ -44,6 +54,25 @@ Open **http://localhost:8001**. A program that compiles with clang warnings list
 The stack runs the same application image with the user programs setting on, beside a compiler service holding the pinned LLVM toolchain and the C library headers. On Apple Silicon the compiler runs `linux/amd64` under emulation, so a program takes a few seconds. The compiler service has no published port and no internet access, reaches only the application over the stack's internal network, has a read-only root file system and wipes its temporary work directory after each program. The application never gets the Docker socket and never runs `clang` or `opt` itself.
 
 With the stack up, `scripts/check_user_programs.sh` checks it against the real toolchain; CI runs the same check on amd64 when started by hand. See [tests/README.md](tests/README.md#real-compiler-smoke-check).
+
+## Run the study build
+
+The evaluation ran application release `0.5.0`, with participant content `v0.11-final-1` and study `v0.11-study-1`, from 6 to 14 October 2026. The `v0.5.0` tag holds that source. It comes before user programs and later changes to Explore, so run it to see the application as participants saw it. Clone the tag into its own folder and start it under its own Compose project name:
+
+```sh
+git clone --branch v0.5.0 --depth 1 https://github.com/joe-thorne/irexplorer.git irexplorer-0.5.0
+cd irexplorer-0.5.0
+IREXPLORER_VERSION=0.5.0 docker compose -p irexplorer-study up -d --build --wait
+```
+
+Stop the current build first (`docker compose down` in your `main` checkout), because both publish port 8000. Open **http://localhost:8000** for Explore and **http://localhost:8000/#/study** for the study.
+
+Set `IREXPLORER_VERSION=0.5.0` as shown: the tag's Compose file defaults to `0.1.0`, and the version is part of the release identity. With it, `/api/release` reports revision `0.5.0+560f1f63580a`, the revision recorded for live collection. The project name gives the build its own `irexplorer-study_study-data` volume, so its submissions stay apart from the current build's. It runs in local collection mode: submissions stay on your machine and never reach the evaluation's store.
+
+```sh
+docker compose -p irexplorer-study down             # Remove container; retain local submissions.
+docker compose -p irexplorer-study down --volumes   # Also remove its local submissions.
+```
 
 ## Run with Python
 
