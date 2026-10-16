@@ -2,8 +2,9 @@
 
 Run by hand before the demo and before merging, with `scripts/check_user_programs.sh`, which checks that
 Docker and the stack are up and sets IREXPLORER_SMOKE_COMPILER (the compiler service's container) and
-IREXPLORER_SMOKE_APP (the app's address). Without them this module is skipped: the offline suite and CI
-have no Docker or LLVM.
+IREXPLORER_SMOKE_APP (the app's address); CI's user-programs job runs it the same way, only when started by
+hand. Without them this module is skipped: the offline suite, and CI on push and pull request, have no
+Docker or LLVM.
 """
 
 import json
@@ -66,6 +67,8 @@ class RealCompilerSmokeTests(unittest.TestCase):
                 status, body = self.compiler.compile(f"{example}.c", curated.read_source(example))
                 answered = recording_files(example, status, body)
                 answered.pop("manifest.json")
+                # The fake toolchain replays a curated source's -O0 stderr as empty: it must compile cleanly.
+                self.assertEqual(answered.pop(f"{example}_O0_stderr.txt", ""), "")
                 committed = {name: (curated.artefact_dir(example) / name).read_text(encoding="utf-8")
                              for name in answered}
                 self.assertEqual([name for name in answered if as_user_program(answered[name], example)

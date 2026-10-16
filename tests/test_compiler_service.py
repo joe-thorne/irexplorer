@@ -92,7 +92,7 @@ class CompilerServiceTests(unittest.TestCase):
         status, body = self.compile("score.c", (curated.EXAMPLES_ROOT / "score.c").read_text(encoding="utf-8"))
 
         self.assertEqual(status, 200)
-        self.assertEqual(set(body), {"states", "optRecord", "rpass", "manifest"})
+        self.assertEqual(set(body), {"states", "optRecord", "rpass", "o0Stderr", "manifest"})
         self.assertEqual([state["stateId"] for state in body["states"]],
                          [state.state_id for state in curated.PASS_STATES])
         self.assertTrue(all(set(state) == {"stateId", "ir", "remarks", "command"} for state in body["states"]))

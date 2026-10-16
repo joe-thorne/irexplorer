@@ -1,0 +1,25 @@
+{
+  "clang": "clang version 22.1.8 (https://github.com/llvm/llvm-project ca7933e47d3a3451d81e72ac174dcb5aa28b59d1)",
+  "opt": "LLVM version 22.1.8",
+  "targetTriple": "x86_64-unknown-linux-gnu",
+  "compilerImage": "content-sha256:e5bd7adf63e6064a774bb2ddfd61d7b4e91b711aa2724691826f910582a79427",
+  "libcVersion": "2.39-0ubuntu8.9",
+  "commands": [
+    "clang -O0 -g -Xclang -disable-O0-optnone -fno-discard-value-names -S -emit-llvm /workspace/user-programs/clang_warnings.c -o /workspace/out/clang_warnings_O0.ll",
+    "clang -O0 -g -Xclang -disable-O0-optnone -fno-discard-value-names -emit-llvm -c /workspace/user-programs/clang_warnings.c -o /workspace/out/clang_warnings_O0.bc",
+    "opt -passes=mem2reg '-pass-remarks=.*' '-pass-remarks-missed=.*' '-pass-remarks-analysis=.*' -pass-remarks-output=/workspace/out/clang_warnings_01_mem2reg_remarks.yaml /workspace/out/clang_warnings_O0.bc -S -o /workspace/out/clang_warnings_01_mem2reg.ll",
+    "opt -passes=instcombine '-pass-remarks=.*' '-pass-remarks-missed=.*' '-pass-remarks-analysis=.*' -pass-remarks-output=/workspace/out/clang_warnings_02_instcombine_remarks.yaml /workspace/out/clang_warnings_01_mem2reg.ll -S -o /workspace/out/clang_warnings_02_instcombine.ll",
+    "opt -passes=simplifycfg '-pass-remarks=.*' '-pass-remarks-missed=.*' '-pass-remarks-analysis=.*' -pass-remarks-output=/workspace/out/clang_warnings_03_simplifycfg_remarks.yaml /workspace/out/clang_warnings_02_instcombine.ll -S -o /workspace/out/clang_warnings_03_simplifycfg.ll",
+    "opt -passes=gvn '-pass-remarks=.*' '-pass-remarks-missed=.*' '-pass-remarks-analysis=.*' -pass-remarks-output=/workspace/out/clang_warnings_04_gvn_remarks.yaml /workspace/out/clang_warnings_03_simplifycfg.ll -S -o /workspace/out/clang_warnings_04_gvn.ll",
+    "opt '-passes=instcombine,simplifycfg' '-pass-remarks=.*' '-pass-remarks-missed=.*' '-pass-remarks-analysis=.*' -pass-remarks-output=/workspace/out/clang_warnings_05_cleanup_remarks.yaml /workspace/out/clang_warnings_04_gvn.ll -S -o /workspace/out/clang_warnings_05_cleanup.ll",
+    "opt '-passes=loop-simplify,lcssa' '-pass-remarks=.*' '-pass-remarks-missed=.*' '-pass-remarks-analysis=.*' -pass-remarks-output=/workspace/out/clang_warnings_06_loop_canonical_remarks.yaml /workspace/out/clang_warnings_05_cleanup.ll -S -o /workspace/out/clang_warnings_06_loop_canonical.ll",
+    "opt -passes=loop-rotate '-pass-remarks=.*' '-pass-remarks-missed=.*' '-pass-remarks-analysis=.*' -pass-remarks-output=/workspace/out/clang_warnings_07_loop_rotate_remarks.yaml /workspace/out/clang_warnings_06_loop_canonical.ll -S -o /workspace/out/clang_warnings_07_loop_rotate.ll",
+    "opt -passes=licm '-pass-remarks=.*' '-pass-remarks-missed=.*' '-pass-remarks-analysis=.*' -pass-remarks-output=/workspace/out/clang_warnings_08_licm_remarks.yaml /workspace/out/clang_warnings_07_loop_rotate.ll -S -o /workspace/out/clang_warnings_08_licm.ll",
+    "opt -passes=indvars '-pass-remarks=.*' '-pass-remarks-missed=.*' '-pass-remarks-analysis=.*' -pass-remarks-output=/workspace/out/clang_warnings_09_indvars_remarks.yaml /workspace/out/clang_warnings_08_licm.ll -S -o /workspace/out/clang_warnings_09_indvars.ll",
+    "opt '-passes=instcombine,simplifycfg' '-pass-remarks=.*' '-pass-remarks-missed=.*' '-pass-remarks-analysis=.*' -pass-remarks-output=/workspace/out/clang_warnings_10_loop_cleanup_remarks.yaml /workspace/out/clang_warnings_09_indvars.ll -S -o /workspace/out/clang_warnings_10_loop_cleanup.ll",
+    "opt -passes=loop-vectorize '-pass-remarks=.*' '-pass-remarks-missed=.*' '-pass-remarks-analysis=.*' -pass-remarks-output=/workspace/out/clang_warnings_11_vectorize_remarks.yaml /workspace/out/clang_warnings_10_loop_cleanup.ll -S -o /workspace/out/clang_warnings_11_vectorize.ll",
+    "opt '-passes=instcombine,simplifycfg' '-pass-remarks=.*' '-pass-remarks-missed=.*' '-pass-remarks-analysis=.*' -pass-remarks-output=/workspace/out/clang_warnings_12_final_cleanup_remarks.yaml /workspace/out/clang_warnings_11_vectorize.ll -S -o /workspace/out/clang_warnings_12_final_cleanup.ll",
+    "clang -O3 -g -fno-discard-value-names -S -emit-llvm /workspace/user-programs/clang_warnings.c -o /workspace/out/clang_warnings_O3.ll",
+    "clang -O3 -g -fno-discard-value-names '-Rpass=.*' '-Rpass-missed=.*' '-Rpass-analysis=.*' -fsave-optimization-record /workspace/user-programs/clang_warnings.c -c -o /workspace/out/clang_warnings.o"
+  ]
+}

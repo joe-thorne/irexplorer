@@ -45,6 +45,20 @@ async function until(expression) {
   for (let attempt = 0; attempt < 100; attempt += 1) { if (await value(expression)) return; await new Promise(resolve => setTimeout(resolve, 75)); }
   throw Error(`Timed out: ${expression}`);
 }
+// Page.reload and Page.navigate return before the new document has loaded, while the old one still answers
+// and may still show what the next wait looks for: mark the old document, and wait until a new one has
+// loaded in its place.
+async function newDocument(method, params = {}) {
+  await value('window.irexplorerReplacedDocument = true');
+  await send(method, params);
+  for (let attempt = 0; attempt < 200; attempt += 1) {
+    // Reading the page can fail while its document is replaced; the next attempt reads the new one.
+    try { if (await value(`!window.irexplorerReplacedDocument && document.readyState === 'complete'`)) return; } catch { /* navigating */ }
+    await new Promise(resolve => setTimeout(resolve, 75));
+  }
+  throw Error(`Timed out: ${method} loaded no new document`);
+}
+const reloadPage = () => newDocument('Page.reload');
 async function check(name, expression) { const result = await value(expression); if (!result) throw Error(`Failed: ${name}; observed=${JSON.stringify(await value(`(() => { const e=document.activeElement,t=document.querySelector('#ir-help-tooltip'),panels=[document.querySelector('#source-panel'),document.querySelector('#left-viewer').closest('.viewer-panel'),document.querySelector('#right-viewer').closest('.viewer-panel')].map(p=>{const c=p.querySelector('.source-lines,.viewer-content'),l=p.querySelector('.source-line,.ir-line'),s=getComputedStyle(p);return {id:p.id,className:p.className,panel:p.getBoundingClientRect().height,computed:s.height,inline:p.style.height,content:c?.clientHeight,line:l?.getBoundingClientRect().height,scrollHeight:c?.scrollHeight};}); return { hash:location.hash, active:{tag:e.tagName,id:e.id,className:e.className,text:e.innerText?.slice(0,80)}, heading:document.querySelector('#route-heading')?.textContent, tooltip:{hidden:t?.hidden,text:t?.textContent,html:t?.innerHTML,children:t?.childElementCount},panels }; })()`))}`); checks.push(name); }
 // Poll the whole assertion rather than a proxy for it: help and focus settle asynchronously, so a proxy can pass
 // while the state is still changing. A timeout falls through to check, which reports what it observed.
@@ -193,7 +207,7 @@ async function task(id) {
   if (id === 'T6') await check('T6 offers continuing from its inherited workspace once or choosing another State pair', `document.querySelector('#task-instructions').innerText.includes('continues from T5 with its selection cleared') && document.querySelector('#task-instructions').innerText.includes('choose another example, State pair') && (document.querySelector('#task-instructions').innerText.match(/Your workspace continues from T5/g) || []).length === 1`);
   if (id === 'T6') await check('T6 inherits T5 workspace and clears its selection', `document.querySelector('#example-select').value === 'quick_sort' && document.querySelector('#left-state').value === '8' && document.querySelector('#right-state').value === '9' && document.querySelector('#left-view').value === 'ir' && document.querySelector('#right-view').value === 'cfg' && appState.functionName === 'partition' && !appState.selection && !appState.selectionInput`);
   if (id === 'T6') {
-    await send('Page.reload');
+    await reloadPage();
     await until(`document.querySelector('#survey-form')?.dataset.section === 'T6' && window.StudyWorkspace.ready`);
     await check('T6 restores its inherited workspace after refresh and clears the selection', `document.querySelector('#example-select').value === 'quick_sort' && document.querySelector('#left-state').value === '8' && document.querySelector('#right-state').value === '9' && document.querySelector('#left-view').value === 'ir' && document.querySelector('#right-view').value === 'cfg' && appState.functionName === 'partition' && !appState.selection && !appState.selectionInput`);
   }
@@ -225,7 +239,7 @@ async function openStudy() {
   await choose('P3', '7'); await choose('P3', '9'); await fill('P3_other_name', 'Synthetic course');
   await check('Pre-survey records studied courses and optional named Other', `document.querySelector('[data-field="P3"] input[name="P3"][value="7"]:checked') !== null && document.querySelector('[data-field="P3"] input[name="P3"][value="9"]:checked') !== null && document.querySelector('[data-field="P3_other_name"] textarea').value === 'Synthetic course'`);
   await check('Course exposure distinguishes explicit none from unanswered', `(() => { const field=document.querySelector('[data-field="P3"]'); return field.innerText.includes('None of these') && field.innerText.includes('studying or have you studied') && field.querySelector('input[name="P3"][value="8"]')?.type === 'checkbox'; })()`);
-  await send('Page.reload'); await screen('Pre-survey');
+  await reloadPage(); await screen('Pre-survey');
   await check('Ordinary refresh restores course selections without a special URL', `document.querySelector('input[name="P1"][value="1"]').checked && document.querySelector('textarea[name="P13"]').value === 'Container test background response' && document.querySelector('input[name="P3"][value="7"]').checked && document.querySelector('input[name="P3"][value="9"]').checked && document.querySelector('textarea[name="P3_other_name"]').value === 'Synthetic course' && !location.search`);
   await value(`window.taskTimingFetch = window.fetch; window.fetch = async (input, ...args) => { if (String(input) === '/api/examples/score/states') await new Promise(resolve => setTimeout(resolve, 1250)); return taskTimingFetch(input, ...args); };`);
   await click('#survey-form button[type="submit"]');
@@ -268,7 +282,7 @@ async function openStudy() {
   await click('[data-action="submit-responses"]'); await screen('Receipt not yet confirmed');
   await check('Uncertain attempt says a record may exist and directs the participant to retry the same submission', `!document.querySelector('#survey-form') && document.querySelector('#study-screen').textContent.includes('may already exist') && document.querySelector('#study-screen').textContent.includes('same submission ID and answers')`);
   if (captures) await writeFile(join(captures, 'pending.json'), await value(`sessionStorage.getItem('irexplorer.submission.v3')`));
-  await send('Page.reload'); await screen('Receipt not yet confirmed');
+  await reloadPage(); await screen('Receipt not yet confirmed');
   await click('[data-action="retry-submit"]'); await screen('Submission received');
   await check('Retry confirms receipt storage and removes answer draft', `document.querySelector('#study-screen').innerText.includes('Your submission has been saved.') && document.querySelector('#study-screen').innerText.includes('Receipt:') && sessionStorage.getItem('irexplorer.study.v0.11') === null && JSON.parse(sessionStorage.getItem('irexplorer.submission.v3')).kind === 'receipt'`);
 
@@ -308,7 +322,7 @@ async function closedStudy() {
 
   await saveDraft(false);
   const kept = await value(`sessionStorage.getItem('${DRAFT}')`);
-  await route('/study'); await send('Page.reload');
+  await route('/study'); await reloadPage();
   await until(`document.querySelector('[data-action="discard-closed"]') !== null`); await screen(M['closed.title']);
   await check('A local draft is not resumed: the closed message offers only an explicit discard', `document.querySelector('#study-screen').textContent.includes(${q(M['closed.draft'])}) && document.querySelector('[data-action="discard-closed"]').textContent === ${q(M['actions.discard-closed'])} && !document.querySelector('[data-action="submit-responses"], [data-action="stop"], .participant-code, #survey-form') && sessionStorage.getItem('${DRAFT}') === ${q(kept)}`);
   await click('[data-action="discard-closed"]');
@@ -317,13 +331,13 @@ async function closedStudy() {
   // A tab that froze its submission before closure retries it, and this server refuses it with 410.
   await saveDraft(true);
   const frozen = await value(`sessionStorage.getItem('${SUBMISSION}')`);
-  await send('Page.reload');
+  await reloadPage();
   await until(`document.querySelector('[data-action="retry-submit"]') !== null`); await screen(M['submission.unconfirmed']);
   await click('[data-action="retry-submit"]');
   await until(`document.querySelector('[data-action="discard-closed"]') !== null`); await screen(M['closed.title']);
   const notStored = `document.querySelector('#study-screen [role="alert"]').textContent === ${q(M['closed.not-stored'])} && document.querySelector('#study-screen code').textContent === ${q(JSON.parse(frozen).submission.participantCode)} && !document.querySelector('[data-action="retry-submit"]') && !document.querySelector('#study-screen').textContent.includes(${q(M['submission.retry'])}) && sessionStorage.getItem('${SUBMISSION}') === ${q(frozen)}`;
   await check('The server refusal says these answers were not saved, without retry wording', notStored);
-  await send('Page.reload');
+  await reloadPage();
   await until(`document.querySelector('[data-action="retry-submit"]') !== null`); await screen(M['submission.unconfirmed']);
   await click('[data-action="retry-submit"]');
   await until(`document.querySelector('[data-action="discard-closed"]') !== null`);
@@ -335,7 +349,7 @@ async function closedStudy() {
   // A submission committed before closure gets its original receipt from an identical retry. This server
   // stores nothing while closed, so that receipt is supplied in the page.
   await saveDraft(true);
-  await send('Page.reload');
+  await reloadPage();
   await until(`document.querySelector('[data-action="retry-submit"]') !== null`); await screen(M['submission.unconfirmed']);
   await value(`window.closedFetch = window.fetch; window.fetch = async (input, options) => { if (String(input) !== '/api/study/submissions') return closedFetch(input, options); const { submissionId, participantCode, studyVersion } = JSON.parse(options.body); return new Response(JSON.stringify({ receiptId: 'synthetic-committed-receipt', submissionId, participantCode, studyVersion }), { status: 200, headers: { 'Content-Type': 'application/json' } }); };`);
   await click('[data-action="retry-submit"]'); await screen(M['receipt.title']);
@@ -350,14 +364,13 @@ try {
   await send('Runtime.enable'); await send('Page.enable'); await send('Network.enable'); await send('Log.enable');
   await send('Emulation.setFocusEmulationEnabled', { enabled: true });
   await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
-  await send('Page.navigate', { url: `${base}/` });
-  await until(`document.readyState === 'complete'`);
+  await newDocument('Page.navigate', { url: `${base}/` });
   await until(`document.querySelectorAll('#example-select option').length === 4`);
   await until(`document.title === 'Explore · irexplorer'`);
   await check('Default page opens Explore without entering Study', `!location.hash && document.querySelector('#study-screen').hidden && !document.querySelector('#explore-heading').hidden`);
   await select('#example-select', 'score');
   await until('window.StudyWorkspace?.ready');
-  await check('With user programs off no switch or upload control is built', `!document.querySelector('#source-mode, #your-file-select, #program-upload, #program-drop, #program-file-input, #program-card, #program-chip') && !document.querySelector('#workspace-shell').innerText.includes('Your files')`);
+  await check('With user programs off no switch, upload control or editor is built', `!document.querySelector('#source-mode, #your-file-select, #program-upload, #program-new, #program-edit, #program-origin, #program-source-note, #program-drop, #program-file-input, #program-editor, #program-card, #program-chip, #program-warnings') && !document.querySelector('#workspace-shell').innerText.includes('Your files')`);
   await select('#example-select', 'quick_sort'); await until('window.StudyWorkspace.ready');
   await select('#left-state', '3'); await select('#right-state', '4'); await until('window.StudyWorkspace.ready');
   await select('#function-select', 'quick_sort'); await until(`window.StudyWorkspace.ready && appState.functionName === 'quick_sort'`);

@@ -51,6 +51,20 @@ async function until(expression, attempts = 200) {
   for (let attempt = 0; attempt < attempts; attempt += 1) { if (await value(expression)) return; await pause(75); }
   throw Error(`Timed out: ${expression}; hash=${await value('location.hash')}`);
 }
+// Page.reload and Page.navigate return before the new document has loaded, while the old one still answers
+// and may still show what the next wait looks for: mark the old document, and wait until a new one has
+// loaded in its place.
+async function newDocument(method, params = {}) {
+  await value('window.irexplorerReplacedDocument = true');
+  await send(method, params);
+  for (let attempt = 0; attempt < 200; attempt += 1) {
+    // Reading the page can fail while its document is replaced; the next attempt reads the new one.
+    try { if (await value(`!window.irexplorerReplacedDocument && document.readyState === 'complete'`)) return; } catch { /* navigating */ }
+    await new Promise(resolve => setTimeout(resolve, 75));
+  }
+  throw Error(`Timed out: ${method} loaded no new document`);
+}
+const reloadPage = () => newDocument('Page.reload');
 async function check(name, expression) {
   if (await value(expression)) { checks.push(name); return; }
   const observed = await value(`({ hash: location.hash, workspace: window.StudyWorkspace?.snapshot(), highlighted: document.querySelectorAll(${JSON.stringify(highlighted)}).length, draft: sessionStorage.getItem('${DRAFT}') })`);
@@ -77,7 +91,7 @@ const onTask = id => until(`document.querySelector('#survey-form')?.dataset.sect
 async function beginJourney() {
   await value(`sessionStorage.clear()`);
   // A hash-only navigation keeps the loaded content; reload so each journey fetches it afresh.
-  await value(`history.replaceState(null, '', '/#/study')`); await send('Page.reload');
+  await value(`history.replaceState(null, '', '/#/study')`); await reloadPage();
   await until(`document.querySelector('#route-heading')?.textContent === 'Information and consent'`);
   for (const id of packaged.membership.consent) await click('#' + id);
   await click('[data-action="start"]');
@@ -95,8 +109,7 @@ try {
   await send('Fetch.enable', { patterns: ['*/api/study/content', '*/api/examples'].map(urlPattern => ({ urlPattern, requestStage: 'Request' })) });
   await send('Emulation.setFocusEmulationEnabled', { enabled: true });
   await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
-  await send('Page.navigate', { url: `${base}/` });
-  await until(`document.readyState === 'complete'`);
+  await newDocument('Page.navigate', { url: `${base}/` });
 
   // Packaged procedure.
   await beginJourney();
@@ -123,7 +136,7 @@ try {
   const beforeReload = (await saved()).tasks.T0.durationMs;
   await check('Visible time resumes after the tab returns', `${beforeReload} > ${hiddenAt}`);
   contentDelayMs = 2500;
-  await send('Page.reload');
+  await reloadPage();
   await until(`document.querySelector('#survey-form')?.dataset.section === 'T0'`);
   contentDelayMs = 0;
   await check('Reload downtime is excluded from task-presentation duration', `JSON.parse(sessionStorage.getItem('${DRAFT}')).tasks.T0.durationMs < ${beforeReload} + 1500`);
@@ -157,7 +170,7 @@ try {
   await onTask('T6');
   await check('T6 inherits the T5 workspace and clears its selection', `${workspaceIs('quick_sort', [8, 'ir'], [9, 'cfg'], 'partition')} && ${selectionClear}`);
   examplesDelayMs = 1500; // Study content arrives before the curated example list.
-  await send('Page.reload');
+  await reloadPage();
   await onTask('T6');
   examplesDelayMs = 0;
   await check('T6 restores the inherited workspace after refresh with selection cleared', `${workspaceIs('quick_sort', [8, 'ir'], [9, 'cfg'], 'partition')} && ${selectionClear}`);
@@ -220,7 +233,7 @@ try {
   await onTask('T4');
   await check('A declared inheriting task continues the preceding workspace with no selection', `${workspaceIs('binary_search', [5, 'ir'], [6, 'cfg'])} && ${selectionClear}`);
   examplesDelayMs = 1500;
-  await send('Page.reload');
+  await reloadPage();
   await onTask('T4');
   examplesDelayMs = 0;
   await check('A declared inheriting task restores after refresh', `${workspaceIs('binary_search', [5, 'ir'], [6, 'cfg'])} && ${selectionClear}`);

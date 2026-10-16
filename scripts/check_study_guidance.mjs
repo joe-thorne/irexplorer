@@ -82,6 +82,20 @@ async function until(expression, attempts = 200) {
   for (let attempt = 0; attempt < attempts; attempt += 1) { if (await value(expression)) return; await pause(75); }
   throw Error(`Timed out: ${expression}; hash=${await value('location.hash')}; screen=${JSON.stringify(await value(`document.querySelector('#study-screen')?.innerText.slice(0, 500)`))}`);
 }
+// Page.reload and Page.navigate return before the new document has loaded, while the old one still answers
+// and may still show what the next wait looks for: mark the old document, and wait until a new one has
+// loaded in its place.
+async function newDocument(method, params = {}) {
+  await value('window.irexplorerReplacedDocument = true');
+  await send(method, params);
+  for (let attempt = 0; attempt < 200; attempt += 1) {
+    // Reading the page can fail while its document is replaced; the next attempt reads the new one.
+    try { if (await value(`!window.irexplorerReplacedDocument && document.readyState === 'complete'`)) return; } catch { /* navigating */ }
+    await new Promise(resolve => setTimeout(resolve, 75));
+  }
+  throw Error(`Timed out: ${method} loaded no new document`);
+}
+const reloadPage = () => newDocument('Page.reload');
 let label = '';
 async function check(name, expression) {
   // A missing element fails the named check rather than aborting with a script error.
@@ -135,7 +149,7 @@ const restore = method => value(`window.__restore${method}()`);
 
 async function load(route = '/study') {
   await value(`sessionStorage.clear()`);
-  await value(`history.replaceState(null, '', '/#${route}')`); await send('Page.reload');
+  await value(`history.replaceState(null, '', '/#${route}')`); await reloadPage();
 }
 
 async function journey(viewport) {
@@ -254,7 +268,7 @@ async function journey(viewport) {
   const pending = `document.querySelector('#study-screen [role="status"]').textContent === ${q(M('submission.retry'))} && ${shows(M('submission.participant-code', { participantCode: frozen.participantCode }), '#study-screen p')} && document.querySelector('#study-screen code').textContent === ${q(frozen.participantCode)} && ${shows(M('submission.keep-tab'), '#study-screen p')} && document.querySelector('[data-action="retry-submit"]').textContent === ${q(M('actions.retry-submit'))} && !document.querySelector('[data-action="stop"]') && !document.querySelector('#survey-form') && !document.querySelector('[data-action="new-study"]')`;
   await check('An offline attempt keeps the frozen submission and asks for a same-ID retry', `${pending} && document.querySelector('#study-screen [role="alert"]').textContent === ${q(M('submission.uncertain', { error: 'Failed to fetch' }))}`);
   await check('Uncertain delivery fits the viewport', fits);
-  await send('Page.reload');
+  await reloadPage();
   await heading('submission.unconfirmed');
   await check('Compatible recovery after reload keeps the same frozen submission and ID', `${pending} && JSON.stringify(JSON.parse(sessionStorage.getItem('${SUBMISSION}')).submission) === ${q(JSON.stringify(frozen))}`);
   attempts = ['unavailable']; delayMs = 900;
@@ -302,12 +316,12 @@ async function journey(viewport) {
 async function recovery() {
   // Corrupt submission recovery blocks progression explicitly.
   await value(`sessionStorage.clear(); sessionStorage.setItem('${SUBMISSION}', '{broken')`);
-  await value(`history.replaceState(null, '', '/#/study')`); await send('Page.reload');
+  await value(`history.replaceState(null, '', '/#/study')`); await reloadPage();
   await heading('recovery.title');
   await check('Corrupt submission recovery is explicit and offers retry or memory-only continuation', `document.querySelector('#study-screen [role="alert"]').textContent === ${q(M('recovery.unreadable'))} && document.querySelector('[data-action="retry-content"]').textContent === ${q(M('actions.retry-recovery'))} && ${shows(M('recovery.memory'), '#study-screen p')} && document.querySelector('[data-action="memory"]').textContent === ${q(M('actions.memory'))}`);
   // An incompatible older pending submission is never resent; discarding it can fail and be retried.
   await value(`sessionStorage.clear(); sessionStorage.setItem('irexplorer.submission.v2', JSON.stringify({ kind: 'pending', submission: { submissionId: 'synthetic-old', participantCode: 'synthetic-old-participant' } }))`);
-  await send('Page.reload');
+  await reloadPage();
   await heading('recovery.title');
   await check('Incompatible recovery names the possible server copy and its participant code', `document.querySelector('#study-screen [role="alert"]').textContent === ${q(M('recovery.incompatible'))} && ${shows(M('recovery.server-copy'), '#study-screen p')} && ${shows(M('submission.participant-code', { participantCode: 'synthetic-old-participant' }), '#study-screen p')} && document.querySelector('[data-action="discard-incompatible-submission"]').textContent === ${q(M('actions.discard-incompatible'))}`);
   await fault('removeItem', 'irexplorer.submission.v2');
@@ -320,7 +334,7 @@ async function recovery() {
   // stored, so the view says so instead of the uncertain server-copy wording.
   const unsupported = { submissionId: 'synthetic-unsupported', participantCode: 'synthetic-unsupported-participant' };
   await value(`sessionStorage.clear(); sessionStorage.setItem('${SUBMISSION}', ${q(JSON.stringify({ kind: 'pending', submission: unsupported }))})`);
-  await send('Page.reload');
+  await reloadPage();
   await heading('submission.unconfirmed');
   attempts = ['unsupported'];
   await click('[data-action="retry-submit"]');
@@ -328,7 +342,7 @@ async function recovery() {
   const notStored = `document.querySelector('#study-screen [role="alert"]').textContent === ${q(M('recovery.incompatible'))} && ${shows(M('recovery.not-stored'), '#study-screen p')} && !${shows(M('recovery.server-copy'), '#study-screen p')} && ${shows(M('submission.participant-code', { participantCode: unsupported.participantCode }), '#study-screen p')} && document.querySelector('[data-action="discard-incompatible-submission"]').textContent === ${q(M('actions.discard-incompatible'))} && !document.querySelector('[data-action="retry-submit"]') && JSON.stringify(JSON.parse(sessionStorage.getItem('${SUBMISSION}')).submission) === ${q(JSON.stringify(unsupported))}`;
   await check('An unsupported release says the answers were not saved, keeps the frozen submission, and makes no server-copy claim', notStored);
   await check('The not-saved recovery fits the viewport', fits);
-  await send('Page.reload');
+  await reloadPage();
   await heading('submission.unconfirmed');
   attempts = ['unsupported'];
   await click('[data-action="retry-submit"]');
@@ -339,7 +353,7 @@ async function recovery() {
   await check('The unsupported frozen submission is removed only by the explicit discard', `sessionStorage.getItem('${SUBMISSION}') === null`);
   // A damaged answer draft must be discarded explicitly.
   await value(`sessionStorage.clear(); sessionStorage.setItem('${DRAFT}', '{broken')`);
-  await send('Page.reload');
+  await reloadPage();
   await heading('information.title');
   await check('A damaged draft is reported with an explicit discard', `document.querySelector('#draft-status [role="alert"]').textContent === ${q(M('storage.incompatible') + M('storage.stale'))} && [...document.querySelectorAll('#draft-status [data-action="stop"]')].some(b => b.textContent === ${q(M('actions.retry-discard'))})`);
   await value(`sessionStorage.clear()`);
@@ -362,7 +376,7 @@ async function closedCollection() {
   // A draft saved before closure is not resumed: only an explicit discard, which can fail and be retried.
   served = open; await load(); await consent();
   const kept = await value(`sessionStorage.getItem('${DRAFT}')`);
-  served = closedContent; await send('Page.reload');
+  served = closedContent; await reloadPage();
   await heading('closed.title');
   await check('A local draft is not resumed: the closed message explains it and offers only a discard', `location.hash === '#/study' && ${shows(M('closed.detail'))} && ${shows(M('closed.draft'))} && document.querySelector('[data-action="discard-closed"]').textContent === ${q(M('actions.discard-closed'))} && ${explore} && !document.querySelector('[data-action="submit-responses"], [data-action="stop"], .participant-code, #survey-form') && sessionStorage.getItem('${DRAFT}') === ${q(kept)}`);
   await value(`location.hash = '/study/tasks/T0'`);
@@ -379,7 +393,7 @@ async function closedCollection() {
   served = open; await load(); await consent();
   const refused = { submissionId: 'synthetic-closed', participantCode: 'synthetic-closed-participant' };
   await value(`sessionStorage.setItem('${SUBMISSION}', ${q(JSON.stringify({ kind: 'pending', submission: refused }))})`);
-  await send('Page.reload');
+  await reloadPage();
   await heading('submission.unconfirmed');
   attempts = ['closed'];
   await click('[data-action="retry-submit"]');
@@ -388,7 +402,7 @@ async function closedCollection() {
   const notStored = `document.querySelector('#study-screen [role="alert"]').textContent === ${q(M('closed.not-stored'))} && ${shows(M('submission.participant-code', { participantCode: refused.participantCode }), '#study-screen p')} && document.querySelector('[data-action="discard-closed"]').textContent === ${q(M('actions.discard-closed'))} && !document.querySelector('[data-action="retry-submit"], [data-action="stop"]') && !document.querySelector('#study-screen').textContent.includes(${q(uncertain)}) && !document.querySelector('#study-screen').textContent.includes(${q(M('submission.retry'))}) && JSON.stringify(JSON.parse(sessionStorage.getItem('${SUBMISSION}')).submission) === ${q(JSON.stringify(refused))}`;
   await check('A refused submission says the server did not save it, keeps the frozen record, and makes no retry claim', notStored);
   await check('The not-saved message fits the viewport', fits);
-  await send('Page.reload');
+  await reloadPage();
   await heading('submission.unconfirmed');
   await check('After a refresh the kept record offers the pending screen and retry again', `document.querySelector('[data-action="retry-submit"]') !== null && JSON.stringify(JSON.parse(sessionStorage.getItem('${SUBMISSION}')).submission) === ${q(JSON.stringify(refused))}`);
   attempts = ['closed'];
@@ -407,7 +421,7 @@ async function closedCollection() {
   served = closedContent;
   const committed = { submissionId: 'synthetic-committed', participantCode: 'synthetic-committed-participant', studyVersion: served.studyVersion };
   await value(`sessionStorage.clear(); sessionStorage.setItem('${SUBMISSION}', ${q(JSON.stringify({ kind: 'pending', submission: committed }))})`);
-  await send('Page.reload');
+  await reloadPage();
   await heading('submission.unconfirmed');
   await check('A pending submission keeps its pending screen and retry while collection is closed', `document.querySelector('#study-screen [role="status"]').textContent === ${q(M('submission.retry'))} && document.querySelector('[data-action="retry-submit"]').textContent === ${q(M('actions.retry-submit'))}`);
   attempts = ['receipt'];
@@ -428,8 +442,7 @@ try {
     { urlPattern: '*/api/study/submissions', requestStage: 'Request' },
   ] });
   await send('Emulation.setFocusEmulationEnabled', { enabled: true });
-  await send('Page.navigate', { url: `${base}/` });
-  await until(`document.readyState === 'complete'`);
+  await newDocument('Page.navigate', { url: `${base}/` });
 
   label = 'Packaged desktop'; await journey({ width: 1440, height: 1000 }); await recovery(); await closedCollection();
   label = 'Packaged narrow'; await journey({ width: 390, height: 844 }); await recovery(); await closedCollection();

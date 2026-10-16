@@ -32,18 +32,18 @@ Only localhost port 8000 is published. The application runs as a non-root user w
 
 ## Run with user programs
 
-User programs let you open one small C file of your own in **Explore** and follow it through the same states, panels and comparison report as a curated example. They are for local use only and run in a separate Compose stack, on port 8001, beside the study stack above. Build the pinned toolchain image once (it downloads about 1.7 GB of LLVM), then start the stack:
+User programs let you open one small C file of your own in **Explore**, write one in its editor, or edit a copy of a curated example or one of your files, and follow it through the same states, panels and comparison report as a curated example. They are for local use only and run in a separate Compose stack, on port 8001, beside the study stack above. Build the pinned toolchain image once (it downloads about 1.7 GB of LLVM), then start the stack:
 
 ```sh
 docker compose --profile toolchain build toolchain
 docker compose -f compose.user-programs.yaml up -d --build --wait
 ```
 
-Open **http://localhost:8001**. Stop it with `docker compose -f compose.user-programs.yaml down`; add `--volumes` to remove its own local study store as well.
+Open **http://localhost:8001**. A program that compiles with clang warnings lists them, collapsed, above its source, and marks their lines. A compiled edit of one of your files replaces it in **Your files**; a copy of a curated example or a new program is added, under a numbered name such as `program (2).c` if its name is already listed. **Restore original** in the editor puts back the curated example or the file first uploaded. An uncompiled edit in the editor survives a reload in the same tab, and a visit to Study and back, but is not shown in another tab or on a later visit. Stop it with `docker compose -f compose.user-programs.yaml down`; add `--volumes` to remove its own local study store as well.
 
 The stack runs the same application image with the user programs setting on, beside a compiler service holding the pinned LLVM toolchain and the C library headers. On Apple Silicon the compiler runs `linux/amd64` under emulation, so a program takes a few seconds. The compiler service has no published port and no internet access, reaches only the application over the stack's internal network, has a read-only root file system and wipes its temporary work directory after each program. The application never gets the Docker socket and never runs `clang` or `opt` itself.
 
-With the stack up, `scripts/check_user_programs.sh` checks it against the real toolchain; see [tests/README.md](tests/README.md#real-compiler-smoke-check).
+With the stack up, `scripts/check_user_programs.sh` checks it against the real toolchain; CI runs the same check on amd64 when started by hand. See [tests/README.md](tests/README.md#real-compiler-smoke-check).
 
 ## Run with Python
 

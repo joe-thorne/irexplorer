@@ -135,14 +135,14 @@ class CompilerService:
             stem = source_path.stem
             clang, opt = self.tool_versions
             commands = pass_sequence_commands(str(source_path), str(output_dir), stem)
-            stderr = ""
-            for command in commands:
-                stderr = self._run(command, deadline, disconnected, output="stderr")
+            stderrs = [self._run(command, deadline, disconnected, output="stderr") for command in commands]
             return {
                 "states": [self._state(state, output_dir, stem, commands) for state in PASS_STATES],
                 "optRecord": (output_dir / f"{stem}.opt.yaml").read_text(encoding="utf-8"),
                 # The last command is the -O3 object compile, whose stderr is the -Rpass text.
-                "rpass": stderr,
+                "rpass": stderrs[-1],
+                # The first is the -O0 emit command: clang's warnings on the program, if any.
+                "o0Stderr": stderrs[0],
                 "manifest": {
                     "clang": clang,
                     "opt": opt,

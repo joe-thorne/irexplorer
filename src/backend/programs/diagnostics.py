@@ -1,6 +1,8 @@
-"""What a student is shown of a failed compile: clang's diagnostics, and the failed command's output.
+"""What a student is shown of clang's stderr: a failed compile's diagnostics and output, and the warnings
+on a program that compiled.
 
-The compiler service only reports which command failed and its stderr; reading that stderr is the app's.
+The compiler service only reports which command failed and its stderr, or the -O0 command's stderr on
+success; reading that stderr is the app's.
 """
 
 from __future__ import annotations
@@ -30,10 +32,24 @@ def compile_failure(failure: CompileFailed) -> dict[str, Any]:
     """
 
     output = failure.output.replace(USER_PROGRAMS, "")
-    diagnostics = [
+    diagnostics = _diagnostics(output) if failure.tool == "clang" else []
+    return {"diagnostics": diagnostics[:MAX_DIAGNOSTICS],
+            "output": output.encode("utf-8")[:MAX_OUTPUT_BYTES].decode("utf-8", errors="ignore")}
+
+
+def compile_warnings(stderr: str) -> list[dict[str, Any]]:
+    """clang's first warnings on a program that compiled, in order, without the notes that explain them."""
+
+    warnings = [diagnostic for diagnostic in _diagnostics(stderr.replace(USER_PROGRAMS, ""))
+                if diagnostic["severity"] == "warning"]
+    return warnings[:MAX_DIAGNOSTICS]
+
+
+def _diagnostics(output: str) -> list[dict[str, Any]]:
+    """Every diagnostic line in clang's output, in the ``{file, line, column, severity, message}`` shape."""
+
+    return [
         {"file": match["file"], "line": int(match["line"]), "column": int(match["column"]),
          "severity": match["severity"], "message": match["message"]}
         for match in DIAGNOSTIC.finditer(output)
-    ] if failure.tool == "clang" else []
-    return {"diagnostics": diagnostics[:MAX_DIAGNOSTICS],
-            "output": output.encode("utf-8")[:MAX_OUTPUT_BYTES].decode("utf-8", errors="ignore")}
+    ]

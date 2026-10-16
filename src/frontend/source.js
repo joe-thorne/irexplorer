@@ -44,11 +44,16 @@ function highlightCSource(code, text, state) {
   flush();
 }
 
+// The source panel's heading for the source on show.
+function sourceSummary() {
+  return sourceState.data ? `C source · ${sourceState.data.file}` : 'C source';
+}
+
 function renderSource() {
   const viewer = document.querySelector('#source-lines');
   viewer.replaceChildren();
   const data = sourceState.data;
-  document.querySelector('#source-summary').textContent = data ? `C source · ${data.file}` : 'C source';
+  document.querySelector('#source-summary').textContent = sourceSummary();
   document.querySelector("#source-prompt").hidden = Boolean(data);
   if (!data) return;
   const lines = data.text.split('\n');

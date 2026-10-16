@@ -1,0 +1,42 @@
+--- !Passed
+Pass:            gvn
+Name:            LoadElim
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 40, Column: 20 }
+Function:        first_positive
+Args:
+  - String:          'load of type '
+  - Type:            i32
+  - String:          ' eliminated'
+  - String:          ' in favor of '
+  - InfavorOfValue:  load
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 39, 
+                       Column: 21 }
+...
+--- !Passed
+Pass:            gvn
+Name:            LoadElim
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 102, Column: 39 }
+Function:        max_of
+Args:
+  - String:          'load of type '
+  - Type:            i32
+  - String:          ' eliminated'
+  - String:          ' in favor of '
+  - InfavorOfValue:  load
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 102, 
+                       Column: 20 }
+...
+--- !Missed
+Pass:            gvn
+Name:            LoadClobbered
+DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 117, Column: 90 }
+Function:        main
+Args:
+  - String:          'load of type '
+  - Type:            i32
+  - String:          ' not eliminated'
+  - String:          ' because it is clobbered by '
+  - ClobberedBy:     call
+    DebugLoc:        { File: 'user-programs/clang_warnings.c', Line: 117, 
+                       Column: 60 }
+...

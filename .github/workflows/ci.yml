@@ -4,12 +4,15 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Started by hand only, and then runs only the user-programs job.
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   checks:
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -33,6 +36,7 @@ jobs:
         run: node scripts/check_study_submission.mjs
 
   browser:
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -46,3 +50,30 @@ jobs:
         run: python -m pip install -r src/backend/requirements.lock
       - name: Browser acceptance
         run: IRX_PYTHON=python scripts/check_browser.sh
+
+  # The real-compiler smoke check against the user-programs stack, natively on amd64. Never on push or pull
+  # request: start it by hand (Actions > CI > Run workflow, or `gh workflow run ci.yml --ref <branch>`)
+  # before merging user-programs work and before a release tag.
+  user-programs:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install runtime environment
+        run: python -m pip install -r src/backend/requirements.lock
+      - name: Build the pinned toolchain image
+        run: docker compose --profile toolchain build toolchain
+      - name: Start the user-programs stack
+        run: docker compose -f compose.user-programs.yaml up -d --build --wait
+      - name: Real-compiler smoke check
+        run: IRX_PYTHON=python scripts/check_user_programs.sh
+      - name: Stack logs
+        if: failure()
+        run: docker compose -f compose.user-programs.yaml logs
+      - name: Stop the stack
+        if: always()
+        run: docker compose -f compose.user-programs.yaml down --volumes

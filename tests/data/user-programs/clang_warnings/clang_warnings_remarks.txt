@@ -1,0 +1,927 @@
+/workspace/user-programs/clang_warnings.c:7:16: warning: using the result of an assignment as a condition without parentheses [-Wparentheses]
+    7 |     while (bit = value & 1u) {
+      |            ~~~~^~~~~~~~~~~~
+/workspace/user-programs/clang_warnings.c:7:16: note: place parentheses around the assignment to silence this warning
+    7 |     while (bit = value & 1u) {
+      |                ^           
+      |            (               )
+/workspace/user-programs/clang_warnings.c:7:16: note: use '==' to turn this assignment into an equality comparison
+    7 |     while (bit = value & 1u) {
+      |                ^
+      |                ==
+/workspace/user-programs/clang_warnings.c:17:15: warning: expression result unused [-Wunused-value]
+   17 |         total + i;
+      |         ~~~~~ ^ ~
+/workspace/user-programs/clang_warnings.c:24:18: warning: self-comparison always evaluates to true [-Wtautological-compare]
+   24 |     return value == value;
+      |                  ^
+/workspace/user-programs/clang_warnings.c:28:26: warning: implicit conversion from 'int' to 'unsigned char' changes value from 300 to 44 [-Wconstant-conversion]
+   28 |     unsigned char byte = 300;
+      |                   ~~~~   ^~~
+/workspace/user-programs/clang_warnings.c:33:18: warning: shift count >= width of type [-Wshift-count-overflow]
+   33 |     return value << 40;
+      |                  ^  ~~
+/workspace/user-programs/clang_warnings.c:39:19: warning: using the result of an assignment as a condition without parentheses [-Wparentheses]
+   39 |         if (found = values[i] > 0) {
+      |             ~~~~~~^~~~~~~~~~~~~~~
+/workspace/user-programs/clang_warnings.c:39:19: note: place parentheses around the assignment to silence this warning
+   39 |         if (found = values[i] > 0) {
+      |                   ^              
+      |             (                    )
+/workspace/user-programs/clang_warnings.c:39:19: note: use '==' to turn this assignment into an equality comparison
+   39 |         if (found = values[i] > 0) {
+      |                   ^
+      |                   ==
+/workspace/user-programs/clang_warnings.c:47:20: warning: if statement has empty body [-Wempty-body]
+   47 |     if (value > 10);
+      |                    ^
+/workspace/user-programs/clang_warnings.c:47:20: note: put the semicolon on a separate line to silence this warning
+/workspace/user-programs/clang_warnings.c:52:16: warning: implicit conversion from 'double' to 'int' changes value from 2.5 to 2 [-Wliteral-conversion]
+   52 |     int half = 2.5;
+      |         ~~~~   ^~~
+/workspace/user-programs/clang_warnings.c:58:12: warning: array index 4 is past the end of the array (that has type 'int[4]') [-Warray-bounds]
+   58 |     return four[4];
+      |            ^    ~
+/workspace/user-programs/clang_warnings.c:57:5: note: array 'four' declared here
+   57 |     int four[4] = {1, 2, 3, 4};
+      |     ^
+/workspace/user-programs/clang_warnings.c:62:9: warning: logical not is only applied to the left hand side of this comparison [-Wlogical-not-parentheses]
+   62 |     if (!a == b) {
+      |         ^  ~~
+/workspace/user-programs/clang_warnings.c:62:9: note: add parentheses after the '!' to evaluate the comparison first
+   62 |     if (!a == b) {
+      |         ^      
+      |          (     )
+/workspace/user-programs/clang_warnings.c:62:9: note: add parentheses around left hand side expression to silence this warning
+   62 |     if (!a == b) {
+      |         ^
+      |         ( )
+/workspace/user-programs/clang_warnings.c:69:18: warning: sizeof on array function parameter will return size of 'int *' instead of 'int[8]' [-Wsizeof-array-argument]
+   69 |     return sizeof(values) / sizeof(values[0]);
+      |                  ^
+/workspace/user-programs/clang_warnings.c:68:20: note: declared here
+   68 | int array_size(int values[8]) {
+      |                    ^
+/workspace/user-programs/clang_warnings.c:69:27: warning: 'sizeof (values)' will return the size of the pointer, not the array itself [-Wsizeof-pointer-div]
+   69 |     return sizeof(values) / sizeof(values[0]);
+      |            ~~~~~~~~~~~~~~ ^
+/workspace/user-programs/clang_warnings.c:68:20: note: pointer 'values' declared here
+   68 | int array_size(int values[8]) {
+      |                    ^
+/workspace/user-programs/clang_warnings.c:73:26: warning: format specifies type 'int' but the argument has type 'long' [-Wformat]
+   73 |     printf("total %d\n", total);
+      |                   ~~     ^~~~~
+      |                   %ld
+/workspace/user-programs/clang_warnings.c:74:25: warning: format specifies type 'int' but the argument has type 'double' [-Wformat]
+   74 |     printf("mean %d\n", mean);
+      |                  ~~     ^~~~
+      |                  %f
+/workspace/user-programs/clang_warnings.c:80:19: warning: using the result of an assignment as a condition without parentheses [-Wparentheses]
+   80 |         if (total = total + values[i] * 2) {
+      |             ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~
+/workspace/user-programs/clang_warnings.c:80:19: note: place parentheses around the assignment to silence this warning
+   80 |         if (total = total + values[i] * 2) {
+      |                   ^                      
+      |             (                            )
+/workspace/user-programs/clang_warnings.c:80:19: note: use '==' to turn this assignment into an equality comparison
+   80 |         if (total = total + values[i] * 2) {
+      |                   ^
+      |                   ==
+/workspace/user-programs/clang_warnings.c:81:19: warning: equality comparison result unused [-Wunused-comparison]
+   81 |             total == 0;
+      |             ~~~~~~^~~~
+/workspace/user-programs/clang_warnings.c:81:19: note: use '=' to turn this equality comparison into an assignment
+   81 |             total == 0;
+      |                   ^~
+      |                   =
+/workspace/user-programs/clang_warnings.c:89:17: warning: implicit conversion from 'int' to 'char' changes value from 200 to -56 [-Wconstant-conversion]
+   89 |     char high = 200;
+      |          ~~~~   ^~~
+/workspace/user-programs/clang_warnings.c:88:16: warning: implicit conversion from 'int' to 'char' changes value from -200 to 56 [-Wconstant-conversion]
+   88 |     char low = -200;
+      |          ~~~   ^~~~
+/workspace/user-programs/clang_warnings.c:102:18: warning: using the result of an assignment as a condition without parentheses [-Wparentheses]
+  102 |         if (best = values[i] > best ? values[i] : best) {
+      |             ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/user-programs/clang_warnings.c:102:18: note: place parentheses around the assignment to silence this warning
+  102 |         if (best = values[i] > best ? values[i] : best) {
+      |                  ^                                    
+      |             (                                         )
+/workspace/user-programs/clang_warnings.c:102:18: note: use '==' to turn this assignment into an equality comparison
+  102 |         if (best = values[i] > best ? values[i] : best) {
+      |                  ^
+      |                  ==
+/workspace/user-programs/clang_warnings.c:103:18: warning: equality comparison result unused [-Wunused-comparison]
+  103 |             best == values[i];
+      |             ~~~~~^~~~~~~~~~~~
+/workspace/user-programs/clang_warnings.c:103:18: note: use '=' to turn this equality comparison into an assignment
+  103 |             best == values[i];
+      |                  ^~
+      |                  =
+/workspace/user-programs/clang_warnings.c:111:14: warning: self-comparison always evaluates to false [-Wtautological-compare]
+  111 |     return i < i ? 0 : i;
+      |              ^
+/workspace/user-programs/clang_warnings.c:110:10: warning: multiple unsequenced modifications to 'i' [-Wunsequenced]
+  110 |     i = i++ + 1;
+      |       ~  ^
+/workspace/user-programs/clang_warnings.c:16:5: remark: Loop deleted because it is invariant [-Rpass=loop-delete]
+   16 |     for (int i = 0; i < limit; i++) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:116:17: remark: 'sum_to' inlined into 'main' with (cost=-35, threshold=375) at callsite main:2:17; [-Rpass=inline]
+  116 |     print_total(sum_to(10), 2.5);
+      |                 ^
+/workspace/user-programs/clang_warnings.c:116:5: remark: 'print_total' inlined into 'main' with (cost=40, threshold=375) at callsite main:2:5; [-Rpass=inline]
+  116 |     print_total(sum_to(10), 2.5);
+      |     ^
+/workspace/user-programs/clang_warnings.c:117:12: remark: 'first_positive' inlined into 'main' with (cost=-10, threshold=250) at callsite main:3:12; [-Rpass=inline]
+  117 |     return first_positive(values, 6) + max_of(values, 6) + scaled_sum(values, 6) + clamp(values[5])
+      |            ^
+/workspace/user-programs/clang_warnings.c:117:40: remark: 'max_of' inlined into 'main' with (cost=-10, threshold=250) at callsite main:3:40; [-Rpass=inline]
+  117 |     return first_positive(values, 6) + max_of(values, 6) + scaled_sum(values, 6) + clamp(values[5])
+      |                                        ^
+/workspace/user-programs/clang_warnings.c:117:60: remark: 'scaled_sum' inlined into 'main' with (cost=-10, threshold=250) at callsite main:3:60; [-Rpass=inline]
+  117 |     return first_positive(values, 6) + max_of(values, 6) + scaled_sum(values, 6) + clamp(values[5])
+      |                                                            ^
+/workspace/user-programs/clang_warnings.c:117:84: remark: 'clamp' inlined into 'main' with (cost=-25, threshold=375) at callsite main:3:84; [-Rpass=inline]
+  117 |     return first_positive(values, 6) + max_of(values, 6) + scaled_sum(values, 6) + clamp(values[5])
+      |                                                                                    ^
+/workspace/user-programs/clang_warnings.c:118:11: remark: 'count_set_bits' inlined into 'main' with (cost=-10, threshold=250) at callsite main:4:11; [-Rpass=inline]
+  118 |         + count_set_bits(255u) + is_same(1) + small_constant() + (int)wide_shift(1) + skip_empty(3)
+      |           ^
+/workspace/user-programs/clang_warnings.c:118:34: remark: 'is_same' inlined into 'main' with (cost=-35, threshold=375) at callsite main:4:34; [-Rpass=inline]
+  118 |         + count_set_bits(255u) + is_same(1) + small_constant() + (int)wide_shift(1) + skip_empty(3)
+      |                                  ^
+/workspace/user-programs/clang_warnings.c:118:47: remark: 'small_constant' inlined into 'main' with (cost=-30, threshold=375) at callsite main:4:47; [-Rpass=inline]
+  118 |         + count_set_bits(255u) + is_same(1) + small_constant() + (int)wide_shift(1) + skip_empty(3)
+      |                                               ^
+/workspace/user-programs/clang_warnings.c:118:71: remark: 'wide_shift' inlined into 'main' with (cost=-35, threshold=375) at callsite main:4:71; [-Rpass=inline]
+  118 |         + count_set_bits(255u) + is_same(1) + small_constant() + (int)wide_shift(1) + skip_empty(3)
+      |                                                                       ^
+/workspace/user-programs/clang_warnings.c:118:87: remark: 'skip_empty' inlined into 'main' with (cost=-35, threshold=375) at callsite main:4:87; [-Rpass=inline]
+  118 |         + count_set_bits(255u) + is_same(1) + small_constant() + (int)wide_shift(1) + skip_empty(3)
+      |                                                                                       ^
+/workspace/user-programs/clang_warnings.c:119:11: remark: 'truncated_half' inlined into 'main' with (cost=-30, threshold=375) at callsite main:5:11; [-Rpass=inline]
+  119 |         + truncated_half() + last_of_four() + not_equal(1, 2) + array_size(values) + bump(2);
+      |           ^
+/workspace/user-programs/clang_warnings.c:119:30: remark: 'last_of_four' inlined into 'main' with (cost=-30, threshold=375) at callsite main:5:30; [-Rpass=inline]
+  119 |         + truncated_half() + last_of_four() + not_equal(1, 2) + array_size(values) + bump(2);
+      |                              ^
+/workspace/user-programs/clang_warnings.c:119:47: remark: 'not_equal' inlined into 'main' with (cost=-40, threshold=375) at callsite main:5:47; [-Rpass=inline]
+  119 |         + truncated_half() + last_of_four() + not_equal(1, 2) + array_size(values) + bump(2);
+      |                                               ^
+/workspace/user-programs/clang_warnings.c:119:65: remark: 'array_size' inlined into 'main' with (cost=-35, threshold=375) at callsite main:5:65; [-Rpass=inline]
+  119 |         + truncated_half() + last_of_four() + not_equal(1, 2) + array_size(values) + bump(2);
+      |                                                                 ^
+/workspace/user-programs/clang_warnings.c:119:86: remark: 'bump' inlined into 'main' with (cost=-35, threshold=375) at callsite main:5:86; [-Rpass=inline]
+  119 |         + truncated_half() + last_of_four() + not_equal(1, 2) + array_size(values) + bump(2);
+      |                                                                                      ^
+/workspace/user-programs/clang_warnings.c:38:5: remark: Loop deleted because it is invariant [-Rpass=loop-delete]
+   38 |     for (int i = 0; i < count; i++) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:101:5: remark: Loop deleted because it is invariant [-Rpass=loop-delete]
+  101 |     for (int i = 1; i < count; i++) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:79:5: remark: Loop deleted because it is invariant [-Rpass=loop-delete]
+   79 |     for (int i = 0; i < count; i++) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:7:5: remark: Loop deleted because it is invariant [-Rpass=loop-delete]
+    7 |     while (bit = value & 1u) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:7:5: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+/workspace/user-programs/clang_warnings.c:7:5: remark: loop not vectorized: loop induction variable could not be identified [-Rpass-analysis=loop-vectorize]
+/workspace/user-programs/clang_warnings.c:7:5: remark: loop not vectorized: Cannot vectorize uncountable loop [-Rpass-analysis=loop-vectorize]
+/workspace/user-programs/clang_warnings.c:7:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+/workspace/user-programs/clang_warnings.c:7:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+/workspace/user-programs/clang_warnings.c:4:5: remark: Cannot SLP vectorize list: vectorization was impossible with available vectorization factors [-Rpass-missed=slp-vectorizer]
+    4 | int count_set_bits(unsigned value) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:16:5: remark: List vectorization was possible but not beneficial with cost 0 >= 0 [-Rpass-missed=slp-vectorizer]
+   16 |     for (int i = 0; i < limit; i++) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:38:5: remark: loop not vectorized: Auto-vectorization of loops with potentially faulting load is not supported [-Rpass-analysis=loop-vectorize]
+   38 |     for (int i = 0; i < count; i++) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:62:9: remark: Cannot SLP vectorize list: vectorization was impossible with available vectorization factors [-Rpass-missed=slp-vectorizer]
+   62 |     if (!a == b) {
+      |         ^
+/workspace/user-programs/clang_warnings.c:79:5: remark: vectorized loop (vectorization width: 4, interleaved count: 2) [-Rpass=loop-vectorize]
+   79 |     for (int i = 0; i < count; i++) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:101:5: remark: vectorized loop (vectorization width: 4, interleaved count: 2) [-Rpass=loop-vectorize]
+  101 |     for (int i = 1; i < count; i++) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:4:5: remark: Canonicalize natural loops: IR instruction count changed from 144 to 146; Delta: 2 [-Rpass-analysis=size-info]
+    4 | int count_set_bits(unsigned value) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:4:5: remark: Canonicalize natural loops: Function: count_set_bits: IR instruction count changed from 12 to 14; Delta: 2 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:4:5: remark: Loop Strength Reduction: IR instruction count changed from 146 to 147; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:4:5: remark: Loop Strength Reduction: Function: count_set_bits: IR instruction count changed from 14 to 15; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:4:5: remark: CodeGen Prepare: IR instruction count changed from 147 to 145; Delta: -2 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:4:5: remark: CodeGen Prepare: Function: count_set_bits: IR instruction count changed from 14 to 13; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:4:1: remark: X86 DAG->DAG Instruction Selection: Function: count_set_bits: MI Instruction count changed from 0 to 25; Delta: 25 [-Rpass-analysis=size-info]
+    4 | int count_set_bits(unsigned value) {
+      | ^
+/workspace/user-programs/clang_warnings.c:4:1: remark: Eliminate PHI nodes for register allocation: Function: count_set_bits: MI Instruction count changed from 25 to 31; Delta: 6 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:4:1: remark: Two-Address instruction pass: Function: count_set_bits: MI Instruction count changed from 31 to 33; Delta: 2 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:4:1: remark: Register Coalescer: Function: count_set_bits: MI Instruction count changed from 33 to 22; Delta: -11 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:4:1: remark: Debug Variable Analysis: Function: count_set_bits: MI Instruction count changed from 22 to 15; Delta: -7 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:7:5: remark: 1 virtual registers copies 1.600000e+01 total copies cost generated in loop [-Rpass-missed=regalloc]
+    7 |     while (bit = value & 1u) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:4:1: remark: 2 virtual registers copies 1.650000e+01 total copies cost generated in function [-Rpass-missed=regalloc]
+    4 | int count_set_bits(unsigned value) {
+      | ^
+/workspace/user-programs/clang_warnings.c:4:1: remark: Virtual Register Rewriter: Function: count_set_bits: MI Instruction count changed from 15 to 22; Delta: 7 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:4:1: remark: 0 stack bytes in function 'count_set_bits' [-Rpass-analysis=prologepilog]
+/workspace/user-programs/clang_warnings.c:4:1: remark: Control Flow Optimizer: Function: count_set_bits: MI Instruction count changed from 22 to 20; Delta: -2 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:4:1: remark: Live DEBUG_VALUE analysis: Function: count_set_bits: MI Instruction count changed from 20 to 29; Delta: 9 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:4:1: remark: 
+Function: count_set_bits [-Rpass-analysis=stack-frame-layout]
+/workspace/user-programs/clang_warnings.c:4:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+    4 | int count_set_bits(unsigned value) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:4:5: remark: BasicBlock: entry
+JCC_1: 1
+TEST8ri: 1
+XOR32rr: 1
+ [-Rpass-analysis=asm-printer]
+    4 | int count_set_bits(unsigned value) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:4:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:4:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:4:5: remark: BasicBlock: while.body.preheader
+MOV32rr: 1
+XOR32rr: 1
+ [-Rpass-analysis=asm-printer]
+    4 | int count_set_bits(unsigned value) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:4:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:4:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:4:5: remark: BasicBlock: while.body
+INC32r: 1
+JCC_1: 1
+MOV32rr: 1
+SHR32ri: 1
+TEST8ri: 1
+ [-Rpass-analysis=asm-printer]
+    4 | int count_set_bits(unsigned value) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:4:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:4:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:4:5: remark: BasicBlock: while.end
+RET64: 1
+ [-Rpass-analysis=asm-printer]
+    4 | int count_set_bits(unsigned value) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:4:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:4:1: remark: 11 instructions in function [-Rpass-analysis=asm-printer]
+    4 | int count_set_bits(unsigned value) {
+      | ^
+/workspace/user-programs/clang_warnings.c:14:1: remark: X86 DAG->DAG Instruction Selection: Function: sum_to: MI Instruction count changed from 0 to 25; Delta: 25 [-Rpass-analysis=size-info]
+   14 | int sum_to(int limit) {
+      | ^
+/workspace/user-programs/clang_warnings.c:14:1: remark: Remove dead machine instructions: Function: sum_to: MI Instruction count changed from 25 to 24; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:14:1: remark: Process Implicit Definitions: Function: sum_to: MI Instruction count changed from 24 to 22; Delta: -2 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:14:1: remark: Eliminate PHI nodes for register allocation: Function: sum_to: MI Instruction count changed from 22 to 24; Delta: 2 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:14:1: remark: Two-Address instruction pass: Function: sum_to: MI Instruction count changed from 24 to 28; Delta: 4 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:14:1: remark: Register Coalescer: Function: sum_to: MI Instruction count changed from 28 to 17; Delta: -11 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:14:1: remark: Debug Variable Analysis: Function: sum_to: MI Instruction count changed from 17 to 12; Delta: -5 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:14:1: remark: Virtual Register Rewriter: Function: sum_to: MI Instruction count changed from 12 to 16; Delta: 4 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:14:1: remark: 0 stack bytes in function 'sum_to' [-Rpass-analysis=prologepilog]
+/workspace/user-programs/clang_warnings.c:14:1: remark: X86 LEA Fixup: Function: sum_to: MI Instruction count changed from 16 to 17; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:14:1: remark: Live DEBUG_VALUE analysis: Function: sum_to: MI Instruction count changed from 17 to 22; Delta: 5 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:14:1: remark: 
+Function: sum_to [-Rpass-analysis=stack-frame-layout]
+/workspace/user-programs/clang_warnings.c:14:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+   14 | int sum_to(int limit) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:14:5: remark: BasicBlock: entry
+JCC_1: 1
+TEST32rr: 1
+ [-Rpass-analysis=asm-printer]
+   14 | int sum_to(int limit) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:14:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:14:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:14:5: remark: BasicBlock: for.body.preheader
+LEA64_32r: 3
+DEC32r: 1
+IMUL64rr: 1
+RET64: 1
+SHR64ri: 1
+ [-Rpass-analysis=asm-printer]
+   14 | int sum_to(int limit) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:14:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:14:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:14:5: remark: BasicBlock: 
+RET64: 1
+XOR32rr: 1
+ [-Rpass-analysis=asm-printer]
+   14 | int sum_to(int limit) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:14:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:14:1: remark: 11 instructions in function [-Rpass-analysis=asm-printer]
+   14 | int sum_to(int limit) {
+      | ^
+/workspace/user-programs/clang_warnings.c:23:1: remark: X86 DAG->DAG Instruction Selection: Function: is_same: MI Instruction count changed from 0 to 4; Delta: 4 [-Rpass-analysis=size-info]
+   23 | int is_same(int value) {
+      | ^
+/workspace/user-programs/clang_warnings.c:23:1: remark: Peephole Optimizations: Function: is_same: MI Instruction count changed from 4 to 3; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:23:1: remark: Debug Variable Analysis: Function: is_same: MI Instruction count changed from 3 to 2; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:23:1: remark: Virtual Register Rewriter: Function: is_same: MI Instruction count changed from 2 to 3; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:23:1: remark: 0 stack bytes in function 'is_same' [-Rpass-analysis=prologepilog]
+/workspace/user-programs/clang_warnings.c:23:1: remark: 
+Function: is_same [-Rpass-analysis=stack-frame-layout]
+/workspace/user-programs/clang_warnings.c:23:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+   23 | int is_same(int value) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:23:5: remark: BasicBlock: entry
+MOV32ri: 1
+RET64: 1
+ [-Rpass-analysis=asm-printer]
+   23 | int is_same(int value) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:23:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:23:1: remark: 2 instructions in function [-Rpass-analysis=asm-printer]
+   23 | int is_same(int value) {
+      | ^
+/workspace/user-programs/clang_warnings.c:27:1: remark: X86 DAG->DAG Instruction Selection: Function: small_constant: MI Instruction count changed from 0 to 4; Delta: 4 [-Rpass-analysis=size-info]
+   27 | unsigned char small_constant(void) {
+      | ^
+/workspace/user-programs/clang_warnings.c:27:1: remark: Peephole Optimizations: Function: small_constant: MI Instruction count changed from 4 to 3; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:27:1: remark: Debug Variable Analysis: Function: small_constant: MI Instruction count changed from 3 to 2; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:27:1: remark: Virtual Register Rewriter: Function: small_constant: MI Instruction count changed from 2 to 3; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:27:1: remark: 0 stack bytes in function 'small_constant' [-Rpass-analysis=prologepilog]
+/workspace/user-programs/clang_warnings.c:27:1: remark: 
+Function: small_constant [-Rpass-analysis=stack-frame-layout]
+/workspace/user-programs/clang_warnings.c:27:15: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+   27 | unsigned char small_constant(void) {
+      |               ^
+/workspace/user-programs/clang_warnings.c:27:15: remark: BasicBlock: entry
+MOV8ri: 1
+RET64: 1
+ [-Rpass-analysis=asm-printer]
+   27 | unsigned char small_constant(void) {
+      |               ^
+/workspace/user-programs/clang_warnings.c:27:15: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:27:1: remark: 2 instructions in function [-Rpass-analysis=asm-printer]
+   27 | unsigned char small_constant(void) {
+      | ^
+/workspace/user-programs/clang_warnings.c:32:1: remark: X86 DAG->DAG Instruction Selection: Function: wide_shift: MI Instruction count changed from 0 to 4; Delta: 4 [-Rpass-analysis=size-info]
+   32 | long wide_shift(int value) {
+      | ^
+/workspace/user-programs/clang_warnings.c:32:1: remark: Process Implicit Definitions: Function: wide_shift: MI Instruction count changed from 4 to 2; Delta: -2 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:32:1: remark: Debug Variable Analysis: Function: wide_shift: MI Instruction count changed from 2 to 1; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:32:1: remark: Virtual Register Rewriter: Function: wide_shift: MI Instruction count changed from 1 to 2; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:32:1: remark: 0 stack bytes in function 'wide_shift' [-Rpass-analysis=prologepilog]
+/workspace/user-programs/clang_warnings.c:32:1: remark: 
+Function: wide_shift [-Rpass-analysis=stack-frame-layout]
+/workspace/user-programs/clang_warnings.c:32:6: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+   32 | long wide_shift(int value) {
+      |      ^
+/workspace/user-programs/clang_warnings.c:32:6: remark: BasicBlock: entry
+RET64: 1
+ [-Rpass-analysis=asm-printer]
+   32 | long wide_shift(int value) {
+      |      ^
+/workspace/user-programs/clang_warnings.c:32:6: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:32:1: remark: 1 instructions in function [-Rpass-analysis=asm-printer]
+   32 | long wide_shift(int value) {
+      | ^
+/workspace/user-programs/clang_warnings.c:36:5: remark: Canonicalize natural loops: IR instruction count changed from 145 to 147; Delta: 2 [-Rpass-analysis=size-info]
+   36 | int first_positive(const int *values, int count) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:36:5: remark: Canonicalize natural loops: Function: first_positive: IR instruction count changed from 14 to 16; Delta: 2 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:36:5: remark: Loop Strength Reduction: IR instruction count changed from 147 to 148; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:36:5: remark: Loop Strength Reduction: Function: first_positive: IR instruction count changed from 16 to 17; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:36:5: remark: CodeGen Prepare: IR instruction count changed from 148 to 146; Delta: -2 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:36:5: remark: CodeGen Prepare: Function: first_positive: IR instruction count changed from 16 to 15; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:36:1: remark: X86 DAG->DAG Instruction Selection: Function: first_positive: MI Instruction count changed from 0 to 31; Delta: 31 [-Rpass-analysis=size-info]
+   36 | int first_positive(const int *values, int count) {
+      | ^
+/workspace/user-programs/clang_warnings.c:36:1: remark: Eliminate PHI nodes for register allocation: Function: first_positive: MI Instruction count changed from 31 to 36; Delta: 5 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:36:1: remark: Two-Address instruction pass: Function: first_positive: MI Instruction count changed from 36 to 37; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:36:1: remark: Register Coalescer: Function: first_positive: MI Instruction count changed from 37 to 27; Delta: -10 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:36:1: remark: Debug Variable Analysis: Function: first_positive: MI Instruction count changed from 27 to 20; Delta: -7 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:36:1: remark: Virtual Register Rewriter: Function: first_positive: MI Instruction count changed from 20 to 25; Delta: 5 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:36:1: remark: 0 stack bytes in function 'first_positive' [-Rpass-analysis=prologepilog]
+/workspace/user-programs/clang_warnings.c:36:1: remark: Control Flow Optimizer: Function: first_positive: MI Instruction count changed from 25 to 23; Delta: -2 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:36:1: remark: Branch Probability Basic Block Placement: Function: first_positive: MI Instruction count changed from 23 to 20; Delta: -3 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:36:1: remark: Live DEBUG_VALUE analysis: Function: first_positive: MI Instruction count changed from 20 to 35; Delta: 15 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:36:1: remark: 
+Function: first_positive [-Rpass-analysis=stack-frame-layout]
+/workspace/user-programs/clang_warnings.c:36:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+   36 | int first_positive(const int *values, int count) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:36:5: remark: BasicBlock: entry
+JCC_1: 1
+TEST32rr: 1
+ [-Rpass-analysis=asm-printer]
+   36 | int first_positive(const int *values, int count) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:36:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:36:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:36:5: remark: BasicBlock: for.body.preheader
+MOV32rr: 1
+XOR32rr: 1
+ [-Rpass-analysis=asm-printer]
+   36 | int first_positive(const int *values, int count) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:36:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:36:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:36:5: remark: BasicBlock: for.body
+JCC_1: 1
+MOV32rm: 1
+TEST32rr: 1
+ [-Rpass-analysis=asm-printer]
+   36 | int first_positive(const int *values, int count) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:36:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:36:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:36:5: remark: BasicBlock: for.cond
+CMP64rr: 1
+INC64r: 1
+JCC_1: 1
+ [-Rpass-analysis=asm-printer]
+   36 | int first_positive(const int *values, int count) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:36:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:36:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:36:5: remark: BasicBlock: 
+XOR32rr: 1
+ [-Rpass-analysis=asm-printer]
+   36 | int first_positive(const int *values, int count) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:36:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:36:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:36:5: remark: BasicBlock: cleanup
+RET64: 1
+ [-Rpass-analysis=asm-printer]
+   36 | int first_positive(const int *values, int count) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:36:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:36:1: remark: 12 instructions in function [-Rpass-analysis=asm-printer]
+   36 | int first_positive(const int *values, int count) {
+      | ^
+/workspace/user-programs/clang_warnings.c:46:1: remark: X86 DAG->DAG Instruction Selection: Function: skip_empty: MI Instruction count changed from 0 to 4; Delta: 4 [-Rpass-analysis=size-info]
+   46 | int skip_empty(int value) {
+      | ^
+/workspace/user-programs/clang_warnings.c:46:1: remark: Debug Variable Analysis: Function: skip_empty: MI Instruction count changed from 4 to 3; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:46:1: remark: 1 virtual registers copies 1.000000e+00 total copies cost generated in function [-Rpass-missed=regalloc]
+/workspace/user-programs/clang_warnings.c:46:1: remark: 0 stack bytes in function 'skip_empty' [-Rpass-analysis=prologepilog]
+/workspace/user-programs/clang_warnings.c:46:1: remark: 
+Function: skip_empty [-Rpass-analysis=stack-frame-layout]
+/workspace/user-programs/clang_warnings.c:46:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+   46 | int skip_empty(int value) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:46:5: remark: BasicBlock: entry
+MOV32rr: 1
+RET64: 1
+ [-Rpass-analysis=asm-printer]
+   46 | int skip_empty(int value) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:46:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:46:1: remark: 2 instructions in function [-Rpass-analysis=asm-printer]
+   46 | int skip_empty(int value) {
+      | ^
+/workspace/user-programs/clang_warnings.c:51:1: remark: X86 DAG->DAG Instruction Selection: Function: truncated_half: MI Instruction count changed from 0 to 4; Delta: 4 [-Rpass-analysis=size-info]
+   51 | int truncated_half(void) {
+      | ^
+/workspace/user-programs/clang_warnings.c:51:1: remark: Peephole Optimizations: Function: truncated_half: MI Instruction count changed from 4 to 3; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:51:1: remark: Debug Variable Analysis: Function: truncated_half: MI Instruction count changed from 3 to 2; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:51:1: remark: Virtual Register Rewriter: Function: truncated_half: MI Instruction count changed from 2 to 3; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:51:1: remark: 0 stack bytes in function 'truncated_half' [-Rpass-analysis=prologepilog]
+/workspace/user-programs/clang_warnings.c:51:1: remark: 
+Function: truncated_half [-Rpass-analysis=stack-frame-layout]
+/workspace/user-programs/clang_warnings.c:51:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+   51 | int truncated_half(void) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:51:5: remark: BasicBlock: entry
+MOV32ri: 1
+RET64: 1
+ [-Rpass-analysis=asm-printer]
+   51 | int truncated_half(void) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:51:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:51:1: remark: 2 instructions in function [-Rpass-analysis=asm-printer]
+   51 | int truncated_half(void) {
+      | ^
+/workspace/user-programs/clang_warnings.c:56:1: remark: X86 DAG->DAG Instruction Selection: Function: last_of_four: MI Instruction count changed from 0 to 3; Delta: 3 [-Rpass-analysis=size-info]
+   56 | int last_of_four(void) {
+      | ^
+/workspace/user-programs/clang_warnings.c:56:1: remark: Process Implicit Definitions: Function: last_of_four: MI Instruction count changed from 3 to 1; Delta: -2 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:56:1: remark: 0 stack bytes in function 'last_of_four' [-Rpass-analysis=prologepilog]
+/workspace/user-programs/clang_warnings.c:56:1: remark: 
+Function: last_of_four [-Rpass-analysis=stack-frame-layout]
+/workspace/user-programs/clang_warnings.c:58:5: remark: BasicBlock: entry
+RET64: 1
+ [-Rpass-analysis=asm-printer]
+   58 |     return four[4];
+      |     ^
+/workspace/user-programs/clang_warnings.c:56:1: remark: 1 instructions in function [-Rpass-analysis=asm-printer]
+   56 | int last_of_four(void) {
+      | ^
+/workspace/user-programs/clang_warnings.c:61:1: remark: X86 DAG->DAG Instruction Selection: Function: not_equal: MI Instruction count changed from 0 to 12; Delta: 12 [-Rpass-analysis=size-info]
+   61 | int not_equal(int a, int b) {
+      | ^
+/workspace/user-programs/clang_warnings.c:61:1: remark: X86 Fixup SetCC: Function: not_equal: MI Instruction count changed from 12 to 14; Delta: 2 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:61:1: remark: Two-Address instruction pass: Function: not_equal: MI Instruction count changed from 14 to 16; Delta: 2 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:61:1: remark: Register Coalescer: Function: not_equal: MI Instruction count changed from 16 to 12; Delta: -4 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:61:1: remark: Debug Variable Analysis: Function: not_equal: MI Instruction count changed from 12 to 10; Delta: -2 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:61:1: remark: Virtual Register Rewriter: Function: not_equal: MI Instruction count changed from 10 to 9; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:61:1: remark: 0 stack bytes in function 'not_equal' [-Rpass-analysis=prologepilog]
+/workspace/user-programs/clang_warnings.c:61:1: remark: 
+Function: not_equal [-Rpass-analysis=stack-frame-layout]
+/workspace/user-programs/clang_warnings.c:61:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+   61 | int not_equal(int a, int b) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:61:5: remark: BasicBlock: entry
+SETCCr: 2
+XOR32rr: 2
+CMP32rr: 1
+RET64: 1
+TEST32rr: 1
+ [-Rpass-analysis=asm-printer]
+   61 | int not_equal(int a, int b) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:61:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:61:1: remark: 7 instructions in function [-Rpass-analysis=asm-printer]
+   61 | int not_equal(int a, int b) {
+      | ^
+/workspace/user-programs/clang_warnings.c:68:1: remark: X86 DAG->DAG Instruction Selection: Function: array_size: MI Instruction count changed from 0 to 4; Delta: 4 [-Rpass-analysis=size-info]
+   68 | int array_size(int values[8]) {
+      | ^
+/workspace/user-programs/clang_warnings.c:68:1: remark: Peephole Optimizations: Function: array_size: MI Instruction count changed from 4 to 3; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:68:1: remark: Debug Variable Analysis: Function: array_size: MI Instruction count changed from 3 to 2; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:68:1: remark: Virtual Register Rewriter: Function: array_size: MI Instruction count changed from 2 to 3; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:68:1: remark: 0 stack bytes in function 'array_size' [-Rpass-analysis=prologepilog]
+/workspace/user-programs/clang_warnings.c:68:1: remark: 
+Function: array_size [-Rpass-analysis=stack-frame-layout]
+/workspace/user-programs/clang_warnings.c:68:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+   68 | int array_size(int values[8]) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:68:5: remark: BasicBlock: entry
+MOV32ri: 1
+RET64: 1
+ [-Rpass-analysis=asm-printer]
+   68 | int array_size(int values[8]) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:68:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:68:1: remark: 2 instructions in function [-Rpass-analysis=asm-printer]
+   68 | int array_size(int values[8]) {
+      | ^
+/workspace/user-programs/clang_warnings.c:72:1: remark: X86 DAG->DAG Instruction Selection: Function: print_total: MI Instruction count changed from 0 to 20; Delta: 20 [-Rpass-analysis=size-info]
+   72 | void print_total(long total, double mean) {
+      | ^
+/workspace/user-programs/clang_warnings.c:72:1: remark: Remove dead machine instructions: Function: print_total: MI Instruction count changed from 20 to 19; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:72:1: remark: Peephole Optimizations: Function: print_total: MI Instruction count changed from 19 to 18; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:72:1: remark: Register Coalescer: Function: print_total: MI Instruction count changed from 18 to 16; Delta: -2 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:72:1: remark: Debug Variable Analysis: Function: print_total: MI Instruction count changed from 16 to 14; Delta: -2 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:72:1: remark: 1 spills 1.000000e+00 total spills cost 1 reloads 1.000000e+00 total reloads cost 1 virtual registers copies 1.000000e+00 total copies cost generated in function [-Rpass-missed=regalloc]
+/workspace/user-programs/clang_warnings.c:72:1: remark: Virtual Register Rewriter: Function: print_total: MI Instruction count changed from 14 to 13; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:72:1: remark: 8 stack bytes in function 'print_total' [-Rpass-analysis=prologepilog]
+/workspace/user-programs/clang_warnings.c:72:1: remark: Prologue/Epilogue Insertion & Frame Finalization: Function: print_total: MI Instruction count changed from 13 to 15; Delta: 2 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:72:1: remark: Live DEBUG_VALUE analysis: Function: print_total: MI Instruction count changed from 15 to 18; Delta: 3 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:72:1: remark: 
+Function: print_total
+Offset: [SP-8], Type: Spill, Align: 8, Size: 8
+    mean @ user-programs/clang_warnings.c:72 [-Rpass-analysis=stack-frame-layout]
+/workspace/user-programs/clang_warnings.c:72:6: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+   72 | void print_total(long total, double mean) {
+      |      ^
+/workspace/user-programs/clang_warnings.c:72:6: remark: BasicBlock: entry
+LEA64r: 2
+CALL64pcrel32: 1
+MOV64rr: 1
+MOV8ri: 1
+MOVSDmr: 1
+MOVSDrm_alt: 1
+POP64r: 1
+PUSH64r: 1
+TAILJMPd64: 1
+XOR32rr: 1
+ [-Rpass-analysis=asm-printer]
+   72 | void print_total(long total, double mean) {
+      |      ^
+/workspace/user-programs/clang_warnings.c:72:6: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:72:1: remark: 11 instructions in function [-Rpass-analysis=asm-printer]
+   72 | void print_total(long total, double mean) {
+      | ^
+/workspace/user-programs/clang_warnings.c:77:5: remark: Canonicalize natural loops: IR instruction count changed from 146 to 147; Delta: 1 [-Rpass-analysis=size-info]
+   77 | int scaled_sum(const int *values, int count) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:77:5: remark: Canonicalize natural loops: Function: scaled_sum: IR instruction count changed from 39 to 40; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:77:5: remark: Loop Strength Reduction: IR instruction count changed from 147 to 148; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:77:5: remark: Loop Strength Reduction: Function: scaled_sum: IR instruction count changed from 40 to 41; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:77:5: remark: Loop Strength Reduction: IR instruction count changed from 148 to 154; Delta: 6 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:77:5: remark: Loop Strength Reduction: Function: scaled_sum: IR instruction count changed from 41 to 47; Delta: 6 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:77:5: remark: Expand reduction intrinsics: IR instruction count changed from 154 to 158; Delta: 4 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:77:5: remark: Expand reduction intrinsics: Function: scaled_sum: IR instruction count changed from 40 to 51; Delta: 11 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:77:5: remark: CodeGen Prepare: IR instruction count changed from 158 to 156; Delta: -2 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:77:5: remark: CodeGen Prepare: Function: scaled_sum: IR instruction count changed from 51 to 49; Delta: -2 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:77:1: remark: X86 DAG->DAG Instruction Selection: Function: scaled_sum: MI Instruction count changed from 0 to 73; Delta: 73 [-Rpass-analysis=size-info]
+   77 | int scaled_sum(const int *values, int count) {
+      | ^
+/workspace/user-programs/clang_warnings.c:77:1: remark: Process Implicit Definitions: Function: scaled_sum: MI Instruction count changed from 73 to 71; Delta: -2 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:77:1: remark: Eliminate PHI nodes for register allocation: Function: scaled_sum: MI Instruction count changed from 71 to 88; Delta: 17 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:77:1: remark: Two-Address instruction pass: Function: scaled_sum: MI Instruction count changed from 88 to 101; Delta: 13 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:77:1: remark: Register Coalescer: Function: scaled_sum: MI Instruction count changed from 101 to 57; Delta: -44 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:77:1: remark: Debug Variable Analysis: Function: scaled_sum: MI Instruction count changed from 57 to 49; Delta: -8 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:77:1: remark: 2 virtual registers copies 6.250000e-01 total copies cost generated in function [-Rpass-missed=regalloc]
+/workspace/user-programs/clang_warnings.c:77:1: remark: Virtual Register Rewriter: Function: scaled_sum: MI Instruction count changed from 49 to 57; Delta: 8 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:77:1: remark: 0 stack bytes in function 'scaled_sum' [-Rpass-analysis=prologepilog]
+/workspace/user-programs/clang_warnings.c:77:1: remark: Control Flow Optimizer: Function: scaled_sum: MI Instruction count changed from 57 to 53; Delta: -4 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:77:1: remark: Tail Duplication: Function: scaled_sum: MI Instruction count changed from 53 to 54; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:77:1: remark: Live DEBUG_VALUE analysis: Function: scaled_sum: MI Instruction count changed from 54 to 86; Delta: 32 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:77:1: remark: 
+Function: scaled_sum [-Rpass-analysis=stack-frame-layout]
+/workspace/user-programs/clang_warnings.c:77:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+   77 | int scaled_sum(const int *values, int count) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:77:5: remark: BasicBlock: entry
+JCC_1: 1
+TEST32rr: 1
+ [-Rpass-analysis=asm-printer]
+   77 | int scaled_sum(const int *values, int count) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:77:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:77:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:77:5: remark: BasicBlock: for.body.preheader
+CMP32ri: 1
+JCC_1: 1
+MOV32rr: 1
+ [-Rpass-analysis=asm-printer]
+   77 | int scaled_sum(const int *values, int count) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:77:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:77:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:77:5: remark: BasicBlock: 
+XOR32rr: 2
+JMP_1: 1
+ [-Rpass-analysis=asm-printer]
+   77 | int scaled_sum(const int *values, int count) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:77:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:77:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:77:5: remark: BasicBlock: 
+RET64: 1
+XOR32rr: 1
+ [-Rpass-analysis=asm-printer]
+   77 | int scaled_sum(const int *values, int count) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:77:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:77:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:77:5: remark: BasicBlock: vector.ph
+AND32ri: 2
+MOV32rr: 2
+PXORrr: 2
+SHL64ri: 1
+SHR32ri: 1
+XOR32rr: 1
+ [-Rpass-analysis=asm-printer]
+   77 | int scaled_sum(const int *values, int count) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:77:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:77:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:77:5: remark: BasicBlock: vector.body
+PADDDrr: 4
+MOVDQUrm: 2
+ADD64ri32: 1
+CMP64rr: 1
+JCC_1: 1
+ [-Rpass-analysis=asm-printer]
+   77 | int scaled_sum(const int *values, int count) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:77:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:77:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:77:5: remark: BasicBlock: middle.block
+PADDDrr: 3
+PSHUFDri: 2
+CMP32rr: 1
+JCC_1: 1
+MOVPDI2DIrr: 1
+ [-Rpass-analysis=asm-printer]
+   77 | int scaled_sum(const int *values, int count) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:77:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:77:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:77:5: remark: BasicBlock: for.body
+CMP64rr: 1
+INC64r: 1
+JCC_1: 1
+LEA64_32r: 1
+MOV32rm: 1
+ [-Rpass-analysis=asm-printer]
+   77 | int scaled_sum(const int *values, int count) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:77:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:77:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:77:5: remark: BasicBlock: for.cond.cleanup
+RET64: 1
+ [-Rpass-analysis=asm-printer]
+   77 | int scaled_sum(const int *values, int count) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:77:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:77:1: remark: 42 instructions in function [-Rpass-analysis=asm-printer]
+   77 | int scaled_sum(const int *values, int count) {
+      | ^
+/workspace/user-programs/clang_warnings.c:87:1: remark: X86 DAG->DAG Instruction Selection: Function: clamp: MI Instruction count changed from 0 to 10; Delta: 10 [-Rpass-analysis=size-info]
+   87 | int clamp(int value) {
+      | ^
+/workspace/user-programs/clang_warnings.c:87:1: remark: Two-Address instruction pass: Function: clamp: MI Instruction count changed from 10 to 11; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:87:1: remark: Register Coalescer: Function: clamp: MI Instruction count changed from 11 to 10; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:87:1: remark: Debug Variable Analysis: Function: clamp: MI Instruction count changed from 10 to 7; Delta: -3 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:87:1: remark: Virtual Register Rewriter: Function: clamp: MI Instruction count changed from 7 to 8; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:87:1: remark: 0 stack bytes in function 'clamp' [-Rpass-analysis=prologepilog]
+/workspace/user-programs/clang_warnings.c:87:1: remark: 
+Function: clamp [-Rpass-analysis=stack-frame-layout]
+/workspace/user-programs/clang_warnings.c:87:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+   87 | int clamp(int value) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:87:5: remark: BasicBlock: entry
+MOV32ri: 2
+CMOV32rr: 1
+CMP32ri: 1
+RET64: 1
+ [-Rpass-analysis=asm-printer]
+   87 | int clamp(int value) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:87:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:87:1: remark: 5 instructions in function [-Rpass-analysis=asm-printer]
+   87 | int clamp(int value) {
+      | ^
+/workspace/user-programs/clang_warnings.c:99:5: remark: Canonicalize natural loops: IR instruction count changed from 156 to 157; Delta: 1 [-Rpass-analysis=size-info]
+   99 | int max_of(const int *values, int count) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:99:5: remark: Canonicalize natural loops: Function: max_of: IR instruction count changed from 42 to 43; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:99:5: remark: Loop Strength Reduction: IR instruction count changed from 157 to 158; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:99:5: remark: Loop Strength Reduction: Function: max_of: IR instruction count changed from 43 to 44; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:99:5: remark: Loop Strength Reduction: IR instruction count changed from 158 to 161; Delta: 3 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:99:5: remark: Loop Strength Reduction: Function: max_of: IR instruction count changed from 44 to 47; Delta: 3 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:99:5: remark: Expand reduction intrinsics: IR instruction count changed from 161 to 165; Delta: 4 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:99:5: remark: Expand reduction intrinsics: Function: max_of: IR instruction count changed from 43 to 51; Delta: 8 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:99:5: remark: CodeGen Prepare: IR instruction count changed from 165 to 164; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:99:5: remark: CodeGen Prepare: Function: max_of: IR instruction count changed from 51 to 50; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:99:1: remark: X86 DAG->DAG Instruction Selection: Function: max_of: MI Instruction count changed from 0 to 77; Delta: 77 [-Rpass-analysis=size-info]
+   99 | int max_of(const int *values, int count) {
+      | ^
+/workspace/user-programs/clang_warnings.c:99:1: remark: Eliminate PHI nodes for register allocation: Function: max_of: MI Instruction count changed from 77 to 94; Delta: 17 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:99:1: remark: Two-Address instruction pass: Function: max_of: MI Instruction count changed from 94 to 118; Delta: 24 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:99:1: remark: Register Coalescer: Function: max_of: MI Instruction count changed from 118 to 76; Delta: -42 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:99:1: remark: Debug Variable Analysis: Function: max_of: MI Instruction count changed from 76 to 68; Delta: -8 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:101:5: remark: 4 virtual registers copies 3.200000e+01 total copies cost generated in loop [-Rpass-missed=regalloc]
+  101 |     for (int i = 1; i < count; i++) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:99:1: remark: 9 virtual registers copies 3.325000e+01 total copies cost generated in function [-Rpass-missed=regalloc]
+   99 | int max_of(const int *values, int count) {
+      | ^
+/workspace/user-programs/clang_warnings.c:99:1: remark: Virtual Register Rewriter: Function: max_of: MI Instruction count changed from 68 to 75; Delta: 7 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:99:1: remark: 0 stack bytes in function 'max_of' [-Rpass-analysis=prologepilog]
+/workspace/user-programs/clang_warnings.c:99:1: remark: Control Flow Optimizer: Function: max_of: MI Instruction count changed from 75 to 69; Delta: -6 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:99:1: remark: Live DEBUG_VALUE analysis: Function: max_of: MI Instruction count changed from 69 to 93; Delta: 24 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:99:1: remark: 
+Function: max_of [-Rpass-analysis=stack-frame-layout]
+/workspace/user-programs/clang_warnings.c:99:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+   99 | int max_of(const int *values, int count) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:99:5: remark: BasicBlock: entry
+CMP32ri: 1
+JCC_1: 1
+MOV32rm: 1
+ [-Rpass-analysis=asm-printer]
+   99 | int max_of(const int *values, int count) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:99:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:99:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:99:5: remark: BasicBlock: for.body.preheader
+CMP32ri: 1
+JCC_1: 1
+MOV32ri: 1
+MOV32rr: 1
+ [-Rpass-analysis=asm-printer]
+   99 | int max_of(const int *values, int count) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:99:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:99:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:99:5: remark: BasicBlock: vector.ph
+LEA64r: 2
+AND64ri32: 1
+MOV64rr: 1
+MOVDI2PDIrr: 1
+MOVDQArr: 1
+PSHUFDri: 1
+XOR32rr: 1
+ [-Rpass-analysis=asm-printer]
+   99 | int max_of(const int *values, int count) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:99:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:99:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:99:5: remark: BasicBlock: vector.body
+MOVDQArr: 4
+MOVDQUrm: 2
+PANDNrr: 2
+PANDrr: 2
+PCMPGTDrr: 2
+PORrr: 2
+ADD64ri32: 1
+CMP64rr: 1
+JCC_1: 1
+ [-Rpass-analysis=asm-printer]
+   99 | int max_of(const int *values, int count) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:99:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:99:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:99:5: remark: BasicBlock: middle.block
+MOVDQArr: 3
+PANDNrr: 3
+PANDrr: 3
+PCMPGTDrr: 3
+PORrr: 3
+PSHUFDri: 2
+CMP64rr: 1
+JCC_1: 1
+MOVPDI2DIrr: 1
+ [-Rpass-analysis=asm-printer]
+   99 | int max_of(const int *values, int count) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:99:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:99:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:99:5: remark: BasicBlock: for.body
+CMOV32rr: 1
+CMP32rr: 1
+CMP64rr: 1
+INC64r: 1
+JCC_1: 1
+MOV32rm: 1
+ [-Rpass-analysis=asm-printer]
+   99 | int max_of(const int *values, int count) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:99:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:99:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:99:5: remark: BasicBlock: for.cond.cleanup
+RET64: 1
+ [-Rpass-analysis=asm-printer]
+   99 | int max_of(const int *values, int count) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:99:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:99:1: remark: 59 instructions in function [-Rpass-analysis=asm-printer]
+   99 | int max_of(const int *values, int count) {
+      | ^
+/workspace/user-programs/clang_warnings.c:109:1: remark: X86 DAG->DAG Instruction Selection: Function: bump: MI Instruction count changed from 0 to 6; Delta: 6 [-Rpass-analysis=size-info]
+  109 | int bump(int i) {
+      | ^
+/workspace/user-programs/clang_warnings.c:109:1: remark: Two-Address instruction pass: Function: bump: MI Instruction count changed from 6 to 7; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:109:1: remark: Register Coalescer: Function: bump: MI Instruction count changed from 7 to 6; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:109:1: remark: Debug Variable Analysis: Function: bump: MI Instruction count changed from 6 to 4; Delta: -2 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:109:1: remark: Virtual Register Rewriter: Function: bump: MI Instruction count changed from 4 to 5; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:109:1: remark: 0 stack bytes in function 'bump' [-Rpass-analysis=prologepilog]
+/workspace/user-programs/clang_warnings.c:109:1: remark: Live DEBUG_VALUE analysis: Function: bump: MI Instruction count changed from 5 to 6; Delta: 1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:109:1: remark: 
+Function: bump [-Rpass-analysis=stack-frame-layout]
+/workspace/user-programs/clang_warnings.c:109:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+  109 | int bump(int i) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:109:5: remark: BasicBlock: entry
+LEA64_32r: 1
+RET64: 1
+ [-Rpass-analysis=asm-printer]
+  109 | int bump(int i) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:109:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:109:1: remark: 2 instructions in function [-Rpass-analysis=asm-printer]
+  109 | int bump(int i) {
+      | ^
+/workspace/user-programs/clang_warnings.c:114:1: remark: X86 DAG->DAG Instruction Selection: Function: main: MI Instruction count changed from 0 to 20; Delta: 20 [-Rpass-analysis=size-info]
+  114 | int main(void) {
+      | ^
+/workspace/user-programs/clang_warnings.c:114:1: remark: Remove dead machine instructions: Function: main: MI Instruction count changed from 20 to 19; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:114:1: remark: Peephole Optimizations: Function: main: MI Instruction count changed from 19 to 17; Delta: -2 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:114:1: remark: Register Coalescer: Function: main: MI Instruction count changed from 17 to 15; Delta: -2 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:114:1: remark: Debug Variable Analysis: Function: main: MI Instruction count changed from 15 to 13; Delta: -2 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:114:1: remark: Virtual Register Rewriter: Function: main: MI Instruction count changed from 13 to 12; Delta: -1 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:114:1: remark: 8 stack bytes in function 'main' [-Rpass-analysis=prologepilog]
+/workspace/user-programs/clang_warnings.c:114:1: remark: Prologue/Epilogue Insertion & Frame Finalization: Function: main: MI Instruction count changed from 12 to 14; Delta: 2 [-Rpass-analysis=size-info]
+/workspace/user-programs/clang_warnings.c:114:1: remark: 
+Function: main [-Rpass-analysis=stack-frame-layout]
+/workspace/user-programs/clang_warnings.c:114:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+  114 | int main(void) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:114:5: remark: BasicBlock: entry
+LEA64r: 2
+CALL64pcrel32: 1
+MOV32ri: 1
+MOV8ri: 1
+MOVSDrm_alt: 1
+POP64r: 1
+PUSH64r: 1
+TAILJMPd64: 1
+XOR32rr: 1
+ [-Rpass-analysis=asm-printer]
+  114 | int main(void) {
+      |     ^
+/workspace/user-programs/clang_warnings.c:114:5: note: could not determine the original source location for user-programs/clang_warnings.c:0:0
+/workspace/user-programs/clang_warnings.c:114:1: remark: 10 instructions in function [-Rpass-analysis=asm-printer]
+  114 | int main(void) {
+      | ^
+22 warnings generated.

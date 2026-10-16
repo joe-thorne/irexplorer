@@ -7,7 +7,8 @@ source, looked up by the SHA-256 of the source text (the normalised source the s
 The recordings are the committed curated artefacts of the three unedited curated sources, with their
 `examples/curated` paths rewritten to `user-programs`, as the compiler service would have written them,
 and the corpus in tests/data/user-programs, recorded from the real toolchain in the same layout by
-scripts/record_user_programs.py. A recorded failure (`failure.json`) replays its failing command's stderr
+scripts/record_user_programs.py. The -O0 emit command prints its recorded stderr (clang's warnings), or
+nothing if none was recorded. A recorded failure (`failure.json`) replays its failing command's stderr
 and exit status. A source with no recording fails with a distinct "no recording" message and exit
 status, so a mistake in a test never looks like a compile failure.
 
@@ -82,6 +83,12 @@ class Recording:
         return self.text(f"{self.stem}_{state.file_suffix}_remarks.yaml")
 
     @property
+    def o0_stderr(self) -> str:
+        """What the -O0 emit command printed: clang's warnings, recorded only for a program that has any."""
+        path = self.directory / f"{self.stem}_O0_stderr.txt"
+        return self.text(path.name) if path.exists() else ""
+
+    @property
     def failure(self) -> dict[str, str] | None:
         """The compiler service's error for a recorded program whose compile failed."""
         path = self.directory / "failure.json"
@@ -135,6 +142,8 @@ def clang(args: list[str]) -> int:
     level = curated.PASS_STATES[0] if "-O0" in args else curated.PASS_STATES[-1]
     if "-S" in args:
         output.write_text(recording.ir(level), encoding="utf-8")
+        if level is curated.PASS_STATES[0]:
+            sys.stderr.write(recording.o0_stderr)
     elif "-emit-llvm" in args:
         # Stand-in bitcode: the O0 IR text, which the fake opt recognises as its first input.
         output.write_text(recording.ir(level), encoding="utf-8")

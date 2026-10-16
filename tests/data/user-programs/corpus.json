@@ -37,10 +37,25 @@
       "outcome": {"status": 422, "code": "compile_failed"}
     },
     {
+      "fileName": "clang_warnings.c",
+      "about": "Compiles with 22 of clang's default warnings, some with notes, more than the 20 the app answers.",
+      "outcome": {"status": 201}
+    },
+    {
       "fileName": "word_frequency.c",
       "about": "A realistic program of about 200 lines.",
       "outcome": {"status": 201},
       "withinSeconds": 15
+    },
+    {
+      "fileName": "program.c",
+      "about": "The starter function a new program begins with in the editor.",
+      "outcome": {"status": 201}
+    },
+    {
+      "fileName": "quick_sort.c",
+      "about": "An edited copy of the curated quick_sort, under the name Edit a copy gives it: partition keeps its name and quick_sort is renamed sort.",
+      "outcome": {"status": 201}
     }
   ]
 }
