@@ -32,7 +32,7 @@ window.StudySubmit = (() => {
             const old = oldKey ? storage.getItem(oldKey) : null;
             if (!old) return;
             const parsedOld = JSON.parse(old);
-            const legacySubmission = parsedOld?.submission || parsedOld?.payload;
+            const legacySubmission = parsedOld?.submission || parsedOld?.payload; // terminology: allow payload (drafts saved by earlier releases)
             if (parsedOld?.kind === 'pending' && legacySubmission?.submissionId) {
               blockIncompatible(oldKey, legacySubmission.participantCode);
               return;

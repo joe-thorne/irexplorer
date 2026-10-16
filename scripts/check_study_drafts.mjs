@@ -97,8 +97,8 @@ check('Browser validation matches the common browser/server response examples', 
   }
 });
 check('Task inability and not-applicable preserve null independently from numeric answers', () => {
-  for (const [stage, id, status] of [['T2','T2a','could_not_work_out'], ['T3','T3a','could_not_work_out'], ['T4','T4a','could_not_work_out'], ['T5','T5a','could_not_work_out']]) {
-    assert.equal(Object.keys(D.validate(content, stage, {[id]: {status, value:null}})).length, 0);
+  for (const [section, id, status] of [['T2','T2a','could_not_work_out'], ['T3','T3a','could_not_work_out'], ['T4','T4a','could_not_work_out'], ['T5','T5a','could_not_work_out']]) {
+    assert.equal(Object.keys(D.validate(content, section, {[id]: {status, value:null}})).length, 0);
   }
   assert.equal(Object.keys(D.validate(content, 'T2', {T2a: answered(12)})).join(), 'T2a');
   assert.equal(Object.keys(D.validate(content, 'T5', {T5a: {status:'not_applicable',value:null}})).join(), 'T5a');

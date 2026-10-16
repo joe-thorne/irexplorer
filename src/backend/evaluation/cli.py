@@ -53,7 +53,8 @@ class StoreLayout:
         return 'provenance_backfill' if self.has_backfill else 'NULL'
 
 
-LAYOUTS = {1: StoreLayout(1, 'responses', 'payload'), 2: StoreLayout(2, 'submissions', 'submission_json'),
+LAYOUTS = {1: StoreLayout(1, 'responses', 'payload'),  # terminology: allow payload
+           2: StoreLayout(2, 'submissions', 'submission_json'),
            3: StoreLayout(3, 'submissions', 'submission_json'),
            SCHEMA_VERSION: StoreLayout(SCHEMA_VERSION, 'submissions', 'submission_json')}
 

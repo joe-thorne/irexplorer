@@ -461,7 +461,7 @@ def validate_answers(section, answers, *, complete=False, content=None):
         content = participant_content()
     if (not isinstance(section, str) or section not in content['membership']
             or section == 'consent' or not isinstance(answers, dict)):
-        return {'stage': 'Invalid survey.'}
+        return {'section': 'Invalid survey.'}
     field_ids = content['membership'][section]
     fields = {field['id']: field for field in content['fields'] if field['id'] in field_ids}
     errors = {key: 'Unknown item.' for key in answers.keys() - fields.keys()}
