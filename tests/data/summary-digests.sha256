@@ -4,7 +4,7 @@
 # every structured and raw remark path and proves equivalence to that baseline.
 # Update only after a deliberate, reviewed report change:
 # python -m tests.test_summary_digests --write
-# The v3 re-pin followed exact comparison of 315 response payloads and 45
+# The v3 re-pin followed exact comparison of 315 responses and 45
 # model records under the declared rename mapping; see
 # docs/model-record-v3-migration.md.
 8881d42e106daa6f6d6a6790947b44fde33d6bc412f716e2cdf721f02ec7c840  binary_search 00-00

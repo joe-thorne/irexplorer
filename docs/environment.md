@@ -17,7 +17,7 @@ Compiler artefacts for `irexplorer` are generated with one pinned Linux toolchai
 
 ## Docker Files
 
-- `Dockerfile.toolchain`: multi-stage Ubuntu 24.04 image with a pruned LLVM 22.1.8 `clang`/`opt` toolchain.
+- `Dockerfile.toolchain`: Ubuntu 24.04 image that unpacks the checksummed LLVM 22.1.8 release in a separate build image and keeps only a pruned `clang`/`opt` toolchain.
 - `docker-compose.yml`: `toolchain` service built for `linux/amd64`.
 - `Dockerfile.compiler`: the compiler service for user programs, built from the pinned toolchain image with `libc6-dev` and Python 3 added. It records a content ID (a digest of the toolchain, the headers, the installed package versions and the service code) and the `libc6-dev` version at build time, and each user program's manifest carries both. The curated `toolchain` image and the curated checksum do not use it.
 - `compose.user-programs.yaml`: the separate user-programs stack (see the README).

@@ -255,7 +255,7 @@ def migrate(db):
                    'release TEXT NOT NULL)')
     elif version == 1:
         db.execute('ALTER TABLE responses RENAME TO submissions')
-        db.execute('ALTER TABLE submissions RENAME COLUMN payload TO submission_json')
+        db.execute('ALTER TABLE submissions RENAME COLUMN payload TO submission_json')  # terminology: allow payload
     for target in range(max(version, 2) + 1, SCHEMA_VERSION + 1):
         for statement in _MIGRATIONS[target]:
             db.execute(statement)

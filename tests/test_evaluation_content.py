@@ -37,10 +37,10 @@ class EvaluationContentTests(unittest.TestCase):
     def test_revised_response_types_reject_old_codes(self):
         def a(value):
             return {'status': 'answered', 'value': value}
-        for stage, field, value in [('post', 'Q8', [1, 2, 3]), ('T4', 'T4c', 5),
-                                    ('T5', 'T5a', 'Two instructions merge into one'), ('T5', 'T5c', 5),
-                                    ('post', 'Q20', 5)]:
-            self.assertEqual(validate_answers(stage, {field: a(value)}), {})
+        for section, field, value in [('post', 'Q8', [1, 2, 3]), ('T4', 'T4c', 5),
+                                      ('T5', 'T5a', 'Two instructions merge into one'), ('T5', 'T5c', 5),
+                                      ('post', 'Q20', 5)]:
+            self.assertEqual(validate_answers(section, {field: a(value)}), {})
         for value in [1, [1, 4], [4, 4], []]:
             self.assertIn('Q8', validate_answers('post', {'Q8': a(value)}))
         self.assertIn('T4c', validate_answers('T4', {'T4c': {'status': 'not_applicable', 'value': None}}))
@@ -253,8 +253,8 @@ class EvaluationContentTests(unittest.TestCase):
         t2a = next(field for field in participant_content()['fields'] if field['id'] == 'T2a')
         self.assertEqual(t2a['options'][4], {'value': 105, 'label': 'State 5 · produced by instcombine,simplifycfg'})
         self.assertEqual(validate_answers('T2', {'T2a': a(102)}), {})
-        for stage in [f'T{i}' for i in range(7)]:
-            self.assertEqual(validate_answers(stage, {}, complete=True), {})
+        for section in [f'T{i}' for i in range(7)]:
+            self.assertEqual(validate_answers(section, {}, complete=True), {})
         for task, field, status in [('T2', 'T2a', 'could_not_work_out'), ('T3', 'T3a', 'could_not_work_out'),
                                     ('T4', 'T4a', 'could_not_work_out'), ('T5', 'T5a', 'could_not_work_out')]:
             self.assertEqual(validate_answers(task, {field: {'status': status, 'value': None}}), {})
