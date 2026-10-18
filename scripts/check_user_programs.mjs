@@ -138,9 +138,17 @@ async function dropFile(selector, file) {
   for (const type of ['dragEnter', 'dragOver', 'drop']) await send('Input.dispatchDragEvent', { type, x, y, data });
 }
 // Press a key with `modifiers` (CDP's bit field) held, as a person would.
-const CTRL = 2, SHIFT = 8;
-async function key(key, code, keyCode, modifiers = 0) {
-  for (const type of ['keyDown', 'keyUp']) await send('Input.dispatchKeyEvent', { type, key, code, windowsVirtualKeyCode: keyCode, modifiers });
+const CTRL = 2, META = 4, SHIFT = 8;
+async function key(key, code, keyCode, modifiers = 0, commands) {
+  for (const type of ['keyDown', 'keyUp']) {
+    await send('Input.dispatchKeyEvent', { type, key, code, windowsVirtualKeyCode: keyCode, modifiers, ...(type === 'keyDown' && commands ? { commands } : {}) });
+  }
+}
+// Undo as the platform does it. On macOS, Chrome takes editing shortcuts from the system's key bindings, so a
+// synthetic Cmd+Z undoes only with the editing command attached; elsewhere Ctrl+Z is enough.
+async function undo() {
+  if (process.platform === 'darwin') await key('z', 'KeyZ', 90, META, ['undo']);
+  else await key('z', 'KeyZ', 90, CTRL);
 }
 // Every POST /api/programs is intercepted for the whole run (see the setup at the end), since turning the
 // interception on only when needed can miss a request sent straight after; this decides whether it waits.
@@ -1061,7 +1069,7 @@ const scenarios = {
       `document.querySelector('#program-editor textarea').value === ${JSON.stringify(quickSort)} && document.activeElement === document.querySelector('#program-editor textarea') && document.querySelector('#program-editor-restore').disabled`);
     await check('The restored text counts as an edit of the compiled source', `document.querySelector('#program-editor .editor-status').textContent.startsWith('Edited · not compiled · ') && document.querySelector('#program-editor-discard').textContent === 'Discard edits'`);
     await check('Restoring is announced, with the way to undo it', `document.querySelector('#notice').textContent.includes('Restored the original') && document.querySelector('#notice').textContent.includes('undo')`);
-    await key('z', 'KeyZ', 90, CTRL);
+    await undo();
     await check('Undo reverses Restore original', `document.querySelector('#program-editor textarea').value === ${JSON.stringify(twice)} && !document.querySelector('#program-editor-restore').disabled`);
   },
 
@@ -1105,12 +1113,12 @@ const scenarios = {
     await key('Tab', 'Tab', 9, SHIFT);
     await check('Shift+Tab outdents every line of a selection, each by what indent it has',
       `${editor}.value === ${JSON.stringify(edited(undefined, undefined, 'return x * x;'))}`);
-    await key('z', 'KeyZ', 90, CTRL);
+    await undo();
     await check('Undo reverses the last outdent', `${editor}.value === ${JSON.stringify(starter)}`);
-    await key('z', 'KeyZ', 90, CTRL);
+    await undo();
     await check('Undo again reverses the outdent before it, back to the indented selection',
       `${editor}.value === ${JSON.stringify(edited(undefined, '    int square(int x) {', '        return x * x;', '    }'))}`);
-    await key('z', 'KeyZ', 90, CTRL);
+    await undo();
     await check('Undo reverses the indent made with Tab', `${editor}.value === ${JSON.stringify(starter)}`);
 
     await caret(at(3, lines[2].length));
@@ -1118,8 +1126,8 @@ const scenarios = {
     await send('Input.insertText', { text: 'x = 1;' });
     await check('Enter starts a new line with the same indent as the line it splits',
       `${editor}.value === ${JSON.stringify(starter.replace('x * x;\n', 'x * x;\n    x = 1;\n'))} && ${editor}.selectionStart === ${at(4, 10)}`);
-    await key('z', 'KeyZ', 90, CTRL);
-    await key('z', 'KeyZ', 90, CTRL);
+    await undo();
+    await undo();
     await check('Undo steps back through the typing and the new line', `${editor}.value === ${JSON.stringify(starter)}`);
   },
 
@@ -1133,7 +1141,7 @@ const scenarios = {
     await key('ArrowRight', 'ArrowRight', 39);
     await key('Tab', 'Tab', 9);
     await check('A key between Esc and Tab takes the release back: Tab still indents', `${editor}.value === '    ' + ${JSON.stringify(starter)} && document.activeElement === ${editor}`);
-    await key('z', 'KeyZ', 90, CTRL);
+    await undo();
     await key('Escape', 'Escape', 27);
     await check('Esc changes nothing in the editor and keeps it open', `${editor}.value === ${JSON.stringify(starter)} && ${visible('#program-editor')} && document.activeElement === ${editor}`);
     await key('Tab', 'Tab', 9);
@@ -1182,7 +1190,7 @@ const scenarios = {
     await snap('user-programs-editor-edited.png');
     await check('The status line is announced to screen readers, and sits above the editor',
       `${status}.getAttribute('role') === 'status' && Boolean(${status}.compareDocumentPosition(${editor}) & Node.DOCUMENT_POSITION_FOLLOWING)`);
-    await key('z', 'KeyZ', 90, CTRL);
+    await undo();
     await check('Undoing back to the starter clears the status line', `${editor}.value === ${JSON.stringify(starter)} && ${status}.textContent === '' && ${marked} === '1,2,3,4'`);
 
     // An edit that starts from compiled source, as Edit a copy does, is marked against that source.
