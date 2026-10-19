@@ -11,6 +11,11 @@ from src.backend.evaluation.content import participant_content, validate_answers
 from src.backend.evaluation.service import Config
 
 
+def answered(value):
+    """An answered response to one field, in the shape validate_answers accepts."""
+    return {'status': 'answered', 'value': value}
+
+
 class EvaluationContentTests(unittest.TestCase):
     def test_verified_public_package_exposes_explicit_membership_roles_and_controls(self):
         evaluation = Path(__file__).parents[1] / 'src/backend/evaluation'
@@ -35,16 +40,14 @@ class EvaluationContentTests(unittest.TestCase):
         self.assertNotIn('[Joe/Joel to confirm', json.dumps(content))
 
     def test_revised_response_types_reject_old_codes(self):
-        def a(value):
-            return {'status': 'answered', 'value': value}
         for section, field, value in [('post', 'Q8', [1, 2, 3]), ('T4', 'T4c', 5),
                                       ('T5', 'T5a', 'Two instructions merge into one'), ('T5', 'T5c', 5),
                                       ('post', 'Q20', 5)]:
-            self.assertEqual(validate_answers(section, {field: a(value)}), {})
+            self.assertEqual(validate_answers(section, {field: answered(value)}), {})
         for value in [1, [1, 4], [4, 4], []]:
-            self.assertIn('Q8', validate_answers('post', {'Q8': a(value)}))
+            self.assertIn('Q8', validate_answers('post', {'Q8': answered(value)}))
         self.assertIn('T4c', validate_answers('T4', {'T4c': {'status': 'not_applicable', 'value': None}}))
-        self.assertIn('T5a', validate_answers('T5', {'T5a': a(1)}))
+        self.assertIn('T5a', validate_answers('T5', {'T5a': answered(1)}))
 
     def test_t5_target_is_source_mapped_and_has_qualified_merge(self):
         from src.backend.api import QueryService
@@ -138,8 +141,6 @@ class EvaluationContentTests(unittest.TestCase):
             self.assertIn(client.post('/api/study/submissions', json={'pre': {}}).status_code, (403,))
 
     def test_required_optional_and_separate_nonanswer_states(self):
-        def answered(value):
-            return {'status': 'answered', 'value': value}
         self.assertEqual(validate_answers('pre', {}), {})
         self.assertEqual(set(validate_answers('pre', {}, complete=True)), {'P1'})
         self.assertEqual(validate_answers('pre', {'P1': answered(5)}, complete=True), {})
@@ -164,14 +165,12 @@ class EvaluationContentTests(unittest.TestCase):
                 self.assertEqual(sorted(errors), sorted(example['errorFields']))
 
     def test_exclusive_choices_and_conditional_details(self):
-        def a(value):
-            return {'status': 'answered', 'value': value}
         for value in [0, 10, True, '1', [], [1, 1], [1, 8]]:
-            self.assertIn('P3', validate_answers('pre', {'P3': a(value)}))
-        self.assertEqual(validate_answers('pre', {'P3': a([1])}), {})
-        self.assertIn('P3_other_name', validate_answers('pre', {'P3_other_name': a('Course')}))
-        self.assertIn('P12.detail', validate_answers('pre', {'P12': a(1), 'P12.detail': a('Detail')}))
-        self.assertEqual(validate_answers('pre', {'P12': a(2), 'P12.detail': a('Detail')}), {})
+            self.assertIn('P3', validate_answers('pre', {'P3': answered(value)}))
+        self.assertEqual(validate_answers('pre', {'P3': answered([1])}), {})
+        self.assertIn('P3_other_name', validate_answers('pre', {'P3_other_name': answered('Course')}))
+        self.assertIn('P12.detail', validate_answers('pre', {'P12': answered(1), 'P12.detail': answered('Detail')}))
+        self.assertEqual(validate_answers('pre', {'P12': answered(2), 'P12.detail': answered('Detail')}), {})
 
     def test_v011_course_selections_combine_status_and_distinguish_none_from_missing(self):
         content = participant_content()
@@ -189,29 +188,26 @@ class EvaluationContentTests(unittest.TestCase):
             'COMP3301 — Operating Systems Architecture', 'COMP4403 — Compilers and Interpreters',
         ])
         self.assertEqual(len(labels), 7)
-        def a(value):
-            return {'status': 'answered', 'value': value}
-        self.assertEqual(validate_answers('pre', {'P3': a([1, 7])}), {})
+        self.assertEqual(validate_answers('pre', {'P3': answered([1, 7])}), {})
         self.assertEqual(validate_answers('pre', {'P3': {'status': 'unanswered', 'value': None}}), {})
-        self.assertEqual(validate_answers('pre', {'P3': a([8])}), {})
-        self.assertIn('P3', validate_answers('pre', {'P3': a([1, 8])}))
-        self.assertIn('P3_other_name', validate_answers('pre', {'P3_other_name': a('Other course')}))
-        self.assertEqual(validate_answers('pre', {'P3': a([9]), 'P3_other_name': a('Other course')}), {})
-        self.assertIn('P3_other_name', validate_answers('pre', {'P1': a(1), 'P3': a([9])}, complete=True))
-        self.assertIn('P3_other_name', validate_answers('pre', {'P3_other_name': a('Synthetic course')}))
-        self.assertEqual(validate_answers('pre', {'P3': a([9]), 'P3_other_name': a('Synthetic course')}), {})
-        self.assertIn('P3_other_name', validate_answers('pre', {'P3_other_name': a('')}))
+        self.assertEqual(validate_answers('pre', {'P3': answered([8])}), {})
+        self.assertIn('P3', validate_answers('pre', {'P3': answered([1, 8])}))
+        self.assertIn('P3_other_name', validate_answers('pre', {'P3_other_name': answered('Other course')}))
+        self.assertEqual(validate_answers('pre', {'P3': answered([9]), 'P3_other_name': answered('Other course')}), {})
+        self.assertIn('P3_other_name', validate_answers('pre', {'P1': answered(1), 'P3': answered([9])}, complete=True))
+        self.assertIn('P3_other_name', validate_answers('pre', {'P3_other_name': answered('Synthetic course')}))
+        self.assertEqual(validate_answers('pre', {'P3': answered([9]),
+                                                  'P3_other_name': answered('Synthetic course')}), {})
+        self.assertIn('P3_other_name', validate_answers('pre', {'P3_other_name': answered('')}))
 
     def test_text_bounds_raw_unicode_and_unknown_keys(self):
         text = '🙂' * 4000
-        def a(value):
-            return {'status': 'answered', 'value': value}
-        self.assertEqual(validate_answers('post', {'Q14': a(text)}), {})
-        self.assertIn('Q14', validate_answers('post', {'Q14': a(text + 'x')}))
-        self.assertIn('Q14', validate_answers('post', {'Q14': a('  \n ')}))
-        self.assertIn('researcherScore', validate_answers('post', {'researcherScore': a(5)}))
+        self.assertEqual(validate_answers('post', {'Q14': answered(text)}), {})
+        self.assertIn('Q14', validate_answers('post', {'Q14': answered(text + 'x')}))
+        self.assertIn('Q14', validate_answers('post', {'Q14': answered('  \n ')}))
+        self.assertIn('researcherScore', validate_answers('post', {'researcherScore': answered(5)}))
         self.assertIn('Q14', validate_answers('post', {'Q14': {'status': 'answered', 'value': 'x', 'extra': True}}))
-        self.assertEqual(validate_answers('post', {'Q14': a('  <script>\n=SUM(A1)  ')}), {})
+        self.assertEqual(validate_answers('post', {'Q14': answered('  <script>\n=SUM(A1)  ')}), {})
 
     def test_task_inventory_setups_and_revised_response_structure(self):
         content = participant_content()
@@ -248,23 +244,22 @@ class EvaluationContentTests(unittest.TestCase):
                     self.assertEqual(set(task['setup'][side]), {'ordinal', 'view'})
 
     def test_task_partial_answers_inability_and_not_applicable(self):
-        def a(value):
-            return {'status': 'answered', 'value': value}
         t2a = next(field for field in participant_content()['fields'] if field['id'] == 'T2a')
         self.assertEqual(t2a['options'][4], {'value': 105, 'label': 'State 5 · produced by instcombine,simplifycfg'})
-        self.assertEqual(validate_answers('T2', {'T2a': a(102)}), {})
+        self.assertEqual(validate_answers('T2', {'T2a': answered(102)}), {})
         for section in [f'T{i}' for i in range(7)]:
             self.assertEqual(validate_answers(section, {}, complete=True), {})
         for task, field, status in [('T2', 'T2a', 'could_not_work_out'), ('T3', 'T3a', 'could_not_work_out'),
                                     ('T4', 'T4a', 'could_not_work_out'), ('T5', 'T5a', 'could_not_work_out')]:
             self.assertEqual(validate_answers(task, {field: {'status': status, 'value': None}}), {})
-        for task, field, answer in [('T2', 'T2a', a(12)), ('T2', 'T2a', {'status': 'not_applicable', 'value': None}),
-                                    ('T4', 'T4d', a(True)), ('T5', 'T5a', a(4)),
+        for task, field, answer in [('T2', 'T2a', answered(12)),
+                                    ('T2', 'T2a', {'status': 'not_applicable', 'value': None}),
+                                    ('T4', 'T4d', answered(True)), ('T5', 'T5a', answered(4)),
                                     ('T6', 'T6a', {'status': 'could_not_work_out', 'value': None})]:
             self.assertIn(field, validate_answers(task, {field: answer}))
-        self.assertIn('T1a', validate_answers('T0', {'T1a': a('No orientation answers')}))
-        self.assertIn('T5confidence', validate_answers('T5', {'T5confidence': a(5)}))
-        self.assertEqual(validate_answers('T6', {'T6a': a('Synthetic\n<script>\n=SUM(A1)')}), {})
-        self.assertEqual(validate_answers('T3', {'T3a': a('🙂' * 256)}), {})
-        self.assertIn('T3a', validate_answers('T3', {'T3a': a('🙂' * 257)}))
-        self.assertIn('T6a', validate_answers('T6', {'T6a': a('x' * 4001)}))
+        self.assertIn('T1a', validate_answers('T0', {'T1a': answered('No orientation answers')}))
+        self.assertIn('T5confidence', validate_answers('T5', {'T5confidence': answered(5)}))
+        self.assertEqual(validate_answers('T6', {'T6a': answered('Synthetic\n<script>\n=SUM(A1)')}), {})
+        self.assertEqual(validate_answers('T3', {'T3a': answered('🙂' * 256)}), {})
+        self.assertIn('T3a', validate_answers('T3', {'T3a': answered('🙂' * 257)}))
+        self.assertIn('T6a', validate_answers('T6', {'T6a': answered('x' * 4001)}))
