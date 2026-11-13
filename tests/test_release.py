@@ -32,11 +32,11 @@ class ImageDefaultsTests(unittest.TestCase):
     def setUp(self):
         self.dockerfile = (ROOT / 'Dockerfile').read_text()
 
-    def test_branch_builds_carry_a_0_6_0_development_version(self):
-        # Until 0.6.0 is tagged, an image built from the user-programs branch is never mistaken for a release.
-        # Moving the default to 0.6.0 itself is the deliberate act of tagging that release.
+    def test_release_builds_carry_the_0_6_0_version(self):
+        # 0.6.0 is the examined release, so an image built from its tag reports that version without being told to.
+        # The next development build moves this default to its own -dev.N version.
         default = re.search(r'^ARG APP_VERSION=(\S+)$', self.dockerfile, re.MULTILINE)
-        self.assertRegex(default and default.group(1), r'^0\.6\.0-dev\.[1-9][0-9]*$')
+        self.assertEqual(default and default.group(1), '0.6.0')
 
     def test_image_leaves_user_programs_off(self):
         self.assertIn('IREXPLORER_USER_PROGRAMS=0', self.dockerfile)

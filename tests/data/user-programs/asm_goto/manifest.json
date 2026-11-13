@@ -2,8 +2,8 @@
   "clang": "clang version 22.1.8 (https://github.com/llvm/llvm-project ca7933e47d3a3451d81e72ac174dcb5aa28b59d1)",
   "opt": "LLVM version 22.1.8",
   "targetTriple": "x86_64-unknown-linux-gnu",
-  "compilerImage": "content-sha256:f2f15f138e5f5d8549c62ff7b41fe3e47d9d3b08b6ea3350d14a05e28c808724",
-  "libcVersion": "2.39-0ubuntu8.9",
+  "compilerImage": "content-sha256:63d6f1c990d8e3d0266821e2bd2cd9892b5475249e50af765b5fc2d50e6fa1a8",
+  "libcVersion": "2.39-0ubuntu8.12",
   "commands": [
     "clang -O0 -g -Xclang -disable-O0-optnone -fno-discard-value-names -S -emit-llvm /workspace/user-programs/asm_goto.c -o /workspace/out/asm_goto_O0.ll",
     "clang -O0 -g -Xclang -disable-O0-optnone -fno-discard-value-names -emit-llvm -c /workspace/user-programs/asm_goto.c -o /workspace/out/asm_goto_O0.bc",

@@ -11,8 +11,8 @@ services:
       dockerfile: Dockerfile
       target: app
       args:
-        APP_VERSION: ${IREXPLORER_VERSION:-0.6.0-dev.1}
-    image: irexplorer:${IREXPLORER_VERSION:-0.6.0-dev.1}
+        APP_VERSION: ${IREXPLORER_VERSION:-0.6.0}
+    image: irexplorer:${IREXPLORER_VERSION:-0.6.0}
     ports:
       - "127.0.0.1:8001:8000"
     environment:
