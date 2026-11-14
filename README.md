@@ -42,7 +42,7 @@ Only localhost port 8000 is published. The application runs as a non-root user w
 
 ## Run with user programs
 
-User programs let you open one small C file of your own in **Explore**, write one in its editor, or edit a copy of a curated example or one of your files, and follow it through the same states, panels and comparison report as a curated example. They are for local use only and run in a separate Compose stack, on port 8001, beside the current build above. Build the pinned toolchain image once (it downloads about 1.7 GB of LLVM), then start the stack:
+User programs let you open one small C file of your own in **Explore**, write one in its editor, or edit a copy of a curated example or one of your files, and follow it through the same states, panels and comparison report as a curated example. They are for local use only and run in a separate Compose stack, on port 8001. The stack runs on its own: the current build above need not be running, though it can run beside it. The compiler image is `linux/amd64`, so on Apple Silicon Docker must be able to run amd64 images under emulation, as Docker Desktop does by default. Build the pinned toolchain image once (it downloads about 1.7 GB of LLVM, and the stack's images take about 2 GB of disk in all), then start the stack:
 
 ```sh
 docker compose --profile toolchain build toolchain
@@ -53,7 +53,7 @@ Open **http://localhost:8001**. A program that compiles with clang warnings list
 
 The stack runs the same application image with the user programs setting on, beside a compiler service holding the pinned LLVM toolchain and the C library headers. On Apple Silicon the compiler runs `linux/amd64` under emulation, so a program takes a few seconds. The compiler service has no published port and no internet access, reaches only the application over the stack's internal network, has a read-only root file system and wipes its temporary work directory after each program. The application never gets the Docker socket and never runs `clang` or `opt` itself.
 
-With the stack up, `scripts/check_user_programs.sh` checks it against the real toolchain; CI runs the same check on amd64 when started by hand. See [tests/README.md](tests/README.md#real-compiler-smoke-check).
+With the stack up, `scripts/check_user_programs.sh` checks it against the real toolchain. The check runs its tests with `.venv/bin/python`, so create that environment first, as in [Run with Python](#run-with-python), or set `IRX_PYTHON` to another Python with the same requirements. CI runs the same check on amd64 when started by hand. See [tests/README.md](tests/README.md#real-compiler-smoke-check).
 
 ## Run the study build
 
@@ -84,7 +84,7 @@ python3.12 -m venv .venv
 .venv/bin/python -m src.backend.api.server
 ```
 
-Open **http://127.0.0.1:8000**. Stop the Docker application first if it already uses port 8000. The host runner uses the development release label and a separate preview study store by default; see [study operations](docs/evaluation-operations.md).
+Open **http://127.0.0.1:8000**. Stop the Docker application first if it already uses port 8000. The host runner serves the curated application only; user programs need the [user-programs stack](#run-with-user-programs), whose compiler runs in Docker. The host runner uses the development release label and a separate preview study store by default; see [study operations](docs/evaluation-operations.md).
 
 ## Development and verification
 
