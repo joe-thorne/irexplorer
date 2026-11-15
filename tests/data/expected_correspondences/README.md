@@ -17,8 +17,9 @@ produced by serialising fresh or stored correspondence output. The labelled
 CFG edge sets were transcribed from the terminators separately.
 
 This is an AI-assisted manual artefact review. The project author reviewed the
-five `score` tables (95 links) and accepted them on 1 October 2026; the five
-`binary_search` tables (258 links) have had no independent human review. The tables check the observable change story and the matcher’s
+five `score` tables (95 links) and accepted them on 1 October 2026, and later
+checked the five `binary_search` tables (258 links) by hand; the date of that
+check was not recorded. The tables check the observable change story and the matcher’s
 qualified identity claims; they do not prove semantic equivalence, identify
 every possible semantic counterpart, or establish compiler intent.
 
